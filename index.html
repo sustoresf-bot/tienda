@@ -26,6 +26,12 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
 
+    <!-- Vercel Speed Insights -->
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap');
         
@@ -60,6 +66,10 @@
         import { initializeApp } from 'firebase/app';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
         import { getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc, where } from 'firebase/firestore';
+        import { injectSpeedInsights } from '@vercel/speed-insights';
+
+        // Initialize Vercel Speed Insights
+        injectSpeedInsights();
 
         // --- CONFIGURACIÓN ---
         const firebaseConfig = {
