@@ -1,7 +1,7 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 // Inicializamos Mercado Pago con tu Access Token (Secreto)
-// Vercel inyectará esto desde las variables de entorno
+// Vercel inyectará esto desde las variables de entorno MP_ACCESS_TOKEN
 const client = new MercadoPagoConfig({ 
     accessToken: process.env.MP_ACCESS_TOKEN 
 });
@@ -17,13 +17,15 @@ export default async function handler(req, res) {
                     id: item.id,
                     title: item.title,
                     quantity: Number(item.quantity),
+                    // El frontend ya envía el precio con descuento aplicado si corresponde
                     unit_price: Number(item.unit_price),
                     currency_id: "ARS"
                 })),
                 back_urls: {
-                    success: "[https://tienda-chi-rouge.vercel.app](https://tienda-chi-rouge.vercel.app)", // Tu URL real
-                    failure: "[https://tienda-chi-rouge.vercel.app](https://tienda-chi-rouge.vercel.app)", 
-                    pending: "[https://tienda-chi-rouge.vercel.app](https://tienda-chi-rouge.vercel.app)"
+                    // CORRECCIÓN: Usamos TU dominio real para que el cliente vuelva a tu tienda
+                    success: "https://tienda-4yap07jca-sustoresf-bots-projects.vercel.app", 
+                    failure: "https://tienda-4yap07jca-sustoresf-bots-projects.vercel.app", 
+                    pending: "https://tienda-4yap07jca-sustoresf-bots-projects.vercel.app"
                 },
                 auto_return: "approved",
             };
@@ -31,7 +33,7 @@ export default async function handler(req, res) {
             const preference = new Preference(client);
             const result = await preference.create({ body });
 
-            // Devolvemos el ID de la preferencia al frontend
+            // Devolvemos el ID de la preferencia al frontend para abrir el checkout
             res.status(200).json({ id: result.id });
         } catch (error) {
             console.error("Error creando preferencia:", error);
