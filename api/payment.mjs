@@ -1,7 +1,5 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
-// Inicializamos Mercado Pago con tu Access Token (Secreto)
-// Vercel inyectará esto desde las variables de entorno MP_ACCESS_TOKEN
 const client = new MercadoPagoConfig({ 
     accessToken: process.env.MP_ACCESS_TOKEN 
 });
@@ -11,18 +9,15 @@ export default async function handler(req, res) {
         try {
             const { items } = req.body;
 
-            // Configuración de la Preferencia de Pago
             const body = {
                 items: items.map(item => ({
                     id: item.id,
                     title: item.title,
                     quantity: Number(item.quantity),
-                    // El frontend ya envía el precio con descuento aplicado si corresponde
                     unit_price: Number(item.unit_price),
                     currency_id: "ARS"
                 })),
                 back_urls: {
-                    // CORRECCIÓN: Usamos TU dominio real para que el cliente vuelva a tu tienda
                     success: "https://tienda-4yap07jca-sustoresf-bots-projects.vercel.app", 
                     failure: "https://tienda-4yap07jca-sustoresf-bots-projects.vercel.app", 
                     pending: "https://tienda-4yap07jca-sustoresf-bots-projects.vercel.app"
@@ -33,14 +28,17 @@ export default async function handler(req, res) {
             const preference = new Preference(client);
             const result = await preference.create({ body });
 
-            // Devolvemos el ID de la preferencia al frontend para abrir el checkout
-            res.status(200).json({ id: result.id });
+            // CAMBIO CLAVE: Devolvemos init_point para redirección directa
+            res.status(200).json({ 
+                id: result.id, 
+                url: result.init_point 
+            });
+            
         } catch (error) {
             console.error("Error creando preferencia:", error);
             res.status(500).json({ error: "Error al procesar el pago" });
         }
     } else {
-        // Si intentan entrar por navegador directo
         res.setHeader('Allow', ['POST']);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
