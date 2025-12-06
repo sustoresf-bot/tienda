@@ -109,7 +109,7 @@
                         <div className="bg-white p-4 rounded-full mb-6 animate-bounce shadow-[0_0_30px_rgba(0,158,227,0.4)]">
                             <CreditCard className="w-12 h-12 text-[#009EE3]" />
                         </div>
-                        <p className="text-white text-xl font-bold tracking-widest animate-pulse">CONECTANDO CON MERCADO PAGO</p>
+                        <p className="text-white text-xl font-bold tracking-widest animate-pulse">ABRIENDO MERCADO PAGO</p>
                         <p className="text-slate-400 text-sm mt-3 flex items-center gap-2"><Lock className="w-4 h-4"/> Entorno Seguro SSL</p>
                     </>
                 ) : (
@@ -319,15 +319,16 @@
 
                     const preference = await response.json();
                     
-                    if (!window.MercadoPago) throw new Error("El sistema de pagos no cargó correctamente. Recarga la página.");
+                    // 4. REDIRECCIÓN DIRECTA (Obligatoria)
+                    if (preference.url) {
+                        window.location.href = preference.url;
+                    } else {
+                        throw new Error("El servidor no devolvió un link de pago válido.");
+                    }
                     
-                    const mp = new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'es-AR' });
-                    mp.checkout({ preference: { id: preference.id }, autoOpen: true });
-                    setIsLoading(false);
-
                 } catch (error) {
                     console.error("CRITICAL PAYMENT ERROR:", error);
-                    alert("⛔ ERROR DE PAGO:\nNo se pudo conectar con el servidor de cobros.\n\nDetalle técnico: " + error.message + "\n\nAsegúrate de que el archivo /api/payment.js existe y está desplegado en Vercel.");
+                    alert("⛔ ERROR DE PAGO:\n" + error.message + "\n\nVerifica tu consola para más detalles.");
                     setIsLoading(false);
                 }
             };
@@ -339,16 +340,16 @@
                 // Restaurar carrito
                 setCart(pendingOrderRecover.items);
                 
-                // Intentar parsear dirección vieja si es necesario, o simplemente dejar que el usuario rellene
-                // Para "hacer que funcione ya", llevamos al usuario al checkout
-                // y pre-rellenamos lo que tengamos.
-                // Como la dirección se guarda como un string en la DB ("Calle 123, Ciudad (CP: 1234)"), 
-                // es difícil separarla perfectamente. 
-                // MEJOR ESTRATEGIA: Dejar que el usuario rellene la dirección de nuevo por seguridad,
-                // pero llevarlo YA a la pantalla de checkout.
+                // Restaurar datos del formulario si existen en la orden guardada
+                if (pendingOrderRecover.checkoutData) {
+                    setCheckoutData(pendingOrderRecover.checkoutData);
+                } else {
+                    // Fallback para órdenes viejas: Intentar rellenar lo que tengamos
+                    setCheckoutData(prev => ({ ...prev, transferHolder: pendingOrderRecover.userName }));
+                }
                 
                 setView('checkout');
-                setPendingOrderRecover(null); // Cierra el modal, ya estamos en checkout listos para pagar
+                setPendingOrderRecover(null); 
             };
 
             const handleRecoverNo = async () => {
@@ -569,6 +570,17 @@
                                         <button onClick={validateCoupon} className="bg-purple-600 hover:bg-purple-700 text-white px-4 rounded-xl font-bold text-xs transition shadow-lg shadow-purple-200">APLICAR</button>
                                     </div>
                                     {appliedCoupon && <div className="mb-6 text-green-700 text-sm font-bold bg-green-50 p-3 rounded-xl border border-green-200 flex justify-between items-center"><span><Ticket className="w-4 h-4 inline mr-1"/> {appliedCoupon.code}</span> <span>-{appliedCoupon.discountPercentage}% OFF</span></div>}
+                                    
+                                    {/* RESUMEN PRODUCTOS */}
+                                    <div className="bg-slate-100 p-4 rounded-xl mb-6 max-h-40 overflow-y-auto">
+                                        {cart.map((item,i) => (
+                                            <div key={i} className="flex justify-between text-sm mb-2 border-b border-slate-200 pb-2 last:border-0 last:pb-0">
+                                                <span className="text-slate-700 font-bold">{item.quantity}x {item.product.name}</span>
+                                                <span className="text-slate-900 font-mono">${(calculatePrice(item.product.basePrice, item.product.discount)*item.quantity).toLocaleString()}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
                                     <div className="bg-slate-50 p-6 rounded-2xl mb-8 text-center border border-slate-200 relative">
                                         <p className="text-xs text-slate-500 uppercase font-bold mb-1 tracking-widest">Total a Pagar</p>
                                         <div className="text-5xl font-black text-slate-900 tracking-tighter">${cartTotal.toLocaleString()}</div>
@@ -743,9 +755,9 @@
                                         <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 w-full max-w-md">
                                             <h3 className="text-xl font-bold text-white mb-4">Editar Usuario</h3>
                                             <div className="space-y-3">
-                                                <input className="w-full bg-slate-950 border border-slate-700 p-3 rounded-lg text-white" value={editingUser.name} onChange={e => setEditingUser({...editingUser, name: e.target.value})} placeholder="Nombre"/>
-                                                <input className="w-full bg-slate-950 border border-slate-700 p-3 rounded-lg text-white" value={editingUser.dni} onChange={e => setEditingUser({...editingUser, dni: e.target.value})} placeholder="DNI"/>
-                                                <input className="w-full bg-slate-950 border border-slate-700 p-3 rounded-lg text-white" value={editingUser.phone} onChange={e => setEditingUser({...editingUser, phone: e.target.value})} placeholder="Teléfono"/>
+                                                <input className="w-full input-dark p-3" value={editingUser.name} onChange={e => setEditingUser({...editingUser, name: e.target.value})} placeholder="Nombre"/>
+                                                <input className="w-full input-dark p-3" value={editingUser.dni} onChange={e => setEditingUser({...editingUser, dni: e.target.value})} placeholder="DNI"/>
+                                                <input className="w-full input-dark p-3" value={editingUser.phone} onChange={e => setEditingUser({...editingUser, phone: e.target.value})} placeholder="Teléfono"/>
                                             </div>
                                             <div className="flex gap-2 mt-6"><button onClick={() => setEditingUser(null)} className="flex-1 py-2 bg-slate-800 text-slate-300 rounded-lg">Cancelar</button><button onClick={saveUserEdit} className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-bold">Guardar</button></div>
                                         </div>
