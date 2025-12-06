@@ -95,7 +95,9 @@
             aboutUsText: "Somos una empresa dedicada a traer la mejor tecnología al mejor precio."
         };
 
-        // --- COMPONENTES AUXILIARES ---
+        // --- COMPONENTES AUXILIARES (Asegurados) ---
+        
+        // Logo de la tienda
         const SustoreLogo = () => (
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.5)] overflow-hidden border-2 border-cyan-500 relative z-50">
                 <svg viewBox="0 0 100 100" className="w-6 h-6" fill="none"><path d="M20 30 H60 M20 50 H80 M20 70 H50" stroke="#0F172A" strokeWidth="8" strokeLinecap="round"/></svg>
@@ -168,6 +170,7 @@
             const [checkoutCoupon, setCheckoutCoupon] = useState('');
             const [appliedCoupon, setAppliedCoupon] = useState(null);
             const [editingUser, setEditingUser] = useState(null);
+            const [editingId, setEditingId] = useState(null); // ID para editar productos
 
             // Chatbot
             const [isChatOpen, setIsChatOpen] = useState(false);
@@ -183,7 +186,6 @@
             const [tempSettings, setTempSettings] = useState(defaultSettings);
             const [newProduct, setNewProduct] = useState({ name: '', basePrice: '', category: '', image: '', description: '', stock: '', discount: 0 });
             const [newCoupon, setNewCoupon] = useState({ code: '', discountPercentage: 7, expirationDate: '', userEmail: '' });
-            const [editingId, setEditingId] = useState(null);
             const [newCategory, setNewCategory] = useState('');
             const [aboutText, setAboutText] = useState('');
 
@@ -239,7 +241,6 @@
                         const newUser = { ...registerData, role: 'user', joinDate: new Date().toISOString(), favorites: [] };
                         const ref = await addDoc(usersRef, newUser);
                         
-                        // LÓGICA CUPÓN 7%
                         const qDni = query(usersRef, where("dni", "==", registerData.dni));
                         const snapDni = await getDocs(qDni);
                         if (snapDni.empty) {
@@ -263,7 +264,7 @@
             const onRegisterSubmit = (e) => { e.preventDefault(); performAuth(true); };
             const handleLogout = () => { localStorage.removeItem('nexus_user_id'); setCurrentUser(null); setView('store'); setFavorites([]); setShowLogoutConfirm(false); setIsMenuOpen(false); };
 
-            // --- CART & PAYMENT REAL ---
+            // --- CART & PAYMENTS ---
             const manageCart = (prod, delta) => {
                 const idx = cart.findIndex(i => i.product.id === prod.id);
                 if (idx === -1 && delta > 0) {
@@ -365,20 +366,11 @@
             const addCategory = () => { if(newCategory && !tempSettings.categories.includes(newCategory)) { setTempSettings({...tempSettings, categories:[...tempSettings.categories, newCategory]}); setNewCategory(''); } };
             const removeCategory = (c) => setTempSettings({...tempSettings, categories: tempSettings.categories.filter(x => x!==c)});
             const seedDB = async () => { setIsLoading(true); for(const p of [{ name: "iPhone 14 Pro", basePrice: 950000, category: "Celulares", stock: 10, image: "https://images.unsplash.com/photo-1664478546384-d57ffe74a797?q=80&w=500", description: "Potencia ilimitada.", discount: 0 }]) await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), p); setIsLoading(false); };
-
-            // --- RESTORED MISSING FUNCTIONS ---
-            const toggleFavorite = async (productId) => {
-                let newFavs;
-                if (favorites.includes(productId)) newFavs = favorites.filter(id => id !== productId);
-                else newFavs = [...favorites, productId];
-                setFavorites(newFavs);
-                if (currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), { favorites: newFavs });
-                else localStorage.setItem('nexus_favs', JSON.stringify(newFavs));
-            };
-
+            const toggleFavorite = async (productId) => { let newFavs; if (favorites.includes(productId)) newFavs = favorites.filter(id => id !== productId); else newFavs = [...favorites, productId]; setFavorites(newFavs); if (currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), { favorites: newFavs }); else localStorage.setItem('nexus_favs', JSON.stringify(newFavs)); };
             const goIg = () => window.open(`https://www.instagram.com/${settings.instagramUser}/`, '_blank');
             const goWsp = () => window.open(settings.whatsappLink, '_blank');
 
+            // Funciones Recuperar Compra (Restauradas)
             const handleRecoverYes = () => {
                 if (!pendingOrderRecover) return;
                 setCart(pendingOrderRecover.items);
@@ -793,8 +785,8 @@
                         <footer className="bg-slate-950 py-8 border-t border-slate-800 mt-auto">
                             <div className="max-w-7xl mx-auto px-4 text-center">
                                 <div className="flex justify-center gap-6 mb-4">
-                                    <button onClick={() => window.open(`https://instagram.com/${settings.instagramUser}`)} className="text-slate-400 hover:text-pink-500 transition"><Instagram className="w-6 h-6"/></button>
-                                    <button onClick={() => window.open(settings.whatsappLink)} className="text-slate-400 hover:text-green-500 transition"><MessageCircle className="w-6 h-6"/></button>
+                                    <button onClick={goIg} className="text-slate-400 hover:text-pink-500 transition"><Instagram className="w-6 h-6"/></button>
+                                    <button onClick={goWsp} className="text-slate-400 hover:text-green-500 transition"><MessageCircle className="w-6 h-6"/></button>
                                 </div>
                                 <p className="text-slate-600 text-sm">© 2024 Sustore Technology. Todos los derechos reservados.</p>
                             </div>
