@@ -77,12 +77,7 @@
         const db = getFirestore(app);
         const appId = "sustore-prod-v1";
         const apiKey = ""; 
-        
-        // ------------------------------------------------------------------
-        // ¡ATENCIÓN! ESTA ES LA CLAVE PÚBLICA DE PRODUCCIÓN DE MERCADO PAGO
-        // CAMBIAR "PON_TU_PUBLIC_KEY_PRODUCCION_ACA" POR TU CREDENCIAL REAL.
-        // DEBE EMPEZAR CON "APP_USR-..." PARA COBROS REALES.
-        // ------------------------------------------------------------------
+        // ¡ATENCIÓN! Reemplaza esto con tu KEY DE PRODUCCIÓN real para que cobres de verdad
         const MP_PUBLIC_KEY = "TEST-e6ef7e6d-5a9d-472e-8393-27357597542d"; 
 
         const defaultSettings = {
@@ -172,7 +167,7 @@
             const [welcomeCode, setWelcomeCode] = useState(null);
             const [checkoutCoupon, setCheckoutCoupon] = useState('');
             const [appliedCoupon, setAppliedCoupon] = useState(null);
-            const [editingUser, setEditingUser] = useState(null); // Nuevo estado para editar usuario
+            const [editingUser, setEditingUser] = useState(null);
 
             // Chatbot
             const [isChatOpen, setIsChatOpen] = useState(false);
@@ -227,7 +222,7 @@
             const calculatePrice = (basePrice, discount) => { const markup = Number(basePrice) * (1 + settings.markupPercentage / 100); return discount > 0 ? Math.ceil(markup * (1 - discount / 100)) : Math.ceil(markup); };
             const getRawPrice = (basePrice) => Math.ceil(Number(basePrice) * (1 + settings.markupPercentage / 100));
             
-            // --- LÓGICA DE NEGOCIO ---
+            // --- AUTH ---
             const performAuth = async (isRegister) => {
                 setAuthError(''); 
                 if (isRegister && (!registerData.name || !registerData.dni || !registerData.email || !registerData.password)) return setAuthError("Completa todos los campos.");
@@ -244,7 +239,7 @@
                         const newUser = { ...registerData, role: 'user', joinDate: new Date().toISOString(), favorites: [] };
                         const ref = await addDoc(usersRef, newUser);
                         
-                        // LÓGICA CUPÓN BIENVENIDA: Solo si el DNI es nuevo
+                        // LÓGICA CUPÓN 7%
                         const qDni = query(usersRef, where("dni", "==", registerData.dni));
                         const snapDni = await getDocs(qDni);
                         if (snapDni.empty) {
@@ -266,31 +261,20 @@
 
             const onLoginSubmit = (e) => { e.preventDefault(); performAuth(false); };
             const onRegisterSubmit = (e) => { e.preventDefault(); performAuth(true); };
+            const handleLogout = () => { localStorage.removeItem('nexus_user_id'); setCurrentUser(null); setView('store'); setFavorites([]); setShowLogoutConfirm(false); setIsMenuOpen(false); };
 
-            const handleLogout = () => {
-                localStorage.removeItem('nexus_user_id');
-                setCurrentUser(null);
-                setView('store');
-                setFavorites([]);
-                setShowLogoutConfirm(false);
-                setIsMenuOpen(false);
-            };
-
-            // --- CART & PAYMENTS ---
+            // --- CART & PAYMENT REAL ---
             const manageCart = (prod, delta) => {
                 const idx = cart.findIndex(i => i.product.id === prod.id);
-                const currentStock = Number(prod.stock);
                 if (idx === -1 && delta > 0) {
-                    if (currentStock < 1) return alert("Sin stock");
+                    if (Number(prod.stock) < 1) return alert("Sin stock");
                     setCart([...cart, { product: prod, quantity: 1 }]);
                 } else if (idx !== -1) {
                     const newCart = [...cart];
-                    const newQty = newCart[idx].quantity + delta;
-                    if (newQty <= 0) setCart(cart.filter((_, i) => i !== idx));
-                    else if (newQty <= currentStock) {
-                        newCart[idx].quantity = newQty;
-                        setCart(newCart);
-                    } else alert("Stock insuficiente");
+                    newCart[idx].quantity += delta;
+                    if (newCart[idx].quantity <= 0) setCart(cart.filter((_, i) => i !== idx));
+                    else if (newCart[idx].quantity <= Number(prod.stock)) setCart(newCart);
+                    else alert("Stock insuficiente");
                 }
             };
             
@@ -299,58 +283,51 @@
 
             const handleGoToMP = async () => {
                 if (!checkoutData.address || !checkoutData.city || !checkoutData.zipCode || !checkoutData.transferHolder) return alert("Por favor completa todos los campos de envío.");
-                if (!/^\d{4}$/.test(checkoutData.zipCode)) return alert("El CP debe ser un número de 4 dígitos.");
+                if (!/^\d{4}$/.test(checkoutData.zipCode)) return alert("El CP debe ser un número de 4 dígitos válido.");
                 
                 setLoadingMessage('MP'); setIsLoading(true);
+
                 try {
-                    // 1. Orden Temporal
+                    // 1. Crear Orden en Firestore
                     const newOrder = {
                         orderId: `ORD-${Math.floor(Math.random()*100000)}`,
-                        userId: currentUser?.id || 'guest', 
-                        userName: currentUser?.name || checkoutData.transferHolder, 
+                        userId: currentUser?.id || 'guest', userName: currentUser?.name || checkoutData.transferHolder, 
                         userEmail: currentUser?.email || 'guest',
                         total: cartTotal, items: cart, date: new Date().toISOString(), displayDate: new Date().toLocaleString(),
-                        shippingAddress: `${checkoutData.address}, ${checkoutData.city}`,
-                        paymentMethod: `Mercado Pago`, status: 'Pendiente', paymentId: '',
-                        couponCode: appliedCoupon?.code || null 
+                        shippingAddress: `${checkoutData.address}, ${checkoutData.city} (CP: ${checkoutData.zipCode})`,
+                        paymentMethod: `Mercado Pago`, status: 'Pendiente', paymentId: '', couponCode: appliedCoupon?.code || null 
                     };
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
 
-                    // 2. PREVIEW CHECK (Seguridad)
-                    const isPreview = window.location.protocol === 'blob:' || window.location.hostname.includes('googleusercontent');
-                    if (isPreview) {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        setView('receipt'); setCart([]); localStorage.removeItem('nexus_cart'); setIsLoading(false);
-                        alert("⚠️ MODO VISTA PREVIA: Pago simulado exitosamente.\n\nEn producción, esto abrirá Mercado Pago.");
-                        return;
-                    }
-
-                    // 3. BACKEND REAL
+                    // 2. Preparar Items con Descuento Aplicado al Unit Price
                     const discountFactor = appliedCoupon ? (1 - appliedCoupon.discountPercentage / 100) : 1;
                     const mpItems = cart.map(item => ({
-                        id: item.product.id,
-                        title: item.product.name,
-                        quantity: item.quantity,
-                        // IMPORTANTE: Aplicar descuento al precio unitario
+                        id: item.product.id, title: item.product.name, quantity: item.quantity,
                         unit_price: Math.ceil(calculatePrice(item.product.basePrice, item.product.discount) * discountFactor),
                         currency_id: 'ARS'
                     }));
 
+                    // 3. Fetch a Backend Real (FORZADO)
                     const response = await fetch('/api/payment', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: mpItems })
                     });
 
-                    if (!response.ok) throw new Error("Error en backend de pagos.");
+                    if (!response.ok) {
+                        const txt = await response.text();
+                        throw new Error(`Error del servidor de pagos (${response.status}): ${txt}`);
+                    }
+
                     const preference = await response.json();
                     
-                    if (!window.MercadoPago) throw new Error("SDK MP no cargó.");
+                    if (!window.MercadoPago) throw new Error("El sistema de pagos no cargó correctamente. Recarga la página.");
+                    
                     const mp = new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'es-AR' });
                     mp.checkout({ preference: { id: preference.id }, autoOpen: true });
                     setIsLoading(false);
 
                 } catch (error) {
-                    console.error("Error MP:", error);
-                    alert("Error: " + error.message);
+                    console.error("CRITICAL PAYMENT ERROR:", error);
+                    alert("⛔ ERROR DE PAGO:\nNo se pudo conectar con el servidor de cobros.\n\nDetalle técnico: " + error.message + "\n\nAsegúrate de que el archivo /api/payment.js existe y está desplegado en Vercel.");
                     setIsLoading(false);
                 }
             };
@@ -362,104 +339,34 @@
                 if (new Date(found.expirationDate) < new Date()) return alert("Vencido");
                 if (found.userEmail && found.userEmail !== currentUser?.email) return alert("No es para ti");
                 if (found.usedBy?.includes(currentUser?.id)) return alert("Ya usado");
-                
-                setAppliedCoupon(found);
-                alert("¡Aplicado!");
+                setAppliedCoupon(found); alert("¡Aplicado!");
             };
 
-            // --- ADMIN (Funciones Restauradas) ---
+            // --- ADMIN ---
             const saveProduct = async () => {
                 if (!newProduct.name || !newProduct.basePrice) return alert("Faltan datos");
                 setIsLoading(true);
-                const pData = { 
-                    ...newProduct, basePrice: Number(newProduct.basePrice), stock: Number(newProduct.stock), discount: Number(newProduct.discount || 0),
-                    image: newProduct.image || 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=500'
-                };
+                const pData = { ...newProduct, basePrice: Number(newProduct.basePrice), stock: Number(newProduct.stock), discount: Number(newProduct.discount || 0), image: newProduct.image || 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=500' };
                 if (editingId) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId), pData);
                 else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), pData);
-                setNewProduct({ name: '', basePrice: '', category: '', image: '', description: '', stock: '', discount: 0 });
-                setEditingId(null);
-                if (fileInputRef.current) fileInputRef.current.value = "";
-                setIsLoading(false);
+                setNewProduct({ name: '', basePrice: '', category: '', image: '', description: '', stock: '', discount: 0 }); setEditingId(null); if(fileInputRef.current) fileInputRef.current.value = ""; setIsLoading(false);
             };
-
-            const deleteProd = async () => {
-                if (!productToDelete) return;
-                setIsLoading(true);
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', productToDelete.id));
-                setProductToDelete(null);
-                setIsLoading(false);
-            };
-
-            const saveCoupon = async () => {
-                if(!newCoupon.code) return alert("Falta código");
-                setIsLoading(true);
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), { ...newCoupon, usedBy: [] });
-                setNewCoupon({ code: '', discountPercentage: 7, expirationDate: '', userEmail: '' });
-                setIsLoading(false);
-            };
-            
-            const deleteCoupon = async (id) => {
-                if(!confirm("¿Eliminar cupón?")) return;
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', id));
-            };
-
-            const handleImage = (e) => {
-                const f = e.target.files[0];
-                if (f && f.size < 1000000) {
-                    const r = new FileReader();
-                    r.onload = () => setNewProduct(prev => ({...prev, image: r.result }));
-                    r.readAsDataURL(f);
-                } else alert("Imagen muy pesada.");
-            };
-
-            const handleLogoUpload = (e) => {
-                const f = e.target.files[0];
-                if (f && f.size < 700000) {
-                    const r = new FileReader();
-                    r.onload = () => setTempSettings(prev => ({...prev, logoUrl: r.result}));
-                    r.readAsDataURL(f);
-                } else alert("Logo muy pesado.");
-            };
-
-            const saveSettings = async () => {
-                setIsLoading(true);
-                try {
-                    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'settings'));
-                    const s = await getDocs(q);
-                    const data = { ...tempSettings, aboutUsText: aboutText };
-                    if (!s.empty) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', s.docs[0].id), data);
-                    else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), data);
-                    alert("Guardado.");
-                } catch (err) { alert("Error: " + err.message); }
-                setIsLoading(false);
-            };
-
-            const addCategory = () => {
-                if(newCategory && !tempSettings.categories.includes(newCategory)) {
-                    setTempSettings({...tempSettings, categories:[...tempSettings.categories, newCategory]});
-                    setNewCategory('');
-                }
-            };
-            const removeCategory = (c) => setTempSettings({...tempSettings, categories: tempSettings.categories.filter(x => x!==c)});
+            const deleteProd = async () => { if (!productToDelete) return; setIsLoading(true); await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', productToDelete.id)); setProductToDelete(null); setIsLoading(false); };
+            const saveCoupon = async () => { if(!newCoupon.code) return alert("Falta código"); setIsLoading(true); await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), { ...newCoupon, usedBy: [] }); setNewCoupon({ code: '', discountPercentage: 7, expirationDate: '', userEmail: '' }); setIsLoading(false); };
+            const deleteCoupon = async (id) => { if(!confirm("¿Eliminar cupón?")) return; await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', id)); };
+            const handleImage = (e) => { const f = e.target.files[0]; if (f && f.size < 1000000) { const r = new FileReader(); r.onload = () => setNewProduct(prev => ({...prev, image: r.result })); r.readAsDataURL(f); } else alert("Imagen muy pesada."); };
+            const handleLogoUpload = (e) => { const f = e.target.files[0]; if (f && f.size < 700000) { const r = new FileReader(); r.onload = () => setTempSettings(prev => ({...prev, logoUrl: r.result})); r.readAsDataURL(f); } else alert("Logo muy pesado."); };
+            const saveSettings = async () => { setIsLoading(true); try { const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'settings')); const s = await getDocs(q); const data = { ...tempSettings, aboutUsText: aboutText }; if (!s.empty) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', s.docs[0].id), data); else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), data); alert("Guardado."); } catch (err) { alert("Error: " + err.message); } setIsLoading(false); };
             const handleEditProduct = (p) => { setNewProduct({ ...p, basePrice: p.basePrice }); setEditingId(p.id); window.scrollTo({ top: 0, behavior: 'smooth' }); };
             const initiateDelete = (p) => setProductToDelete(p);
             const handleCancelEdit = () => { setNewProduct({ name: '', basePrice: '', category: '', image: '', description: '', stock: '', discount: 0 }); setEditingId(null); if(fileInputRef.current) fileInputRef.current.value = ""; };
-
-            // --- USER EDITING ---
             const handleEditUser = (user) => setEditingUser({ ...user });
-            const saveUserEdit = async () => {
-                if (!editingUser) return;
-                setIsLoading(true);
-                try {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editingUser.id), { name: editingUser.name, dni: editingUser.dni, phone: editingUser.phone });
-                    alert("Usuario actualizado.");
-                    setEditingUser(null);
-                } catch (e) { alert("Error: " + e.message); }
-                setIsLoading(false);
-            };
+            const saveUserEdit = async () => { if (!editingUser) return; setIsLoading(true); try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editingUser.id), { name: editingUser.name, dni: editingUser.dni, phone: editingUser.phone }); alert("Usuario actualizado."); setEditingUser(null); } catch (e) { alert("Error: " + e.message); } setIsLoading(false); };
+            const addCategory = () => { if(newCategory && !tempSettings.categories.includes(newCategory)) { setTempSettings({...tempSettings, categories:[...tempSettings.categories, newCategory]}); setNewCategory(''); } };
+            const removeCategory = (c) => setTempSettings({...tempSettings, categories: tempSettings.categories.filter(x => x!==c)});
+            const seedDB = async () => { setIsLoading(true); for(const p of [{ name: "iPhone 14 Pro", basePrice: 950000, category: "Celulares", stock: 10, image: "https://images.unsplash.com/photo-1664478546384-d57ffe74a797?q=80&w=500", description: "Potencia ilimitada.", discount: 0 }]) await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), p); setIsLoading(false); };
 
-            // --- FEATURES ---
+            // --- RESTORED MISSING FUNCTIONS ---
             const toggleFavorite = async (productId) => {
                 let newFavs;
                 if (favorites.includes(productId)) newFavs = favorites.filter(id => id !== productId);
@@ -488,15 +395,6 @@
                     setPendingOrderRecover(null);
                     alert("Orden descartada.");
                 } catch(err) { alert("Error: " + err.message); }
-                setIsLoading(false);
-            };
-
-            const seedDB = async () => {
-                setIsLoading(true);
-                for(const p of [
-                    { name: "iPhone 14 Pro", basePrice: 950000, category: "Celulares", stock: 10, image: "https://images.unsplash.com/photo-1664478546384-d57ffe74a797?q=80&w=500", description: "Potencia ilimitada.", discount: 0 },
-                    { name: "Samsung S23 Ultra", basePrice: 890000, category: "Celulares", stock: 15, image: "https://images.unsplash.com/photo-1678911820864-e526120b4143?q=80&w=500", description: "Zoom espacial.", discount: 5 }
-                ]) await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), p);
                 setIsLoading(false);
             };
 
