@@ -30,6 +30,18 @@
         .input-dark:focus { border-color: #06b6d4; box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2); }
         .animate-fade-up { animation: fadeUp 0.5s ease-out forwards; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Animaciones para Toasts */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .toast-enter { animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .toast-exit { animation: fadeOut 0.4s ease forwards; }
     </style>
 </head>
 <body>
@@ -63,10 +75,58 @@
             storeName: "SUSTORE", primaryColor: "#06b6d4", currency: "$", admins: "lautarocorazza63@gmail.com", sellerEmail: "sustoresf@gmail.com", instagramUser: "sustore_sf", whatsappLink: "https://wa.me/message/3MU36VTEKINKP1", logoUrl: "", heroUrl: "", markupPercentage: 6.50, categories: ["Celulares", "Accesorios", "Audio", "Computación", "Gaming"], aboutUsText: "Somos una empresa dedicada a traer la mejor tecnología al mejor precio."
         };
 
-        const SustoreLogo = () => (<div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-cyan-500 relative z-50"><svg viewBox="0 0 100 100" className="w-6 h-6" fill="none"><path d="M20 30 H60 M20 50 H80 M20 70 H50" stroke="#0F172A" strokeWidth="8" strokeLinecap="round"/></svg></div>);
+        // --- COMPONENTES UI MEJORADOS ---
+        
+        // Componente Toast (Notificación)
+        const Toast = ({ message, type, onClose }) => {
+            const bgColors = {
+                success: 'bg-slate-800 border-green-500',
+                error: 'bg-slate-800 border-red-500',
+                info: 'bg-slate-800 border-cyan-500',
+                warning: 'bg-slate-800 border-yellow-500'
+            };
+            const icons = {
+                success: <CheckCircle className="w-5 h-5 text-green-400" />,
+                error: <AlertCircle className="w-5 h-5 text-red-400" />,
+                info: <Info className="w-5 h-5 text-cyan-400" />,
+                warning: <AlertTriangle className="w-5 h-5 text-yellow-400" />
+            };
+
+            useEffect(() => {
+                const timer = setTimeout(() => { onClose(); }, 4000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            return (
+                <div className={`toast-enter flex items-center gap-3 p-4 rounded-xl border-l-4 shadow-2xl mb-3 max-w-sm w-full backdrop-blur-md ${bgColors[type] || bgColors.info} border border-slate-700/50 text-white relative overflow-hidden group`}>
+                    <div className="flex-shrink-0">{icons[type] || icons.info}</div>
+                    <p className="text-sm font-medium pr-6">{message}</p>
+                    <button onClick={onClose} className="absolute top-2 right-2 text-slate-500 hover:text-white opacity-0 group-hover:opacity-100 transition"><X className="w-4 h-4" /></button>
+                </div>
+            );
+        };
+
+        // Modal de Confirmación Personalizado
+        const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-up">
+                    <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full">
+                        <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+                        <p className="text-slate-400 mb-6 text-sm">{message}</p>
+                        <div className="flex gap-3">
+                            <button onClick={onCancel} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold transition">Cancelar</button>
+                            <button onClick={onConfirm} className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold transition">Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const Loading = ({ message }) => (<div className="fixed inset-0 bg-[#020617]/95 z-[200] flex flex-col items-center justify-center backdrop-blur-md">{message === 'EMAIL' ? (<><div className="bg-white p-4 rounded-full mb-6 animate-bounce shadow-lg"><Mail className="w-12 h-12 text-[#009EE3]" /></div><p className="text-white text-xl font-bold tracking-widest animate-pulse">ENVIANDO PEDIDO...</p><p className="text-slate-400 text-sm mt-3">Revisa tu correo en breve</p></>) : (<><RefreshCw className="w-12 h-12 text-cyan-500 animate-spin mb-4"/><p className="text-cyan-400 text-sm font-bold tracking-widest animate-pulse">{message || 'CARGANDO...'}</p></>)}</div>);
 
         function App() {
+            // ... estados existentes ...
             const [view, setView] = useState('store');
             const [products, setProducts] = useState([]);
             const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('nexus_cart')) || []; } catch(e) { return []; } });
@@ -81,7 +141,6 @@
             const [isLoading, setIsLoading] = useState(true);
             const [loadingMessage, setLoadingMessage] = useState('');
             const [isMenuOpen, setIsMenuOpen] = useState(false);
-            const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
             const [productToDelete, setProductToDelete] = useState(null);
             const [searchQuery, setSearchQuery] = useState('');
             const [selectedCategory, setSelectedCategory] = useState(''); 
@@ -89,8 +148,11 @@
             const [checkoutCoupon, setCheckoutCoupon] = useState('');
             const [appliedCoupon, setAppliedCoupon] = useState(null);
             const [pendingOrderRecover, setPendingOrderRecover] = useState(null);
-            const [activeTab, setActiveTab] = useState('completed');
-            const [welcomeCode, setWelcomeCode] = useState(null);
+            
+            // --- NUEVOS ESTADOS PARA UI ---
+            const [toasts, setToasts] = useState([]);
+            const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+            // ------------------------------
             
             const [loginData, setLoginData] = useState({ identifier: '', password: '' }); 
             const [registerData, setRegisterData] = useState({ name: '', username: '', email: '', password: '', dni: '', phone: '' });
@@ -105,11 +167,25 @@
             const [newAdminEmail, setNewAdminEmail] = useState('');
 
             const fileInputRef = useRef(null);
-            const [isChatOpen, setIsChatOpen] = useState(false);
-            const [chatMessages, setChatMessages] = useState([{ role: 'system', text: '¡Hola! Soy la IA de Sustore.' }]);
-            const [chatInput, setChatInput] = useState('');
-            const [isChatLoading, setIsChatLoading] = useState(false);
-            const chatEndRef = useRef(null);
+
+            // --- HELPER PARA TOASTS ---
+            const showToast = (message, type = 'info') => {
+                const id = Date.now();
+                setToasts(prev => [...prev, { id, message, type }]);
+            };
+            const removeToast = (id) => {
+                setToasts(prev => prev.filter(t => t.id !== id));
+            };
+
+            // --- HELPER PARA CONFIRM MODAL ---
+            const confirmAction = (title, message, action) => {
+                setModalConfig({
+                    isOpen: true,
+                    title,
+                    message,
+                    onConfirm: () => { action(); setModalConfig({ ...modalConfig, isOpen: false }); }
+                });
+            };
 
             // --- SYNC ---
             useEffect(() => { localStorage.setItem('nexus_cart', JSON.stringify(cart)); }, [cart]);
@@ -168,9 +244,9 @@
                                 code, discountPercentage: 7, expirationDate: new Date(Date.now() + 86400000*30).toISOString(), 
                                 userEmail: registerData.email, usageLimit: 1, usedBy: [] 
                             });
-                            alert(`¡Bienvenido! Te hemos regalado un cupón de 7%: ${code}`);
+                            showToast(`¡Bienvenido! Te hemos regalado un cupón: ${code}`, 'success');
                         } else {
-                            alert("Cuenta creada. (Sin cupón: DNI ya registrado).");
+                            showToast("Cuenta creada con éxito", 'success');
                         }
 
                         setCurrentUser({ ...newUser, id: ref.id }); localStorage.setItem('nexus_user_id', ref.id);
@@ -191,18 +267,19 @@
 
             const onLoginSubmit = (e) => { e.preventDefault(); performAuth(false); };
             const onRegisterSubmit = (e) => { e.preventDefault(); performAuth(true); };
-            const handleLogout = () => { localStorage.removeItem('nexus_user_id'); localStorage.removeItem('nexus_cart'); setCurrentUser(null); setView('store'); setCart([]); setFavorites([]); setShowLogoutConfirm(false); setIsMenuOpen(false); };
+            const handleLogout = () => { localStorage.removeItem('nexus_user_id'); localStorage.removeItem('nexus_cart'); setCurrentUser(null); setView('store'); setCart([]); setFavorites([]); setIsMenuOpen(false); showToast("Sesión cerrada", 'info'); };
 
             const manageCart = (prod, delta) => {
                 const idx = cart.findIndex(i => i.product.id === prod.id);
                 if (idx === -1 && delta > 0) { 
-                    if (Number(prod.stock) < 1) return alert("Sin stock"); 
+                    if (Number(prod.stock) < 1) return showToast("Sin stock disponible", 'error'); 
                     setCart([...cart, { product: prod, quantity: 1 }]); 
+                    showToast("Agregado al carrito", 'success');
                 } else if (idx !== -1) { 
                     const newCart = [...cart]; newCart[idx].quantity += delta; 
                     if (newCart[idx].quantity <= 0) setCart(cart.filter((_, i) => i !== idx)); 
                     else if (newCart[idx].quantity <= Number(prod.stock)) setCart(newCart); 
-                    else alert("Stock insuficiente"); 
+                    else showToast("Stock insuficiente para agregar más", 'warning'); 
                 }
             };
 
@@ -210,8 +287,11 @@
             const cartTotal = appliedCoupon ? Math.ceil(cartSubtotal * (1 - appliedCoupon.discountPercentage / 100)) : cartSubtotal;
 
             const handleConfirmOrder = async () => {
-                if (!checkoutData.address || !checkoutData.city || !checkoutData.zipCode || !checkoutData.paymentChoice) return alert("Completa los datos de envío y pago.");
-                setLoadingMessage('EMAIL'); setIsLoading(true);
+                if (!checkoutData.address || !checkoutData.city || !checkoutData.zipCode || !checkoutData.paymentChoice) return showToast("Por favor completa los datos de envío y pago.", 'warning');
+                
+                setLoadingMessage('EMAIL'); 
+                setIsLoading(true);
+                
                 try {
                     const newOrder = {
                         orderId: `ORD-${Math.floor(Math.random()*100000)}`,
@@ -225,40 +305,56 @@
                         status: 'Pendiente'
                     };
                     
+                    // 1. Guardar en Firestore primero
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
 
-                    if (appliedCoupon) {
-                        const cRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
-                        await updateDoc(cRef, { usedBy: [...(appliedCoupon.usedBy || []), currentUser.id] });
-                    }
-
+                    // 2. Actualizar stock
                     for (const item of cart) {
                          const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.product.id);
                          const newStock = Math.max(0, item.product.stock - item.quantity);
                          await updateDoc(pRef, { stock: newStock });
                     }
 
-                    await fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newOrder, shipping: newOrder.shippingAddress }) });
+                    // 3. Actualizar cupón si existe
+                    if (appliedCoupon) {
+                        const cRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
+                        await updateDoc(cRef, { usedBy: [...(appliedCoupon.usedBy || []), currentUser.id] });
+                    }
 
-                    alert(`✅ ¡Pedido realizado con éxito!\n\nTe hemos enviado un correo a ${currentUser.email}.`);
+                    // 4. Enviar email (CORREGIDO: Ruta /api/payment y validación de respuesta)
+                    const emailResponse = await fetch('/api/payment', { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ ...newOrder, shipping: newOrder.shippingAddress }) 
+                    });
+
+                    if (!emailResponse.ok) {
+                        const errorData = await emailResponse.json();
+                        throw new Error(errorData.error || 'Error al enviar el correo');
+                    }
+
+                    showToast(`¡Pedido confirmado! Revisa tu correo ${currentUser.email}`, 'success');
                     setCart([]); localStorage.removeItem('nexus_cart'); setView('store');
-                } catch (error) { console.error(error); alert("Error al procesar. Intenta de nuevo."); }
+                } catch (error) { 
+                    console.error("Error Order:", error); 
+                    showToast(`Error: ${error.message}. El pedido se guardó pero el correo falló.`, 'error');
+                }
                 setIsLoading(false);
             };
 
             const validateCoupon = () => {
                 if(!checkoutCoupon) return;
                 const found = coupons.find(c => c.code.toUpperCase() === checkoutCoupon.toUpperCase());
-                if (!found) return alert("Cupón inválido");
-                if (new Date(found.expirationDate) < new Date()) return alert("Vencido");
-                if (found.targetUser && found.targetUser !== currentUser.email) return alert("Este cupón no es para ti.");
-                if (found.usageLimit && found.usedBy && found.usedBy.length >= Number(found.usageLimit)) return alert("Cupón agotado.");
-                if (found.usedBy && found.usedBy.includes(currentUser.id)) return alert("Ya usaste este cupón.");
-                setAppliedCoupon(found); alert("¡Descuento aplicado!");
+                if (!found) return showToast("Cupón inválido", 'error');
+                if (new Date(found.expirationDate) < new Date()) return showToast("Cupón vencido", 'warning');
+                if (found.targetUser && found.targetUser !== currentUser.email) return showToast("Este cupón no es para ti", 'error');
+                if (found.usageLimit && found.usedBy && found.usedBy.length >= Number(found.usageLimit)) return showToast("Cupón agotado", 'warning');
+                if (found.usedBy && found.usedBy.includes(currentUser.id)) return showToast("Ya usaste este cupón", 'warning');
+                setAppliedCoupon(found); showToast("¡Descuento aplicado!", 'success');
             };
 
             const saveCoupon = async () => {
-                if(!newCoupon.code) return alert("Código requerido");
+                if(!newCoupon.code) return showToast("Código requerido", 'warning');
                 setIsLoading(true);
                 await addDoc(collection(db,'artifacts',appId,'public','data','coupons'), {
                     code: newCoupon.code.toUpperCase(), 
@@ -270,24 +366,43 @@
                 });
                 setNewCoupon({code:'', discountPercentage:10, expirationDate:'', targetUser: '', usageLimit: ''});
                 setIsLoading(false);
+                showToast("Cupón creado", 'success');
             };
 
-            const deleteCouponAction = async (id) => { if(confirm("¿Borrar?")) await deleteDoc(doc(db,'artifacts',appId,'public','data','coupons',id)); };
+            const deleteCouponAction = (id) => { 
+                confirmAction("Eliminar Cupón", "¿Estás seguro de que quieres eliminar este cupón?", async () => {
+                    await deleteDoc(doc(db,'artifacts',appId,'public','data','coupons',id));
+                    showToast("Cupón eliminado", 'info');
+                });
+            };
 
             const saveProduct = async () => { 
-                if(!newProduct.name) return alert("Faltan datos"); setIsLoading(true); 
+                if(!newProduct.name) return showToast("Faltan datos del producto", 'warning'); 
+                setIsLoading(true); 
                 const pData={...newProduct, basePrice:Number(newProduct.basePrice), stock:Number(newProduct.stock), discount:Number(newProduct.discount||0), image:newProduct.image||'https://via.placeholder.com/150'}; 
                 if(editingId) await updateDoc(doc(db,'artifacts',appId,'public','data','products',editingId), pData); 
                 else await addDoc(collection(db,'artifacts',appId,'public','data','products'), pData); 
                 setNewProduct({name:'',basePrice:'',category:'',image:'',description:'',stock:'',discount:0}); setEditingId(null); 
                 if(fileInputRef.current) fileInputRef.current.value = "";
                 setIsLoading(false); 
+                showToast(editingId ? "Producto actualizado" : "Producto creado", 'success');
             };
-            const deleteProd = async () => { if(!productToDelete)return; await deleteDoc(doc(db,'artifacts',appId,'public','data','products',productToDelete.id)); setProductToDelete(null); setIsLoading(false); };
-            const handleImage = (e) => { const f=e.target.files[0]; if(f&&f.size<1000000){const r=new FileReader();r.onload=()=>setNewProduct(p=>({...p,image:r.result}));r.readAsDataURL(f);}else alert("Imagen pesada"); };
-            const saveSettings = async () => { setIsLoading(true); const q=query(collection(db,'artifacts',appId,'public','data','settings')); const s=await getDocs(q); const d={...tempSettings, aboutUsText: aboutText}; if(!s.empty) await updateDoc(doc(db,'artifacts',appId,'public','data','settings',s.docs[0].id), d); else await addDoc(collection(db,'artifacts',appId,'public','data','settings'), d); alert("Guardado"); setIsLoading(false); };
+            
+            const deleteProd = async () => { 
+                if(!productToDelete) return; 
+                await deleteDoc(doc(db,'artifacts',appId,'public','data','products',productToDelete.id)); 
+                setProductToDelete(null); 
+                setIsLoading(false);
+                showToast("Producto eliminado", 'info');
+            };
+            
+            const handleImage = (e) => { const f=e.target.files[0]; if(f&&f.size<1000000){const r=new FileReader();r.onload=()=>setNewProduct(p=>({...p,image:r.result}));r.readAsDataURL(f);}else showToast("La imagen es muy pesada (Max 1MB)", 'error'); };
+            const saveSettings = async () => { setIsLoading(true); const q=query(collection(db,'artifacts',appId,'public','data','settings')); const s=await getDocs(q); const d={...tempSettings, aboutUsText: aboutText}; if(!s.empty) await updateDoc(doc(db,'artifacts',appId,'public','data','settings',s.docs[0].id), d); else await addDoc(collection(db,'artifacts',appId,'public','data','settings'), d); showToast("Configuración guardada", 'success'); setIsLoading(false); };
             const handleEditProduct = (p) => { setNewProduct({...p, basePrice: p.basePrice}); setEditingId(p.id); window.scrollTo({top:0, behavior:'smooth'}); };
-            const initiateDelete = (p) => setProductToDelete(p);
+            const initiateDelete = (p) => confirmAction("Eliminar Producto", `¿Eliminar ${p.name}?`, async () => {
+                await deleteDoc(doc(db,'artifacts',appId,'public','data','products',p.id));
+                showToast("Producto eliminado", 'info');
+            });
             const handleCancelEdit = () => { setNewProduct({name:'',basePrice:'',category:'',image:'',description:'',stock:'',discount:0}); setEditingId(null); if(fileInputRef.current) fileInputRef.current.value=""; };
             const addCategory = () => { if(newCategory && !tempSettings.categories.includes(newCategory)) { setTempSettings({...tempSettings, categories:[...tempSettings.categories, newCategory]}); setNewCategory(''); } };
             const removeCategory = (c) => setTempSettings({...tempSettings, categories: tempSettings.categories.filter(x => x!==c)});
@@ -295,6 +410,7 @@
             const toggleOrder = async (o) => {
                 const newStatus = o.status === 'Pendiente' ? 'Realizado' : 'Pendiente';
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id), { status: newStatus });
+                showToast(`Orden actualizada a: ${newStatus}`, 'info');
             };
             const addAdmin = () => {
                 if(!newAdminEmail) return;
@@ -303,7 +419,15 @@
                 setNewAdminEmail('');
             };
 
-            const toggleFavorite = async (pid) => { let n; if(favorites.includes(pid)) n=favorites.filter(id=>id!==pid); else n=[...favorites, pid]; setFavorites(n); if(currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {favorites:n}); else localStorage.setItem('nexus_favs', JSON.stringify(n)); };
+            const toggleFavorite = async (pid) => { 
+                let n; 
+                let isAdding = !favorites.includes(pid);
+                if(favorites.includes(pid)) n=favorites.filter(id=>id!==pid); else n=[...favorites, pid]; 
+                setFavorites(n); 
+                if(currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {favorites:n}); 
+                else localStorage.setItem('nexus_favs', JSON.stringify(n)); 
+                showToast(isAdding ? "Añadido a favoritos" : "Eliminado de favoritos", 'info');
+            };
             const goIg = () => window.open(`https://www.instagram.com/${settings.instagramUser}/`, '_blank');
             const goWsp = () => window.open(settings.whatsappLink, '_blank');
             const handleLogoUpload = (e) => { const f=e.target.files[0]; if(f){const r=new FileReader();r.onload=()=>setTempSettings(p=>({...p,logoUrl:r.result}));r.readAsDataURL(f);} };
@@ -315,18 +439,35 @@
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editingUser.id), { 
                         name: editingUser.name, username: editingUser.username, email: editingUser.email, dni: editingUser.dni, phone: editingUser.phone, password: editingUser.password 
                     }); 
-                    alert("Usuario actualizado."); setEditingUser(null); 
-                } catch (e) { alert("Error: " + e.message); } 
+                    showToast("Usuario actualizado", 'success'); setEditingUser(null); 
+                } catch (e) { showToast("Error: " + e.message, 'error'); } 
                 setIsLoading(false); 
             };
 
             const handleRecoverYes = () => { if (!pendingOrderRecover) return; setCart(pendingOrderRecover.items); setView('checkout'); setPendingOrderRecover(null); };
-            const handleRecoverNo = async () => { if (!pendingOrderRecover) return; setIsLoading(true); try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', pendingOrderRecover.id)); setPendingOrderRecover(null); alert("Orden descartada."); } catch(err) { alert("Error: " + err.message); } setIsLoading(false); };
+            const handleRecoverNo = async () => { if (!pendingOrderRecover) return; setIsLoading(true); try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', pendingOrderRecover.id)); setPendingOrderRecover(null); showToast("Orden pendiente descartada", 'info'); } catch(err) { showToast("Error: " + err.message, 'error'); } setIsLoading(false); };
             const closeRecoveryModal = () => { setPendingOrderRecover(null); };
-            const sendChat = async (e) => { e.preventDefault(); if (!chatInput.trim()) return; setChatMessages(p => [...p, { role: 'user', text: chatInput }]); setChatInput(''); setTimeout(() => setChatMessages(p => [...p, { role: 'ai', text: 'Hola, ¿en qué puedo ayudarte hoy?' }]), 1000); };
 
             return (
-                <div className="min-h-screen bg-[#020617] text-slate-100 font-sans flex flex-col">
+                <div className="min-h-screen bg-[#020617] text-slate-100 font-sans flex flex-col relative overflow-hidden">
+                    {/* CONTAINER DE TOASTS (NOTIFICACIONES) */}
+                    <div className="fixed top-20 right-4 z-[300] flex flex-col items-end pointer-events-none">
+                        {toasts.map(t => (
+                            <div key={t.id} className="pointer-events-auto">
+                                <Toast message={t.message} type={t.type} onClose={() => removeToast(t.id)} />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* MODAL CONFIRMACION CUSTOM */}
+                    <ConfirmModal 
+                        isOpen={modalConfig.isOpen} 
+                        title={modalConfig.title} 
+                        message={modalConfig.message} 
+                        onConfirm={modalConfig.onConfirm} 
+                        onCancel={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+                    />
+
                     {isLoading && <Loading message={loadingMessage} />}
 
                     <header className="fixed top-0 w-full z-40 glass-panel h-16 flex items-center justify-between px-4 lg:px-8 shadow-lg">
@@ -394,7 +535,7 @@
                              </div>
                         )}
 
-                        {/* CART VIEW - AGREGADA */}
+                        {/* CART VIEW */}
                         {view === 'cart' && (
                             <div className="max-w-4xl mx-auto animate-fade-up">
                                 <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
@@ -736,7 +877,7 @@
                                 <h3 className="text-xl font-bold text-white mb-4">Mis Cupones</h3>
                                 <div className="grid sm:grid-cols-2 gap-4 mb-8">
                                     {coupons.filter(c => (c.userEmail === currentUser.email) && !c.usedBy.includes(currentUser.id)).map(c => (
-                                        <div key={c.id} className="bg-slate-900 border border-yellow-500/30 p-4 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-800 transition" onClick={() => {navigator.clipboard.writeText(c.code); alert("Cupón copiado");}}>
+                                        <div key={c.id} className="bg-slate-900 border border-yellow-500/30 p-4 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-800 transition" onClick={() => {navigator.clipboard.writeText(c.code); showToast("Cupón copiado al portapapeles", 'success');}}>
                                             <div><p className="font-bold text-yellow-400 text-lg">{c.code}</p><p className="text-[10px] text-slate-500 uppercase">Vence: {new Date(c.expirationDate).toLocaleDateString()}</p></div>
                                             <span className="text-2xl font-black text-white">{c.discountPercentage}%</span>
                                         </div>
