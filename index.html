@@ -21,92 +21,24 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap');
         
-        body { 
-            font-family: 'Outfit', sans-serif; 
-            background-color: #050505; 
-            color: #e2e8f0; 
-            overflow-x: hidden; 
-        }
-
-        /* Scrollbar Neon */
+        body { font-family: 'Outfit', sans-serif; background-color: #050505; color: #e2e8f0; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a0a0a; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
-
-        /* Efectos Neón y Glass */
-        .glass {
-            background: rgba(20, 20, 30, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-        
-        .neon-text {
-            text-shadow: 0 0 10px rgba(6, 182, 212, 0.5), 0 0 20px rgba(6, 182, 212, 0.3);
-        }
-        
-        .neon-box {
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .neon-box:hover {
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2), inset 0 0 10px rgba(6, 182, 212, 0.05);
-            border-color: rgba(6, 182, 212, 0.5);
-            transform: translateY(-5px);
-        }
-
-        .neon-button {
-            background: linear-gradient(90deg, #0891b2 0%, #2563eb 100%);
-            position: relative;
-            z-index: 1;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        
-        .neon-button:hover {
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
-            filter: brightness(1.2);
-        }
-
-        /* Inputs */
-        .input-cyber {
-            background: #0a0a12;
-            border: 1px solid #2a2a35;
-            color: white;
-            border-radius: 0.75rem;
-            transition: all 0.3s;
-        }
-        .input-cyber:focus {
-            border-color: #06b6d4;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
-            background: #11111a;
-            outline: none;
-        }
-
-        /* Animaciones */
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
-        
+        .glass { background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+        .neon-text { text-shadow: 0 0 10px rgba(6, 182, 212, 0.5), 0 0 20px rgba(6, 182, 212, 0.3); }
+        .neon-box { transition: all 0.3s ease; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neon-box:hover { box-shadow: 0 0 20px rgba(6, 182, 212, 0.2), inset 0 0 10px rgba(6, 182, 212, 0.05); border-color: rgba(6, 182, 212, 0.5); transform: translateY(-5px); }
+        .neon-button { background: linear-gradient(90deg, #0891b2 0%, #2563eb 100%); position: relative; z-index: 1; overflow: hidden; transition: all 0.3s; }
+        .neon-button:hover { box-shadow: 0 0 20px rgba(6, 182, 212, 0.6); filter: brightness(1.2); }
+        .input-cyber { background: #0a0a12; border: 1px solid #2a2a35; color: white; border-radius: 0.75rem; transition: all 0.3s; }
+        .input-cyber:focus { border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); background: #11111a; outline: none; }
         .animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Admin Sidebar */
         .admin-item { transition: all 0.2s; border-right: 3px solid transparent; }
-        .admin-item:hover, .admin-item.active {
-            background: linear-gradient(90deg, rgba(6,182,212,0.05) 0%, rgba(6,182,212,0.1) 100%);
-            border-right-color: #06b6d4;
-            color: #22d3ee;
-            text-shadow: 0 0 10px rgba(6,182,212,0.4);
-        }
-        
-        /* Fondo Animado */
-        .bg-grid {
-            background-size: 50px 50px;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-        }
+        .admin-item:hover, .admin-item.active { background: linear-gradient(90deg, rgba(6,182,212,0.05) 0%, rgba(6,182,212,0.1) 100%); border-right-color: #06b6d4; color: #22d3ee; text-shadow: 0 0 10px rgba(6,182,212,0.4); }
+        .bg-grid { background-size: 50px 50px; background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px); }
     </style>
 </head>
 <body>
@@ -147,7 +79,8 @@
         // --- COMPONENTES VISUALES ---
         const Toast = ({ message, type, onClose }) => {
             const colors = { success: 'border-green-500 text-green-400 shadow-green-500/20', error: 'border-red-500 text-red-400 shadow-red-500/20', info: 'border-cyan-500 text-cyan-400 shadow-cyan-500/20', warning: 'border-yellow-500 text-yellow-400 shadow-yellow-500/20' };
-            useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
+            // FIX: Timer reducido para evitar amontonamiento
+            useEffect(() => { const t = setTimeout(onClose, 2500); return () => clearTimeout(t); }, [onClose]);
             return (<div className={`fixed top-24 right-4 z-[9999] flex items-center gap-3 p-4 rounded-xl border-l-4 shadow-xl glass animate-fade-up ${colors[type] || colors.info}`}><p className="font-bold text-sm tracking-wide">{message}</p></div>);
         };
 
@@ -199,7 +132,9 @@
             
             const [authData, setAuthData] = useState({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
             const [loginMode, setLoginMode] = useState(true);
-            const [checkoutData, setCheckoutData] = useState({ address: '', city: '', zipCode: '', paymentChoice: '' });
+            
+            // --- CHECKOUT DATA + PROVINCE ---
+            const [checkoutData, setCheckoutData] = useState({ address: '', city: '', province: '', zipCode: '', paymentChoice: '' });
             const [checkoutCoupon, setCheckoutCoupon] = useState('');
             const [appliedCoupon, setAppliedCoupon] = useState(null);
 
@@ -227,7 +162,13 @@
 
             const fileInputRef = useRef(null);
 
-            const showToast = (msg, type = 'info') => { const id = Date.now(); setToasts(p => [...p, { id, message: msg, type }]); };
+            const showToast = (msg, type = 'info') => { 
+                const id = Date.now(); 
+                setToasts(prev => {
+                    const filtered = prev.filter(t => Date.now() - t.id < 2000); // Limpia viejos
+                    return [...filtered, { id, message: msg, type }];
+                });
+            };
             const removeToast = (id) => setToasts(p => p.filter(t => t.id !== id));
             const confirmAction = (title, message, action) => setModalConfig({ isOpen: true, title, message, onConfirm: () => { action(); setModalConfig({ ...modalConfig, isOpen: false }); } });
             const calculatePrice = (p, d) => d > 0 ? Math.ceil(Number(p) * (1 - d / 100)) : Number(p);
@@ -240,7 +181,24 @@
             };
 
             useEffect(() => localStorage.setItem('nexus_cart', JSON.stringify(cart)), [cart]);
-            useEffect(() => { if(currentUser) localStorage.setItem('nexus_user_data', JSON.stringify(currentUser)); else localStorage.removeItem('nexus_user_data'); }, [currentUser]);
+            
+            // --- PERSISTENCIA DE DATOS DE USUARIO ---
+            useEffect(() => { 
+                if(currentUser) {
+                    localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
+                    // Auto-fill checkout data
+                    setCheckoutData(prev => ({
+                        ...prev, 
+                        address: currentUser.address || '', 
+                        city: currentUser.city || '', 
+                        province: currentUser.province || '', // Provincia recuperada
+                        zipCode: currentUser.zipCode || ''
+                    }));
+                } else {
+                    localStorage.removeItem('nexus_user_data');
+                }
+            }, [currentUser]);
+
             useEffect(() => { const init = async () => { await signInAnonymously(auth); }; init(); return onAuthStateChanged(auth, setSystemUser); }, []);
             useEffect(() => { const t = setTimeout(() => { if(isLoading) setIsLoading(false); }, 4000); return () => clearTimeout(t); }, [isLoading]);
 
@@ -307,23 +265,54 @@
                 setAppliedCoupon(c); showToast("Aplicado", "success");
             };
 
+            // --- CONFIRM ORDER WITH EMAIL & SAVE ADDRESS ---
             const confirmOrder = async () => {
                 if(!currentUser) { setView('login'); return showToast("Inicia sesión", "info"); }
-                if(!checkoutData.address) return showToast("Faltan datos", "warning");
+                if(!checkoutData.address || !checkoutData.city || !checkoutData.province) return showToast("Faltan datos de envío", "warning");
+                
                 setIsLoading(true);
                 try {
                     const totalBase = cart.reduce((a,i)=>a+(calculatePrice(i.product.basePrice, i.product.discount)*i.quantity),0);
                     const discountVal = appliedCoupon ? Math.ceil(totalBase * (appliedCoupon.discountPercentage/100)) : 0;
+                    const finalTotal = totalBase - discountVal;
+                    const orderId = `ORD-${Date.now().toString().slice(-6)}`;
                     
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), {
-                        orderId: `ORD-${Date.now().toString().slice(-6)}`,
+                    const newOrder = {
+                        orderId,
                         userId: currentUser.id,
                         customer: { name: currentUser.name, email: currentUser.email, phone: currentUser.phone, dni: currentUser.dni },
                         items: cart.map(i => ({ productId: i.product.id, title: i.product.name, quantity: i.quantity, unit_price: calculatePrice(i.product.basePrice, i.product.discount) })),
-                        total: totalBase - discountVal, subtotal: totalBase, discount: discountVal, discountCode: appliedCoupon?.code || null,
+                        total: finalTotal, subtotal: totalBase, discount: discountVal, discountCode: appliedCoupon?.code || null,
                         status: 'Pendiente', date: new Date().toISOString(),
-                        shippingAddress: `${checkoutData.address}, ${checkoutData.city} (CP: ${checkoutData.zipCode})`, paymentMethod: checkoutData.paymentChoice
+                        shippingAddress: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})`, 
+                        paymentMethod: checkoutData.paymentChoice
+                    };
+
+                    // 1. Guardar Pedido
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
+
+                    // 2. Guardar Datos de Usuario para la próxima (Persistencia)
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
+                        address: checkoutData.address,
+                        city: checkoutData.city,
+                        province: checkoutData.province,
+                        zipCode: checkoutData.zipCode
                     });
+
+                    // 3. Enviar Email (Intento)
+                    fetch('/api/payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ...newOrder,
+                            shipping: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province}`,
+                            discountDetails: appliedCoupon ? { percentage: appliedCoupon.discountPercentage, amount: discountVal } : null
+                        })
+                    }).then(res => {
+                        if(!res.ok) console.log("Email API not ready (Local Env)");
+                    }).catch(err => console.log("Email skipped in simulation"));
+
+                    // 4. Actualizar Stock
                     for(const i of cart) {
                         const r = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.product.id);
                         const s = await getDoc(r);
@@ -334,9 +323,10 @@
                         const cSnap = await getDoc(cRef);
                         if(cSnap.exists()) await updateDoc(cRef, { usedBy: [...(cSnap.data().usedBy || []), currentUser.id] });
                     }
+
                     setCart([]); setView('store'); setAppliedCoupon(null);
-                    showToast("¡Pedido Realizado!", "success");
-                } catch(e) { showToast("Error", "error"); }
+                    showToast("¡Pedido Realizado! Revisa tu Email", "success");
+                } catch(e) { showToast("Error al procesar", "error"); }
                 setIsLoading(false);
             };
 
@@ -544,7 +534,14 @@
                                         <h2 className="text-3xl font-black text-white mb-8">Envío y Pago</h2>
                                         <div className="space-y-6">
                                             <input className="w-full input-cyber p-5 text-lg" placeholder="Dirección Completa (Calle, Altura)" value={checkoutData.address} onChange={e=>setCheckoutData({...checkoutData, address:e.target.value})}/>
-                                            <div className="grid grid-cols-2 gap-6"><input className="w-full input-cyber p-5" placeholder="Ciudad" value={checkoutData.city} onChange={e=>setCheckoutData({...checkoutData, city:e.target.value})}/><input className="w-full input-cyber p-5" placeholder="CP" value={checkoutData.zipCode} onChange={e=>setCheckoutData({...checkoutData, zipCode:e.target.value})}/></div>
+                                            {/* PROVINCIA INPUT */}
+                                            <div className="grid grid-cols-1 gap-6">
+                                                <input className="w-full input-cyber p-5" placeholder="Provincia" value={checkoutData.province} onChange={e=>setCheckoutData({...checkoutData, province:e.target.value})}/>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <input className="w-full input-cyber p-5" placeholder="Ciudad" value={checkoutData.city} onChange={e=>setCheckoutData({...checkoutData, city:e.target.value})}/>
+                                                <input className="w-full input-cyber p-5" placeholder="CP" value={checkoutData.zipCode} onChange={e=>setCheckoutData({...checkoutData, zipCode:e.target.value})}/>
+                                            </div>
                                             <h3 className="font-bold text-white mt-8 mb-4 text-xl">Método de Pago</h3>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <button onClick={()=>setCheckoutData({...checkoutData, paymentChoice:'Transferencia'})} className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 ${checkoutData.paymentChoice==='Transferencia'?'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]':'border-slate-700 text-slate-500 hover:border-slate-500'}`}><RefreshCw className="w-8 h-8"/><span className="text-sm font-bold tracking-wider">TRANSFERENCIA</span></button>
