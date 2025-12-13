@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag, Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home, Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet, FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown, Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy, ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift } from 'lucide-react';
+import { ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag, Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home, Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet, FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown, Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy, ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc, where, writeBatch, getDoc } from 'firebase/firestore';
@@ -75,7 +75,13 @@ function App() {
 
     // --- DATOS ---
     const [products, setProducts] = useState([]);
-    const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('nexus_cart')) || []; } catch(e) { return []; } });
+    // FIXED: Inicialización segura del carrito
+    const [cart, setCart] = useState(() => { 
+        try { 
+            const saved = JSON.parse(localStorage.getItem('nexus_cart'));
+            return Array.isArray(saved) ? saved : []; 
+        } catch(e) { return []; } 
+    });
     const [orders, setOrders] = useState([]);
     const [users, setUsers] = useState([]);
     const [coupons, setCoupons] = useState([]);
@@ -213,13 +219,32 @@ function App() {
         setIsLoading(false);
     };
 
+    // FIXED: Gestión de carrito más robusta
     const manageCart = (prod, delta) => {
-        const ex = cart.find(i => i.product.id === prod.id);
-        const newQty = (ex ? ex.quantity : 0) + delta;
-        if (newQty > Number(prod.stock)) return showToast("Stock insuficiente", "warning");
-        if (newQty <= 0) setCart(cart.filter(i => i.product.id !== prod.id));
-        else if (ex) setCart(cart.map(i => i.product.id === prod.id ? { ...i, quantity: newQty } : i));
-        else { setCart([...cart, { product: prod, quantity: 1 }]); showToast("¡Agregado!", "success"); }
+        if (!prod || !prod.id) return showToast("Error al agregar producto", "error");
+        
+        setCart(prevCart => {
+            const exists = prevCart.find(i => i.product.id === prod.id);
+            const currentQty = exists ? exists.quantity : 0;
+            const newQty = currentQty + delta;
+
+            if (newQty > Number(prod.stock)) {
+                showToast("Stock máximo alcanzado", "warning");
+                return prevCart;
+            }
+
+            if (newQty <= 0) {
+                if (exists) showToast("Eliminado del carrito", "info");
+                return prevCart.filter(i => i.product.id !== prod.id);
+            }
+
+            if (exists) {
+                return prevCart.map(i => i.product.id === prod.id ? { ...i, quantity: newQty } : i);
+            } else {
+                showToast("¡Producto agregado!", "success");
+                return [...prevCart, { product: prod, quantity: 1 }];
+            }
+        });
     };
 
     const cartTotal = cart.reduce((a,i)=>a+(calculatePrice(i.product.basePrice, i.product.discount)*i.quantity),0);
@@ -329,6 +354,23 @@ function App() {
     const handlePurchaseImage = (e) => { const f=e.target.files[0]; if(f && f.size<1000000) { const r=new FileReader(); r.onload=()=>setNewPurchaseItem(p=>({...p, image: r.result})); r.readAsDataURL(f); } else showToast("Imagen pesada", 'error'); };
     const selectExistingProduct = (p) => { setNewPurchaseItem({ ...newPurchaseItem, name: p.name, salePrice: p.basePrice, category: p.category, image: p.image, existingId: p.id, quantity: '', costPrice: '' }); setProductSearchTerm(''); };
     const addPurchaseItemToCart = () => { if(!newPurchaseItem.name || !newPurchaseItem.costPrice || !newPurchaseItem.quantity) return; setPurchaseCart([...purchaseCart, { ...newPurchaseItem, id: Date.now(), costPrice: Number(newPurchaseItem.costPrice), salePrice: Number(newPurchaseItem.salePrice), quantity: Number(newPurchaseItem.quantity) }]); setNewPurchaseItem({ name: '', costPrice: '', salePrice: '', quantity: '', category: '', image: '', existingId: null }); };
+
+    // --- FINANCIAL METRICS (Dashboard Improved) ---
+    const financialData = useMemo(() => {
+        // Ingresos: Suma de pedidos Realizados (dinero que entró)
+        const revenue = orders.reduce((acc, o) => acc + (o.total || 0), 0);
+        
+        // Gastos: Suma de todos los gastos registrados
+        const totalExpenses = expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+        
+        // Balance Neto: Ganancia o Pérdida
+        const netBalance = revenue - totalExpenses;
+        
+        // Progreso de Recuperación: Porcentaje de gastos cubiertos
+        const recoveryProgress = totalExpenses > 0 ? Math.min((revenue / totalExpenses) * 100, 100) : 100;
+
+        return { revenue, totalExpenses, netBalance, recoveryProgress };
+    }, [orders, expenses]);
 
     // --- SUB-COMPONENTS ---
     const OrderDetailsModal = ({ order, onClose }) => {
@@ -473,7 +515,7 @@ function App() {
                     </div>
                 )}
 
-                {/* VISTA PERFIL - NUEVA Y MEJORADA */}
+                {/* VISTA PERFIL */}
                 {view === 'profile' && currentUser && (
                     <div className="max-w-5xl mx-auto pt-4 animate-fade-up">
                         <div className="flex items-center gap-6 mb-8">
@@ -517,7 +559,7 @@ function App() {
                     </div>
                 )}
 
-                {/* VISTA CHECKOUT CON SELECTOR DE CUPONES */}
+                {/* VISTA CHECKOUT */}
                 {view === 'checkout' && (
                     <div className="max-w-5xl mx-auto pt-4 pb-20 animate-fade-up">
                         <button onClick={()=>setView('cart')} className="mb-8 text-slate-400 hover:text-white flex items-center gap-2"><ArrowLeft className="w-4 h-4"/> Volver</button>
@@ -562,8 +604,10 @@ function App() {
                     </div>
                 )}
                 
+                {/* --- ADMIN PANEL --- */}
                 {view === 'admin' && hasAccess(currentUser?.email) && (
                     <div className="flex h-screen bg-[#050505] overflow-hidden animate-fade-up relative w-full">
+                        {/* Sidebar */}
                         <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static md:w-80`}>
                             <div className="p-8 flex justify-between items-center"><h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2"><Shield className="w-6 h-6 text-cyan-400"/> ADMIN<span className="text-cyan-500">PANEL</span></h2><button onClick={()=>setIsAdminMenuOpen(false)} className="md:hidden text-slate-400"><X className="w-6 h-6"/></button></div>
                             <nav className="flex-1 p-6 space-y-2 overflow-y-auto no-scrollbar">
@@ -585,19 +629,58 @@ function App() {
                             <div className="p-6 border-t border-slate-800"><button onClick={()=>setView('store')} className="w-full py-4 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition font-bold text-sm flex items-center justify-center gap-2 group"><LogOut className="w-4 h-4 group-hover:-translate-x-1 transition"/> Salir del Panel</button></div>
                         </div>
 
-                        {/* ADMIN CONTENT */}
+                        {/* ADMIN MAIN CONTENT */}
                         <div className="flex-1 bg-[#050505] p-6 md:p-10 overflow-y-auto relative w-full">
                             <button onClick={()=>setIsAdminMenuOpen(true)} className="md:hidden mb-6 p-2 bg-slate-900 rounded-lg text-white border border-slate-800"><Menu className="w-6 h-6"/></button>
                             
                             {adminTab === 'dashboard' && (
                                 <div className="max-w-7xl mx-auto animate-fade-up space-y-8">
                                     <h1 className="text-4xl font-black text-white mb-8 neon-text">Dashboard General</h1>
+                                    
+                                    {/* --- IMPROVED FINANCIAL CARDS --- */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><DollarSign className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Ingresos</p><p className="text-4xl font-black text-white">${orders.reduce((a,o)=>a+(o.total||0),0).toLocaleString()}</p></div>
-                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><ShoppingBag className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Pedidos</p><p className="text-4xl font-black text-white">{orders.length}</p></div>
-                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><AlertCircle className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Stock Bajo</p><p className="text-4xl font-black text-white">{products.filter(p=>p.stock<5).length}</p></div>
-                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><Users className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Clientes</p><p className="text-4xl font-black text-white">{users.length}</p></div>
+                                        <div className={`glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 ${financialData.netBalance >= 0 ? 'border-green-500' : 'border-red-500'}`}>
+                                            <div className="absolute top-0 right-0 p-4 opacity-10"><DollarSign className="w-24 h-24"/></div>
+                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Balance Neto (Ganancia/Pérdida)</p>
+                                            <p className={`text-4xl font-black ${financialData.netBalance >= 0 ? 'text-green-400' : 'text-red-400'} group-hover:scale-105 transition duration-500`}>
+                                                {financialData.netBalance >= 0 ? '+' : ''}${financialData.netBalance.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 border-cyan-500">
+                                            <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp className="w-24 h-24"/></div>
+                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Ingresos Totales (Ventas)</p>
+                                            <p className="text-4xl font-black text-white group-hover:scale-105 transition duration-500">${financialData.revenue.toLocaleString()}</p>
+                                        </div>
+                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 border-red-500">
+                                            <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingDown className="w-24 h-24"/></div>
+                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Gastos Totales (Inversión)</p>
+                                            <p className="text-4xl font-black text-white group-hover:scale-105 transition duration-500">${financialData.totalExpenses.toLocaleString()}</p>
+                                        </div>
+                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 border-purple-500">
+                                            <div className="absolute top-0 right-0 p-4 opacity-10"><ShoppingBag className="w-24 h-24"/></div>
+                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Pedidos Realizados</p>
+                                            <p className="text-4xl font-black text-white group-hover:scale-105 transition duration-500">{orders.length}</p>
+                                        </div>
                                     </div>
+
+                                    {/* --- RECOVERY PROGRESS BAR --- */}
+                                    <div className="glass p-8 rounded-[2rem] border border-slate-800">
+                                        <div className="flex justify-between items-end mb-4">
+                                            <h3 className="font-bold text-white text-xl flex items-center gap-2"><RefreshCw className="w-5 h-5 text-cyan-400"/> Recuperación de Inversión</h3>
+                                            <span className={`text-xl font-black ${financialData.recoveryProgress >= 100 ? 'text-green-400' : 'text-yellow-400'}`}>{financialData.recoveryProgress.toFixed(1)}%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-900 rounded-full h-6 overflow-hidden border border-slate-700 relative">
+                                            <div className="bg-gradient-to-r from-red-600 via-yellow-500 to-green-500 h-full transition-all duration-1000 ease-out relative" style={{width: `${financialData.recoveryProgress}%`}}>
+                                                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-3 text-center">
+                                            {financialData.netBalance < 0 
+                                                ? `Faltan $${Math.abs(financialData.netBalance).toLocaleString()} para recuperar la inversión inicial.` 
+                                                : "¡Felicidades! Tu negocio ya es rentable."}
+                                        </p>
+                                    </div>
+                                    
                                     <div className="grid lg:grid-cols-3 gap-8">
                                         <div className="lg:col-span-2 glass p-8 rounded-[2rem]">
                                             <h3 className="font-bold text-white mb-6 text-xl flex items-center gap-2"><Clock className="w-5 h-5 text-cyan-400"/> Pedidos Recientes</h3>
@@ -607,6 +690,7 @@ function App() {
                                 </div>
                             )}
 
+                            {/* --- PRODUCTS SECTION --- */}
                             {adminTab === 'products' && (
                                 <div className="max-w-7xl mx-auto animate-fade-up">
                                     <div className="flex justify-between items-center mb-8">
@@ -642,6 +726,7 @@ function App() {
                                 </div>
                             )}
 
+                            {/* --- COUPONS SECTION --- */}
                             {adminTab === 'coupons' && (
                                 <div className="max-w-6xl mx-auto animate-fade-up">
                                     <h1 className="text-3xl font-black text-white mb-8 neon-text">Gestión de Cupones</h1>
@@ -672,6 +757,7 @@ function App() {
                                 </div>
                             )}
 
+                            {/* --- ORDERS SECTION --- */}
                             {adminTab === 'orders' && (
                                 <div className="max-w-6xl mx-auto animate-fade-up">
                                     <h1 className="text-3xl font-black text-white mb-8 neon-text">Pedidos</h1>
@@ -686,6 +772,7 @@ function App() {
                                 </div>
                              )}
 
+                            {/* --- SUPPLIERS SECTION --- */}
                             {adminTab === 'suppliers' && (
                                 <div className="max-w-5xl mx-auto space-y-8 animate-fade-up">
                                     <div className="flex justify-between items-center"><h1 className="text-3xl font-black text-white">Proveedores</h1><button onClick={()=>setShowSupplierModal(true)} className="neon-button text-white px-8 py-3 rounded-xl font-bold flex gap-2 shadow-lg"><Plus className="w-5 h-5"/> Nuevo Proveedor</button></div>
@@ -693,16 +780,18 @@ function App() {
                                 </div>
                             )}
 
+                            {/* --- BALANCE / FINANCE SECTION --- */}
                             {adminTab === 'balance' && (
                                 <div className="max-w-6xl mx-auto animate-fade-up">
-                                    <div className="flex flex-col md:flex-row justify-between mb-8 gap-4"><h1 className="text-3xl font-black text-white neon-text">Finanzas</h1><div className="flex gap-4"><button onClick={()=>setShowPosModal(true)} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold flex gap-2 items-center shadow-lg hover:bg-green-500 transition justify-center flex-1 md:flex-none"><Plus className="w-5 h-5"/> POS Venta</button><button onClick={()=>setExpenseModalMode('selection')} className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex gap-2 items-center shadow-lg hover:bg-red-500 transition justify-center flex-1 md:flex-none"><Minus className="w-5 h-5"/> Nuevo Gasto</button></div></div>
+                                    <div className="flex flex-col md:flex-row justify-between mb-8 gap-4"><h1 className="text-3xl font-black text-white neon-text">Movimientos Financieros</h1><div className="flex gap-4"><button onClick={()=>setShowPosModal(true)} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold flex gap-2 items-center shadow-lg hover:bg-green-500 transition justify-center flex-1 md:flex-none"><Plus className="w-5 h-5"/> POS Venta</button><button onClick={()=>setExpenseModalMode('selection')} className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex gap-2 items-center shadow-lg hover:bg-red-500 transition justify-center flex-1 md:flex-none"><Minus className="w-5 h-5"/> Nuevo Gasto</button></div></div>
                                     <div className="glass border border-slate-800 rounded-[2rem] overflow-hidden">
-                                        <div className="p-6 border-b border-slate-800"><h3 className="font-bold text-white text-lg">Historial de Movimientos</h3></div>
+                                        <div className="p-6 border-b border-slate-800"><h3 className="font-bold text-white text-lg">Historial Completo</h3></div>
                                         {expenses.map(e=><div key={e.id} className="p-5 border-b border-slate-800 flex justify-between items-center hover:bg-slate-900/50 transition"><div><p className="font-bold text-white">{e.description}</p><p className="text-xs text-slate-500 mt-1 flex items-center gap-2">{e.date} {e.details && <span className="bg-slate-800 px-2 rounded-full text-[10px] text-slate-400 max-w-[200px] truncate block">{e.details}</span>}</p></div><span className="text-red-400 font-bold font-mono text-lg">-${e.amount.toLocaleString()}</span></div>)}
                                     </div>
                                 </div>
                             )}
 
+                            {/* --- BUDGET SECTION --- */}
                             {adminTab === 'budget' && (
                                 <div className="max-w-7xl mx-auto animate-fade-up">
                                     <h1 className="text-3xl font-black text-white mb-8">Presupuestos</h1>
@@ -722,6 +811,7 @@ function App() {
                                 </div>
                             )}
 
+                            {/* --- SETTINGS SECTION --- */}
                             {adminTab === 'settings' && (
                                 <div className="max-w-4xl mx-auto space-y-8 animate-fade-up">
                                     <h1 className="text-3xl font-black text-white neon-text">Configuración Global</h1>
