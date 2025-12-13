@@ -693,16 +693,12 @@ function App() {
                                         <span className="text-4xl font-black text-white neon-text">${finalTotal.toLocaleString()}</span>
                                     </div>
                                     
+                                    {/* --- BOTÓN CORREGIDO: AHORA LLEVA A CHECKOUT --- */}
                                     <button 
-                                        onClick={confirmOrder}
-                                        disabled={isProcessingOrder} 
-                                        className={`w-full neon-button py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 ${isProcessingOrder ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                                        onClick={() => setView('checkout')}
+                                        className="w-full neon-button py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3"
                                     >
-                                        {isProcessingOrder ? (
-                                            <>Procesando <Loader2 className="w-6 h-6 animate-spin"/></>
-                                        ) : (
-                                            <>Confirmar Compra <CheckCircle className="w-6 h-6"/></>
-                                        )}
+                                        Continuar Compra <ArrowRight className="w-6 h-6"/>
                                     </button>
                                     
                                     <button onClick={() => setView('store')} className="w-full py-3 text-slate-400 hover:text-white font-bold text-sm transition">
@@ -798,10 +794,10 @@ function App() {
                                 </div>
                                 <div className="flex justify-between items-end mb-10"><span className="text-slate-300 font-bold text-lg">Total Final</span><span className="text-5xl font-black text-white neon-text">${finalTotal.toLocaleString()}</span></div>
                                 
-                                {/* BOTÓN DE COMPRA PROTEGIDO */}
+                                {/* BOTÓN FINAL REAL */}
                                 <button 
                                     onClick={confirmOrder}
-                                    disabled={isProcessingOrder} // DESHABILITADO SI ESTÁ PROCESANDO
+                                    disabled={isProcessingOrder} 
                                     className={`w-full neon-button py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 ${isProcessingOrder ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                                 >
                                     {isProcessingOrder ? (
