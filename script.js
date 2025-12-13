@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag, Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home, Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet, FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown, Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy, ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc, where, writeBatch, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc, where, writeBatch, getDoc, increment } from 'firebase/firestore';
 
 // --- CONFIGURACIÓN FIREBASE ---
 const firebaseConfig = {
@@ -38,14 +38,17 @@ const Toast = ({ message, type, onClose }) => {
     return (<div className={`fixed top-24 right-4 z-[9999] flex items-center gap-3 p-4 rounded-xl border-l-4 shadow-2xl backdrop-blur-md animate-fade-up ${colors[type] || colors.info}`}><p className="font-bold text-sm tracking-wide">{message}</p></div>);
 };
 
-const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText="Confirmar", cancelText="Cancelar" }) => {
+const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText="Confirmar", cancelText="Cancelar", isDangerous = false }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
-            <div className="glass p-8 rounded-3xl max-w-sm w-full border border-slate-700 shadow-2xl shadow-cyan-900/20">
-                <h3 className="text-xl font-bold text-white mb-2 neon-text">{title}</h3>
+            <div className={`glass p-8 rounded-3xl max-w-sm w-full border ${isDangerous ? 'border-red-500/50' : 'border-slate-700'} shadow-2xl`}>
+                <h3 className={`text-xl font-bold mb-2 neon-text ${isDangerous ? 'text-red-400' : 'text-white'}`}>{title}</h3>
                 <p className="text-slate-300 mb-6 text-sm">{message}</p>
-                <div className="flex gap-3"><button onClick={onCancel} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">{cancelText}</button><button onClick={onConfirm} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition shadow-lg shadow-red-600/30">{confirmText}</button></div>
+                <div className="flex gap-3">
+                    <button onClick={onCancel} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">{cancelText}</button>
+                    <button onClick={onConfirm} className={`flex-1 py-3 text-white rounded-xl font-bold transition shadow-lg ${isDangerous ? 'bg-red-600 hover:bg-red-500 shadow-red-600/30' : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/30'}`}>{confirmText}</button>
+                </div>
             </div>
         </div>
     );
@@ -68,7 +71,7 @@ function App() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
     
-    // PERSISTENCIA DE SESIÓN MEJORADA
+    // PERSISTENCIA DE SESIÓN
     const [currentUser, setCurrentUser] = useState(() => { 
         try { 
             const saved = localStorage.getItem('nexus_user_data');
@@ -78,7 +81,7 @@ function App() {
 
     const [systemUser, setSystemUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isProcessingOrder, setIsProcessingOrder] = useState(false); // Nuevo estado para bloqueo de botón
+    const [isProcessingOrder, setIsProcessingOrder] = useState(false); 
     const [toasts, setToasts] = useState([]);
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
@@ -143,16 +146,14 @@ function App() {
         setToasts(prev => { const filtered = prev.filter(t => Date.now() - t.id < 2000); return [...filtered, { id, message: msg, type }]; });
     };
     const removeToast = (id) => setToasts(p => p.filter(t => t.id !== id));
-    const confirmAction = (title, message, action) => setModalConfig({ isOpen: true, title, message, onConfirm: () => { action(); setModalConfig({ ...modalConfig, isOpen: false }); } });
+    const confirmAction = (title, message, action, isDangerous=false) => setModalConfig({ isOpen: true, title, message, onConfirm: () => { action(); setModalConfig({ ...modalConfig, isOpen: false }); }, isDangerous });
     const calculatePrice = (p, d) => d > 0 ? Math.ceil(Number(p) * (1 - d / 100)) : Number(p);
     
-    // Roles - Simplificado y robusto
+    // Roles
     const getRole = (email) => {
         if (!email || !settings) return null;
         const clean = email.trim().toLowerCase();
-        // Check main admin
         if (settings.admins && clean === settings.admins.toLowerCase()) return 'admin';
-        // Check team
         const team = settings.team || [];
         const member = team.find(m => m.email && m.email.toLowerCase() === clean);
         return member ? member.role : 'user';
@@ -167,22 +168,13 @@ function App() {
     // --- EFFECTS ---
     useEffect(() => localStorage.setItem('nexus_cart', JSON.stringify(cart)), [cart]);
     
-    // Auth Persistence Sync
     useEffect(() => { 
         if(currentUser) {
             localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
-            setCheckoutData(prev => ({ 
-                ...prev, 
-                address: currentUser.address || prev.address, 
-                city: currentUser.city || prev.city, 
-                province: currentUser.province || prev.province, 
-                zipCode: currentUser.zipCode || prev.zipCode 
-            }));
+            setCheckoutData(prev => ({ ...prev, address: currentUser.address || prev.address, city: currentUser.city || prev.city, province: currentUser.province || prev.province, zipCode: currentUser.zipCode || prev.zipCode }));
         }
-        // No borramos localStorage en el else para evitar perder sesión por parpadeos
     }, [currentUser]);
 
-    // Inicialización y Refresco de Usuario
     useEffect(() => { 
         const init = async () => { 
             try {
@@ -192,27 +184,18 @@ function App() {
                     await signInAnonymously(auth);
                 }
                 
-                // Si tenemos un usuario en local, intentamos refrescar sus datos para asegurar roles
                 if (currentUser && currentUser.id) {
                     try {
                         const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id));
                         if (userDoc.exists()) {
                             const freshData = { ...userDoc.data(), id: userDoc.id };
-                            // Solo actualizamos si hay cambios relevantes para evitar re-renders infinitos
-                            if (JSON.stringify(freshData) !== JSON.stringify(currentUser)) {
-                                setCurrentUser(freshData);
-                            }
+                            if (JSON.stringify(freshData) !== JSON.stringify(currentUser)) setCurrentUser(freshData);
                         }
-                    } catch (err) {
-                        console.warn("No se pudo refrescar usuario:", err);
-                    }
+                    } catch (err) { console.warn("No se pudo refrescar usuario:", err); }
                 }
-            } catch (e) {
-                console.error("Auth init error:", e);
-            }
+            } catch (e) { console.error("Auth init error:", e); }
         }; 
         init(); 
-        
         return onAuthStateChanged(auth, (user) => {
             setSystemUser(user);
             setTimeout(() => setIsLoading(false), 1500);
@@ -222,20 +205,14 @@ function App() {
     useEffect(() => {
         if(!systemUser) return;
         const subs = [
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), s => {
-                setProducts(s.docs.map(d=>({id:d.id, ...d.data()})));
-                if(cart.length === 0) setIsLoading(false);
-            }),
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), s => { setProducts(s.docs.map(d=>({id:d.id, ...d.data()}))); if(cart.length === 0) setIsLoading(false); }),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), s => setOrders(s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>new Date(b.date)-new Date(a.date)))),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), s => setUsers(s.docs.map(d=>({id:d.id, ...d.data()})))),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), s => setCoupons(s.docs.map(d=>({id:d.id, ...d.data()})))),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), s => setSuppliers(s.docs.map(d=>({id:d.id, ...d.data()})))),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), s => setExpenses(s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>new Date(b.date)-new Date(a.date)))),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'), s => setQuotes(s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>new Date(b.date)-new Date(a.date)))),
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), s => {
-                if(!s.empty) { const d = s.docs[0].data(); setSettings({...defaultSettings, ...d}); setTempSettings({...defaultSettings, ...d}); setAboutText(d.aboutUsText || defaultSettings.aboutUsText); }
-                else addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), defaultSettings);
-            })
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), s => { if(!s.empty) { const d = s.docs[0].data(); setSettings({...defaultSettings, ...d}); setTempSettings({...defaultSettings, ...d}); setAboutText(d.aboutUsText || defaultSettings.aboutUsText); } else addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), defaultSettings); })
         ];
         return () => subs.forEach(unsub => unsub());
     }, [systemUser]);
@@ -269,28 +246,13 @@ function App() {
 
     const manageCart = (prod, delta) => {
         if (!prod || !prod.id) return showToast("Error al agregar producto", "error");
-        
         setCart(prevCart => {
             const exists = prevCart.find(i => i.product.id === prod.id);
             const currentQty = exists ? exists.quantity : 0;
             const newQty = currentQty + delta;
-
-            if (newQty > Number(prod.stock)) {
-                showToast("Stock máximo alcanzado", "warning");
-                return prevCart;
-            }
-
-            if (newQty <= 0) {
-                if (exists) showToast("Eliminado del carrito", "info");
-                return prevCart.filter(i => i.product.id !== prod.id);
-            }
-
-            if (exists) {
-                return prevCart.map(i => i.product.id === prod.id ? { ...i, quantity: newQty } : i);
-            } else {
-                showToast("¡Producto agregado!", "success");
-                return [...prevCart, { product: prod, quantity: 1 }];
-            }
+            if (newQty > Number(prod.stock)) { showToast("Stock máximo alcanzado", "warning"); return prevCart; }
+            if (newQty <= 0) { if (exists) showToast("Eliminado del carrito", "info"); return prevCart.filter(i => i.product.id !== prod.id); }
+            if (exists) { return prevCart.map(i => i.product.id === prod.id ? { ...i, quantity: newQty } : i); } else { showToast("¡Producto agregado!", "success"); return [...prevCart, { product: prod, quantity: 1 }]; }
         });
     };
 
@@ -313,12 +275,12 @@ function App() {
     };
 
     const confirmOrder = async () => {
-        if (isProcessingOrder) return; // PREVENIR DOBLE CLICK
+        if (isProcessingOrder) return;
         if(!currentUser) { setView('login'); return showToast("Inicia sesión para comprar", "info"); }
         if(!checkoutData.address || !checkoutData.city || !checkoutData.province) return showToast("Faltan datos de envío", "warning");
         if(appliedCoupon && cartTotal < (appliedCoupon.minPurchase || 0)) return showToast(`Compra mínima para el cupón: $${appliedCoupon.minPurchase}`, "error");
 
-        setIsProcessingOrder(true); // BLOQUEAR BOTÓN
+        setIsProcessingOrder(true);
         showToast("Procesando pedido, por favor espera...", "info");
 
         try {
@@ -333,31 +295,23 @@ function App() {
                 paymentMethod: checkoutData.paymentChoice 
             };
             
-            // 1. Guardar Orden
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
-            
-            // 2. Actualizar Usuario
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), { address: checkoutData.address, city: checkoutData.city, province: checkoutData.province, zipCode: checkoutData.zipCode });
-            
-            // 3. Enviar Email (Async, no bloqueante para UX)
             fetch('/api/payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newOrder, shipping: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province}`, discountDetails: appliedCoupon ? { percentage: appliedCoupon.type === 'percentage' ? appliedCoupon.value : 0, amount: discountAmt } : null }) }).catch(err => console.log("Email skipped"));
             
-            // 4. Actualizar Stock
-            for(const i of cart) { const r = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.product.id); const s = await getDoc(r); if(s.exists()) await updateDoc(r, { stock: Math.max(0, s.data().stock - i.quantity) }); }
-            
-            // 5. Marcar Cupón
+            // Stock Update with Atomic Increment (Negative)
+            const batch = writeBatch(db);
+            cart.forEach(i => {
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.product.id);
+                batch.update(ref, { stock: increment(-i.quantity) });
+            });
+            await batch.commit();
+
             if(appliedCoupon) { const cRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id); const cSnap = await getDoc(cRef); if(cSnap.exists()) await updateDoc(cRef, { usedBy: [...(cSnap.data().usedBy || []), currentUser.id] }); }
             
-            setCart([]); 
-            setAppliedCoupon(null); 
-            setView('profile'); // Ir al perfil para ver el pedido
-            showToast("¡Pedido Completado con Éxito!", "success");
-            
-        } catch(e) { 
-            console.error(e); 
-            showToast("Error al procesar el pedido. Intenta nuevamente.", "error"); 
-        }
-        setIsProcessingOrder(false); // DESBLOQUEAR AL FINAL (aunque ya habremos cambiado de vista)
+            setCart([]); setAppliedCoupon(null); setView('profile'); showToast("¡Pedido Completado con Éxito!", "success");
+        } catch(e) { console.error(e); showToast("Error al procesar el pedido. Intenta nuevamente.", "error"); }
+        setIsProcessingOrder(false);
     };
 
     // --- ADMIN FUNCTIONS ---
@@ -372,17 +326,10 @@ function App() {
     
     const saveCouponFn = async () => {
         if(!newCoupon.code) return showToast("Falta código", "warning");
-        if(newCoupon.targetType === 'individual' && !newCoupon.targetUser) return showToast("Ingresa el email del usuario", "warning");
-        await addDoc(collection(db,'artifacts',appId,'public','data','coupons'), {
-            ...newCoupon, code: newCoupon.code.toUpperCase(), value: Number(newCoupon.value),
-            minPurchase: Number(newCoupon.minPurchase), usageLimit: Number(newCoupon.usageLimit),
-            targetUser: newCoupon.targetType === 'global' ? '' : newCoupon.targetUser,
-        });
-        setNewCoupon({code:'', type: 'percentage', value: 0, minPurchase: 0, expirationDate:'', targetType: 'global', targetUser: '', usageLimit: ''}); 
-        showToast("Cupón creado", "success");
+        await addDoc(collection(db,'artifacts',appId,'public','data','coupons'), { ...newCoupon, code: newCoupon.code.toUpperCase(), value: Number(newCoupon.value), minPurchase: Number(newCoupon.minPurchase), usageLimit: Number(newCoupon.usageLimit), targetUser: newCoupon.targetType === 'global' ? '' : newCoupon.targetUser });
+        setNewCoupon({code:'', type: 'percentage', value: 0, minPurchase: 0, expirationDate:'', targetType: 'global', targetUser: '', usageLimit: ''}); showToast("Cupón creado", "success");
     };
     const deleteCouponFn = (id) => confirmAction("Eliminar", "¿Borrar cupón?", async () => { await deleteDoc(doc(db,'artifacts',appId,'public','data','coupons',id)); showToast("Eliminado", "success"); });
-
     const addTeamMemberFn = async () => { if(!newTeamMember.email.includes('@')) return; const updatedTeam = [...(settings.team || []), newTeamMember]; await updateDoc(doc(db,'artifacts',appId,'public','data','settings', settings.id || 'default'), { team: updatedTeam }); setNewTeamMember({email:'',role:'employee'}); showToast("Agregado", "success"); };
     const removeTeamMemberFn = async (email) => { const updatedTeam = (settings.team || []).filter(m => m.email !== email); await updateDoc(doc(db,'artifacts',appId,'public','data','settings', settings.id || 'default'), { team: updatedTeam }); showToast("Eliminado", "success"); };
     const saveSupplierFn = async () => { if(!newSupplier.name) return; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), newSupplier); setNewSupplier({name:'',debt:0,contact:'',phone:''}); setShowSupplierModal(false); showToast("Guardado", "success"); };
@@ -394,26 +341,54 @@ function App() {
             const totalCost = purchaseCart.reduce((acc, item) => acc + (item.costPrice * item.quantity), 0);
             batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses')), { description: `Compra Stock (${purchaseCart.length})`, details: purchaseCart.map(i => `${i.quantity}x ${i.name}`).join(', '), amount: totalCost, date: new Date().toISOString().split('T')[0], type: 'purchase' });
             purchaseCart.forEach(item => {
-                if (item.existingId) batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'products', item.existingId), { stock: Number(products.find(p=>p.id===item.existingId).stock) + Number(item.quantity), basePrice: Number(item.salePrice) });
+                if (item.existingId) batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'products', item.existingId), { stock: increment(item.quantity), basePrice: Number(item.salePrice) });
                 else batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'products')), { name: item.name, basePrice: item.salePrice, stock: item.quantity, category: item.category || 'Varios', image: item.image || '', description: 'Ingreso stock', discount: 0 });
             });
             await batch.commit(); setPurchaseCart([]); setExpenseModalMode('closed'); showToast("Stock actualizado", "success");
         } catch(e) { console.error(e); showToast("Error", "error"); } setIsLoading(false);
     };
     const saveGeneralExpenseFn = async () => { if(!newExpense.amount) return; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), {...newExpense, amount: Number(newExpense.amount), type: 'general'}); setExpenseModalMode('closed'); showToast("Guardado", "success"); };
-    
     const saveSettingsFn = async () => { const s=await getDocs(query(collection(db,'artifacts',appId,'public','data','settings'))); const d={...tempSettings, aboutUsText: aboutText}; if(!s.empty) await updateDoc(doc(db,'artifacts',appId,'public','data','settings',s.docs[0].id), d); else await addDoc(collection(db,'artifacts',appId,'public','data','settings'), d); showToast("Configuración guardada", 'success'); };
-    const toggleOrderFn = async (o) => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id), { status: o.status === 'Pendiente' ? 'Realizado' : 'Pendiente' }); showToast("Estado actualizado", 'info'); };
     
+    // --- GESTIÓN DE PEDIDOS AVANZADA ---
+    const toggleOrderFn = async (o) => { 
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id), { status: o.status === 'Pendiente' ? 'Realizado' : 'Pendiente' }); 
+            showToast("Estado del pedido actualizado", 'success'); 
+        } catch(e) { showToast("Error al cambiar estado", "error"); }
+    };
+
+    const deleteOrderFn = async (o) => {
+        setIsLoading(true);
+        try {
+            const batch = writeBatch(db);
+            // 1. Eliminar la orden
+            const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id);
+            batch.delete(orderRef);
+            
+            // 2. Devolver stock (Restaurar)
+            // Solo si la orden no fue cancelada previamente o algo raro, asumimos que "Pendiente" o "Realizado" ya descontaron stock.
+            o.items.forEach(item => {
+                const prodRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.productId);
+                batch.update(prodRef, { stock: increment(item.quantity) });
+            });
+
+            await batch.commit();
+            setSelectedOrder(null);
+            showToast("Pedido eliminado y stock restaurado", "success");
+        } catch (e) { console.error(e); showToast("Error al eliminar pedido", "error"); }
+        setIsLoading(false);
+    };
+
     // POS Functions
     const addToPos = (p) => { const ex = posCart.find(i=>i.id===p.id); if(ex && ex.qty+1>p.stock) return; setPosCart(ex ? posCart.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i) : [...posCart,{...p,qty:1}]); };
-    const confirmPosSale = async () => { if(!posCart.length) return; setIsLoading(true); const batch = writeBatch(db); const total = posCart.reduce((a,i)=>a+(i.basePrice*i.qty),0); const orderRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'orders')); batch.set(orderRef, { orderId: `POS-${Date.now().toString().slice(-6)}`, userId: 'ADMIN', customer: { name: 'Mostrador', email: '-', phone: '-' }, items: posCart.map(i=>({productId:i.id, title:i.name, quantity:i.qty, unit_price:i.basePrice})), total, subtotal: total, discount: 0, status: 'Realizado', date: new Date().toISOString(), origin: 'store', paymentMethod: 'Efectivo' }); posCart.forEach(i => { const ref = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.id); batch.update(ref, { stock: Math.max(0, products.find(p=>p.id===i.id).stock - i.qty) }); }); await batch.commit(); setPosCart([]); setShowPosModal(false); showToast("Venta registrada", "success"); setIsLoading(false); };
+    const confirmPosSale = async () => { if(!posCart.length) return; setIsLoading(true); const batch = writeBatch(db); const total = posCart.reduce((a,i)=>a+(i.basePrice*i.qty),0); const orderRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'orders')); batch.set(orderRef, { orderId: `POS-${Date.now().toString().slice(-6)}`, userId: 'ADMIN', customer: { name: 'Mostrador', email: '-', phone: '-' }, items: posCart.map(i=>({productId:i.id, title:i.name, quantity:i.qty, unit_price:i.basePrice})), total, subtotal: total, discount: 0, status: 'Realizado', date: new Date().toISOString(), origin: 'store', paymentMethod: 'Efectivo' }); posCart.forEach(i => { const ref = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.id); batch.update(ref, { stock: increment(-i.qty) }); }); await batch.commit(); setPosCart([]); setShowPosModal(false); showToast("Venta registrada", "success"); setIsLoading(false); };
     
     // Quote Functions
     const addToQuote = (p) => { const ex = quoteCart.find(i=>i.id===p.id); setQuoteCart(ex ? quoteCart.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i) : [...quoteCart,{...p,qty:1}]); };
     const saveQuote = async () => { const total = quoteCart.reduce((a,i)=>a+(i.basePrice*i.qty),0) * (1 - quoteDiscount/100); await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'), { clientName: quoteClient.name || 'Cliente', clientPhone: quoteClient.phone, items: quoteCart, total, discount: quoteDiscount, date: new Date().toISOString(), status: 'Borrador' }); setQuoteCart([]); setQuoteClient({name:'',phone:''}); showToast("Presupuesto guardado", "success"); };
     const deleteQuoteFn = (id) => confirmAction("Eliminar Presupuesto", "¿Borrar historial?", async () => { await deleteDoc(doc(db,'artifacts',appId,'public','data','quotes',id)); showToast("Presupuesto eliminado", "success"); });
-    const convertQuote = async (q) => { setIsLoading(true); const batch = writeBatch(db); const orderRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'orders')); batch.set(orderRef, { orderId: `QUO-${Date.now().toString().slice(-6)}`, userId: 'ADMIN', customer: { name: q.clientName, phone: q.clientPhone, email: '-' }, items: q.items.map(i=>({productId:i.id, title:i.name, quantity:i.qty, unit_price:i.basePrice})), total: q.total, status: 'Realizado', date: new Date().toISOString(), origin: 'quote', paymentMethod: 'Presupuesto' }); q.items.forEach(i => { const ref = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.id); batch.update(ref, { stock: Math.max(0, products.find(p=>p.id===i.id).stock - i.qty) }); }); batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', q.id), { status: 'Convertido' }); await batch.commit(); showToast("Convertido a venta", "success"); setIsLoading(false); };
+    const convertQuote = async (q) => { setIsLoading(true); const batch = writeBatch(db); const orderRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'orders')); batch.set(orderRef, { orderId: `QUO-${Date.now().toString().slice(-6)}`, userId: 'ADMIN', customer: { name: q.clientName, phone: q.clientPhone, email: '-' }, items: q.items.map(i=>({productId:i.id, title:i.name, quantity:i.qty, unit_price:i.basePrice})), total: q.total, status: 'Realizado', date: new Date().toISOString(), origin: 'quote', paymentMethod: 'Presupuesto' }); q.items.forEach(i => { const ref = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.id); batch.update(ref, { stock: increment(-i.qty) }); }); batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', q.id), { status: 'Convertido' }); await batch.commit(); showToast("Convertido a venta", "success"); setIsLoading(false); };
 
     // Helpers
     const goWsp = () => window.open(settings.whatsappLink, '_blank');
@@ -438,34 +413,96 @@ function App() {
         if (!order) return null;
         return (
             <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up">
-                <div className="glass rounded-3xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="glass rounded-3xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border border-slate-700">
+                    {/* Header */}
                     <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                        <div><h3 className="text-xl font-bold text-white flex items-center gap-2 neon-text">Pedido <span className="text-cyan-400">#{order.orderId}</span></h3><p className="text-slate-400 text-xs">{new Date(order.date).toLocaleString()}</p></div>
-                        <button onClick={onClose} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700"><X className="w-5 h-5 text-white"/></button>
+                        <div>
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2 neon-text">Pedido <span className="text-cyan-400">#{order.orderId}</span></h3>
+                            <p className="text-slate-400 text-xs mt-1 flex items-center gap-2"><Clock className="w-3 h-3"/> {new Date(order.date).toLocaleString()}</p>
+                        </div>
+                        <button onClick={onClose} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 hover:text-white transition"><X className="w-5 h-5 text-slate-400"/></button>
                     </div>
+                    
+                    {/* Content */}
                     <div className="p-6 overflow-y-auto space-y-6">
-                        <div className="flex justify-between items-center bg-slate-800/30 p-4 rounded-xl border border-slate-700">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'Realizado' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{order.status}</span>
-                            
-                            {/* PROTECCIÓN ESTRICTA: Botón visible SOLO si es admin */}
+                        
+                        {/* Estado y Acciones Admin */}
+                        <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs text-slate-500 uppercase font-bold tracking-wider">Estado:</span>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${order.status === 'Realizado' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
+                                    {order.status}
+                                </span>
+                            </div>
                             {isAdmin(currentUser?.email) && (
-                                <button onClick={() => toggleOrderFn(order)} className="text-xs text-blue-400 font-bold hover:underline">
-                                    Cambiar Estado
+                                <button onClick={() => toggleOrderFn(order)} className={`text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 ${order.status === 'Pendiente' ? 'bg-green-600 text-white hover:bg-green-500' : 'bg-yellow-600 text-white hover:bg-yellow-500'}`}>
+                                    <RefreshCw className="w-3 h-3"/> {order.status === 'Pendiente' ? 'Marcar Realizado' : 'Marcar Pendiente'}
                                 </button>
                             )}
                         </div>
+
+                        {/* Datos del Cliente y Envío (Grid Layout) */}
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="bg-slate-900/30 p-5 rounded-2xl border border-slate-800">
+                                <h4 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><User className="w-3 h-3"/> Cliente</h4>
+                                <div className="space-y-2 text-sm">
+                                    <p className="text-white font-bold text-lg">{order.customer.name}</p>
+                                    <p className="text-slate-400"><span className="text-slate-500">Email:</span> {order.customer.email}</p>
+                                    <p className="text-slate-400"><span className="text-slate-500">Tel:</span> {order.customer.phone || '-'}</p>
+                                    <p className="text-slate-400"><span className="text-slate-500">DNI:</span> {order.customer.dni || '-'}</p>
+                                </div>
+                            </div>
+                            <div className="bg-slate-900/30 p-5 rounded-2xl border border-slate-800">
+                                <h4 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><MapPin className="w-3 h-3"/> Envío</h4>
+                                <div className="space-y-2 text-sm">
+                                    <p className="text-white">{order.shippingAddress || 'Retiro en tienda'}</p>
+                                    <p className="text-slate-400 text-xs mt-2 pt-2 border-t border-slate-800">
+                                        Método de Pago: <span className="text-cyan-400 font-bold uppercase">{order.paymentMethod}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Items */}
                         <div className="space-y-3">
+                            <h4 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Productos</h4>
                             {order.items.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center border-b border-slate-800 pb-2 last:border-0">
-                                    <div className="flex items-center gap-3"><span className="font-bold text-white text-sm">{item.quantity}x</span> <span className="text-slate-300 text-sm">{item.title}</span></div>
-                                    <span className="text-white font-mono text-sm">${item.unit_price}</span>
+                                <div key={idx} className="flex justify-between items-center border-b border-slate-800 pb-3 last:border-0 hover:bg-slate-800/30 p-2 rounded-lg transition">
+                                    <div className="flex items-center gap-4">
+                                        <span className="bg-slate-800 text-white w-8 h-8 flex items-center justify-center rounded-lg font-bold text-xs">{item.quantity}x</span> 
+                                        <span className="text-slate-200 font-medium text-sm">{item.title}</span>
+                                    </div>
+                                    <span className="text-white font-mono text-sm font-bold">${item.unit_price}</span>
                                 </div>
                             ))}
                         </div>
-                        <div className="border-t border-slate-700 pt-4 flex justify-between items-center">
-                            <span className="text-white font-bold">Total Pagado</span>
-                            <span className="text-2xl font-black text-cyan-400 neon-text">${order.total.toLocaleString()}</span>
+
+                        {/* Totales */}
+                        <div className="border-t border-slate-700 pt-4 space-y-2">
+                            <div className="flex justify-between text-slate-500 text-sm"><span>Subtotal</span><span>${order.subtotal?.toLocaleString()}</span></div>
+                            {order.discount > 0 && <div className="flex justify-between text-green-400 text-sm font-bold"><span>Descuento</span><span>-${order.discount?.toLocaleString()}</span></div>}
+                            <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-800 border-dashed">
+                                <span className="text-white font-bold">Total Final</span>
+                                <span className="text-3xl font-black text-cyan-400 neon-text">${order.total.toLocaleString()}</span>
+                            </div>
                         </div>
+
+                        {/* Botón de Eliminar (Admin Only) */}
+                        {isAdmin(currentUser?.email) && (
+                            <div className="pt-6 border-t border-slate-800">
+                                <button 
+                                    onClick={() => confirmAction(
+                                        "Eliminar Pedido", 
+                                        "¿Estás seguro? Esta acción eliminará el pedido permanentemente y RESTAURARÁ EL STOCK de los productos. No se puede deshacer.", 
+                                        () => deleteOrderFn(order), 
+                                        true
+                                    )} 
+                                    className="w-full py-3 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 rounded-xl font-bold transition flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 className="w-5 h-5"/> Eliminar Pedido y Restaurar Stock
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -512,7 +549,7 @@ function App() {
             <div className="fixed inset-0 pointer-events-none z-0"><div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[120px] animate-pulse-slow"></div><div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-900/10 rounded-full blur-[120px] animate-pulse-slow"></div></div>
             <div className="fixed top-24 right-4 z-[9999] space-y-2">{toasts.map(t=><Toast key={t.id} message={t.message} type={t.type} onClose={()=>removeToast(t.id)}/>)}</div>
             
-            <ConfirmModal isOpen={modalConfig.isOpen} title={modalConfig.title} message={modalConfig.message} onConfirm={modalConfig.onConfirm} onCancel={()=>setModalConfig({...modalConfig, isOpen:false})} />
+            <ConfirmModal isOpen={modalConfig.isOpen} title={modalConfig.title} message={modalConfig.message} onConfirm={modalConfig.onConfirm} onCancel={()=>setModalConfig({...modalConfig, isOpen:false})} isDangerous={modalConfig.isDangerous} />
             <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
             <CouponSelectorModal />
 
@@ -653,14 +690,19 @@ function App() {
                                     </div>
                                     <div className="flex justify-between items-end mb-8">
                                         <span className="text-white font-bold text-lg">Total Estimado</span>
-                                        <span className="text-4xl font-black text-white neon-text">${cartTotal.toLocaleString()}</span>
+                                        <span className="text-4xl font-black text-white neon-text">${finalTotal.toLocaleString()}</span>
                                     </div>
                                     
                                     <button 
-                                        onClick={() => setView('checkout')}
-                                        className="w-full neon-button py-4 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 text-lg mb-4"
+                                        onClick={confirmOrder}
+                                        disabled={isProcessingOrder} 
+                                        className={`w-full neon-button py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 ${isProcessingOrder ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                                     >
-                                        Iniciar Pago <ArrowRight className="w-5 h-5"/>
+                                        {isProcessingOrder ? (
+                                            <>Procesando <Loader2 className="w-6 h-6 animate-spin"/></>
+                                        ) : (
+                                            <>Confirmar Compra <CheckCircle className="w-6 h-6"/></>
+                                        )}
                                     </button>
                                     
                                     <button onClick={() => setView('store')} className="w-full py-3 text-slate-400 hover:text-white font-bold text-sm transition">
