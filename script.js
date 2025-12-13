@@ -6,7 +6,6 @@ import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken }
 import { getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc, where, writeBatch, getDoc } from 'firebase/firestore';
 
 // --- CONFIGURACIÓN FIREBASE ---
-// Nota: En un entorno real, estas keys no deberían estar hardcodeadas así, pero para este demo funcionan.
 const firebaseConfig = {
   apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
   authDomain: "sustore-63266.firebaseapp.com",
@@ -68,9 +67,18 @@ function App() {
     const [adminTab, setAdminTab] = useState('dashboard');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
-    const [currentUser, setCurrentUser] = useState(() => { try { return JSON.parse(localStorage.getItem('nexus_user_data')); } catch(e) { return null; } });
+    
+    // PERSISTENCIA DE SESIÓN MEJORADA
+    const [currentUser, setCurrentUser] = useState(() => { 
+        try { 
+            const saved = localStorage.getItem('nexus_user_data');
+            return saved ? JSON.parse(saved) : null; 
+        } catch(e) { return null; } 
+    });
+
     const [systemUser, setSystemUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isProcessingOrder, setIsProcessingOrder] = useState(false); // Nuevo estado para bloqueo de botón
     const [toasts, setToasts] = useState([]);
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
@@ -138,47 +146,76 @@ function App() {
     const confirmAction = (title, message, action) => setModalConfig({ isOpen: true, title, message, onConfirm: () => { action(); setModalConfig({ ...modalConfig, isOpen: false }); } });
     const calculatePrice = (p, d) => d > 0 ? Math.ceil(Number(p) * (1 - d / 100)) : Number(p);
     
-    // Roles
+    // Roles - Simplificado y robusto
     const getRole = (email) => {
-        if (!email) return null;
+        if (!email || !settings) return null;
         const clean = email.trim().toLowerCase();
-        if (clean === settings.admins?.toLowerCase()) return 'admin';
+        // Check main admin
+        if (settings.admins && clean === settings.admins.toLowerCase()) return 'admin';
+        // Check team
         const team = settings.team || [];
-        const member = team.find(m => m.email.toLowerCase() === clean);
-        return member ? member.role : null;
+        const member = team.find(m => m.email && m.email.toLowerCase() === clean);
+        return member ? member.role : 'user';
     };
+    
     const isAdmin = (email) => getRole(email) === 'admin';
-    const hasAccess = (email) => isAdmin(email) || getRole(email) === 'employee';
+    const hasAccess = (email) => {
+        const role = getRole(email);
+        return role === 'admin' || role === 'employee';
+    };
 
     // --- EFFECTS ---
     useEffect(() => localStorage.setItem('nexus_cart', JSON.stringify(cart)), [cart]);
+    
+    // Auth Persistence Sync
     useEffect(() => { 
         if(currentUser) {
             localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
-            setCheckoutData(prev => ({ ...prev, address: currentUser.address || '', city: currentUser.city || '', province: currentUser.province || '', zipCode: currentUser.zipCode || '' }));
-        } else {
-            localStorage.removeItem('nexus_user_data');
+            setCheckoutData(prev => ({ 
+                ...prev, 
+                address: currentUser.address || prev.address, 
+                city: currentUser.city || prev.city, 
+                province: currentUser.province || prev.province, 
+                zipCode: currentUser.zipCode || prev.zipCode 
+            }));
         }
+        // No borramos localStorage en el else para evitar perder sesión por parpadeos
     }, [currentUser]);
 
+    // Inicialización y Refresco de Usuario
     useEffect(() => { 
         const init = async () => { 
             try {
-                // Check if we have an initial token provided by the environment
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
+                }
+                
+                // Si tenemos un usuario en local, intentamos refrescar sus datos para asegurar roles
+                if (currentUser && currentUser.id) {
+                    try {
+                        const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id));
+                        if (userDoc.exists()) {
+                            const freshData = { ...userDoc.data(), id: userDoc.id };
+                            // Solo actualizamos si hay cambios relevantes para evitar re-renders infinitos
+                            if (JSON.stringify(freshData) !== JSON.stringify(currentUser)) {
+                                setCurrentUser(freshData);
+                            }
+                        }
+                    } catch (err) {
+                        console.warn("No se pudo refrescar usuario:", err);
+                    }
                 }
             } catch (e) {
                 console.error("Auth init error:", e);
             }
         }; 
         init(); 
+        
         return onAuthStateChanged(auth, (user) => {
             setSystemUser(user);
-            // Si el sistema ha cargado usuario (anónimo o real), quitamos el loading a los pocos segundos si no hay datos
-            setTimeout(() => setIsLoading(false), 2000);
+            setTimeout(() => setIsLoading(false), 1500);
         }); 
     }, []);
     
@@ -187,7 +224,7 @@ function App() {
         const subs = [
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), s => {
                 setProducts(s.docs.map(d=>({id:d.id, ...d.data()})));
-                setIsLoading(false); // Datos cargados
+                if(cart.length === 0) setIsLoading(false);
             }),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), s => setOrders(s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>new Date(b.date)-new Date(a.date)))),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), s => setUsers(s.docs.map(d=>({id:d.id, ...d.data()})))),
@@ -218,7 +255,6 @@ function App() {
                 setCurrentUser({ ...newUser, id: ref.id });
             } else {
                 if (!authData.email || !authData.password) throw new Error("Ingresa usuario y contraseña");
-                // Intento simple de login buscando en la colección 'users'
                 let q = query(uRef, where("email", "==", authData.email), where("password", "==", authData.password));
                 let s = await getDocs(q);
                 if (s.empty) { q = query(uRef, where("username", "==", authData.email), where("password", "==", authData.password)); s = await getDocs(q); }
@@ -277,11 +313,14 @@ function App() {
     };
 
     const confirmOrder = async () => {
+        if (isProcessingOrder) return; // PREVENIR DOBLE CLICK
         if(!currentUser) { setView('login'); return showToast("Inicia sesión para comprar", "info"); }
         if(!checkoutData.address || !checkoutData.city || !checkoutData.province) return showToast("Faltan datos de envío", "warning");
         if(appliedCoupon && cartTotal < (appliedCoupon.minPurchase || 0)) return showToast(`Compra mínima para el cupón: $${appliedCoupon.minPurchase}`, "error");
 
-        setIsLoading(true);
+        setIsProcessingOrder(true); // BLOQUEAR BOTÓN
+        showToast("Procesando pedido, por favor espera...", "info");
+
         try {
             const orderId = `ORD-${Date.now().toString().slice(-6)}`;
             const newOrder = { 
@@ -293,14 +332,32 @@ function App() {
                 shippingAddress: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})`, 
                 paymentMethod: checkoutData.paymentChoice 
             };
+            
+            // 1. Guardar Orden
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
+            
+            // 2. Actualizar Usuario
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), { address: checkoutData.address, city: checkoutData.city, province: checkoutData.province, zipCode: checkoutData.zipCode });
+            
+            // 3. Enviar Email (Async, no bloqueante para UX)
             fetch('/api/payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newOrder, shipping: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province}`, discountDetails: appliedCoupon ? { percentage: appliedCoupon.type === 'percentage' ? appliedCoupon.value : 0, amount: discountAmt } : null }) }).catch(err => console.log("Email skipped"));
+            
+            // 4. Actualizar Stock
             for(const i of cart) { const r = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.product.id); const s = await getDoc(r); if(s.exists()) await updateDoc(r, { stock: Math.max(0, s.data().stock - i.quantity) }); }
+            
+            // 5. Marcar Cupón
             if(appliedCoupon) { const cRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id); const cSnap = await getDoc(cRef); if(cSnap.exists()) await updateDoc(cRef, { usedBy: [...(cSnap.data().usedBy || []), currentUser.id] }); }
-            setCart([]); setView('profile'); setAppliedCoupon(null); showToast("¡Pedido Realizado!", "success");
-        } catch(e) { console.error(e); showToast("Error al procesar", "error"); }
-        setIsLoading(false);
+            
+            setCart([]); 
+            setAppliedCoupon(null); 
+            setView('profile'); // Ir al perfil para ver el pedido
+            showToast("¡Pedido Completado con Éxito!", "success");
+            
+        } catch(e) { 
+            console.error(e); 
+            showToast("Error al procesar el pedido. Intenta nuevamente.", "error"); 
+        }
+        setIsProcessingOrder(false); // DESBLOQUEAR AL FINAL (aunque ya habremos cambiado de vista)
     };
 
     // --- ADMIN FUNCTIONS ---
@@ -389,7 +446,13 @@ function App() {
                     <div className="p-6 overflow-y-auto space-y-6">
                         <div className="flex justify-between items-center bg-slate-800/30 p-4 rounded-xl border border-slate-700">
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'Realizado' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{order.status}</span>
-                            {isAdmin(currentUser?.email) && <button onClick={() => toggleOrderFn(order)} className="text-xs text-blue-400 font-bold hover:underline">Cambiar Estado</button>}
+                            
+                            {/* PROTECCIÓN ESTRICTA: Botón visible SOLO si es admin */}
+                            {isAdmin(currentUser?.email) && (
+                                <button onClick={() => toggleOrderFn(order)} className="text-xs text-blue-400 font-bold hover:underline">
+                                    Cambiar Estado
+                                </button>
+                            )}
                         </div>
                         <div className="space-y-3">
                             {order.items.map((item, idx) => (
@@ -536,7 +599,7 @@ function App() {
                     </div>
                 )}
 
-                {/* VISTA CARRITO - IMPLEMENTADA Y CORREGIDA */}
+                {/* VISTA CARRITO */}
                 {view === 'cart' && (
                     <div className="max-w-5xl mx-auto animate-fade-up">
                          <h1 className="text-4xl font-black text-white mb-8 neon-text flex items-center gap-3">
@@ -609,7 +672,7 @@ function App() {
                     </div>
                 )}
 
-                {/* VISTA PERFIL - NUEVA Y MEJORADA */}
+                {/* VISTA PERFIL */}
                 {view === 'profile' && currentUser && (
                     <div className="max-w-5xl mx-auto pt-4 animate-fade-up">
                         <div className="flex items-center gap-6 mb-8">
@@ -653,7 +716,7 @@ function App() {
                     </div>
                 )}
 
-                {/* VISTA CHECKOUT CON SELECTOR DE CUPONES */}
+                {/* VISTA CHECKOUT MEJORADA */}
                 {view === 'checkout' && (
                     <div className="max-w-5xl mx-auto pt-4 pb-20 animate-fade-up">
                         <button onClick={()=>setView('cart')} className="mb-8 text-slate-400 hover:text-white flex items-center gap-2"><ArrowLeft className="w-4 h-4"/> Volver</button>
@@ -692,7 +755,19 @@ function App() {
                                     {appliedCoupon && <div className="flex justify-between text-green-400 font-bold"><span>Descuento</span><span>-${discountAmt.toLocaleString()}</span></div>}
                                 </div>
                                 <div className="flex justify-between items-end mb-10"><span className="text-slate-300 font-bold text-lg">Total Final</span><span className="text-5xl font-black text-white neon-text">${finalTotal.toLocaleString()}</span></div>
-                                <button onClick={confirmOrder} className="w-full neon-button py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3">Confirmar Compra <CheckCircle className="w-6 h-6"/></button>
+                                
+                                {/* BOTÓN DE COMPRA PROTEGIDO */}
+                                <button 
+                                    onClick={confirmOrder}
+                                    disabled={isProcessingOrder} // DESHABILITADO SI ESTÁ PROCESANDO
+                                    className={`w-full neon-button py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 ${isProcessingOrder ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                                >
+                                    {isProcessingOrder ? (
+                                        <>Procesando <Loader2 className="w-6 h-6 animate-spin"/></>
+                                    ) : (
+                                        <>Confirmar Compra <CheckCircle className="w-6 h-6"/></>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     </div>
