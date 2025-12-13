@@ -536,6 +536,79 @@ function App() {
                     </div>
                 )}
 
+                {/* VISTA CARRITO - IMPLEMENTADA Y CORREGIDA */}
+                {view === 'cart' && (
+                    <div className="max-w-5xl mx-auto animate-fade-up">
+                         <h1 className="text-4xl font-black text-white mb-8 neon-text flex items-center gap-3">
+                            <ShoppingBag className="w-10 h-10 text-cyan-400"/> Mi Carrito
+                        </h1>
+                        
+                        {cart.length === 0 ? (
+                            <EmptyState 
+                                icon={ShoppingCart} 
+                                title="Tu carrito está vacío" 
+                                text="Parece que aún no has agregado productos. Explora nuestro catálogo y encuentra lo mejor en tecnología."
+                                action={() => setView('store')}
+                                actionText="Ir a la Tienda"
+                            />
+                        ) : (
+                            <div className="grid lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2 space-y-4">
+                                    {cart.map((item) => (
+                                        <div key={item.product.id} className="glass p-4 rounded-2xl flex gap-4 items-center group relative overflow-hidden">
+                                            <div className="w-24 h-24 bg-slate-900 rounded-xl flex items-center justify-center p-2 flex-shrink-0">
+                                                <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain"/>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-bold text-white text-lg truncate mb-1">{item.product.name}</h3>
+                                                <p className="text-cyan-400 font-bold text-sm mb-2">${calculatePrice(item.product.basePrice, item.product.discount).toLocaleString()}</p>
+                                                <div className="flex items-center gap-3 bg-slate-900/50 w-fit rounded-lg p-1 border border-slate-700">
+                                                    <button onClick={() => manageCart(item.product, -1)} className="p-1 hover:text-white text-slate-400 transition hover:bg-slate-800 rounded"><Minus className="w-4 h-4"/></button>
+                                                    <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
+                                                    <button onClick={() => manageCart(item.product, 1)} className="p-1 hover:text-white text-slate-400 transition hover:bg-slate-800 rounded"><Plus className="w-4 h-4"/></button>
+                                                </div>
+                                            </div>
+                                            <div className="text-right flex flex-col items-end justify-between h-24 py-2">
+                                                <button onClick={() => manageCart(item.product, -item.quantity)} className="text-slate-600 hover:text-red-500 transition p-2"><Trash2 className="w-5 h-5"/></button>
+                                                <p className="font-black text-xl text-white neon-text">${(calculatePrice(item.product.basePrice, item.product.discount) * item.quantity).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <div className="glass h-fit p-8 rounded-[2rem] border border-slate-700 sticky top-24">
+                                    <h3 className="text-2xl font-bold text-white mb-6">Resumen</h3>
+                                    <div className="space-y-4 border-b border-slate-700 pb-6 mb-6">
+                                        <div className="flex justify-between text-slate-400">
+                                            <span>Subtotal</span>
+                                            <span className="font-mono font-bold text-white">${cartTotal.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between text-slate-400 text-sm">
+                                            <span>Envío</span>
+                                            <span className="text-cyan-400 font-bold">A calcular</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-end mb-8">
+                                        <span className="text-white font-bold text-lg">Total Estimado</span>
+                                        <span className="text-4xl font-black text-white neon-text">${cartTotal.toLocaleString()}</span>
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => setView('checkout')}
+                                        className="w-full neon-button py-4 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 text-lg mb-4"
+                                    >
+                                        Iniciar Pago <ArrowRight className="w-5 h-5"/>
+                                    </button>
+                                    
+                                    <button onClick={() => setView('store')} className="w-full py-3 text-slate-400 hover:text-white font-bold text-sm transition">
+                                        Seguir Comprando
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* VISTA PERFIL - NUEVA Y MEJORADA */}
                 {view === 'profile' && currentUser && (
                     <div className="max-w-5xl mx-auto pt-4 animate-fade-up">
