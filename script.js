@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag, Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home, Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet, FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown, Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy, ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock } from 'lucide-react';
+import { ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag, Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home, Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet, FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown, Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy, ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc, where, writeBatch, getDoc } from 'firebase/firestore';
 
 // --- CONFIGURACIÓN FIREBASE ---
+// Nota: En un entorno real, estas keys no deberían estar hardcodeadas así, pero para este demo funcionan.
 const firebaseConfig = {
   apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
   authDomain: "sustore-63266.firebaseapp.com",
@@ -35,13 +36,13 @@ const defaultSettings = {
 const Toast = ({ message, type, onClose }) => {
     const colors = { success: 'border-green-500 text-green-400 bg-green-950/90', error: 'border-red-500 text-red-400 bg-red-950/90', info: 'border-cyan-500 text-cyan-400 bg-cyan-950/90', warning: 'border-yellow-500 text-yellow-400 bg-yellow-950/90' };
     useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
-    return (<div className={`fixed top-24 right-4 z-[9999] flex items-center gap-3 p-4 rounded-xl border-l-4 shadow-2xl backdrop-blur-md ${colors[type] || colors.info}`}><p className="font-bold text-sm tracking-wide">{message}</p></div>);
+    return (<div className={`fixed top-24 right-4 z-[9999] flex items-center gap-3 p-4 rounded-xl border-l-4 shadow-2xl backdrop-blur-md animate-fade-up ${colors[type] || colors.info}`}><p className="font-bold text-sm tracking-wide">{message}</p></div>);
 };
 
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText="Confirmar", cancelText="Cancelar" }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
             <div className="glass p-8 rounded-3xl max-w-sm w-full border border-slate-700 shadow-2xl shadow-cyan-900/20">
                 <h3 className="text-xl font-bold text-white mb-2 neon-text">{title}</h3>
                 <p className="text-slate-300 mb-6 text-sm">{message}</p>
@@ -52,7 +53,7 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText
 };
 
 const EmptyState = ({ icon: Icon, title, text, action, actionText }) => (
-    <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/30 w-full">
+    <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/30 w-full animate-fade-up">
         <div className="p-5 bg-slate-800/50 rounded-full mb-4 shadow-[0_0_15px_rgba(0,0,0,0.5)]"><Icon className="w-12 h-12 text-slate-600"/></div>
         <h3 className="text-xl font-bold text-slate-300 mb-2">{title}</h3>
         <p className="text-slate-500 text-sm max-w-xs mb-6">{text}</p>
@@ -75,7 +76,6 @@ function App() {
 
     // --- DATOS ---
     const [products, setProducts] = useState([]);
-    // FIXED: Inicialización segura del carrito
     const [cart, setCart] = useState(() => { 
         try { 
             const saved = JSON.parse(localStorage.getItem('nexus_cart'));
@@ -90,28 +90,22 @@ function App() {
     const [quotes, setQuotes] = useState([]);
     const [settings, setSettings] = useState(defaultSettings);
 
-    // --- ESTADOS UI ESPECÍFICOS ---
+    // --- ESTADOS UI ---
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
     
-    // Auth
+    // Auth & Checkout
     const [authData, setAuthData] = useState({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
     const [loginMode, setLoginMode] = useState(true);
-    
-    // Checkout
     const [checkoutData, setCheckoutData] = useState({ address: '', city: '', province: '', zipCode: '', paymentChoice: '' });
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [showCouponModal, setShowCouponModal] = useState(false);
 
-    // Admin: Products
+    // Admin States
     const [newProduct, setNewProduct] = useState({ name: '', basePrice: '', stock: '', category: '', image: '', description: '', discount: 0 });
     const [editingId, setEditingId] = useState(null);
     const [showProductForm, setShowProductForm] = useState(false);
-    
-    // Admin: Coupons
     const [newCoupon, setNewCoupon] = useState({ code: '', type: 'percentage', value: 0, minPurchase: 0, expirationDate: '', targetType: 'global', targetUser: '', usageLimit: '' });
-    
-    // Admin: Suppliers & Expenses & Purchases
     const [newSupplier, setNewSupplier] = useState({ name: '', contact: '', phone: '', debt: 0 });
     const [showSupplierModal, setShowSupplierModal] = useState(false);
     const [expenseModalMode, setExpenseModalMode] = useState('closed'); 
@@ -119,16 +113,12 @@ function App() {
     const [purchaseCart, setPurchaseCart] = useState([]); 
     const [newPurchaseItem, setNewPurchaseItem] = useState({ name: '', costPrice: '', salePrice: '', quantity: '', category: '', image: '', existingId: null });
     const [productSearchTerm, setProductSearchTerm] = useState(''); 
-    
-    // Admin: POS & Quotes
     const [posCart, setPosCart] = useState([]);
     const [posSearch, setPosSearch] = useState('');
     const [showPosModal, setShowPosModal] = useState(false);
     const [quoteCart, setQuoteCart] = useState([]);
     const [quoteClient, setQuoteClient] = useState({ name: '', phone: '' });
     const [quoteDiscount, setQuoteDiscount] = useState(0);
-    
-    // Admin: Settings & Details
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [aboutText, setAboutText] = useState('');
     const [tempSettings, setTempSettings] = useState(defaultSettings);
@@ -171,12 +161,34 @@ function App() {
         }
     }, [currentUser]);
 
-    useEffect(() => { const init = async () => { await signInAnonymously(auth); }; init(); return onAuthStateChanged(auth, setSystemUser); }, []);
+    useEffect(() => { 
+        const init = async () => { 
+            try {
+                // Check if we have an initial token provided by the environment
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.error("Auth init error:", e);
+            }
+        }; 
+        init(); 
+        return onAuthStateChanged(auth, (user) => {
+            setSystemUser(user);
+            // Si el sistema ha cargado usuario (anónimo o real), quitamos el loading a los pocos segundos si no hay datos
+            setTimeout(() => setIsLoading(false), 2000);
+        }); 
+    }, []);
     
     useEffect(() => {
         if(!systemUser) return;
         const subs = [
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), s => setProducts(s.docs.map(d=>({id:d.id, ...d.data()})))),
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), s => {
+                setProducts(s.docs.map(d=>({id:d.id, ...d.data()})));
+                setIsLoading(false); // Datos cargados
+            }),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), s => setOrders(s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>new Date(b.date)-new Date(a.date)))),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), s => setUsers(s.docs.map(d=>({id:d.id, ...d.data()})))),
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), s => setCoupons(s.docs.map(d=>({id:d.id, ...d.data()})))),
@@ -186,7 +198,6 @@ function App() {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), s => {
                 if(!s.empty) { const d = s.docs[0].data(); setSettings({...defaultSettings, ...d}); setTempSettings({...defaultSettings, ...d}); setAboutText(d.aboutUsText || defaultSettings.aboutUsText); }
                 else addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), defaultSettings);
-                setIsLoading(false);
             })
         ];
         return () => subs.forEach(unsub => unsub());
@@ -207,6 +218,7 @@ function App() {
                 setCurrentUser({ ...newUser, id: ref.id });
             } else {
                 if (!authData.email || !authData.password) throw new Error("Ingresa usuario y contraseña");
+                // Intento simple de login buscando en la colección 'users'
                 let q = query(uRef, where("email", "==", authData.email), where("password", "==", authData.password));
                 let s = await getDocs(q);
                 if (s.empty) { q = query(uRef, where("username", "==", authData.email), where("password", "==", authData.password)); s = await getDocs(q); }
@@ -219,7 +231,6 @@ function App() {
         setIsLoading(false);
     };
 
-    // FIXED: Gestión de carrito más robusta
     const manageCart = (prod, delta) => {
         if (!prod || !prod.id) return showToast("Error al agregar producto", "error");
         
@@ -266,7 +277,7 @@ function App() {
     };
 
     const confirmOrder = async () => {
-        if(!currentUser) { setView('login'); return showToast("Inicia sesión", "info"); }
+        if(!currentUser) { setView('login'); return showToast("Inicia sesión para comprar", "info"); }
         if(!checkoutData.address || !checkoutData.city || !checkoutData.province) return showToast("Faltan datos de envío", "warning");
         if(appliedCoupon && cartTotal < (appliedCoupon.minPurchase || 0)) return showToast(`Compra mínima para el cupón: $${appliedCoupon.minPurchase}`, "error");
 
@@ -369,7 +380,7 @@ function App() {
     const OrderDetailsModal = ({ order, onClose }) => {
         if (!order) return null;
         return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up">
                 <div className="glass rounded-3xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
                     <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
                         <div><h3 className="text-xl font-bold text-white flex items-center gap-2 neon-text">Pedido <span className="text-cyan-400">#{order.orderId}</span></h3><p className="text-slate-400 text-xs">{new Date(order.date).toLocaleString()}</p></div>
@@ -402,7 +413,7 @@ function App() {
         if (!showCouponModal) return null;
         const availableCoupons = coupons.filter(c => !c.targetUser || c.targetUser === currentUser?.email);
         return (
-            <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+            <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up">
                 <div className="glass rounded-3xl w-full max-w-md overflow-hidden relative">
                     <button onClick={()=>setShowCouponModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-6 h-6"/></button>
                     <div className="p-8">
@@ -423,6 +434,15 @@ function App() {
             </div>
         );
     };
+
+    if (isLoading && view === 'store') {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white">
+                <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mb-4"/>
+                <p className="tracking-widest font-bold text-sm animate-pulse">CARGANDO SISTEMA...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden bg-grid">
@@ -466,7 +486,7 @@ function App() {
                 
                 {/* VISTA TIENDA */}
                 {view === 'store' && (
-                    <div className="max-w-7xl mx-auto">
+                    <div className="max-w-7xl mx-auto animate-fade-up">
                         <div className="relative w-full h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group neon-box">
                                 <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105"/>
                                 <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent flex flex-col justify-center px-12">
@@ -486,31 +506,39 @@ function App() {
                             {settings.categories.map(c=><button key={c} onClick={()=>setSelectedCategory(c)} className={`px-6 py-2 rounded-full font-bold text-sm transition border ${selectedCategory===c?'bg-cyan-600 border-cyan-500 text-white':'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'}`}>{c}</button>)}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20">
-                            {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategory === '' || p.category === selectedCategory)).map(p => (
-                                <div key={p.id} className="neon-box rounded-2xl overflow-hidden group relative bg-[#0a0a0a]">
-                                    <div className="h-64 bg-slate-950 p-6 flex items-center justify-center relative overflow-hidden">
-                                        <img src={p.image} className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110"/>
-                                        {p.discount > 0 && <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded shadow-lg z-20">-{p.discount}%</span>}
-                                        <button onClick={()=>manageCart(p, 1)} className="absolute bottom-4 right-4 bg-cyan-500 text-white p-3 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.6)] hover:scale-110 transition opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 z-20"><Plus className="w-5 h-5"/></button>
-                                    </div>
-                                    <div className="p-6 border-t border-slate-800">
-                                        <p className="text-xs text-cyan-400 font-bold uppercase tracking-wider mb-1">{p.category}</p>
-                                        <h3 className="text-white font-bold text-lg truncate mb-2 group-hover:text-cyan-300 transition">{p.name}</h3>
-                                        <div className="flex items-end gap-2">
-                                            <span className="text-2xl font-black text-white">${calculatePrice(p.basePrice, p.discount).toLocaleString()}</span>
-                                            {p.discount > 0 && <span className="text-sm text-slate-500 line-through">${p.basePrice}</span>}
+                        {products.length === 0 && !isLoading ? (
+                            <div className="text-center py-20 animate-fade-up">
+                                <Package className="w-20 h-20 text-slate-700 mx-auto mb-4"/>
+                                <h3 className="text-2xl font-bold text-slate-500">Catálogo Vacío</h3>
+                                <p className="text-slate-600">No hay productos disponibles en este momento.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20">
+                                {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategory === '' || p.category === selectedCategory)).map(p => (
+                                    <div key={p.id} className="neon-box rounded-2xl overflow-hidden group relative bg-[#0a0a0a]">
+                                        <div className="h-64 bg-slate-950 p-6 flex items-center justify-center relative overflow-hidden">
+                                            <img src={p.image} className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110"/>
+                                            {p.discount > 0 && <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded shadow-lg z-20">-{p.discount}%</span>}
+                                            <button onClick={()=>manageCart(p, 1)} className="absolute bottom-4 right-4 bg-cyan-500 text-white p-3 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.6)] hover:scale-110 transition opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 z-20"><Plus className="w-5 h-5"/></button>
+                                        </div>
+                                        <div className="p-6 border-t border-slate-800">
+                                            <p className="text-xs text-cyan-400 font-bold uppercase tracking-wider mb-1">{p.category}</p>
+                                            <h3 className="text-white font-bold text-lg truncate mb-2 group-hover:text-cyan-300 transition">{p.name}</h3>
+                                            <div className="flex items-end gap-2">
+                                                <span className="text-2xl font-black text-white">${calculatePrice(p.basePrice, p.discount).toLocaleString()}</span>
+                                                {p.discount > 0 && <span className="text-sm text-slate-500 line-through">${p.basePrice}</span>}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
-                {/* VISTA PERFIL */}
+                {/* VISTA PERFIL - NUEVA Y MEJORADA */}
                 {view === 'profile' && currentUser && (
-                    <div className="max-w-5xl mx-auto pt-4">
+                    <div className="max-w-5xl mx-auto pt-4 animate-fade-up">
                         <div className="flex items-center gap-6 mb-8">
                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg">{currentUser.name.charAt(0)}</div>
                             <div><h2 className="text-4xl font-black text-white neon-text">{currentUser.name}</h2><p className="text-slate-400">{currentUser.email}</p></div>
@@ -552,9 +580,9 @@ function App() {
                     </div>
                 )}
 
-                {/* VISTA CHECKOUT */}
+                {/* VISTA CHECKOUT CON SELECTOR DE CUPONES */}
                 {view === 'checkout' && (
-                    <div className="max-w-5xl mx-auto pt-4 pb-20">
+                    <div className="max-w-5xl mx-auto pt-4 pb-20 animate-fade-up">
                         <button onClick={()=>setView('cart')} className="mb-8 text-slate-400 hover:text-white flex items-center gap-2"><ArrowLeft className="w-4 h-4"/> Volver</button>
                         <div className="grid md:grid-cols-2 gap-12">
                             <div>
@@ -597,10 +625,8 @@ function App() {
                     </div>
                 )}
                 
-                {/* --- ADMIN PANEL --- */}
                 {view === 'admin' && hasAccess(currentUser?.email) && (
-                    <div className="flex h-screen bg-[#050505] overflow-hidden relative w-full">
-                        {/* Sidebar */}
+                    <div className="flex h-screen bg-[#050505] overflow-hidden animate-fade-up relative w-full">
                         <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static md:w-80`}>
                             <div className="p-8 flex justify-between items-center"><h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2"><Shield className="w-6 h-6 text-cyan-400"/> ADMIN<span className="text-cyan-500">PANEL</span></h2><button onClick={()=>setIsAdminMenuOpen(false)} className="md:hidden text-slate-400"><X className="w-6 h-6"/></button></div>
                             <nav className="flex-1 p-6 space-y-2 overflow-y-auto no-scrollbar">
@@ -622,70 +648,29 @@ function App() {
                             <div className="p-6 border-t border-slate-800"><button onClick={()=>setView('store')} className="w-full py-4 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition font-bold text-sm flex items-center justify-center gap-2 group"><LogOut className="w-4 h-4 group-hover:-translate-x-1 transition"/> Salir del Panel</button></div>
                         </div>
 
-                        {/* ADMIN MAIN CONTENT */}
+                        {/* ADMIN CONTENT */}
                         <div className="flex-1 bg-[#050505] p-6 md:p-10 overflow-y-auto relative w-full">
                             <button onClick={()=>setIsAdminMenuOpen(true)} className="md:hidden mb-6 p-2 bg-slate-900 rounded-lg text-white border border-slate-800"><Menu className="w-6 h-6"/></button>
                             
                             {adminTab === 'dashboard' && (
-                                <div className="max-w-7xl mx-auto space-y-8">
+                                <div className="max-w-7xl mx-auto animate-fade-up space-y-8">
                                     <h1 className="text-4xl font-black text-white mb-8 neon-text">Dashboard General</h1>
-                                    
-                                    {/* --- IMPROVED FINANCIAL CARDS --- */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                        <div className={`glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 ${financialData.netBalance >= 0 ? 'border-green-500' : 'border-red-500'}`}>
-                                            <div className="absolute top-0 right-0 p-4 opacity-10"><DollarSign className="w-24 h-24"/></div>
-                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Balance Neto (Ganancia/Pérdida)</p>
-                                            <p className={`text-4xl font-black ${financialData.netBalance >= 0 ? 'text-green-400' : 'text-red-400'} group-hover:scale-105 transition duration-500`}>
-                                                {financialData.netBalance >= 0 ? '+' : ''}${financialData.netBalance.toLocaleString()}
-                                            </p>
-                                        </div>
-                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 border-cyan-500">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp className="w-24 h-24"/></div>
-                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Ingresos Totales (Ventas)</p>
-                                            <p className="text-4xl font-black text-white group-hover:scale-105 transition duration-500">${financialData.revenue.toLocaleString()}</p>
-                                        </div>
-                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 border-red-500">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingDown className="w-24 h-24"/></div>
-                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Gastos Totales (Inversión)</p>
-                                            <p className="text-4xl font-black text-white group-hover:scale-105 transition duration-500">${financialData.totalExpenses.toLocaleString()}</p>
-                                        </div>
-                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 border-purple-500">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10"><ShoppingBag className="w-24 h-24"/></div>
-                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Pedidos Realizados</p>
-                                            <p className="text-4xl font-black text-white group-hover:scale-105 transition duration-500">{orders.length}</p>
-                                        </div>
+                                        <div className={`glass p-6 rounded-[2rem] relative overflow-hidden group border-t-4 ${financialData.netBalance >= 0 ? 'border-green-500' : 'border-red-500'}`}><div className="absolute top-0 right-0 p-4 opacity-10"><DollarSign className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Ingresos</p><p className="text-4xl font-black text-white">${orders.reduce((a,o)=>a+(o.total||0),0).toLocaleString()}</p></div>
+                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><ShoppingBag className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Pedidos</p><p className="text-4xl font-black text-white">{orders.length}</p></div>
+                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><AlertCircle className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Stock Bajo</p><p className="text-4xl font-black text-white">{products.filter(p=>p.stock<5).length}</p></div>
+                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><Users className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Clientes</p><p className="text-4xl font-black text-white">{users.length}</p></div>
                                     </div>
-
-                                    {/* --- RECOVERY PROGRESS BAR --- */}
                                     <div className="glass p-8 rounded-[2rem] border border-slate-800">
-                                        <div className="flex justify-between items-end mb-4">
-                                            <h3 className="font-bold text-white text-xl flex items-center gap-2"><RefreshCw className="w-5 h-5 text-cyan-400"/> Recuperación de Inversión</h3>
-                                            <span className={`text-xl font-black ${financialData.recoveryProgress >= 100 ? 'text-green-400' : 'text-yellow-400'}`}>{financialData.recoveryProgress.toFixed(1)}%</span>
-                                        </div>
-                                        <div className="w-full bg-slate-900 rounded-full h-6 overflow-hidden border border-slate-700 relative">
-                                            <div className="bg-gradient-to-r from-red-600 via-yellow-500 to-green-500 h-full transition-all duration-1000 ease-out relative" style={{width: `${financialData.recoveryProgress}%`}}>
-                                                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-slate-500 mt-3 text-center">
-                                            {financialData.netBalance < 0 
-                                                ? `Faltan $${Math.abs(financialData.netBalance).toLocaleString()} para recuperar la inversión inicial.` 
-                                                : "¡Felicidades! Tu negocio ya es rentable."}
-                                        </p>
-                                    </div>
-                                    
-                                    <div className="grid lg:grid-cols-3 gap-8">
-                                        <div className="lg:col-span-2 glass p-8 rounded-[2rem]">
-                                            <h3 className="font-bold text-white mb-6 text-xl flex items-center gap-2"><Clock className="w-5 h-5 text-cyan-400"/> Pedidos Recientes</h3>
-                                            <div className="space-y-4">{orders.slice(0, 5).map(o => (<div key={o.id} className="flex justify-between items-center border-b border-slate-800 pb-3 last:border-0"><div className="flex items-center gap-4"><div className={`w-2 h-2 rounded-full ${o.status==='Realizado'?'bg-green-500':'bg-yellow-500'}`}></div><div><p className="text-white font-bold">{o.customer.name}</p><p className="text-xs text-slate-500">hace {Math.floor((new Date() - new Date(o.date))/(1000*60))} min</p></div></div><span className="font-mono text-cyan-400 font-bold">${o.total}</span></div>))}</div>
-                                        </div>
+                                        <div className="flex justify-between items-end mb-4"><h3 className="font-bold text-white text-xl flex items-center gap-2"><RefreshCw className="w-5 h-5 text-cyan-400"/> Recuperación de Inversión</h3><span className={`text-xl font-black ${financialData.recoveryProgress >= 100 ? 'text-green-400' : 'text-yellow-400'}`}>{financialData.recoveryProgress.toFixed(1)}%</span></div>
+                                        <div className="w-full bg-slate-900 rounded-full h-6 overflow-hidden border border-slate-700 relative"><div className="bg-gradient-to-r from-red-600 via-yellow-500 to-green-500 h-full transition-all duration-1000 ease-out relative" style={{width: `${financialData.recoveryProgress}%`}}><div className="absolute inset-0 bg-white/20 animate-pulse"></div></div></div>
+                                        <p className="text-xs text-slate-500 mt-3 text-center">{financialData.netBalance < 0 ? `Faltan $${Math.abs(financialData.netBalance).toLocaleString()} para recuperar la inversión inicial.` : "¡Felicidades! Tu negocio ya es rentable."}</p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* --- PRODUCTS SECTION --- */}
                             {adminTab === 'products' && (
-                                <div className="max-w-7xl mx-auto">
+                                <div className="max-w-7xl mx-auto animate-fade-up">
                                     <div className="flex justify-between items-center mb-8">
                                         <h1 className="text-3xl font-black text-white neon-text">Inventario</h1>
                                         <button onClick={()=>{setNewProduct({});setEditingId(null);setShowProductForm(true)}} className="neon-button px-6 py-3 rounded-xl font-bold text-white flex gap-2 items-center"><Plus className="w-5 h-5"/> Agregar</button>
@@ -719,9 +704,8 @@ function App() {
                                 </div>
                             )}
 
-                            {/* --- COUPONS SECTION --- */}
                             {adminTab === 'coupons' && (
-                                <div className="max-w-6xl mx-auto">
+                                <div className="max-w-6xl mx-auto animate-fade-up">
                                     <h1 className="text-3xl font-black text-white mb-8 neon-text">Gestión de Cupones</h1>
                                     <div className="glass p-8 rounded-[2rem] mb-10 border border-purple-500/30">
                                         <h3 className="font-bold text-white mb-6 text-xl">Crear Nuevo Beneficio</h3>
@@ -750,7 +734,6 @@ function App() {
                                 </div>
                             )}
 
-                            {/* --- ORDERS SECTION --- */}
                             {adminTab === 'orders' && (
                                 <div className="max-w-6xl mx-auto animate-fade-up">
                                     <h1 className="text-3xl font-black text-white mb-8 neon-text">Pedidos</h1>
@@ -765,7 +748,6 @@ function App() {
                                 </div>
                              )}
 
-                            {/* --- SUPPLIERS SECTION --- */}
                             {adminTab === 'suppliers' && (
                                 <div className="max-w-5xl mx-auto space-y-8 animate-fade-up">
                                     <div className="flex justify-between items-center"><h1 className="text-3xl font-black text-white">Proveedores</h1><button onClick={()=>setShowSupplierModal(true)} className="neon-button text-white px-8 py-3 rounded-xl font-bold flex gap-2 shadow-lg"><Plus className="w-5 h-5"/> Nuevo Proveedor</button></div>
@@ -773,18 +755,16 @@ function App() {
                                 </div>
                             )}
 
-                            {/* --- BALANCE / FINANCE SECTION --- */}
                             {adminTab === 'balance' && (
                                 <div className="max-w-6xl mx-auto animate-fade-up">
-                                    <div className="flex flex-col md:flex-row justify-between mb-8 gap-4"><h1 className="text-3xl font-black text-white neon-text">Movimientos Financieros</h1><div className="flex gap-4"><button onClick={()=>setShowPosModal(true)} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold flex gap-2 items-center shadow-lg hover:bg-green-500 transition justify-center flex-1 md:flex-none"><Plus className="w-5 h-5"/> POS Venta</button><button onClick={()=>setExpenseModalMode('selection')} className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex gap-2 items-center shadow-lg hover:bg-red-500 transition justify-center flex-1 md:flex-none"><Minus className="w-5 h-5"/> Nuevo Gasto</button></div></div>
+                                    <div className="flex flex-col md:flex-row justify-between mb-8 gap-4"><h1 className="text-3xl font-black text-white neon-text">Finanzas</h1><div className="flex gap-4"><button onClick={()=>setShowPosModal(true)} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold flex gap-2 items-center shadow-lg hover:bg-green-500 transition justify-center flex-1 md:flex-none"><Plus className="w-5 h-5"/> POS Venta</button><button onClick={()=>setExpenseModalMode('selection')} className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex gap-2 items-center shadow-lg hover:bg-red-500 transition justify-center flex-1 md:flex-none"><Minus className="w-5 h-5"/> Nuevo Gasto</button></div></div>
                                     <div className="glass border border-slate-800 rounded-[2rem] overflow-hidden">
-                                        <div className="p-6 border-b border-slate-800"><h3 className="font-bold text-white text-lg">Historial Completo</h3></div>
+                                        <div className="p-6 border-b border-slate-800"><h3 className="font-bold text-white text-lg">Historial de Movimientos</h3></div>
                                         {expenses.map(e=><div key={e.id} className="p-5 border-b border-slate-800 flex justify-between items-center hover:bg-slate-900/50 transition"><div><p className="font-bold text-white">{e.description}</p><p className="text-xs text-slate-500 mt-1 flex items-center gap-2">{e.date} {e.details && <span className="bg-slate-800 px-2 rounded-full text-[10px] text-slate-400 max-w-[200px] truncate block">{e.details}</span>}</p></div><span className="text-red-400 font-bold font-mono text-lg">-${e.amount.toLocaleString()}</span></div>)}
                                     </div>
                                 </div>
                             )}
 
-                            {/* --- BUDGET SECTION --- */}
                             {adminTab === 'budget' && (
                                 <div className="max-w-7xl mx-auto animate-fade-up">
                                     <h1 className="text-3xl font-black text-white mb-8">Presupuestos</h1>
@@ -804,7 +784,6 @@ function App() {
                                 </div>
                             )}
 
-                            {/* --- SETTINGS SECTION --- */}
                             {adminTab === 'settings' && (
                                 <div className="max-w-4xl mx-auto space-y-8 animate-fade-up">
                                     <h1 className="text-3xl font-black text-white neon-text">Configuración Global</h1>
@@ -881,6 +860,36 @@ function App() {
                         </div>
                     </div>
                 )}
+
+                {/* VISTA LOGIN / REGISTER REESTRUCTURADA */}
+                {(view === 'login' || view === 'register') && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505] p-4 animate-fade-up">
+                        <button onClick={()=>setView('store')} className="absolute top-6 right-6 text-slate-400 hover:text-white"><X className="w-8 h-8"/></button>
+                        <div className="glass p-12 rounded-[2.5rem] w-full max-w-md shadow-2xl border-t border-cyan-500/20 relative overflow-hidden">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.8)]"></div>
+                            <h2 className="text-4xl font-black text-center text-white mb-10 tracking-tight">{loginMode ? 'Bienvenido' : 'Crear Cuenta'}</h2>
+                            <form onSubmit={(e)=>{e.preventDefault(); handleAuth(!loginMode)}} className="space-y-6">
+                                {!loginMode && (
+                                    <>
+                                        <input className="w-full input-cyber p-4" placeholder="Nombre" value={authData.name} onChange={e=>setAuthData({...authData, name:e.target.value})} required/>
+                                        <input className="w-full input-cyber p-4" placeholder="Usuario" value={authData.username} onChange={e=>setAuthData({...authData, username:e.target.value})} required/>
+                                    </>
+                                )}
+                                <input className="w-full input-cyber p-4" placeholder={loginMode ? "Email o Usuario" : "Email"} value={authData.email} onChange={e=>setAuthData({...authData, email:e.target.value})} required/>
+                                <input className="w-full input-cyber p-4" type="password" placeholder="Contraseña" value={authData.password} onChange={e=>setAuthData({...authData, password:e.target.value})} required/>
+                                <button type="submit" className="w-full neon-button py-4 text-white rounded-xl font-bold text-lg shadow-lg mt-4 flex items-center justify-center gap-2">
+                                    {isLoading ? <RefreshCw className="w-5 h-5 animate-spin"/> : (loginMode ? 'INGRESAR' : 'REGISTRARSE')}
+                                </button>
+                            </form>
+                            <button onClick={()=>{setLoginMode(!loginMode); setAuthData({email:'',password:'',name:'',username:'',dni:'',phone:''})}} className="w-full text-center text-slate-400 text-sm mt-8 hover:text-cyan-400 transition font-bold">
+                                {loginMode ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Ingresa'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {view === 'about' && (<div className="max-w-4xl mx-auto pt-10 animate-fade-up px-4"><h2 className="text-4xl font-black text-white mb-12 flex items-center gap-4 neon-text"><Info className="w-10 h-10 text-cyan-400"/> Sobre Nosotros</h2><div className="glass p-12 rounded-[3rem] relative overflow-hidden"><div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] -mr-20 -mt-20 pointer-events-none"></div><p className="text-slate-200 text-xl leading-relaxed whitespace-pre-wrap font-light relative z-10">{settings.aboutUsText || "Cargando información..."}</p><div className="mt-12 pt-8 border-t border-slate-700 flex gap-6"><button onClick={goWsp} className="flex items-center gap-3 text-green-400 font-bold hover:text-green-300 transition text-lg"><MessageCircle className="w-6 h-6"/> Contactar por WhatsApp</button></div></div></div>)}
+                {view === 'guide' && (<div className="max-w-5xl mx-auto pt-10 animate-fade-up px-4"><h2 className="text-4xl font-black text-white text-center mb-16 neon-text">Cómo Comprar</h2><div className="grid md:grid-cols-3 gap-8 relative">{[ { icon: Search, title: "1. Elige", text: "Explora y selecciona tus productos favoritos." }, { icon: CreditCard, title: "2. Confirma", text: "Completa el pedido en el carrito." }, { icon: MessageCircle, title: "3. Recibe", text: "Coordinamos entrega y pago por WhatsApp." } ].map((step, i) => (<div key={i} className="glass p-10 rounded-[2.5rem] text-center hover:bg-slate-800/50 transition duration-500 group border-t border-slate-700"><div className="w-24 h-24 mx-auto bg-slate-900 border border-slate-700 rounded-full flex items-center justify-center mb-8 group-hover:scale-110 transition shadow-[0_0_30px_rgba(6,182,212,0.15)]"><step.icon className="w-10 h-10 text-cyan-400"/></div><h3 className="text-2xl font-bold text-white mb-4">{step.title}</h3><p className="text-slate-400 leading-relaxed text-lg">{step.text}</p></div>))}</div><div className="mt-20 text-center"><button onClick={() => setView('store')} className="neon-button px-12 py-4 text-white font-bold rounded-full shadow-xl transition text-xl">Ir a la Tienda</button></div></div>)}
             </main>
         </div>
     );
