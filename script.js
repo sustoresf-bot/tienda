@@ -35,13 +35,13 @@ const defaultSettings = {
 const Toast = ({ message, type, onClose }) => {
     const colors = { success: 'border-green-500 text-green-400 bg-green-950/90', error: 'border-red-500 text-red-400 bg-red-950/90', info: 'border-cyan-500 text-cyan-400 bg-cyan-950/90', warning: 'border-yellow-500 text-yellow-400 bg-yellow-950/90' };
     useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
-    return (<div className={`fixed top-24 right-4 z-[9999] flex items-center gap-3 p-4 rounded-xl border-l-4 shadow-2xl backdrop-blur-md animate-fade-up ${colors[type] || colors.info}`}><p className="font-bold text-sm tracking-wide">{message}</p></div>);
+    return (<div className={`fixed top-24 right-4 z-[9999] flex items-center gap-3 p-4 rounded-xl border-l-4 shadow-2xl backdrop-blur-md ${colors[type] || colors.info}`}><p className="font-bold text-sm tracking-wide">{message}</p></div>);
 };
 
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText="Confirmar", cancelText="Cancelar" }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
             <div className="glass p-8 rounded-3xl max-w-sm w-full border border-slate-700 shadow-2xl shadow-cyan-900/20">
                 <h3 className="text-xl font-bold text-white mb-2 neon-text">{title}</h3>
                 <p className="text-slate-300 mb-6 text-sm">{message}</p>
@@ -52,7 +52,7 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText
 };
 
 const EmptyState = ({ icon: Icon, title, text, action, actionText }) => (
-    <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/30 w-full animate-fade-up">
+    <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/30 w-full">
         <div className="p-5 bg-slate-800/50 rounded-full mb-4 shadow-[0_0_15px_rgba(0,0,0,0.5)]"><Icon className="w-12 h-12 text-slate-600"/></div>
         <h3 className="text-xl font-bold text-slate-300 mb-2">{title}</h3>
         <p className="text-slate-500 text-sm max-w-xs mb-6">{text}</p>
@@ -357,16 +357,9 @@ function App() {
 
     // --- FINANCIAL METRICS (Dashboard Improved) ---
     const financialData = useMemo(() => {
-        // Ingresos: Suma de pedidos Realizados (dinero que entró)
-        const revenue = orders.reduce((acc, o) => acc + (o.total || 0), 0);
-        
-        // Gastos: Suma de todos los gastos registrados
-        const totalExpenses = expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
-        
-        // Balance Neto: Ganancia o Pérdida
+        const revenue = (orders || []).reduce((acc, o) => acc + (o.total || 0), 0);
+        const totalExpenses = (expenses || []).reduce((acc, e) => acc + (e.amount || 0), 0);
         const netBalance = revenue - totalExpenses;
-        
-        // Progreso de Recuperación: Porcentaje de gastos cubiertos
         const recoveryProgress = totalExpenses > 0 ? Math.min((revenue / totalExpenses) * 100, 100) : 100;
 
         return { revenue, totalExpenses, netBalance, recoveryProgress };
@@ -376,7 +369,7 @@ function App() {
     const OrderDetailsModal = ({ order, onClose }) => {
         if (!order) return null;
         return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
                 <div className="glass rounded-3xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
                     <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
                         <div><h3 className="text-xl font-bold text-white flex items-center gap-2 neon-text">Pedido <span className="text-cyan-400">#{order.orderId}</span></h3><p className="text-slate-400 text-xs">{new Date(order.date).toLocaleString()}</p></div>
@@ -409,7 +402,7 @@ function App() {
         if (!showCouponModal) return null;
         const availableCoupons = coupons.filter(c => !c.targetUser || c.targetUser === currentUser?.email);
         return (
-            <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
+            <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
                 <div className="glass rounded-3xl w-full max-w-md overflow-hidden relative">
                     <button onClick={()=>setShowCouponModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-6 h-6"/></button>
                     <div className="p-8">
@@ -473,7 +466,7 @@ function App() {
                 
                 {/* VISTA TIENDA */}
                 {view === 'store' && (
-                    <div className="max-w-7xl mx-auto animate-fade-up">
+                    <div className="max-w-7xl mx-auto">
                         <div className="relative w-full h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group neon-box">
                                 <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105"/>
                                 <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent flex flex-col justify-center px-12">
@@ -517,7 +510,7 @@ function App() {
 
                 {/* VISTA PERFIL */}
                 {view === 'profile' && currentUser && (
-                    <div className="max-w-5xl mx-auto pt-4 animate-fade-up">
+                    <div className="max-w-5xl mx-auto pt-4">
                         <div className="flex items-center gap-6 mb-8">
                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg">{currentUser.name.charAt(0)}</div>
                             <div><h2 className="text-4xl font-black text-white neon-text">{currentUser.name}</h2><p className="text-slate-400">{currentUser.email}</p></div>
@@ -561,7 +554,7 @@ function App() {
 
                 {/* VISTA CHECKOUT */}
                 {view === 'checkout' && (
-                    <div className="max-w-5xl mx-auto pt-4 pb-20 animate-fade-up">
+                    <div className="max-w-5xl mx-auto pt-4 pb-20">
                         <button onClick={()=>setView('cart')} className="mb-8 text-slate-400 hover:text-white flex items-center gap-2"><ArrowLeft className="w-4 h-4"/> Volver</button>
                         <div className="grid md:grid-cols-2 gap-12">
                             <div>
@@ -606,7 +599,7 @@ function App() {
                 
                 {/* --- ADMIN PANEL --- */}
                 {view === 'admin' && hasAccess(currentUser?.email) && (
-                    <div className="flex h-screen bg-[#050505] overflow-hidden animate-fade-up relative w-full">
+                    <div className="flex h-screen bg-[#050505] overflow-hidden relative w-full">
                         {/* Sidebar */}
                         <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static md:w-80`}>
                             <div className="p-8 flex justify-between items-center"><h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2"><Shield className="w-6 h-6 text-cyan-400"/> ADMIN<span className="text-cyan-500">PANEL</span></h2><button onClick={()=>setIsAdminMenuOpen(false)} className="md:hidden text-slate-400"><X className="w-6 h-6"/></button></div>
@@ -634,7 +627,7 @@ function App() {
                             <button onClick={()=>setIsAdminMenuOpen(true)} className="md:hidden mb-6 p-2 bg-slate-900 rounded-lg text-white border border-slate-800"><Menu className="w-6 h-6"/></button>
                             
                             {adminTab === 'dashboard' && (
-                                <div className="max-w-7xl mx-auto animate-fade-up space-y-8">
+                                <div className="max-w-7xl mx-auto space-y-8">
                                     <h1 className="text-4xl font-black text-white mb-8 neon-text">Dashboard General</h1>
                                     
                                     {/* --- IMPROVED FINANCIAL CARDS --- */}
@@ -692,7 +685,7 @@ function App() {
 
                             {/* --- PRODUCTS SECTION --- */}
                             {adminTab === 'products' && (
-                                <div className="max-w-7xl mx-auto animate-fade-up">
+                                <div className="max-w-7xl mx-auto">
                                     <div className="flex justify-between items-center mb-8">
                                         <h1 className="text-3xl font-black text-white neon-text">Inventario</h1>
                                         <button onClick={()=>{setNewProduct({});setEditingId(null);setShowProductForm(true)}} className="neon-button px-6 py-3 rounded-xl font-bold text-white flex gap-2 items-center"><Plus className="w-5 h-5"/> Agregar</button>
@@ -728,7 +721,7 @@ function App() {
 
                             {/* --- COUPONS SECTION --- */}
                             {adminTab === 'coupons' && (
-                                <div className="max-w-6xl mx-auto animate-fade-up">
+                                <div className="max-w-6xl mx-auto">
                                     <h1 className="text-3xl font-black text-white mb-8 neon-text">Gestión de Cupones</h1>
                                     <div className="glass p-8 rounded-[2rem] mb-10 border border-purple-500/30">
                                         <h3 className="font-bold text-white mb-6 text-xl">Crear Nuevo Beneficio</h3>
