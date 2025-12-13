@@ -31,9 +31,9 @@ const defaultSettings = {
     aboutUsText: "Somos una empresa dedicada a traer la mejor tecnología al mejor precio del mercado.\n\nContamos con garantía oficial en todos nuestros productos y soporte personalizado."
 };
 
-// --- COMPONENTES UI ---
+// --- UTILS & COMPONENTS ---
 const Toast = ({ message, type, onClose }) => {
-    const colors = { success: 'border-green-500 text-green-400 bg-green-950/30', error: 'border-red-500 text-red-400 bg-red-950/30', info: 'border-cyan-500 text-cyan-400 bg-cyan-950/30', warning: 'border-yellow-500 text-yellow-400 bg-yellow-950/30' };
+    const colors = { success: 'border-green-500 text-green-400 bg-green-950/90', error: 'border-red-500 text-red-400 bg-red-950/90', info: 'border-cyan-500 text-cyan-400 bg-cyan-950/90', warning: 'border-yellow-500 text-yellow-400 bg-yellow-950/90' };
     useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
     return (<div className={`fixed top-24 right-4 z-[9999] flex items-center gap-3 p-4 rounded-xl border-l-4 shadow-2xl backdrop-blur-md animate-fade-up ${colors[type] || colors.info}`}><p className="font-bold text-sm tracking-wide">{message}</p></div>);
 };
@@ -41,7 +41,7 @@ const Toast = ({ message, type, onClose }) => {
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText="Confirmar", cancelText="Cancelar" }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
             <div className="glass p-8 rounded-3xl max-w-sm w-full border border-slate-700 shadow-2xl shadow-cyan-900/20">
                 <h3 className="text-xl font-bold text-white mb-2 neon-text">{title}</h3>
                 <p className="text-slate-300 mb-6 text-sm">{message}</p>
@@ -60,16 +60,20 @@ const EmptyState = ({ icon: Icon, title, text, action, actionText }) => (
     </div>
 );
 
-// --- APP MAIN ---
+// --- MAIN APPLICATION ---
 function App() {
+    // --- ESTADOS GLOBALES ---
     const [view, setView] = useState('store');
     const [adminTab, setAdminTab] = useState('dashboard');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
     const [currentUser, setCurrentUser] = useState(() => { try { return JSON.parse(localStorage.getItem('nexus_user_data')); } catch(e) { return null; } });
     const [systemUser, setSystemUser] = useState(null);
-    
-    // Data State
+    const [isLoading, setIsLoading] = useState(true);
+    const [toasts, setToasts] = useState([]);
+    const [modalConfig, setModalConfig] = useState({ isOpen: false });
+
+    // --- DATOS ---
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('nexus_cart')) || []; } catch(e) { return []; } });
     const [orders, setOrders] = useState([]);
@@ -80,29 +84,28 @@ function App() {
     const [quotes, setQuotes] = useState([]);
     const [settings, setSettings] = useState(defaultSettings);
 
-    // UI State
-    const [toasts, setToasts] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    // --- ESTADOS UI ESPECÍFICOS ---
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [modalConfig, setModalConfig] = useState({ isOpen: false });
     
-    // Auth & Checkout
+    // Auth
     const [authData, setAuthData] = useState({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
     const [loginMode, setLoginMode] = useState(true);
+    
+    // Checkout
     const [checkoutData, setCheckoutData] = useState({ address: '', city: '', province: '', zipCode: '', paymentChoice: '' });
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [showCouponModal, setShowCouponModal] = useState(false);
 
-    // Admin Forms
+    // Admin: Products
     const [newProduct, setNewProduct] = useState({ name: '', basePrice: '', stock: '', category: '', image: '', description: '', discount: 0 });
     const [editingId, setEditingId] = useState(null);
     const [showProductForm, setShowProductForm] = useState(false);
     
-    // Cupones Mejorados
+    // Admin: Coupons
     const [newCoupon, setNewCoupon] = useState({ code: '', type: 'percentage', value: 0, minPurchase: 0, expirationDate: '', targetType: 'global', targetUser: '', usageLimit: '' });
     
-    // Gastos, Proveedores, Equipo, Compras
+    // Admin: Suppliers & Expenses & Purchases
     const [newSupplier, setNewSupplier] = useState({ name: '', contact: '', phone: '', debt: 0 });
     const [showSupplierModal, setShowSupplierModal] = useState(false);
     const [expenseModalMode, setExpenseModalMode] = useState('closed'); 
@@ -110,12 +113,8 @@ function App() {
     const [purchaseCart, setPurchaseCart] = useState([]); 
     const [newPurchaseItem, setNewPurchaseItem] = useState({ name: '', costPrice: '', salePrice: '', quantity: '', category: '', image: '', existingId: null });
     const [productSearchTerm, setProductSearchTerm] = useState(''); 
-    const [isAddingCategory, setIsAddingCategory] = useState(false); 
-    const [quickCategoryName, setQuickCategoryName] = useState('');
-    const [showDraftPrompt, setShowDraftPrompt] = useState(false);
-    const [newTeamMember, setNewTeamMember] = useState({ email: '', role: 'employee' });
     
-    // POS & Quotes (Restaurados)
+    // Admin: POS & Quotes
     const [posCart, setPosCart] = useState([]);
     const [posSearch, setPosSearch] = useState('');
     const [showPosModal, setShowPosModal] = useState(false);
@@ -123,22 +122,27 @@ function App() {
     const [quoteClient, setQuoteClient] = useState({ name: '', phone: '' });
     const [quoteDiscount, setQuoteDiscount] = useState(0);
     
+    // Admin: Settings & Details
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [aboutText, setAboutText] = useState('');
     const [tempSettings, setTempSettings] = useState(defaultSettings);
     const [newCategory, setNewCategory] = useState('');
+    const [newTeamMember, setNewTeamMember] = useState({ email: '', role: 'employee' });
 
+    // Refs
     const fileInputRef = useRef(null);
     const purchaseFileInputRef = useRef(null);
+
+    // --- UTILIDADES ---
     const showToast = (msg, type = 'info') => { 
         const id = Date.now(); 
         setToasts(prev => { const filtered = prev.filter(t => Date.now() - t.id < 2000); return [...filtered, { id, message: msg, type }]; });
     };
     const removeToast = (id) => setToasts(p => p.filter(t => t.id !== id));
     const confirmAction = (title, message, action) => setModalConfig({ isOpen: true, title, message, onConfirm: () => { action(); setModalConfig({ ...modalConfig, isOpen: false }); } });
-    
     const calculatePrice = (p, d) => d > 0 ? Math.ceil(Number(p) * (1 - d / 100)) : Number(p);
     
+    // Roles
     const getRole = (email) => {
         if (!email) return null;
         const clean = email.trim().toLowerCase();
@@ -150,6 +154,7 @@ function App() {
     const isAdmin = (email) => getRole(email) === 'admin';
     const hasAccess = (email) => isAdmin(email) || getRole(email) === 'employee';
 
+    // --- EFFECTS ---
     useEffect(() => localStorage.setItem('nexus_cart', JSON.stringify(cart)), [cart]);
     useEffect(() => { 
         if(currentUser) {
@@ -181,6 +186,7 @@ function App() {
         return () => subs.forEach(unsub => unsub());
     }, [systemUser]);
 
+    // --- LOGIC FUNCTIONS ---
     const handleAuth = async (isRegister) => {
         setIsLoading(true);
         try {
@@ -217,14 +223,11 @@ function App() {
     };
 
     const cartTotal = cart.reduce((a,i)=>a+(calculatePrice(i.product.basePrice, i.product.discount)*i.quantity),0);
-    
-    // --- LÓGICA CUPONES ACTUALIZADA ---
     const getDiscountValue = (total, coupon) => {
         if (!coupon) return 0;
         if (coupon.type === 'fixed') return Math.min(total, coupon.value);
         return Math.ceil(total * (coupon.value / 100));
     };
-
     const discountAmt = appliedCoupon ? getDiscountValue(cartTotal, appliedCoupon) : 0;
     const finalTotal = cartTotal - discountAmt;
 
@@ -237,8 +240,6 @@ function App() {
         showToast("Cupón aplicado", "success");
     };
 
-    const removeCoupon = () => { setAppliedCoupon(null); showToast("Cupón removido", "info"); };
-
     const confirmOrder = async () => {
         if(!currentUser) { setView('login'); return showToast("Inicia sesión", "info"); }
         if(!checkoutData.address || !checkoutData.city || !checkoutData.province) return showToast("Faltan datos de envío", "warning");
@@ -248,22 +249,17 @@ function App() {
         try {
             const orderId = `ORD-${Date.now().toString().slice(-6)}`;
             const newOrder = { 
-                orderId, 
-                userId: currentUser.id, 
+                orderId, userId: currentUser.id, 
                 customer: { name: currentUser.name, email: currentUser.email, phone: currentUser.phone, dni: currentUser.dni }, 
                 items: cart.map(i => ({ productId: i.product.id, title: i.product.name, quantity: i.quantity, unit_price: calculatePrice(i.product.basePrice, i.product.discount) })), 
-                total: finalTotal, 
-                subtotal: cartTotal, 
-                discount: discountAmt, 
-                discountCode: appliedCoupon?.code || null, 
-                status: 'Pendiente', 
-                date: new Date().toISOString(), 
+                total: finalTotal, subtotal: cartTotal, discount: discountAmt, 
+                discountCode: appliedCoupon?.code || null, status: 'Pendiente', date: new Date().toISOString(), 
                 shippingAddress: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})`, 
                 paymentMethod: checkoutData.paymentChoice 
             };
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), { address: checkoutData.address, city: checkoutData.city, province: checkoutData.province, zipCode: checkoutData.zipCode });
-            fetch('/api/payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newOrder, shipping: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province}`, discountDetails: appliedCoupon ? { percentage: appliedCoupon.type === 'percentage' ? appliedCoupon.value : 0, amount: discountAmt } : null }) }).catch(err => console.log("Email skipped in simulation"));
+            fetch('/api/payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newOrder, shipping: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province}`, discountDetails: appliedCoupon ? { percentage: appliedCoupon.type === 'percentage' ? appliedCoupon.value : 0, amount: discountAmt } : null }) }).catch(err => console.log("Email skipped"));
             for(const i of cart) { const r = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.product.id); const s = await getDoc(r); if(s.exists()) await updateDoc(r, { stock: Math.max(0, s.data().stock - i.quantity) }); }
             if(appliedCoupon) { const cRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id); const cSnap = await getDoc(cRef); if(cSnap.exists()) await updateDoc(cRef, { usedBy: [...(cSnap.data().usedBy || []), currentUser.id] }); }
             setCart([]); setView('profile'); setAppliedCoupon(null); showToast("¡Pedido Realizado!", "success");
@@ -271,7 +267,7 @@ function App() {
         setIsLoading(false);
     };
 
-    // --- ADMIN ACTIONS ---
+    // --- ADMIN FUNCTIONS ---
     const saveProductFn = async () => {
         if(!newProduct.name) return showToast("Faltan datos", "warning");
         const d = {...newProduct, basePrice: Number(newProduct.basePrice), stock: Number(newProduct.stock), discount: Number(newProduct.discount), image: newProduct.image || 'https://via.placeholder.com/150'};
@@ -281,16 +277,12 @@ function App() {
     };
     const deleteProductFn = (p) => confirmAction("Eliminar", `¿Borrar ${p.name}?`, async () => { await deleteDoc(doc(db,'artifacts',appId,'public','data','products',p.id)); showToast("Borrado", "success"); });
     
-    // --- LÓGICA GUARDAR CUPÓN MEJORADA ---
     const saveCouponFn = async () => {
         if(!newCoupon.code) return showToast("Falta código", "warning");
         if(newCoupon.targetType === 'individual' && !newCoupon.targetUser) return showToast("Ingresa el email del usuario", "warning");
         await addDoc(collection(db,'artifacts',appId,'public','data','coupons'), {
-            ...newCoupon, 
-            code: newCoupon.code.toUpperCase(),
-            value: Number(newCoupon.value),
-            minPurchase: Number(newCoupon.minPurchase),
-            usageLimit: Number(newCoupon.usageLimit),
+            ...newCoupon, code: newCoupon.code.toUpperCase(), value: Number(newCoupon.value),
+            minPurchase: Number(newCoupon.minPurchase), usageLimit: Number(newCoupon.usageLimit),
             targetUser: newCoupon.targetType === 'global' ? '' : newCoupon.targetUser,
         });
         setNewCoupon({code:'', type: 'percentage', value: 0, minPurchase: 0, expirationDate:'', targetType: 'global', targetUser: '', usageLimit: ''}); 
@@ -298,15 +290,9 @@ function App() {
     };
     const deleteCouponFn = (id) => confirmAction("Eliminar", "¿Borrar cupón?", async () => { await deleteDoc(doc(db,'artifacts',appId,'public','data','coupons',id)); showToast("Eliminado", "success"); });
 
-    // --- FUNCIONES EXTRA RESTAURADAS (POS, PROVEEDORES, PRESUPUESTOS) ---
     const addTeamMemberFn = async () => { if(!newTeamMember.email.includes('@')) return; const updatedTeam = [...(settings.team || []), newTeamMember]; await updateDoc(doc(db,'artifacts',appId,'public','data','settings', settings.id || 'default'), { team: updatedTeam }); setNewTeamMember({email:'',role:'employee'}); showToast("Agregado", "success"); };
     const removeTeamMemberFn = async (email) => { const updatedTeam = (settings.team || []).filter(m => m.email !== email); await updateDoc(doc(db,'artifacts',appId,'public','data','settings', settings.id || 'default'), { team: updatedTeam }); showToast("Eliminado", "success"); };
-    
     const saveSupplierFn = async () => { if(!newSupplier.name) return; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), newSupplier); setNewSupplier({name:'',debt:0,contact:'',phone:''}); setShowSupplierModal(false); showToast("Guardado", "success"); };
-    
-    const handlePurchaseImage = (e) => { const f=e.target.files[0]; if(f && f.size<1000000) { const r=new FileReader(); r.onload=()=>setNewPurchaseItem(p=>({...p, image: r.result})); r.readAsDataURL(f); } else showToast("Imagen pesada", 'error'); };
-    const selectExistingProduct = (p) => { setNewPurchaseItem({ ...newPurchaseItem, name: p.name, salePrice: p.basePrice, category: p.category, image: p.image, existingId: p.id, quantity: '', costPrice: '' }); setProductSearchTerm(''); };
-    const addPurchaseItemToCart = () => { if(!newPurchaseItem.name || !newPurchaseItem.costPrice || !newPurchaseItem.quantity) return; setPurchaseCart([...purchaseCart, { ...newPurchaseItem, id: Date.now(), costPrice: Number(newPurchaseItem.costPrice), salePrice: Number(newPurchaseItem.salePrice), quantity: Number(newPurchaseItem.quantity) }]); setNewPurchaseItem({ name: '', costPrice: '', salePrice: '', quantity: '', category: '', image: '', existingId: null }); };
     
     const confirmPurchaseFn = async () => {
         if(!purchaseCart.length) return; setIsLoading(true);
@@ -321,7 +307,6 @@ function App() {
             await batch.commit(); setPurchaseCart([]); setExpenseModalMode('closed'); showToast("Stock actualizado", "success");
         } catch(e) { console.error(e); showToast("Error", "error"); } setIsLoading(false);
     };
-    
     const saveGeneralExpenseFn = async () => { if(!newExpense.amount) return; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), {...newExpense, amount: Number(newExpense.amount), type: 'general'}); setExpenseModalMode('closed'); showToast("Guardado", "success"); };
     
     const saveSettingsFn = async () => { const s=await getDocs(query(collection(db,'artifacts',appId,'public','data','settings'))); const d={...tempSettings, aboutUsText: aboutText}; if(!s.empty) await updateDoc(doc(db,'artifacts',appId,'public','data','settings',s.docs[0].id), d); else await addDoc(collection(db,'artifacts',appId,'public','data','settings'), d); showToast("Configuración guardada", 'success'); };
@@ -337,10 +322,15 @@ function App() {
     const deleteQuoteFn = (id) => confirmAction("Eliminar Presupuesto", "¿Borrar historial?", async () => { await deleteDoc(doc(db,'artifacts',appId,'public','data','quotes',id)); showToast("Presupuesto eliminado", "success"); });
     const convertQuote = async (q) => { setIsLoading(true); const batch = writeBatch(db); const orderRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'orders')); batch.set(orderRef, { orderId: `QUO-${Date.now().toString().slice(-6)}`, userId: 'ADMIN', customer: { name: q.clientName, phone: q.clientPhone, email: '-' }, items: q.items.map(i=>({productId:i.id, title:i.name, quantity:i.qty, unit_price:i.basePrice})), total: q.total, status: 'Realizado', date: new Date().toISOString(), origin: 'quote', paymentMethod: 'Presupuesto' }); q.items.forEach(i => { const ref = doc(db, 'artifacts', appId, 'public', 'data', 'products', i.id); batch.update(ref, { stock: Math.max(0, products.find(p=>p.id===i.id).stock - i.qty) }); }); batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', q.id), { status: 'Convertido' }); await batch.commit(); showToast("Convertido a venta", "success"); setIsLoading(false); };
 
+    // Helpers
     const goWsp = () => window.open(settings.whatsappLink, '_blank');
     const goIg = () => window.open(`https://www.instagram.com/${settings.instagramUser}`, '_blank');
     const handleImage = (e, setter) => { const f=e.target.files[0]; if(f&&f.size<1000000){const r=new FileReader();r.onload=()=>setter(p=>({...p,image:r.result}));r.readAsDataURL(f);}else showToast("Imagen muy pesada (Max 1MB)", 'error'); };
+    const handlePurchaseImage = (e) => { const f=e.target.files[0]; if(f && f.size<1000000) { const r=new FileReader(); r.onload=()=>setNewPurchaseItem(p=>({...p, image: r.result})); r.readAsDataURL(f); } else showToast("Imagen pesada", 'error'); };
+    const selectExistingProduct = (p) => { setNewPurchaseItem({ ...newPurchaseItem, name: p.name, salePrice: p.basePrice, category: p.category, image: p.image, existingId: p.id, quantity: '', costPrice: '' }); setProductSearchTerm(''); };
+    const addPurchaseItemToCart = () => { if(!newPurchaseItem.name || !newPurchaseItem.costPrice || !newPurchaseItem.quantity) return; setPurchaseCart([...purchaseCart, { ...newPurchaseItem, id: Date.now(), costPrice: Number(newPurchaseItem.costPrice), salePrice: Number(newPurchaseItem.salePrice), quantity: Number(newPurchaseItem.quantity) }]); setNewPurchaseItem({ name: '', costPrice: '', salePrice: '', quantity: '', category: '', image: '', existingId: null }); };
 
+    // --- SUB-COMPONENTS ---
     const OrderDetailsModal = ({ order, onClose }) => {
         if (!order) return null;
         return (
@@ -436,7 +426,10 @@ function App() {
             )}
             {view !== 'admin' && <div className="h-24"></div>}
 
+            {/* --- CONTENIDO PRINCIPAL --- */}
             <main className={`flex-grow relative z-10 ${view === 'admin' ? 'h-screen flex overflow-hidden' : 'p-4'}`}>
+                
+                {/* VISTA TIENDA */}
                 {view === 'store' && (
                     <div className="max-w-7xl mx-auto animate-fade-up">
                         <div className="relative w-full h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group neon-box">
@@ -480,6 +473,7 @@ function App() {
                     </div>
                 )}
 
+                {/* VISTA PERFIL - NUEVA Y MEJORADA */}
                 {view === 'profile' && currentUser && (
                     <div className="max-w-5xl mx-auto pt-4 animate-fade-up">
                         <div className="flex items-center gap-6 mb-8">
@@ -508,7 +502,10 @@ function App() {
                                         {coupons.filter(c => !c.targetUser || c.targetUser === currentUser.email).map(c => (
                                             <div key={c.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center relative overflow-hidden">
                                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>
-                                                <div><p className="font-black text-white tracking-widest">{c.code}</p><p className="text-xs text-purple-400 font-bold">{c.type==='fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}</p></div>
+                                                <div>
+                                                    <p className="font-black text-white tracking-widest">{c.code}</p>
+                                                    <p className="text-xs text-purple-400 font-bold">{c.type==='fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}</p>
+                                                </div>
                                                 {c.minPurchase > 0 && <span className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400">Min: ${c.minPurchase}</span>}
                                             </div>
                                         ))}
@@ -548,7 +545,7 @@ function App() {
                                     {appliedCoupon ? (
                                         <div className="flex justify-between items-center bg-green-900/20 p-3 rounded-xl border border-green-900/50">
                                             <div><p className="font-black text-green-400">{appliedCoupon.code}</p><p className="text-xs text-green-300">{appliedCoupon.type==='fixed' ? `$${appliedCoupon.value} OFF` : `${appliedCoupon.value}% OFF`}</p></div>
-                                            <button onClick={removeCoupon} className="p-2 bg-slate-900 rounded-full text-slate-400 hover:text-red-400"><X className="w-4 h-4"/></button>
+                                            <button onClick={()=>{setAppliedCoupon(null)}} className="p-2 bg-slate-900 rounded-full text-slate-400 hover:text-red-400"><X className="w-4 h-4"/></button>
                                         </div>
                                     ) : (
                                         <button onClick={()=>setShowCouponModal(true)} className="w-full py-3 border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-cyan-500 rounded-xl transition flex items-center justify-center gap-2 text-sm font-bold"><Ticket className="w-4 h-4"/> Ver mis cupones disponibles</button>
@@ -599,9 +596,17 @@ function App() {
                                         <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><DollarSign className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Ingresos</p><p className="text-4xl font-black text-white">${orders.reduce((a,o)=>a+(o.total||0),0).toLocaleString()}</p></div>
                                         <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><ShoppingBag className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Pedidos</p><p className="text-4xl font-black text-white">{orders.length}</p></div>
                                         <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><AlertCircle className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Stock Bajo</p><p className="text-4xl font-black text-white">{products.filter(p=>p.stock<5).length}</p></div>
+                                        <div className="glass p-6 rounded-[2rem] relative overflow-hidden group"><div className="absolute top-0 right-0 p-4 opacity-10"><Users className="w-24 h-24"/></div><p className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2">Clientes</p><p className="text-4xl font-black text-white">{users.length}</p></div>
+                                    </div>
+                                    <div className="grid lg:grid-cols-3 gap-8">
+                                        <div className="lg:col-span-2 glass p-8 rounded-[2rem]">
+                                            <h3 className="font-bold text-white mb-6 text-xl flex items-center gap-2"><Clock className="w-5 h-5 text-cyan-400"/> Pedidos Recientes</h3>
+                                            <div className="space-y-4">{orders.slice(0, 5).map(o => (<div key={o.id} className="flex justify-between items-center border-b border-slate-800 pb-3 last:border-0"><div className="flex items-center gap-4"><div className={`w-2 h-2 rounded-full ${o.status==='Realizado'?'bg-green-500':'bg-yellow-500'}`}></div><div><p className="text-white font-bold">{o.customer.name}</p><p className="text-xs text-slate-500">hace {Math.floor((new Date() - new Date(o.date))/(1000*60))} min</p></div></div><span className="font-mono text-cyan-400 font-bold">${o.total}</span></div>))}</div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
+
                             {adminTab === 'products' && (
                                 <div className="max-w-7xl mx-auto animate-fade-up">
                                     <div className="flex justify-between items-center mb-8">
@@ -637,20 +642,6 @@ function App() {
                                 </div>
                             )}
 
-                            {adminTab === 'orders' && (
-                                <div className="max-w-6xl mx-auto animate-fade-up">
-                                    <h1 className="text-3xl font-black text-white mb-8 neon-text">Pedidos</h1>
-                                    <div className="space-y-4">
-                                        {orders.map(o => (
-                                            <div key={o.id} onClick={()=>setSelectedOrder(o)} className="glass p-6 rounded-2xl flex justify-between items-center cursor-pointer hover:border-cyan-500/50 transition hover:bg-slate-900/50">
-                                                <div className="flex items-center gap-6"><div className={`w-12 h-12 rounded-full flex items-center justify-center ${o.status==='Realizado'?'bg-green-500/20 text-green-400':'bg-yellow-500/20 text-yellow-400'}`}><Package className="w-6 h-6"/></div><div><p className="font-bold text-white text-lg">{o.customer.name}</p><p className="text-sm text-slate-500 font-mono mt-1">{o.orderId}</p></div></div>
-                                                <div className="text-right"><p className="font-black text-white text-xl">${o.total.toLocaleString()}</p><span className={`text-xs px-3 py-1 rounded-full mt-2 inline-block font-bold ${o.status==='Realizado'?'bg-green-900/30 text-green-400':'bg-yellow-900/30 text-yellow-400'}`}>{o.status}</span></div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
                             {adminTab === 'coupons' && (
                                 <div className="max-w-6xl mx-auto animate-fade-up">
                                     <h1 className="text-3xl font-black text-white mb-8 neon-text">Gestión de Cupones</h1>
@@ -680,6 +671,20 @@ function App() {
                                     </div>
                                 </div>
                             )}
+
+                            {adminTab === 'orders' && (
+                                <div className="max-w-6xl mx-auto animate-fade-up">
+                                    <h1 className="text-3xl font-black text-white mb-8 neon-text">Pedidos</h1>
+                                    <div className="space-y-4">
+                                        {orders.map(o => (
+                                            <div key={o.id} onClick={()=>setSelectedOrder(o)} className="glass p-6 rounded-2xl flex justify-between items-center cursor-pointer hover:border-cyan-500/50 transition hover:bg-slate-900/50">
+                                                <div className="flex items-center gap-6"><div className={`w-12 h-12 rounded-full flex items-center justify-center ${o.status==='Realizado'?'bg-green-500/20 text-green-400':'bg-yellow-500/20 text-yellow-400'}`}><Package className="w-6 h-6"/></div><div><p className="font-bold text-white text-lg">{o.customer.name}</p><p className="text-sm text-slate-500 font-mono mt-1">{o.orderId}</p></div></div>
+                                                <div className="text-right"><p className="font-black text-white text-xl">${o.total.toLocaleString()}</p><span className={`text-xs px-3 py-1 rounded-full mt-2 inline-block font-bold ${o.status==='Realizado'?'bg-green-900/30 text-green-400':'bg-yellow-900/30 text-yellow-400'}`}>{o.status}</span></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                             )}
 
                             {adminTab === 'suppliers' && (
                                 <div className="max-w-5xl mx-auto space-y-8 animate-fade-up">
@@ -764,6 +769,33 @@ function App() {
                         )}
                         
                         {showPosModal && (<div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md"><div className="bg-[#0a0a0a] w-full max-w-6xl h-[90vh] rounded-[3rem] border border-green-500/20 flex flex-col overflow-hidden animate-fade-up shadow-[0_0_50px_rgba(0,0,0,0.8)]"><div className="p-8 border-b border-slate-800 flex justify-between items-center bg-[#050505]"><h2 className="text-3xl font-black text-white flex items-center gap-3"><Zap className="text-green-500 w-8 h-8"/> Punto de Venta</h2><button onClick={()=>setShowPosModal(false)} className="p-3 bg-slate-900 rounded-full hover:bg-slate-800 transition"><X className="text-slate-400 w-6 h-6"/></button></div><div className="flex-1 flex overflow-hidden"><div className="w-3/4 p-8 border-r border-slate-800 overflow-y-auto"><input className="w-full input-cyber p-6 mb-8 text-xl font-bold" placeholder="🔍 Escanear o buscar producto..." autoFocus value={posSearch} onChange={e=>setPosSearch(e.target.value)}/><div className="grid grid-cols-4 gap-4">{products.filter(p=>p.name.toLowerCase().includes(posSearch.toLowerCase())&&p.stock>0).slice(0,24).map(p=>(<div key={p.id} onClick={()=>addToPos(p)} className="bg-slate-900 p-4 rounded-2xl cursor-pointer hover:bg-slate-800 hover:border-green-500 border-2 border-transparent transition text-center group"><div className="h-28 w-full bg-white rounded-xl mb-3 overflow-hidden flex items-center justify-center p-2"><img src={p.image} className="max-h-full max-w-full object-contain"/></div><p className="font-bold text-white text-sm truncate group-hover:text-green-400 transition">{p.name}</p><p className="text-green-500 font-black text-lg">${p.basePrice}</p></div>))}</div></div><div className="w-1/4 p-8 bg-[#050505] flex flex-col border-l border-slate-800"><div className="flex-1 overflow-y-auto space-y-3 mb-6 pr-2">{posCart.map(i=><div key={i.id} className="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800"><div><p className="text-white text-sm font-bold truncate w-32">{i.name}</p><p className="text-xs text-slate-500 mt-1">${i.basePrice} x {i.qty}</p></div><div className="flex items-center gap-3"><span className="text-green-400 font-bold">${i.basePrice*i.qty}</span><button onClick={()=>setPosCart(posCart.filter(x=>x.id!==i.id))} className="text-red-500 hover:text-red-400"><X className="w-5 h-5"/></button></div></div>)}</div><div className="border-t border-slate-800 pt-6"><div className="flex justify-between text-slate-400 mb-2 font-bold uppercase tracking-wider text-xs">Total a Cobrar</div><div className="flex justify-between text-4xl font-black text-white mb-8 neon-text"><span>Total</span><span>${posCart.reduce((a,i)=>a+(i.basePrice*i.qty),0).toLocaleString()}</span></div><button onClick={confirmPosSale} className="w-full py-5 bg-green-600 hover:bg-green-500 text-white font-black rounded-2xl text-xl shadow-lg shadow-green-900/20 transition flex items-center justify-center gap-3">COBRAR <DollarSign className="w-6 h-6"/></button></div></div></div></div></div>)}
+                    </div>
+                )}
+
+                {/* --- MENU DESPLEGABLE MÓVIL --- */}
+                {isMenuOpen && (
+                    <div className="fixed inset-0 z-[9999] flex justify-start">
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm" onClick={()=>setIsMenuOpen(false)}></div>
+                        <div className="relative w-80 bg-[#0a0a0a] h-full p-8 border-r border-slate-800 animate-fade-up flex flex-col shadow-2xl z-[10000]">
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-3xl font-black text-white neon-text">MENÚ</h2>
+                                <button onClick={()=>setIsMenuOpen(false)} className="p-2 bg-slate-900 rounded-full text-slate-400"><X className="w-6 h-6"/></button>
+                            </div>
+                            <div className="space-y-6 flex-1">
+                                <button onClick={()=>{setView('store');setIsMenuOpen(false)}} className="w-full text-left text-xl font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4"><Home className="w-6 h-6"/> Inicio</button>
+                                <button onClick={()=>{setView('store'); document.getElementById('catalog')?.scrollIntoView({behavior:'smooth'}); setIsMenuOpen(false)}} className="w-full text-left text-xl font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4"><Search className="w-6 h-6"/> Catálogo</button>
+                                {currentUser && <button onClick={()=>{setView('profile');setIsMenuOpen(false)}} className="w-full text-left text-xl font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4"><User className="w-6 h-6"/> Mi Perfil</button>}
+                                <button onClick={()=>{setView('cart');setIsMenuOpen(false)}} className="w-full text-left text-xl font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4"><ShoppingBag className="w-6 h-6"/> Carrito</button>
+                                <button onClick={()=>{setView('guide');setIsMenuOpen(false)}} className="w-full text-left text-xl font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4"><FileQuestion className="w-6 h-6"/> Cómo Comprar</button>
+                                <button onClick={()=>{setView('about');setIsMenuOpen(false)}} className="w-full text-left text-xl font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4"><Info className="w-6 h-6"/> Sobre Nosotros</button>
+                                {currentUser && hasAccess(currentUser.email) && <button onClick={()=>{setView('admin');setIsMenuOpen(false)}} className="w-full text-left text-xl font-bold text-cyan-400 mt-4 pt-4 border-t border-slate-800 flex items-center gap-4"><Shield className="w-6 h-6"/> Admin Panel</button>}
+                                {currentUser ? ( <button onClick={()=>{localStorage.removeItem('nexus_user_id'); localStorage.removeItem('nexus_user_data'); setCurrentUser(null); setView('store'); setIsMenuOpen(false);}} className="w-full text-left text-xl font-bold text-red-400 mt-4 flex items-center gap-4"><LogOut className="w-6 h-6"/> Cerrar Sesión</button> ) : ( <button onClick={()=>{setView('login');setIsMenuOpen(false)}} className="w-full text-left text-xl font-bold text-cyan-400 mt-4 flex items-center gap-4"><LogIn className="w-6 h-6"/> Iniciar Sesión</button> )}
+                            </div>
+                            <div className="border-t border-slate-800 pt-6 flex gap-4 justify-center">
+                                <button onClick={goWsp} className="p-3 bg-slate-900 rounded-full text-green-400 hover:bg-slate-800 transition"><MessageCircle className="w-6 h-6"/></button>
+                                <button onClick={goIg} className="p-3 bg-slate-900 rounded-full text-pink-400 hover:bg-slate-800 transition"><Instagram className="w-6 h-6"/></button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </main>
