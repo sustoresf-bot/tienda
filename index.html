@@ -3,8 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sustore - Tecnología del Futuro</title>
+    <title>Sustore | Tecnología Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#06b6d4',
+                        'primary-dark': '#0891b2',
+                        'bg-main': '#030304',
+                        'bg-panel': '#0a0a0c'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
     <script type="importmap">
     {
         "imports": {
@@ -20,9 +38,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div id="root"></div>
-
+<body class="bg-bg-main text-white h-screen overflow-hidden flex flex-col">
+    <div id="root" class="flex-1 flex flex-col h-full overflow-hidden"></div>
     <script type="text/babel" data-type="module" src="script.js"></script>
 </body>
 </html>
