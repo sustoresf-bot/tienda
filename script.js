@@ -124,7 +124,10 @@ function App() {
 
     // Navegación y UI
     const [view, setView] = useState('store'); // store, cart, checkout, profile, login, register, admin, about, guide
-    const [adminTab, setAdminTab] = useState('dashboard'); // dashboard, products, coupons, users, suppliers, settings, finance
+    const [adminTab, setAdminTab] = useState('dashboard');
+    const [expenses, setExpenses] = useState([]);
+    const [purchases, setPurchases] = useState([]);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null }); // dashboard, products, coupons, users, suppliers, settings, finance
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
 
@@ -154,7 +157,7 @@ function App() {
     const [users, setUsers] = useState([]);
     const [coupons, setCoupons] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
-    const [expenses, setExpenses] = useState([]);
+
     const [settings, setSettings] = useState(defaultSettings);
 
     // Estados de Interfaz de Usuario
@@ -171,6 +174,24 @@ function App() {
         phone: ''
     });
     const [loginMode, setLoginMode] = useState(true);
+
+    // Estados para Nuevos Formularios (Finanzas y Compras)
+    const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
+    const [newPurchase, setNewPurchase] = useState({ productId: '', supplierId: '', quantity: 1, cost: 0 });
+
+    // --- HELPERS ---
+    const openConfirm = (title, message, onConfirm) => {
+        setConfirmModal({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: async () => {
+                await onConfirm();
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            },
+            onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        });
+    };
 
     // Formulario de Checkout
     const [checkoutData, setCheckoutData] = useState({
@@ -396,6 +417,11 @@ function App() {
             // Gastos
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => {
                 setExpenses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            }),
+
+            // Compras
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
+                setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             }),
 
             // Carritos en Vivo (Solo filtramos los que tienen items)
@@ -794,58 +820,61 @@ function App() {
     };
 
     // 6.5. Eliminar Producto
-    const deleteProductFn = async (product) => {
-        if (!window.confirm(`¿Estás seguro de eliminar el producto "${product.name}"?`)) return;
-
-        try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id));
-            showToast("Producto eliminado correctamente.", "success");
-        } catch (e) {
-            console.error(e);
-            showToast("Error al eliminar el producto.", "error");
-        }
+    const deleteProductFn = (product) => {
+        openConfirm("Eliminar Producto", `¿Estás seguro de eliminar el producto "${product.name}"?`, async () => {
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id));
+                showToast("Producto eliminado correctamente.", "success");
+            } catch (e) {
+                console.error(e);
+                showToast("Error al eliminar el producto.", "error");
+            }
+        });
     };
 
     // 6.6. Venta Manual (Fuera de Página)
-    const handleManualSale = async (product) => {
+    const handleManualSale = (product) => {
         if (product.stock <= 0) return showToast("No hay stock para vender.", "warning");
-        if (!window.confirm(`¿Registrar venta manual de 1 unidad de "${product.name}"? Se descontará del stock.`)) return;
 
-        try {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
-                stock: increment(-1)
-            });
-            showToast("Venta registrada. Stock actualizado.", "success");
-        } catch (e) {
-            console.error(e);
-            showToast("Error al registrar venta manual.", "error");
-        }
+        openConfirm("Venta Manual", `¿Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
+                    stock: increment(-1)
+                });
+                showToast("Venta registrada. Stock actualizado.", "success");
+            } catch (e) {
+                console.error(e);
+                showToast("Error al registrar venta manual.", "error");
+            }
+        });
     };
 
     // 6.7. Gestión de Pedidos (Finalizar/Eliminar)
-    const finalizeOrderFn = async (orderId) => {
-        if (!window.confirm("¿Marcar este pedido como REALIZADO/ENTREGADO?")) return;
-        try {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId), {
-                status: 'Realizado',
-                lastUpdate: new Date().toISOString()
-            });
-            showToast("Pedido finalizado correctamente.", "success");
-        } catch (e) {
-            console.error(e);
-            showToast("Error al finalizar pedido.", "error");
-        }
+    const finalizeOrderFn = (orderId) => {
+        openConfirm("Finalizar Pedido", "¿Marcar este pedido como REALIZADO/ENTREGADO?", async () => {
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId), {
+                    status: 'Realizado',
+                    lastUpdate: new Date().toISOString()
+                });
+                showToast("Pedido finalizado correctamente.", "success");
+            } catch (e) {
+                console.error(e);
+                showToast("Error al finalizar pedido.", "error");
+            }
+        });
     };
 
-    const deleteOrderFn = async (orderId) => {
-        if (!window.confirm("¿Eliminar este pedido permanentemente? Esta acción no se puede deshacer.")) return;
-        try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId));
-            showToast("Pedido eliminado correctamente.", "success");
-        } catch (e) {
-            console.error(e);
-            showToast("Error al eliminar pedido.", "error");
-        }
+    const deleteOrderFn = (orderId) => {
+        openConfirm("Eliminar Pedido", "¿Eliminar este pedido permanentemente?", async () => {
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId));
+                showToast("Pedido eliminado correctamente.", "success");
+            } catch (e) {
+                console.error(e);
+                showToast("Error al eliminar pedido.", "error");
+            }
+        });
     };
 
     // 7. Guardar Cupón (COMPLEJO y DETALLADO)
@@ -1007,7 +1036,8 @@ function App() {
             .reduce((acc, o) => acc + (o.total || 0), 0);
 
         const expensesTotal = expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
-        const netIncome = revenue - expensesTotal;
+        const purchasesTotal = purchases.reduce((acc, p) => acc + (p.cost || 0), 0);
+        const netIncome = revenue - expensesTotal - purchasesTotal;
 
         // 3. Producto Estrella (Ventas reales confirmadas)
         const salesCount = {};
@@ -1033,6 +1063,7 @@ function App() {
         return {
             revenue,
             expensesTotal,
+            purchasesTotal,
             netIncome,
             trendingProducts,
             starProduct,
@@ -1040,7 +1071,7 @@ function App() {
             totalOrders: orders.length,
             totalUsers: users.length
         };
-    }, [orders, expenses, products, liveCarts, users]);
+    }, [orders, expenses, purchases, products, liveCarts, users]);
 
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la Interfaz Gráfica completa y detallada. Por favor escribe "continuar".
     // --- COMPONENTES UI: MODALES DETALLADOS ---
@@ -2174,6 +2205,14 @@ function App() {
                                             <Truck className="w-5 h-5" /> Proveedores
                                         </button>
 
+                                        <button onClick={() => setAdminTab('purchases')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'purchases' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <ShoppingCart className="w-5 h-5" /> Compras
+                                        </button>
+
+                                        <button onClick={() => setAdminTab('finance')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'finance' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <Wallet className="w-5 h-5" /> Finanzas
+                                        </button>
+
                                         <button onClick={() => setAdminTab('settings')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'settings' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                             <Settings className="w-5 h-5" /> Configuración
                                         </button>
@@ -2207,31 +2246,38 @@ function App() {
                                         </div>
                                     </div>
 
-                                    {/* Métricas Principales */}
+                                    {/* Métricas Principales (Financieras) */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                         <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="p-3 bg-green-900/20 rounded-xl text-green-400"><DollarSign className="w-6 h-6" /></div>
-                                                <span className="text-[10px] font-bold bg-green-900/20 text-green-400 px-2 py-1 rounded-full">+12%</span>
+                                                <span className="text-[10px] font-bold bg-green-900/20 text-green-400 px-2 py-1 rounded-full">VENTAS</span>
                                             </div>
-                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">INGRESOS NETOS</p>
+                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">INGRESOS BRUTOS</p>
                                             <p className="text-3xl font-black text-white tracking-tight">${dashboardMetrics.revenue.toLocaleString()}</p>
                                         </div>
 
                                         <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className="p-3 bg-blue-900/20 rounded-xl text-blue-400"><ShoppingBag className="w-6 h-6" /></div>
+                                                <div className={`p-3 rounded-xl ${dashboardMetrics.netIncome >= 0 ? 'bg-cyan-900/20 text-cyan-400' : 'bg-red-900/20 text-red-500'}`}>
+                                                    {dashboardMetrics.netIncome >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+                                                </div>
+                                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${dashboardMetrics.netIncome >= 0 ? 'bg-cyan-900/20 text-cyan-400' : 'bg-red-900/20 text-red-500'}`}>
+                                                    {dashboardMetrics.netIncome >= 0 ? 'PROFIT' : 'LOSS'}
+                                                </span>
                                             </div>
-                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">PEDIDOS TOTALES</p>
-                                            <p className="text-3xl font-black text-white tracking-tight">{dashboardMetrics.totalOrders}</p>
+                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">BENEFICIO NETO</p>
+                                            <p className={`text-3xl font-black tracking-tight ${dashboardMetrics.netIncome >= 0 ? 'text-white' : 'text-red-500'}`}>
+                                                ${dashboardMetrics.netIncome.toLocaleString()}
+                                            </p>
                                         </div>
 
                                         <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className="p-3 bg-purple-900/20 rounded-xl text-purple-400"><Users className="w-6 h-6" /></div>
+                                                <div className="p-3 bg-red-900/20 rounded-xl text-red-400"><Wallet className="w-6 h-6" /></div>
                                             </div>
-                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">CLIENTES REGISTRADOS</p>
-                                            <p className="text-3xl font-black text-white tracking-tight">{dashboardMetrics.totalUsers}</p>
+                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">GASTOS + COMPRAS</p>
+                                            <p className="text-3xl font-black text-white tracking-tight">${(dashboardMetrics.expensesTotal + (dashboardMetrics.purchasesTotal || 0)).toLocaleString()}</p>
                                         </div>
 
                                         <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
@@ -2239,7 +2285,7 @@ function App() {
                                                 <div className="p-3 bg-cyan-900/20 rounded-xl text-cyan-400"><Eye className="w-6 h-6 animate-pulse" /></div>
                                                 <span className="text-[10px] font-bold bg-cyan-900/20 text-cyan-400 px-2 py-1 rounded-full animate-pulse">LIVE</span>
                                             </div>
-                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">USUARIOS COMPRANDO</p>
+                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">USUARIOS ACTIVOS</p>
                                             <p className="text-3xl font-black text-white tracking-tight">{liveCarts.length}</p>
                                         </div>
                                     </div>
@@ -2448,7 +2494,10 @@ function App() {
                                                     <div className="p-4 bg-slate-900 rounded-xl text-slate-400 group-hover:text-cyan-400 transition group-hover:bg-cyan-900/20">
                                                         <Truck className="w-8 h-8" />
                                                     </div>
-                                                    <button onClick={async () => { if (window.confirm("¿Eliminar proveedor?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)); }} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-900 rounded-lg transition">
+                                                    <button
+                                                        onClick={() => openConfirm("Eliminar Proveedor", "¿Eliminar proveedor?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)))}
+                                                        className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-900 rounded-lg transition"
+                                                    >
                                                         <Trash2 className="w-5 h-5" />
                                                     </button>
                                                 </div>
@@ -2488,6 +2537,164 @@ function App() {
                                                             <span className="text-xs text-slate-600 italic">No hay productos asignados</span>
                                                         )}
                                                     </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* TAB: COMPRAS (STOCK) */}
+                            {adminTab === 'purchases' && (
+                                <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                    <h1 className="text-3xl font-black text-white mb-8">Gestión de Stock y Compras</h1>
+
+                                    {/* Formulario de Compra */}
+                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
+                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                            <ShoppingCart className="w-5 h-5 text-cyan-400" /> Registrar Nueva Compra
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <div className="lg:col-span-2">
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto</label>
+                                                <select className="input-cyber w-full p-4" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
+                                                    <option value="">Seleccionar Producto...</option>
+                                                    {products.map(p => <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Proveedor</label>
+                                                <select className="input-cyber w-full p-4" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
+                                                    <option value="">Seleccionar...</option>
+                                                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad</label>
+                                                <input type="number" className="input-cyber w-full p-4" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Costo Total ($)</label>
+                                                <input type="number" className="input-cyber w-full p-4" placeholder="$0.00" value={newPurchase.cost} onChange={e => setNewPurchase({ ...newPurchase, cost: parseFloat(e.target.value) || 0 })} />
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                if (!newPurchase.productId || newPurchase.quantity <= 0) return showToast("Completa los datos correctamente.", "warning");
+                                                try {
+                                                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), {
+                                                        ...newPurchase,
+                                                        date: new Date().toISOString()
+                                                    });
+                                                    // Actualizar Stock
+                                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', newPurchase.productId), {
+                                                        stock: increment(newPurchase.quantity)
+                                                    });
+                                                    setNewPurchase({ productId: '', supplierId: '', quantity: 1, cost: 0 });
+                                                    showToast("Compra registrada y stock actualizado.", "success");
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    showToast("Error al registrar compra.", "error");
+                                                }
+                                            }}
+                                            className="w-full mt-6 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+                                        >
+                                            <Save className="w-5 h-5" /> Registrar Compra
+                                        </button>
+                                    </div>
+
+                                    {/* Historial */}
+                                    <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] p-8">
+                                        <h3 className="text-xl font-bold text-white mb-6">Historial de Compras</h3>
+                                        <div className="space-y-4">
+                                            {purchases.sort((a, b) => new Date(b.date) - new Date(a.date)).map(p => {
+                                                const prod = products.find(prod => prod.id === p.productId);
+                                                const sup = suppliers.find(s => s.id === p.supplierId);
+                                                return (
+                                                    <div key={p.id} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800">
+                                                        <div>
+                                                            <p className="font-bold text-white">{prod?.name || 'Producto Eliminado'}</p>
+                                                            <p className="text-xs text-slate-500">{new Date(p.date).toLocaleDateString()} - Prov: {sup?.name || 'Desconocido'}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-cyan-400 font-bold">+{p.quantity} u.</p>
+                                                            <p className="text-slate-400 text-xs font-mono">${(p.cost || 0).toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* TAB: FINANZAS (GASTOS) */}
+                            {adminTab === 'finance' && (
+                                <div className="max-w-5xl mx-auto animate-fade-up pb-20">
+                                    <h1 className="text-3xl font-black text-white mb-8">Finanzas y Gastos</h1>
+
+                                    {/* Formulario Gastos */}
+                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
+                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                            <Wallet className="w-5 h-5 text-red-400" /> Registrar Nuevo Gasto
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="md:col-span-2">
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                <input className="input-cyber w-full p-4" placeholder="Ej: Pago de Internet, Alquiler..." value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Monto ($)</label>
+                                                <input type="number" className="input-cyber w-full p-4" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })} />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
+                                                <select className="input-cyber w-full p-4" value={newExpense.category} onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}>
+                                                    <option>General</option>
+                                                    <option>Servicios</option>
+                                                    <option>Impuestos</option>
+                                                    <option>Mantenimiento</option>
+                                                    <option>Marketing</option>
+                                                    <option>Sueldos</option>
+                                                    <option>Otros</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                if (!newExpense.description || newExpense.amount <= 0) return showToast("Completa los datos correctamente.", "warning");
+                                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), {
+                                                    ...newExpense,
+                                                    date: new Date().toISOString()
+                                                });
+                                                setNewExpense({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
+                                                showToast("Gasto registrado correctamente.", "success");
+                                            }}
+                                            className="w-full mt-6 bg-red-900/50 hover:bg-red-900 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-red-500/20"
+                                        >
+                                            <Save className="w-5 h-5" /> Registrar Gasto
+                                        </button>
+                                    </div>
+
+                                    {/* Lista Gastos */}
+                                    <div className="space-y-4">
+                                        {expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(Ex => (
+                                            <div key={Ex.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex justify-between items-center group hover:border-slate-700 transition">
+                                                <div>
+                                                    <h4 className="text-white font-bold text-lg">{Ex.description}</h4>
+                                                    <p className="text-slate-500 text-xs flex gap-3">
+                                                        <span className="text-red-400 font-bold bg-red-900/10 px-2 rounded border border-red-500/10">{Ex.category}</span>
+                                                        <span>{new Date(Ex.date).toLocaleDateString()}</span>
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-6">
+                                                    <p className="text-xl font-mono font-bold text-red-500">-${Ex.amount.toLocaleString()}</p>
+                                                    <button
+                                                        onClick={() => openConfirm("Eliminar Gasto", "¿Estás seguro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', Ex.id)))}
+                                                        className="p-3 bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 rounded-xl transition border border-slate-800"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
@@ -2582,7 +2789,10 @@ function App() {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <button onClick={async () => { if (window.confirm("¿Eliminar este cupón?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)); }} className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800">
+                                                <button
+                                                    onClick={() => openConfirm("Eliminar Cupón", "¿Eliminar este cupón?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
+                                                    className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800"
+                                                >
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
                                             </div>
@@ -2814,6 +3024,14 @@ function App() {
                     </div>
                 )}
             </main>
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={confirmModal.onCancel || (() => setConfirmModal(prev => ({ ...prev, isOpen: false })))}
+                isDangerous={true}
+            />
         </div>
     );
 }
