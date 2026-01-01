@@ -92,7 +92,7 @@ const defaultSettings = {
     
     // Textos y Contenidos
     announcementMessage: "🔥 ENVÍOS GRATIS EN COMPRAS SUPERIORES A $50.000 🔥",
-    aboutUsText: "Somos una empresa dedicada a traer la mejor tecnología al mejor precio del mercado.\n\nContamos con garantía oficial en todos nuestros productos y soporte personalizado para asegurar tu satisfacción. Nuestro compromiso es brindarte la última tecnología con la confianza y seguridad que mereces.",
+    aboutUsText: "Somos una empresa dedicada a traer la mejor tecnología al mejor precio del mercado.\n\nContamos con garantía oficial en todos nuestros productos y soporte personalizado para asegur[...]
     
     // Categorización
     categories: [
@@ -186,7 +186,7 @@ const calculateProductMetrics = (basePrice, discountPercent, costPrice = 0) => {
 // 1. Componente Toast (Notificaciones Flotantes Avanzadas)
 const ToastNotification = ({ id, message, type, onClose }) => {
     // Definición de estilos dinámicos basados en el tipo de alerta
-    let containerClasses = "fixed top-24 right-4 z-[9999] flex items-center gap-4 p-5 rounded-2xl border-l-4 backdrop-blur-xl animate-fade-up shadow-2xl transition-all duration-300 min-w-[320px] max-w-[450px]";
+    let containerClasses = "fixed top-24 right-4 z-[9999] flex items-center gap-4 p-5 rounded-2xl border-l-4 backdrop-blur-xl animate-fade-up shadow-2xl transition-all duration-300 min-w-[320px] max-w[...]
     let iconContainerClasses = "p-3 rounded-full flex items-center justify-center shrink-0";
     let Icon = Info;
     let textColor = "text-white";
@@ -271,7 +271,7 @@ const Modal = ({ isOpen, onClose, title, children, size = "md", icon: Icon }) =>
             />
             
             {/* Contenedor del Modal */}
-            <div className={`relative bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] shadow-2xl w-full ${sizes[size]} transform transition-all duration-300 animate-fade-up flex flex-col max-h-[90vh]`}>
+            <div className={`relative bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] shadow-2xl w-full ${sizes[size]} transform transition-all duration-300 animate-fade-up flex flex-col max-h-[[...]
                 
                 {/* Cabecera Neon */}
                 <div className="p-6 md:p-8 border-b border-slate-800 flex justify-between items-center bg-gradient-to-r from-slate-900/50 to-transparent rounded-t-[2.5rem]">
@@ -350,14 +350,14 @@ const TextAreaField = ({ label, value, onChange, placeholder, rows = 4 }) => (
             onChange={onChange} 
             placeholder={placeholder}
             rows={rows}
-            className="w-full bg-[#0f0f13] border border-slate-800 rounded-xl p-4 text-white placeholder-slate-600 font-medium transition-all duration-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 focus:bg-[#161620] outline-none resize-none custom-scrollbar"
+            className="w-full bg-[#0f0f13] border border-slate-800 rounded-xl p-4 text-white placeholder-slate-600 font-medium transition-all duration-300 focus:border-cyan-500 focus:ring[...]
         />
     </div>
 );
 
 // 5. Componente Botón Primario/Secundario
 const Button = ({ children, onClick, variant = "primary", className = "", icon: Icon, isLoading = false, disabled = false, type = "button" }) => {
-    const baseStyle = "relative overflow-hidden rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
+    const baseStyle = "relative overflow-hidden rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"[...]
     
     const variants = {
         primary: "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-900/20 hover:shadow-cyan-500/30 py-4 px-8",
@@ -390,7 +390,7 @@ const ConfirmationDialog = ({ config, onConfirm, onCancel }) => {
             <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] max-w-sm w-full relative z-10 shadow-2xl animate-fade-up">
                 
                 {/* Icono Central */}
-                <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 shadow-xl ${config.isDangerous ? 'bg-red-900/20 text-red-500 border border-red-500/20' : 'bg-cyan-900/20 text-cyan-500 border border-cyan-500/20'}`}>
+                <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 shadow-xl ${config.isDangerous ? 'bg-red-900/20 text-red-500 border border-red-500/20' : 'bg-cyan-[...]
                     {config.isDangerous ? <AlertTriangle className="w-10 h-10" /> : <Info className="w-10 h-10" />}
                 </div>
 
@@ -1340,6 +1340,80 @@ function App() {
             true // Dangerous action
         );
     };
+
+    // ---------------------------------------------------------------------------------------------
+    // FIX: funciones/helpers que faltaban (isAdmin, hasAccess, saveCouponFn, saveSupplierFn)
+    // Se colocan aquí dentro del scope de App para evitar ReferenceError que causaba pantalla en negro
+    // ---------------------------------------------------------------------------------------------
+    const isAdmin = (email) => {
+        if (!email && !currentUser) return false;
+        if (currentUser?.role) return currentUser.role === 'admin';
+        return email === SUPER_ADMIN_EMAIL;
+    };
+
+    const hasAccess = (email) => {
+        if (currentUser?.role) return currentUser.role === 'admin' || currentUser.role === 'employee';
+        return email === SUPER_ADMIN_EMAIL;
+    };
+
+    const saveCouponFn = async () => {
+        try {
+            if (!couponForm.code) return addNotification("El código del cupón es obligatorio.", "warning");
+            if (!couponForm.value || Number(couponForm.value) <= 0) return addNotification("El valor del cupón debe ser mayor a 0.", "warning");
+
+            const couponData = {
+                code: (couponForm.code || '').toUpperCase().trim(),
+                type: couponForm.type || 'percentage',
+                value: Number(couponForm.value) || 0,
+                minPurchase: Number(couponForm.minPurchase) || 0,
+                maxDiscount: Number(couponForm.maxDiscount) || 0,
+                expirationDate: couponForm.expirationDate || null,
+                usageLimit: Number(couponForm.usageLimit) || 0,
+                targetType: couponForm.targetType || 'global',
+                targetUser: couponForm.targetType === 'user' ? (couponForm.targetUser || '') : '',
+                isActive: true,
+                usedBy: [],
+                createdAt: new Date().toISOString()
+            };
+
+            await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'coupons'), couponData);
+            addNotification("Cupón creado correctamente.", "success");
+            setShowCouponFormModal(false);
+            setCouponForm({
+                code: '', type: 'percentage', value: 0, minPurchase: 0, maxDiscount: 0,
+                expirationDate: '', usageLimit: 0, targetType: 'global', targetUser: ''
+            });
+        } catch (e) {
+            console.error("Error saving coupon:", e);
+            addNotification("Error al guardar el cupón.", "error");
+        }
+    };
+
+    const saveSupplierFn = async () => {
+        try {
+            if (!supplierForm.name) return addNotification("El nombre del proveedor es obligatorio.", "warning");
+
+            const supplierData = {
+                name: supplierForm.name,
+                contactName: supplierForm.contactName || '',
+                phone: supplierForm.phone || '',
+                email: supplierForm.email || '',
+                website: supplierForm.website || '',
+                notes: supplierForm.notes || '',
+                associatedProducts: supplierForm.associatedProducts || [],
+                createdAt: new Date().toISOString()
+            };
+
+            await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'suppliers'), supplierData);
+            addNotification("Proveedor registrado correctamente.", "success");
+            setShowSupplierModal(false);
+            setSupplierForm({ name: '', contactName: '', phone: '', email: '', website: '', notes: '', associatedProducts: [] });
+        } catch (e) {
+            console.error("Error saving supplier:", e);
+            addNotification("Error al guardar el proveedor.", "error");
+        }
+    };
+
     // ---------------------------------------------------------------------------------------------
     // 9. MODALES DE FORMULARIOS (UI DE GESTIÓN AVANZADA)
     // ---------------------------------------------------------------------------------------------
@@ -1434,7 +1508,7 @@ function App() {
                             
                             {/* Previsualización de Imagen */}
                             <div 
-                                className="w-full h-48 bg-[#0f0f13] border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-cyan-500/50 hover:bg-slate-900/50 transition-all group relative overflow-hidden"
+                                className="w-full h-48 bg-[#0f0f13] border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-cyan-500/50[...]
                                 onClick={() => fileInputRef.current?.click()}
                             >
                                 {productForm.image && productForm.image.length > 100 ? (
@@ -1474,7 +1548,7 @@ function App() {
 
                         {/* Switch de Destacado */}
                         <div 
-                            className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${productForm.featured ? 'bg-yellow-900/10 border-yellow-500/30' : 'bg-slate-900/30 border-slate-800'}`}
+                            className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${productForm.featured ? 'bg-yellow-900/10 border-yellow-500/30' : 'bg-sla[...]
                             onClick={() => setProductForm({...productForm, featured: !productForm.featured})}
                         >
                             <div className="flex items-center gap-3">
@@ -1522,13 +1596,13 @@ function App() {
                         <div className="flex bg-[#0f0f13] p-1 rounded-xl border border-slate-800">
                             <button 
                                 onClick={() => setCouponForm({...couponForm, type: 'percentage'})}
-                                className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${couponForm.type === 'percentage' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                                className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${couponForm.type === 'percentage' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-400 hover:text[...]
                             >
                                 Porcentaje (%)
                             </button>
                             <button 
                                 onClick={() => setCouponForm({...couponForm, type: 'fixed'})}
-                                className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${couponForm.type === 'fixed' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                                className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${couponForm.type === 'fixed' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-wh[...]
                             >
                                 Monto Fijo ($)
                             </button>
@@ -1559,7 +1633,6 @@ function App() {
                         type="number" 
                         value={couponForm.usageLimit} 
                         onChange={e => setCouponForm({...couponForm, usageLimit: e.target.value})}
-                        icon={Hash} // Hash no importado, cambiado a Users
                         icon={Users}
                     />
                     <InputField 
@@ -1717,7 +1790,7 @@ function App() {
 
             {/* --- NAVBAR SUPERIOR (SOLO VISIBLE SI NO ES LOGIN/ADMIN FULLSCREEN) --- */}
             {view !== 'login' && view !== 'register' && view !== 'admin' && (
-                <nav className="fixed top-0 w-full h-24 z-50 px-6 md:px-12 flex items-center justify-between border-b border-white/5 backdrop-blur-xl transition-all duration-300 bg-black/50 supports-[backdrop-filter]:bg-black/20">
+                <nav className="fixed top-0 w-full h-24 z-50 px-6 md:px-12 flex items-center justify-between border-b border-white/5 backdrop-blur-xl transition-all duration-300 bg-black/50 supports-[[...]
                     
                     {/* IZQUIERDA: MENÚ Y LOGO */}
                     <div className="flex items-center gap-6">
@@ -1748,7 +1821,7 @@ function App() {
                     
                     {/* CENTRO: BARRA DE BÚSQUEDA (Desktop) */}
                     <div className="hidden lg:flex items-center relative w-1/3 max-w-xl group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl opacity-0 group-focus-within:opacity-20 transition-opacity duration-500 blur-md"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl opacity-0 group-focus-within:opacity-20 transition-opacity duration-500 blur-md"></div[...]
                         <div className="relative w-full flex items-center bg-[#0a0a0a] border border-white/10 rounded-2xl px-6 py-3.5 focus-within:border-cyan-500/50 transition-all shadow-inner">
                             <Search className="w-5 h-5 text-slate-500 mr-4 group-focus-within:text-cyan-400 transition-colors" />
                             <input 
@@ -1772,7 +1845,7 @@ function App() {
                             href={settings?.whatsappLink} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.2)] group"
+                            className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition[...]
                         >
                             <MessageCircle className="w-5 h-5 group-hover:animate-bounce" /> 
                             <span className="hidden lg:inline">Soporte</span>
@@ -1781,11 +1854,11 @@ function App() {
                         {/* Botón Carrito */}
                         <button 
                             onClick={()=>setView('cart')} 
-                            className="relative p-3 bg-white/5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 border border-white/5 transition group hover:border-cyan-500/30 active:scale-95"
+                            className="relative p-3 bg-white/5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 border border-white/5 transition group hover:border-cyan-500/30 active:scale[...]
                         >
                             <ShoppingBag className="w-6 h-6 group-hover:scale-110 transition" />
                             {cart.length > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 bg-cyan-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-[#050505] animate-bounce-short">
+                                <span className="absolute -top-1.5 -right-1.5 bg-cyan-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 bor[...]
                                     {cart.length}
                                 </span>
                             )}
@@ -1798,7 +1871,7 @@ function App() {
                                     onClick={()=>setView('profile')} 
                                     className="flex items-center gap-3 pl-2 pr-4 py-2 bg-white/5 rounded-xl border border-white/5 hover:border-cyan-500/50 transition group hover:bg-white/10"
                                 >
-                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white font-bold shadow-lg text-sm border border-white/10 overflow-hidden">
+                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white font-bold shadow-lg text-sm border border[...]
                                         {currentUser.avatar ? (
                                             <img src={currentUser.avatar} alt="Avatar" className="w-full h-full object-cover" />
                                         ) : (
@@ -1816,7 +1889,7 @@ function App() {
                         ) : (
                             <button 
                                 onClick={()=>setView('login')} 
-                                className="px-6 py-3 bg-white text-black rounded-xl text-sm font-black hover:bg-cyan-400 transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 border border-transparent"
+                                className="px-6 py-3 bg-white text-black rounded-xl text-sm font-black hover:bg-cyan-400 transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba([...]
                             >
                                 <User className="w-5 h-5" /> 
                                 <span className="hidden md:inline">INGRESAR</span>
@@ -1859,7 +1932,7 @@ function App() {
                                 <button 
                                     key={item.id}
                                     onClick={()=>{setView(item.id); setIsMenuOpen(false)}} 
-                                    className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800"
+                                    className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group borde[...]
                                 >
                                     <item.icon className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition-colors" /> 
                                     {item.label}
@@ -1877,7 +1950,7 @@ function App() {
                             {currentUser && (currentUser.role === 'admin' || currentUser.role === 'employee' || currentUser.email === SUPER_ADMIN_EMAIL) && (
                                 <button 
                                     onClick={()=>{setView('admin'); setIsMenuOpen(false)}} 
-                                    className="w-full text-left text-lg font-bold text-cyan-400 mt-2 pt-4 border-t border-slate-800 flex items-center gap-4 p-4 bg-cyan-900/10 rounded-xl hover:bg-cyan-900/20 transition border border-cyan-500/20 shadow-lg shadow-cyan-900/10"
+                                    className="w-full text-left text-lg font-bold text-cyan-400 mt-2 pt-4 border-t border-slate-800 flex items-center gap-4 p-4 bg-cyan-900/10 rounded-xl hover:bg-cyan-[...]
                                 >
                                     <Shield className="w-6 h-6" /> 
                                     Panel Admin
@@ -1916,7 +1989,7 @@ function App() {
                         
                         {/* Banner de Anuncios */}
                         {settings?.announcementMessage && (
-                            <div className="w-full bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border border-cyan-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
+                            <div className="w-full bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border border-cyan-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden g[...]
                                 <div className="absolute inset-0 bg-white/5 skew-x-12 -translate-x-full group-hover:translate-x-full transition duration-1000"></div>
                                 <p className="text-cyan-300 font-black text-xs md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3">
                                     <Flame className="w-4 h-4 text-orange-500 animate-fire"/> 
@@ -1936,7 +2009,7 @@ function App() {
                             
                             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10">
                                 <div className="max-w-3xl animate-fade-up">
-                                    <span className="inline-block py-1 px-3 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold uppercase tracking-widest mb-6 backdrop-blur-md">
+                                    <span className="inline-block py-1 px-3 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold uppercase tracking-widest mb-6 backdro[...]
                                         Nueva Colección 2025
                                     </span>
                                     <h1 className="text-5xl md:text-8xl font-black text-white leading-[0.9] drop-shadow-2xl mb-6">
@@ -1949,10 +2022,10 @@ function App() {
                                         Explora nuestra selección premium de dispositivos con garantía oficial.
                                     </p>
                                     <div className="flex gap-4">
-                                        <button onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center gap-2 group/btn">
+                                        <button onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})} className="px-8 py-4 bg-white text-black font-black rounded-xl ho[...]
                                             VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition"/>
                                         </button>
-                                        <button onClick={() => setView('about')} className="px-8 py-4 bg-transparent border border-white/20 text-white font-bold rounded-xl hover:bg-white/10 transition flex items-center gap-2">
+                                        <button onClick={() => setView('about')} className="px-8 py-4 bg-transparent border border-white/20 text-white font-bold rounded-xl hover:bg-white/10 transition[...]
                                             CONOCER MÁS
                                         </button>
                                     </div>
@@ -1961,11 +2034,11 @@ function App() {
                         </div>
 
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className="sticky top-24 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-4 overflow-x-auto no-scrollbar mask-gradient-x">
+                        <div id="catalog" className="sticky top-24 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-4 overflow-x-auto no-sc[...]
                             <Filter className="w-5 h-5 text-slate-500 flex-shrink-0 ml-2" />
                             <button 
                                 onClick={()=>setSelectedCategory('Todos')} 
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory==='Todos'?'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]':'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory==='Todos'?'bg-white text-black border-white shadow-[0_0_15px[...]
                             >
                                 Todos
                             </button>
@@ -1973,7 +2046,7 @@ function App() {
                                 <button 
                                     key={c} 
                                     onClick={()=>setSelectedCategory(c)} 
-                                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory===c?'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)]':'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}
+                                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory===c?'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_[...]
                                 >
                                     {c}
                                 </button>
@@ -1990,7 +2063,7 @@ function App() {
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20">
                                 {filteredProducts.map(p => (
-                                    <div key={p.id} onClick={() => {}} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_40px_rgba(6,182,212,0.15)] transition duration-500 relative flex flex-col h-full cursor-pointer hover:-translate-y-2">
+                                    <div key={p.id} onClick={() => {}} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_[...]
                                         
                                         {/* Imagen y Badges */}
                                         <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden">
@@ -2013,7 +2086,7 @@ function App() {
                                             {/* Acción Favorito */}
                                             <button 
                                                 onClick={(e)=>{e.stopPropagation(); handleToggleFavorite(p)}} 
-                                                className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500' : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500'}`}
+                                                className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red[...]
                                             >
                                                 <Heart className={`w-5 h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`}/>
                                             </button>
@@ -2022,9 +2095,9 @@ function App() {
                                         {/* Info Producto */}
                                         <div className="p-6 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
                                             <div className="flex justify-between items-start mb-3">
-                                                <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">{p.category}</p>
+                                                <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">{p.category}</p[...]
                                                 {p.stock <= 0 && <span className="text-[10px] text-slate-500 font-bold bg-slate-800 px-2 py-1 rounded border border-slate-700">AGOTADO</span>}
-                                                {p.stock > 0 && p.stock < 5 && <span className="text-[10px] text-orange-400 font-bold bg-orange-900/20 px-2 py-1 rounded border border-orange-500/20">ÚLTIMOS</span>}
+                                                {p.stock > 0 && p.stock < 5 && <span className="text-[10px] text-orange-400 font-bold bg-orange-900/20 px-2 py-1 rounded border border-orange-500/20">Ú[...]
                                             </div>
                                             
                                             <h3 className="text-white font-bold text-lg leading-tight mb-4 group-hover:text-cyan-200 transition line-clamp-2 min-h-[3rem]">{p.name}</h3>
@@ -2038,7 +2111,7 @@ function App() {
                                                 </div>
                                                 <button 
                                                     onClick={(e)=>{e.stopPropagation(); handleAddToCart(p, 1)}} 
-                                                    className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:bg-cyan-400 hover:scale-110 transition shadow-lg group/add disabled:opacity-50 disabled:hover:bg-slate-500"
+                                                    className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:bg-cyan-400 hover:scale-110 transition shadow-lg group/[...]
                                                     disabled={p.stock <= 0}
                                                 >
                                                     <Plus className="w-6 h-6 group-active/add:scale-75 transition-transform"/>
@@ -2058,7 +2131,7 @@ function App() {
                 {view === 'cart' && (
                     <div className="max-w-6xl mx-auto animate-fade-up px-4 md:px-8 pb-20 pt-8">
                          <div className="flex items-center gap-4 mb-8">
-                            <button onClick={()=>setView('store')} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800"><ArrowLeft className="w-5 h-5"/></button>
+                            <button onClick={()=>setView('store')} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800"><Arro[...]
                             <h1 className="text-4xl font-black text-white neon-text flex items-center gap-3"><ShoppingBag className="w-10 h-10 text-cyan-400"/> Tu Carrito</h1>
                         </div>
 
@@ -2088,9 +2161,9 @@ function App() {
                                                 <div className="flex flex-col items-end gap-2">
                                                     <p className="text-white font-black text-xl">${(finalPrice * item.quantity).toLocaleString()}</p>
                                                     <div className="flex items-center gap-1 bg-slate-900 rounded-xl p-1 border border-slate-800">
-                                                        <button onClick={() => handleAddToCart(item.product, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"><Minus className="w-4 h-4"/></button>
+                                                        <button onClick={() => handleAddToCart(item.product, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white ho[...]
                                                         <span className="w-8 text-center text-white font-bold text-sm">{item.quantity}</span>
-                                                        <button onClick={() => handleAddToCart(item.product, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"><Plus className="w-4 h-4"/></button>
+                                                        <button onClick={() => handleAddToCart(item.product, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hov[...]
                                                     </div>
                                                 </div>
                                             </div>
@@ -2117,7 +2190,7 @@ function App() {
                                     ) : (
                                         <button 
                                             onClick={()=>setShowCouponModal(true)} 
-                                            className="w-full py-4 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 text-slate-400 hover:text-purple-300 rounded-2xl mb-6 flex items-center justify-center gap-2 transition-all group"
+                                            className="w-full py-4 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 text-slate-400 hover:text-purple-300 rounded-2xl mb-6 f[...]
                                         >
                                             <Ticket className="w-4 h-4 group-hover:rotate-12 transition"/> Tengo un cupón
                                         </button>
@@ -2127,23 +2200,23 @@ function App() {
                                     <div className="space-y-4 border-b border-slate-800 pb-8 mb-8">
                                         <div className="flex justify-between text-slate-400">
                                             <span>Subtotal</span>
-                                            <span className="font-mono text-white">${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice * item.quantity), 0).toLocaleString()}</span>
+                                            <span className="font-mono text-white">${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice[...]
                                         </div>
                                         {appliedCoupon && (
                                             <div className="flex justify-between text-purple-400 font-bold">
                                                 <span>Descuento</span>
-                                                <span>- ${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice * item.quantity), 0) * (appliedCoupon.value/100)}</span>
+                                                <span>- ${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice * item.quantity), 0) * (ap[...]
                                             </div>
                                         )}
                                         <div className="flex justify-between items-end text-white font-bold text-xl pt-4 border-t border-slate-800/50">
                                             <span>Total Estimado</span>
                                             <span className="text-3xl font-black text-cyan-400 neon-text">
-                                                ${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice * item.quantity), 0).toLocaleString()}
+                                                ${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice * item.quantity), 0).toLocaleStrin[...]
                                             </span>
                                         </div>
                                     </div>
 
-                                    <button onClick={() => setView('checkout')} className="w-full bg-cyan-600 hover:bg-cyan-500 py-5 text-white font-bold text-lg rounded-2xl shadow-lg transition flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                                    <button onClick={() => setView('checkout')} className="w-full bg-cyan-600 hover:bg-cyan-500 py-5 text-white font-bold text-lg rounded-2xl shadow-lg transition flex [...]
                                         Iniciar Compra <ArrowRight className="w-5 h-5"/>
                                     </button>
                                     <p className="text-center text-[10px] text-slate-600 mt-4 uppercase tracking-widest font-bold">Pago 100% Seguro</p>
@@ -2214,9 +2287,9 @@ function App() {
                                             <div 
                                                 key={method}
                                                 onClick={() => setCheckoutForm({...checkoutForm, paymentMethod: method})}
-                                                className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${checkoutForm.paymentMethod === method ? 'bg-cyan-900/20 border-cyan-500 text-white shadow-lg shadow-cyan-900/10' : 'bg-slate-900/30 border-slate-800 text-slate-400 hover:bg-slate-800'}`}
+                                                className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${checkoutForm.paymentMethod === method ? 'bg-cyan-900/20 border[...]
                                             >
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${checkoutForm.paymentMethod === method ? 'border-cyan-500' : 'border-slate-600'}`}>
+                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${checkoutForm.paymentMethod === method ? 'border-cyan-500' : 'border-sl[...]
                                                     {checkoutForm.paymentMethod === method && <div className="w-2.5 h-2.5 rounded-full bg-cyan-500"></div>}
                                                 </div>
                                                 <span className="font-bold">{method}</span>
@@ -2230,7 +2303,7 @@ function App() {
                                     <button 
                                         onClick={handleConfirmOrder} 
                                         disabled={isProcessingOrder} 
-                                        className="w-full py-5 bg-green-600 hover:bg-green-500 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                        className="w-full py-5 bg-green-600 hover:bg-green-500 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 disabled:opacit[...]
                                     >
                                         {isProcessingOrder ? <Loader2 className="animate-spin w-6 h-6"/> : <CheckCircle className="w-6 h-6"/>} 
                                         {isProcessingOrder ? 'Procesando...' : 'CONFIRMAR PEDIDO'}
@@ -2247,7 +2320,7 @@ function App() {
                 {view === 'admin' && hasAccess(currentUser?.email) && (
                     <div className="flex h-screen bg-[#050505] overflow-hidden w-full font-sans fixed inset-0 z-[100]">
                         {/* Sidebar Admin */}
-                        <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static`}>
+                        <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ${isAdminMenuOpen ? 'translate-x-0' : '[...]
                             <div className="p-8 border-b border-slate-900 flex justify-between items-center">
                                 <h2 className="text-2xl font-black text-white flex items-center gap-2"><Shield className="text-cyan-400"/> ADMIN</h2>
                                 <button onClick={()=>setIsAdminMenuOpen(false)} className="md:hidden text-slate-500"><X/></button>
@@ -2255,17 +2328,17 @@ function App() {
                             
                             <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
                                 <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2 mt-4">Analítica</p>
-                                <button onClick={()=>setAdminTab('dashboard')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='dashboard'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-white/5'}`}><LayoutDashboard className="w-5 h-5"/> Dashboard</button>
+                                <button onClick={()=>setAdminTab('dashboard')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='dash[...]
                                 
                                 <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2 mt-6">Gestión</p>
-                                <button onClick={()=>setAdminTab('orders')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='orders'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-white/5'}`}><ShoppingBag className="w-5 h-5"/> Pedidos</button>
-                                <button onClick={()=>setAdminTab('products')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='products'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-white/5'}`}><Package className="w-5 h-5"/> Inventario</button>
+                                <button onClick={()=>setAdminTab('orders')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='orders'[...]
+                                <button onClick={()=>setAdminTab('products')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='produ[...]
                                 
                                 {isAdmin(currentUser?.email) && <>
                                     <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2 mt-6">Marketing & Config</p>
-                                    <button onClick={()=>setAdminTab('coupons')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='coupons'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-white/5'}`}><Ticket className="w-5 h-5"/> Cupones</button>
-                                    <button onClick={()=>setAdminTab('suppliers')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='suppliers'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-white/5'}`}><Truck className="w-5 h-5"/> Proveedores</button>
-                                    <button onClick={()=>setAdminTab('settings')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='settings'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-white/5'}`}><Settings className="w-5 h-5"/> Configuración</button>
+                                    <button onClick={()=>setAdminTab('coupons')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='co[...]
+                                    <button onClick={()=>setAdminTab('suppliers')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='[...]
+                                    <button onClick={()=>setAdminTab('settings')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='s[...]
                                 </>}
                             </nav>
 
@@ -2280,7 +2353,7 @@ function App() {
                                 </div>
                             </div>
                             <div className="p-4 border-t border-slate-800">
-                                <button onClick={()=>setView('store')} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white font-bold text-sm transition flex items-center justify-center gap-2">
+                                <button onClick={()=>setView('store')} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white font-bold text-sm transition fl[...]
                                     <LogOut className="w-4 h-4"/> Salir del Panel
                                 </button>
                             </div>
@@ -2369,7 +2442,7 @@ function App() {
                                     <h1 className="text-3xl font-black text-white">Gestión de Pedidos</h1>
                                     <div className="space-y-4">
                                         {orders.map(o => (
-                                            <div key={o.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-slate-700 transition">
+                                            <div key={o.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-sl[...]
                                                 <div className="flex items-center gap-4 w-full lg:w-auto" onClick={()=>setSelectedOrder(o)}>
                                                     <div className={`p-4 rounded-xl shrink-0 ${o.status==='Realizado'?'bg-green-900/20 text-green-400':'bg-yellow-900/20 text-yellow-400'}`}>
                                                         {o.status==='Realizado' ? <CheckCircle/> : <Clock/>}
@@ -2387,17 +2460,17 @@ function App() {
                                                 </div>
                                                 
                                                 <div className="flex flex-wrap items-center gap-3 justify-end w-full lg:w-auto">
-                                                    <button onClick={()=>setSelectedOrder(o)} className="px-4 py-2 bg-slate-900 text-slate-300 rounded-lg text-xs font-bold hover:text-white border border-slate-800 hover:border-slate-600">Ver Detalles</button>
+                                                    <button onClick={()=>setSelectedOrder(o)} className="px-4 py-2 bg-slate-900 text-slate-300 rounded-lg text-xs font-bold hover:text-white border bord[...]
                                                     
                                                     {/* BOTÓN FINALIZAR (RESTORED) */}
                                                     {o.status !== 'Realizado' && (
-                                                        <button onClick={()=>handleFinalizeOrder(o)} className="px-4 py-2 bg-green-900/20 text-green-400 border border-green-500/30 rounded-lg text-xs font-bold hover:bg-green-500 hover:text-white transition flex gap-2 items-center">
+                                                        <button onClick={()=>handleFinalizeOrder(o)} className="px-4 py-2 bg-green-900/20 text-green-400 border border-green-500/30 rounded-lg text-xs f[...]
                                                             <CheckSquare className="w-3 h-3"/> Finalizar
                                                         </button>
                                                     )}
                                                     
                                                     {/* BOTÓN ELIMINAR (RESTORED) */}
-                                                    <button onClick={()=>handleDeleteOrder(o)} className="px-4 py-2 bg-red-900/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition flex gap-2 items-center">
+                                                    <button onClick={()=>handleDeleteOrder(o)} className="px-4 py-2 bg-red-900/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-bold hov[...]
                                                         <Trash2 className="w-3 h-3"/> Eliminar
                                                     </button>
                                                 </div>
@@ -2412,14 +2485,14 @@ function App() {
                                 <div className="space-y-6 animate-fade-up pb-20">
                                     <div className="flex justify-between items-center">
                                         <h1 className="text-3xl font-black text-white">Inventario</h1>
-                                        <button onClick={()=>{setProductForm({}); setShowProductModal(true)}} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-cyan-500 transition"><Plus/> Nuevo Producto</button>
+                                        <button onClick={()=>{setProductForm({}); setShowProductModal(true)}} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hove[...]
                                     </div>
 
                                     <div className="grid gap-3">
                                         {products.map(p => (
-                                            <div key={p.id} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center group hover:border-cyan-900/50 transition">
+                                            <div key={p.id} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center group hover:border-cy[...]
                                                 <div className="flex items-center gap-6 w-full sm:w-auto">
-                                                    <div className="w-16 h-16 bg-white rounded-xl p-2 flex-shrink-0 object-contain"><img src={p.image} className="w-full h-full object-contain" alt={p.name}/></div>
+                                                    <div className="w-16 h-16 bg-white rounded-xl p-2 flex-shrink-0 object-contain"><img src={p.image} className="w-full h-full object-contain" alt={p.n[...]
                                                     <div>
                                                         <p className="font-bold text-white text-lg">{p.name}</p>
                                                         <div className="flex items-center gap-4 mt-1 text-xs">
@@ -2434,12 +2507,12 @@ function App() {
                                                 
                                                 <div className="flex gap-3 mt-4 sm:mt-0 w-full sm:w-auto justify-end">
                                                     {/* BOTÓN VENTA LOCAL (RESTORED) */}
-                                                    <button onClick={()=>handleLocalSale(p)} className="p-3 bg-green-900/20 text-green-400 border border-green-500/30 rounded-xl hover:bg-green-500 hover:text-white transition" title="Registrar Venta Local Rápida">
+                                                    <button onClick={()=>handleLocalSale(p)} className="p-3 bg-green-900/20 text-green-400 border border-green-500/30 rounded-xl hover:bg-green-500 hove[...]
                                                         <Wallet className="w-5 h-5"/>
                                                     </button>
                                                     
-                                                    <button onClick={()=>{setProductForm(p); setShowProductModal(true)}} className="p-3 bg-slate-900 rounded-xl text-cyan-400 hover:bg-cyan-900/20 transition border border-slate-800 hover:border-cyan-500/30"><Edit className="w-5 h-5"/></button>
-                                                    <button onClick={()=>handleDeleteProduct(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-800 hover:border-red-500/30"><Trash2 className="w-5 h-5"/></button>
+                                                    <button onClick={()=>{setProductForm(p); setShowProductModal(true)}} className="p-3 bg-slate-900 rounded-xl text-cyan-400 hover:bg-cyan-900/20 trans[...]
+                                                    <button onClick={()=>handleDeleteProduct(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-[...]
                                                 </div>
                                             </div>
                                         ))}
@@ -2459,24 +2532,24 @@ function App() {
                                         <h3 className="font-bold text-white text-xl border-b border-slate-800 pb-4">Identidad de Marca</h3>
                                         <div className="grid md:grid-cols-2 gap-6">
                                             <InputField label="Nombre de la Tienda" value={tempSettings.storeName} onChange={e=>setTempSettings({...tempSettings, storeName:e.target.value})} />
-                                            <InputField label="Mensaje de Anuncio (Barra Superior)" value={tempSettings.announcementMessage} onChange={e=>setTempSettings({...tempSettings, announcementMessage:e.target.value})} />
+                                            <InputField label="Mensaje de Anuncio (Barra Superior)" value={tempSettings.announcementMessage} onChange={e=>setTempSettings({...tempSettings, announcement[...]
                                         </div>
                                         <InputField label="URL del Logo" value={tempSettings.logoUrl} onChange={e=>setTempSettings({...tempSettings, logoUrl:e.target.value})} icon={Link} />
-                                        <InputField label="URL del Banner Principal (Hero)" value={tempSettings.heroUrl} onChange={e=>setTempSettings({...tempSettings, heroUrl:e.target.value})} icon={Link} />
+                                        <InputField label="URL del Banner Principal (Hero)" value={tempSettings.heroUrl} onChange={e=>setTempSettings({...tempSettings, heroUrl:e.target.value})} icon={[...]
                                     </div>
 
                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] space-y-6">
                                         <h3 className="font-bold text-white text-xl border-b border-slate-800 pb-4">Redes Sociales y Contacto</h3>
                                         <div className="grid md:grid-cols-2 gap-6">
-                                            <InputField label="Link de WhatsApp" value={tempSettings.whatsappLink} onChange={e=>setTempSettings({...tempSettings, whatsappLink:e.target.value})} icon={MessageCircle} />
-                                            <InputField label="Instagram User" value={tempSettings.instagramUser} onChange={e=>setTempSettings({...tempSettings, instagramUser:e.target.value})} icon={Instagram} />
-                                            <InputField label="Email de Soporte" value={tempSettings.sellerEmail} onChange={e=>setTempSettings({...tempSettings, sellerEmail:e.target.value})} icon={Mail} />
+                                            <InputField label="Link de WhatsApp" value={tempSettings.whatsappLink} onChange={e=>setTempSettings({...tempSettings, whatsappLink:e.target.value})} icon={M[...]
+                                            <InputField label="Instagram User" value={tempSettings.instagramUser} onChange={e=>setTempSettings({...tempSettings, instagramUser:e.target.value})} icon={I[...]
+                                            <InputField label="Email de Soporte" value={tempSettings.sellerEmail} onChange={e=>setTempSettings({...tempSettings, sellerEmail:e.target.value})} icon={Mai[...]
                                         </div>
                                     </div>
 
                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] space-y-6">
                                         <h3 className="font-bold text-white text-xl border-b border-slate-800 pb-4">Sobre Nosotros</h3>
-                                        <TextAreaField label="Texto de la página 'Sobre Nosotros'" rows={6} value={tempSettings.aboutUsText} onChange={e=>setTempSettings({...tempSettings, aboutUsText:e.target.value})} />
+                                        <TextAreaField label="Texto de la página 'Sobre Nosotros'" rows={6} value={tempSettings.aboutUsText} onChange={e=>setTempSettings({...tempSettings, aboutUsText[...]
                                     </div>
                                 </div>
                              )}
