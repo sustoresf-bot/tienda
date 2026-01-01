@@ -1537,7 +1537,7 @@ function App() {
 
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
-        <div className="min-h-screen flex flex-col relative overflow-hidden bg-grid font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+        <div className="min-h-screen flex flex-col relative overflow-x-hidden bg-grid font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
             {/* DEBUGGER VISUAL (SOLO DESARROLLO) */}
             {view === 'store' && (
                 <div className="fixed bottom-4 left-4 z-[9999] bg-black/80 text-green-400 font-mono text-xs p-2 rounded border border-green-900 pointer-events-none">
@@ -1803,7 +1803,11 @@ function App() {
                                                 {/* Efecto Glow Fondo */}
                                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
-                                                <img src={p.image} className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3" />
+                                                <img
+                                                    src={p.image || 'https://via.placeholder.com/300?text=No+Image'}
+                                                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300?text=Error'; }}
+                                                    className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"
+                                                />
 
                                                 {/* Descuento Badge */}
                                                 {p.discount > 0 && (
