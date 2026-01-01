@@ -180,6 +180,7 @@ function App() {
     const [newPurchase, setNewPurchase] = useState({ productId: '', supplierId: '', quantity: 1, cost: 0 });
 
     // --- HELPERS ---
+
     const openConfirm = (title, message, onConfirm) => {
         setConfirmModal({
             isOpen: true,
