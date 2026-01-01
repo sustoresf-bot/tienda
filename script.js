@@ -214,6 +214,10 @@ function App() {
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
     const [newPurchase, setNewPurchase] = useState({ productId: '', supplierId: '', quantity: 1, cost: 0, isNewProduct: false });
 
+    // Estado para Proveedores (Restaurado)
+    const [newSupplier, setNewSupplier] = useState({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] });
+    const [showSupplierModal, setShowSupplierModal] = useState(false);
+
     // --- HELPERS ---
 
     const openConfirm = (title, message, onConfirm) => {
@@ -271,16 +275,7 @@ function App() {
         isActive: true
     });
 
-    // Gestión de Proveedores
-    const [newSupplier, setNewSupplier] = useState({
-        name: '',
-        contact: '',
-        phone: '',
-        ig: '',
-        address: '',
-        cuit: '',
-        associatedProducts: []
-    });
+
 
 
     // Estado para EDICIÓN DE COMPRAS
