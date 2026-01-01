@@ -2549,58 +2549,178 @@ function App() {
                                 <div className="max-w-6xl mx-auto animate-fade-up pb-20">
                                     <h1 className="text-3xl font-black text-white mb-8">Gestión de Stock y Compras</h1>
 
-                                    {/* Formulario de Compra */}
-                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
-                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                            <ShoppingCart className="w-5 h-5 text-cyan-400" /> Registrar Nueva Compra
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                            <div className="lg:col-span-2">
-                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto</label>
-                                                <select className="input-cyber w-full p-4" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
-                                                    <option value="">Seleccionar Producto...</option>
-                                                    {products.map(p => <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>)}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Proveedor</label>
-                                                <select className="input-cyber w-full p-4" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
-                                                    <option value="">Seleccionar...</option>
-                                                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad</label>
-                                                <input type="number" className="input-cyber w-full p-4" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Costo Total ($)</label>
-                                                <input type="number" className="input-cyber w-full p-4" placeholder="$0.00" value={newPurchase.cost} onChange={e => setNewPurchase({ ...newPurchase, cost: parseFloat(e.target.value) || 0 })} />
-                                            </div>
+                                    {/* Formulario de Compra Unificado */}
+                                    <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] mb-10 shadow-xl overflow-hidden relative">
+
+                                        {/* Header / Selector de Modo */}
+                                        <div className="flex border-b border-slate-800">
+                                            <button
+                                                onClick={() => setNewPurchase(prev => ({ ...prev, isNewProduct: false }))}
+                                                className={`flex-1 p-6 text-center font-bold tracking-wider transition ${!newPurchase.isNewProduct ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+                                            >
+                                                <RotateCw className="w-5 h-5 inline-block mr-2" /> REPONER STOCK
+                                            </button>
+                                            <button
+                                                onClick={() => setNewPurchase(prev => ({ ...prev, isNewProduct: true }))}
+                                                className={`flex-1 p-6 text-center font-bold tracking-wider transition ${newPurchase.isNewProduct ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+                                            >
+                                                <Plus className="w-5 h-5 inline-block mr-2" /> PRODUCTO NUEVO
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={async () => {
-                                                if (!newPurchase.productId || newPurchase.quantity <= 0) return showToast("Completa los datos correctamente.", "warning");
-                                                try {
-                                                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), {
-                                                        ...newPurchase,
-                                                        date: new Date().toISOString()
-                                                    });
-                                                    // Actualizar Stock
-                                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', newPurchase.productId), {
-                                                        stock: increment(newPurchase.quantity)
-                                                    });
-                                                    setNewPurchase({ productId: '', supplierId: '', quantity: 1, cost: 0 });
-                                                    showToast("Compra registrada y stock actualizado.", "success");
-                                                } catch (e) {
-                                                    console.error(e);
-                                                    showToast("Error al registrar compra.", "error");
-                                                }
-                                            }}
-                                            className="w-full mt-6 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2"
-                                        >
-                                            <Save className="w-5 h-5" /> Registrar Compra
-                                        </button>
+
+                                        <div className="p-8">
+                                            {/* MODO: REPONER STOCK */}
+                                            {!newPurchase.isNewProduct && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+                                                    <div className="lg:col-span-2">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto Existente</label>
+                                                        <select className="input-cyber w-full p-4" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
+                                                            <option value="">Seleccionar Producto...</option>
+                                                            {products.map(p => <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Proveedor</label>
+                                                        <select className="input-cyber w-full p-4" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
+                                                            <option value="">Seleccionar...</option>
+                                                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad</label>
+                                                        <input type="number" className="input-cyber w-full p-4" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Costo Total ($)</label>
+                                                        <input type="number" className="input-cyber w-full p-4" placeholder="$0.00" value={newPurchase.cost} onChange={e => setNewPurchase({ ...newPurchase, cost: parseFloat(e.target.value) || 0 })} />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* MODO: NUEVO PRODUCTO */}
+                                            {newPurchase.isNewProduct && (
+                                                <div className="space-y-6 animate-fade-in">
+                                                    {/* Datos del Producto */}
+                                                    <div className="p-6 bg-slate-900/30 rounded-2xl border border-slate-800">
+                                                        <h4 className="text-cyan-400 font-bold mb-4 flex items-center gap-2"><Tag className="w-4 h-4" /> Detalles del Nuevo Producto</h4>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <div className="md:col-span-2">
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre del Producto</label>
+                                                                <input className="input-cyber w-full p-4" placeholder="Ej: Samsung Galaxy S24 Ultra" value={newPurchase.newProdName || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdName: e.target.value })} />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
+                                                                <select className="input-cyber w-full p-4" value={newPurchase.newProdCategory || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdCategory: e.target.value })}>
+                                                                    <option value="">Seleccionar...</option>
+                                                                    {settings.categories?.map(c => <option key={c} value={c}>{c}</option>)}
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Precio de Venta ($)</label>
+                                                                <input type="number" className="input-cyber w-full p-4" placeholder="0.00" value={newPurchase.newProdPrice || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdPrice: parseFloat(e.target.value) || 0 })} />
+                                                            </div>
+                                                            <div className="md:col-span-2">
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL de Imagen</label>
+                                                                <div className="flex gap-2">
+                                                                    <input className="input-cyber w-full p-4" placeholder="https://..." value={newPurchase.newProdImage || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdImage: e.target.value })} />
+                                                                    {newPurchase.newProdImage && <img src={newPurchase.newProdImage} className="w-16 h-16 rounded-lg object-cover border border-slate-700" alt="Preview" />}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Datos de Compra Inicial */}
+                                                    <div className="p-6 bg-slate-900/30 rounded-2xl border border-slate-800">
+                                                        <h4 className="text-green-400 font-bold mb-4 flex items-center gap-2"><Truck className="w-4 h-4" /> Datos de Compra Inicial (Stock)</h4>
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Proveedor</label>
+                                                                <select className="input-cyber w-full p-4" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
+                                                                    <option value="">Seleccionar...</option>
+                                                                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad Inicial</label>
+                                                                <input type="number" className="input-cyber w-full p-4" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Costo Total Compra ($)</label>
+                                                                <input type="number" className="input-cyber w-full p-4" placeholder="0.00" value={newPurchase.cost} onChange={e => setNewPurchase({ ...newPurchase, cost: parseFloat(e.target.value) || 0 })} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <button
+                                                onClick={async () => {
+                                                    // Validaciones Comunes
+                                                    if (newPurchase.quantity <= 0) return showToast("La cantidad debe ser mayor a 0.", "warning");
+                                                    if (!newPurchase.supplierId) return showToast("Selecciona un proveedor.", "warning");
+                                                    if (newPurchase.cost < 0) return showToast("El costo no puede ser negativo.", "warning");
+
+                                                    try {
+                                                        let targetProductId = newPurchase.productId;
+                                                        let targetProductName = "";
+
+                                                        if (newPurchase.isNewProduct) {
+                                                            // VALIDAR Y CREAR PRODUCTO
+                                                            if (!newPurchase.newProdName || !newPurchase.newProdPrice || !newPurchase.newProdCategory) {
+                                                                return showToast("Completa los detalles del nuevo producto.", "warning");
+                                                            }
+
+                                                            const newProdData = {
+                                                                name: newPurchase.newProdName,
+                                                                basePrice: newPurchase.newProdPrice,
+                                                                image: newPurchase.newProdImage || 'https://via.placeholder.com/300',
+                                                                category: newPurchase.newProdCategory,
+                                                                description: 'Producto nuevo agregado desde Compras',
+                                                                stock: 0, // Se actualizará abajo
+                                                                discount: 0,
+                                                                createdAt: new Date().toISOString()
+                                                            };
+
+                                                            const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), newProdData);
+                                                            targetProductId = docRef.id;
+                                                            targetProductName = newProdData.name;
+                                                            showToast("¡Producto nuevo creado!", "success");
+                                                        } else {
+                                                            if (!targetProductId) return showToast("Selecciona un producto existente.", "warning");
+                                                            targetProductName = products.find(p => p.id === targetProductId)?.name || "Desconocido";
+                                                        }
+
+                                                        // REGISTRAR COMPRA
+                                                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), {
+                                                            productId: targetProductId,
+                                                            supplierId: newPurchase.supplierId,
+                                                            quantity: newPurchase.quantity,
+                                                            cost: newPurchase.cost,
+                                                            date: new Date().toISOString()
+                                                        });
+
+                                                        // ACTUALIZAR STOCK
+                                                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', targetProductId), {
+                                                            stock: increment(newPurchase.quantity)
+                                                        });
+
+                                                        // Resetear Formulario
+                                                        setNewPurchase({
+                                                            isNewProduct: false, productId: '', supplierId: '', quantity: 1, cost: 0,
+                                                            newProdName: '', newProdPrice: 0, newProdImage: '', newProdCategory: ''
+                                                        });
+                                                        showToast(`Compra de "${targetProductName}" registrada exitosamente.`, "success");
+
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                        showToast("Error al procesar la operación.", "error");
+                                                    }
+                                                }}
+                                                className="w-full mt-8 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-5 rounded-2xl shadow-xl transition transform hover:scale-[1.01] flex items-center justify-center gap-3 text-lg"
+                                            >
+                                                <Save className="w-6 h-6" /> {newPurchase.isNewProduct ? 'CREAR PRODUCTO Y REGISTRAR COMPRA' : 'REGISTRAR REPOSICIÓN DE STOCK'}
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {/* Historial */}
