@@ -218,6 +218,12 @@ function App() {
     const [newSupplier, setNewSupplier] = useState({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] });
     const [showSupplierModal, setShowSupplierModal] = useState(false);
 
+    // Estado para Carrito de Compras (Pedidos Mayoristas)
+    const [purchaseCart, setPurchaseCart] = useState([]);
+
+    // Estado para Modal de Crear Categoría
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
+
     // --- HELPERS ---
 
     const openConfirm = (title, message, onConfirm) => {
@@ -268,8 +274,8 @@ function App() {
         minPurchase: 0,
         maxDiscount: 0,
         expirationDate: '',
-        targetType: 'global', // global, specific_user
-        targetUser: '',
+        targetType: 'global', // global, specific_user, specific_email
+        targetUser: '', // username o email específico
         usageLimit: '', // Limite total de usos
         perUserLimit: 1, // Limite por usuario
         isActive: true
@@ -1066,6 +1072,108 @@ function App() {
         } catch (e) {
             console.error(e);
             showToast("Error al actualizar la compra.", "error");
+        }
+    };
+
+    // --- FUNCIONES PARA GESTIÓN DE CATEGORÍAS ---
+    const createCategoryFn = async () => {
+        if (!newCategory.trim()) return showToast("Ingresa un nombre para la categoría.", "warning");
+
+        try {
+            const updatedCategories = [...(settings.categories || []), newCategory.trim()];
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), {
+                categories: updatedCategories
+            });
+            setNewCategory('');
+            setShowCategoryModal(false);
+            showToast(`Categoría "${newCategory}" creada.`, "success");
+        } catch (e) {
+            console.error(e);
+            showToast("Error al crear categoría.", "error");
+        }
+    };
+
+    // --- FUNCIONES PARA CARRITO DE COMPRAS (PEDIDOS MAYORISTAS) ---
+    const addToPurchaseCart = (productId, quantity, supplierId) => {
+        if (!productId || !supplierId || quantity <= 0) {
+            return showToast("Completa todos los campos.", "warning");
+        }
+
+        const product = products.find(p => p.id === productId);
+        if (!product) return showToast("Producto no encontrado.", "error");
+
+        const productPrice = product.purchasePrice || product.basePrice || 0;
+        const cost = productPrice * quantity;
+
+        const existingIndex = purchaseCart.findIndex(item => item.productId === productId);
+
+        if (existingIndex >= 0) {
+            // Actualizar cantidad si ya existe
+            const updated = [...purchaseCart];
+            updated[existingIndex].quantity += quantity;
+            updated[existingIndex].cost = (product.purchasePrice || product.basePrice || 0) * updated[existingIndex].quantity;
+            setPurchaseCart(updated);
+            showToast(`Cantidad actualizada: ${product.name}`, "success");
+        } else {
+            // Agregar nuevo item
+            setPurchaseCart([...purchaseCart, {
+                productId,
+                productName: product.name,
+                productImage: product.image,
+                quantity,
+                unitPrice: productPrice,
+                cost,
+                supplierId
+            }]);
+            showToast(`Agregado al pedido: ${product.name}`, "success");
+        }
+
+        // Resetear formulario
+        setNewPurchase({ productId: '', supplierId: supplierId, quantity: 1, cost: 0, isNewProduct: false });
+    };
+
+    const removeFromPurchaseCart = (index) => {
+        const updated = purchaseCart.filter((_, i) => i !== index);
+        setPurchaseCart(updated);
+        showToast("Producto eliminado del pedido.", "info");
+    };
+
+    const updatePurchaseCartItem = (index, newQuantity) => {
+        const updated = [...purchaseCart];
+        updated[index].quantity = newQuantity;
+        updated[index].cost = updated[index].unitPrice * newQuantity;
+        setPurchaseCart(updated);
+    };
+
+    const finalizePurchaseOrder = async () => {
+        if (purchaseCart.length === 0) {
+            return showToast("El carrito de compras está vacío.", "warning");
+        }
+
+        try {
+            const batchId = `BATCH - ${Date.now()}`
+
+            // Registrar cada compra y actualizar stock
+            for (const item of purchaseCart) {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), {
+                    productId: item.productId,
+                    supplierId: item.supplierId,
+                    quantity: item.quantity,
+                    cost: item.cost,
+                    batchId: batchId,
+                    date: new Date().toISOString()
+                });
+
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', item.productId), {
+                    stock: increment(item.quantity)
+                });
+            }
+
+            setPurchaseCart([]);
+            showToast(`Pedido finalizado: ${purchaseCart.length} productos registrados.`, "success");
+        } catch (e) {
+            console.error(e);
+            showToast("Error al finalizar el pedido.", "error");
         }
     };
 
@@ -2693,6 +2801,14 @@ function App() {
                                                                     </select>
                                                                 </div>
                                                             </div>
+
+                                                            {/* Botón Agregar al Carrito */}
+                                                            <button
+                                                                onClick={() => addToPurchaseCart(newPurchase.productId, newPurchase.quantity, newPurchase.supplierId)}
+                                                                className="w-full mt-6 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-3"
+                                                            >
+                                                                <ShoppingCart className="w-5 h-5" /> AGREGAR AL PEDIDO
+                                                            </button>
                                                         </div>
                                                     );
                                                 })()}
@@ -2828,6 +2944,58 @@ function App() {
                                                 </button>
                                             </div>
                                         </div>
+
+                                        {/* CARRITO DE COMPRAS */}
+                                        {purchaseCart.length > 0 && (
+                                            <div className="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 border border-cyan-800 rounded-[2.5rem] p-8 mb-10 animate-fade-up">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                                                        <ShoppingCart className="w-6 h-6 text-cyan-400" />
+                                                        Carrito de Compras ({purchaseCart.length} {purchaseCart.length === 1 ? 'producto' : 'productos'})
+                                                    </h3>
+                                                    <p className="text-cyan-400 font-black text-2xl">
+                                                        TOTAL: ${purchaseCart.reduce((acc, item) => acc + item.cost, 0).toLocaleString()}
+                                                    </p>
+                                                </div>
+
+                                                <div className="space-y-4 mb-6">
+                                                    {purchaseCart.map((item, index) => (
+                                                        <div key={index} className="flex items-center gap-6 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                                            <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0">
+                                                                <img src={item.productImage} className="w-full h-full object-contain" alt={item.productName} />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="font-bold text-white">{item.productName}</p>
+                                                                <p className="text-xs text-slate-400">Precio Unit.: ${item.unitPrice.toLocaleString()}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <input
+                                                                    type="number"
+                                                                    value={item.quantity}
+                                                                    onChange={(e) => updatePurchaseCartItem(index, parseInt(e.target.value) || 1)}
+                                                                    className="w-20 bg-slate-800 border border-slate-700 text-white px-3 py-2 rounded-lg text-center font-bold"
+                                                                    min="1"
+                                                                />
+                                                                <p className="text-cyan-400 font-bold w-28 text-right">${item.cost.toLocaleString()}</p>
+                                                                <button
+                                                                    onClick={() => removeFromPurchaseCart(index)}
+                                                                    className="p-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 rounded-lg transition"
+                                                                >
+                                                                    <Trash2 className="w-5 h-5" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <button
+                                                    onClick={finalizePurchaseOrder}
+                                                    className="w-full py-5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black rounded-2xl shadow-xl transition transform hover:scale-[1.01] flex items-center justify-center gap-3 text-lg"
+                                                >
+                                                    <CheckCircle className="w-6 h-6" /> FINALIZAR PEDIDO
+                                                </button>
+                                            </div>
+                                        )}
 
                                         {/* Historial */}
                                         <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] p-8">
