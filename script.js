@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-// Importación MASIVA de iconos para cubrir todas las necesidades visuales de la interfaz antigua y nueva
 import { 
     ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag, Plus, 
     Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home, 
@@ -8,24 +7,16 @@ import {
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown, 
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy, 
     ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, 
-    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, CheckSquare, XCircle, MoreVertical,
-    Activity, Database, Server, Smartphone, Headphones, Monitor, Speaker, Wifi, Battery, MousePointer,
-    Layout, Grid, List, Bell, Link, Share2, Printer, Download, Upload, Camera, Video, Mic, Volume2,
-    Sun, Moon, Globe, Map, Navigation, Crosshair, Target, Disc, Layers, Sidebar, Box, Hexagon
+    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signOut } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { 
     getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc, 
-    where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, serverTimestamp, orderBy, limit 
+    where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove 
 } from 'firebase/firestore';
 
-/**
- * =================================================================================================
- * CONFIGURACIÓN DE FIREBASE E INICIALIZACIÓN DE SERVICIOS
- * =================================================================================================
- * No modificar esta sección a menos que cambien las credenciales del proyecto.
- */
+// --- CONFIGURACIÓN FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
   authDomain: "sustore-63266.firebaseapp.com",
@@ -36,1997 +27,1417 @@ const firebaseConfig = {
   measurementId: "G-X3K7XGYPRD"
 };
 
-// Inicialización de la aplicación Firebase
 const app = initializeApp(firebaseConfig);
-// Servicio de Autenticación
 const auth = getAuth(app);
-// Servicio de Base de Datos Firestore
 const db = getFirestore(app);
+const appId = "sustore-prod-v3";
+const SUPER_ADMIN_EMAIL = "lautarocorazza63@gmail.com";
 
-// Constantes Globales del Sistema
-const APP_ID = "sustore-prod-v3"; // Identificador de versión para aislar datos
-const SUPER_ADMIN_EMAIL = "lautarocorazza63@gmail.com"; // Email con permisos irrevocables
-
-/**
- * =================================================================================================
- * CONFIGURACIÓN POR DEFECTO DEL SISTEMA (FALLBACK SETTINGS)
- * =================================================================================================
- * Estos valores se utilizan cuando no se encuentra configuración en la base de datos o para
- * inicializar el sistema por primera vez. Incluye toda la personalización posible.
- */
+// Configuración por defecto extendida para evitar fallos
 const defaultSettings = {
-    // Identidad de la Marca
     storeName: "SUSTORE", 
     primaryColor: "#06b6d4", 
-    secondaryColor: "#8b5cf6",
     currency: "$", 
-    
-    // Equipo y Accesos
     admins: SUPER_ADMIN_EMAIL, 
-    team: [
-        { 
-            email: SUPER_ADMIN_EMAIL, 
-            role: "admin", 
-            name: "Lautaro Corazza",
-            position: "CEO & Founder",
-            avatar: "",
-            accessLevel: "full"
-        }
-    ],
-    
-    // Contacto y Redes
+    team: [{ email: SUPER_ADMIN_EMAIL, role: "admin", name: "Lautaro Corazza" }],
     sellerEmail: "sustoresf@gmail.com", 
     instagramUser: "sustore_sf", 
     whatsappLink: "https://wa.me/message/3MU36VTEKINKP1", 
-    facebookUser: "",
-    tiktokUser: "",
-    
-    // Recursos Visuales
     logoUrl: "", 
     heroUrl: "", 
-    
-    // Reglas de Negocio
-    markupPercentage: 0, // Margen global opcional
-    enableStockCheck: true, // Validar stock al comprar
-    enableGuestCheckout: true, // Permitir compra sin cuenta (opcional)
-    
-    // Textos y Contenidos
+    markupPercentage: 0,
     announcementMessage: "🔥 ENVÍOS GRATIS EN COMPRAS SUPERIORES A $50.000 🔥",
-    aboutUsText: "Somos una empresa dedicada a traer la mejor tecnología al mejor precio del mercado.\n\nContamos con garantía oficial en todos nuestros productos y soporte personalizado para asegur[...]
-    
-    // Categorización
-    categories: [
-        "Celulares", 
-        "Accesorios", 
-        "Audio", 
-        "Computación", 
-        "Gaming",
-        "Tablets",
-        "Smartwatch",
-        "Cargadores",
-        "Periféricos",
-        "Ofertas"
-    ]
+    categories: ["Celulares", "Accesorios", "Audio", "Computación", "Gaming"], 
+    aboutUsText: "Somos una empresa dedicada a traer la mejor tecnología al mejor precio del mercado.\n\nContamos con garantía oficial en todos nuestros productos y soporte personalizado."
 };
 
-/**
- * =================================================================================================
- * UTILIDADES Y HELPERS (FUNCIONES DE APOYO)
- * =================================================================================================
- */
+// --- COMPONENTES DE UI ---
 
-// Formateador de Moneda Seguro (ARS por defecto)
-const formatCurrency = (amount) => {
-    if (amount === undefined || amount === null || isNaN(amount)) return '$0';
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
-};
+// Componente de Notificación (Toast)
+const Toast = ({ message, type, onClose }) => {
+    // Definición explícita de colores para mayor control
+    let containerClass = "fixed top-24 right-4 z-[9999] flex items-center gap-4 p-5 rounded-2xl border-l-4 backdrop-blur-xl animate-fade-up shadow-2xl transition-all duration-300";
+    let iconContainerClass = "p-2 rounded-full";
+    let IconComponent = Info;
 
-// Formateador de Fechas Largo
-const formatDateLong = (dateString) => {
-    if (!dateString) return 'Fecha desconocida';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
-
-// Formateador de Fechas Corto
-const formatDateShort = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('es-AR');
-};
-
-// Calculadora de Precios Centralizada
-// Maneja descuentos, costos y márgenes en un solo lugar para evitar errores de lógica
-const calculateProductMetrics = (basePrice, discountPercent, costPrice = 0) => {
-    const base = Number(basePrice) || 0;
-    const discount = Number(discountPercent) || 0;
-    const cost = Number(costPrice) || 0;
-    
-    // Precio Final al Público
-    const finalPrice = discount > 0 
-        ? Math.ceil(base * (1 - discount / 100)) 
-        : base;
-        
-    // Ganancia Neta
-    const profit = finalPrice - cost;
-    
-    // Margen de Ganancia (%)
-    const margin = cost > 0 ? ((profit / cost) * 100).toFixed(1) : 100;
-
-    return {
-        base,
-        discount,
-        cost,
-        finalPrice,
-        profit,
-        margin,
-        hasDiscount: discount > 0,
-        discountAmount: base - finalPrice
-    };
-};
-
-/**
- * =================================================================================================
- * COMPONENTES DE INTERFAZ DE USUARIO (UI KIT)
- * =================================================================================================
- * Componentes reutilizables diseñados para mantener consistencia visual y reducir repetición.
- */
-
-// 1. Componente Toast (Notificaciones Flotantes Avanzadas)
-const ToastNotification = ({ id, message, type, onClose }) => {
-    // Definición de estilos dinámicos basados en el tipo de alerta
-    let containerClasses = "fixed top-24 right-4 z-[9999] flex items-center gap-4 p-5 rounded-2xl border-l-4 backdrop-blur-xl animate-fade-up shadow-2xl transition-all duration-300 min-w-[320px] max-w[...]
-    let iconContainerClasses = "p-3 rounded-full flex items-center justify-center shrink-0";
-    let Icon = Info;
-    let textColor = "text-white";
-
-    switch (type) {
-        case 'success':
-            containerClasses += " border-green-500 bg-black/90 shadow-[0_0_20px_rgba(34,197,94,0.2)]";
-            iconContainerClasses += " bg-green-500/20 text-green-400";
-            Icon = CheckCircle;
-            textColor = "text-green-50";
-            break;
-        case 'error':
-            containerClasses += " border-red-500 bg-black/90 shadow-[0_0_20px_rgba(239,68,68,0.2)]";
-            iconContainerClasses += " bg-red-500/20 text-red-400";
-            Icon = AlertCircle;
-            textColor = "text-red-50";
-            break;
-        case 'warning':
-            containerClasses += " border-yellow-500 bg-black/90 shadow-[0_0_20px_rgba(234,179,8,0.2)]";
-            iconContainerClasses += " bg-yellow-500/20 text-yellow-400";
-            Icon = AlertTriangle;
-            textColor = "text-yellow-50";
-            break;
-        case 'info':
-        default:
-            containerClasses += " border-cyan-500 bg-black/90 shadow-[0_0_20px_rgba(6,182,212,0.2)]";
-            iconContainerClasses += " bg-cyan-500/20 text-cyan-400";
-            Icon = Info;
-            textColor = "text-cyan-50";
-            break;
+    if (type === 'success') {
+        containerClass += " border-green-500 text-green-400 bg-black/90 shadow-[0_0_20px_rgba(34,197,94,0.3)]";
+        iconContainerClass += " bg-green-500/20";
+        IconComponent = CheckCircle;
+    } else if (type === 'error') {
+        containerClass += " border-red-500 text-red-400 bg-black/90 shadow-[0_0_20px_rgba(239,68,68,0.3)]";
+        iconContainerClass += " bg-red-500/20";
+        IconComponent = AlertCircle;
+    } else if (type === 'warning') {
+        containerClass += " border-yellow-500 text-yellow-400 bg-black/90 shadow-[0_0_20px_rgba(234,179,8,0.3)]";
+        iconContainerClass += " bg-yellow-500/20";
+        IconComponent = AlertTriangle;
+    } else {
+        containerClass += " border-cyan-500 text-cyan-400 bg-black/90 shadow-[0_0_20px_rgba(6,182,212,0.3)]";
+        iconContainerClass += " bg-cyan-500/20";
+        IconComponent = Info;
     }
-
-    // Auto-cierre después de 4 segundos
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onClose(id);
-        }, 4000);
-        return () => clearTimeout(timer);
-    }, [id, onClose]);
-
+    
+    useEffect(() => { 
+        const t = setTimeout(onClose, 4000); // 4 segundos de duración
+        return () => clearTimeout(t); 
+    }, [onClose]);
+    
     return (
-        <div className={containerClasses} role="alert">
-            <div className={iconContainerClasses}>
-                <Icon className="w-6 h-6" strokeWidth={2.5} />
+        <div className={containerClass}>
+            <div className={iconContainerClass}>
+                <IconComponent className="w-5 h-5"/>
             </div>
-            <div className="flex-1">
-                <p className={`font-bold text-sm tracking-wide leading-snug ${textColor}`}>
-                    {message}
-                </p>
+            <div>
+                <p className="font-bold text-sm tracking-wide">{message}</p>
             </div>
-            <button 
-                onClick={() => onClose(id)} 
-                className="ml-2 text-white/40 hover:text-white transition p-2 hover:bg-white/10 rounded-xl"
-                aria-label="Cerrar notificación"
-            >
-                <X className="w-4 h-4" />
+            <button onClick={onClose} className="ml-2 text-white/50 hover:text-white transition">
+                <X className="w-4 h-4"/>
             </button>
         </div>
     );
 };
 
-// 2. Componente Modal Genérico (Base para todos los diálogos)
-const Modal = ({ isOpen, onClose, title, children, size = "md", icon: Icon }) => {
+// Componente Modal de Confirmación
+const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText="Confirmar", cancelText="Cancelar", isDangerous = false }) => {
     if (!isOpen) return null;
-
-    // Tamaños configurables
-    const sizes = {
-        sm: "max-w-md",
-        md: "max-w-xl",
-        lg: "max-w-3xl",
-        xl: "max-w-5xl",
-        full: "max-w-[95vw]"
-    };
-
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 overflow-y-auto overflow-x-hidden">
-            {/* Backdrop con Blur */}
-            <div 
-                className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300" 
-                onClick={onClose}
-                aria-hidden="true"
-            />
-            
-            {/* Contenedor del Modal */}
-            <div className={`relative bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] shadow-2xl w-full ${sizes[size]} transform transition-all duration-300 animate-fade-up flex flex-col max-h-[[...]
-                
-                {/* Cabecera Neon */}
-                <div className="p-6 md:p-8 border-b border-slate-800 flex justify-between items-center bg-gradient-to-r from-slate-900/50 to-transparent rounded-t-[2.5rem]">
-                    <div className="flex items-center gap-4">
-                        {Icon && (
-                            <div className="p-3 bg-slate-800 rounded-xl text-cyan-400 shadow-lg shadow-cyan-900/20 border border-slate-700">
-                                <Icon className="w-6 h-6" />
-                            </div>
-                        )}
-                        <h3 className="text-2xl font-black text-white tracking-tight">{title}</h3>
-                    </div>
-                    <button 
-                        onClick={onClose}
-                        className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white hover:bg-red-900/20 hover:border-red-500/30 border border-slate-800 transition duration-300 group"
-                    >
-                        <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-                    </button>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
+            <div className={`glass p-8 rounded-[2rem] max-w-sm w-full border ${isDangerous ? 'border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]' : 'border-slate-700 shadow-2xl'}`}>
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${isDangerous ? 'bg-red-900/20 text-red-500' : 'bg-cyan-900/20 text-cyan-500'}`}>
+                    {isDangerous ? <AlertTriangle className="w-8 h-8"/> : <Info className="w-8 h-8"/>}
                 </div>
-
-                {/* Cuerpo Scrollable */}
-                <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar bg-[#050505] relative">
-                    {children}
+                <h3 className="text-xl font-black text-center mb-2 text-white">{title}</h3>
+                <p className="text-slate-400 text-center mb-8 text-sm leading-relaxed">{message}</p>
+                <div className="flex gap-3">
+                    <button onClick={onCancel} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">{cancelText}</button>
+                    <button onClick={onConfirm} className={`flex-1 py-3 text-white rounded-xl font-bold transition shadow-lg ${isDangerous ? 'bg-red-600 hover:bg-red-500 shadow-red-600/30' : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/30'}`}>{confirmText}</button>
                 </div>
-                
-                {/* Decoración Cyberpunk */}
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-blue-500 opacity-20"></div>
             </div>
         </div>
     );
 };
 
-// 3. Componente Input Personalizado (Cyber Style)
-const InputField = ({ label, type = "text", value, onChange, placeholder, icon: Icon, required = false, disabled = false, min, max }) => (
-    <div className="space-y-2 w-full">
-        {label && (
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                {Icon && <Icon className="w-3 h-3" />} {label} {required && <span className="text-red-500">*</span>}
-            </label>
-        )}
-        <div className="relative group">
-            <input 
-                type={type} 
-                value={value} 
-                onChange={onChange} 
-                placeholder={placeholder}
-                disabled={disabled}
-                min={min}
-                max={max}
-                className={`
-                    w-full bg-[#0f0f13] border border-slate-800 rounded-xl p-4 pl-4 
-                    text-white placeholder-slate-600 font-medium transition-all duration-300
-                    focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 focus:bg-[#161620] outline-none
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                    ${Icon ? 'pl-12' : ''}
-                `}
-            />
-            {Icon && (
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors duration-300 pointer-events-none">
-                    <Icon className="w-5 h-5" />
-                </div>
-            )}
-        </div>
-    </div>
-);
-
-// 4. Componente TextArea Personalizado
-const TextAreaField = ({ label, value, onChange, placeholder, rows = 4 }) => (
-    <div className="space-y-2 w-full">
-        {label && (
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1 block">
-                {label}
-            </label>
-        )}
-        <textarea 
-            value={value} 
-            onChange={onChange} 
-            placeholder={placeholder}
-            rows={rows}
-            className="w-full bg-[#0f0f13] border border-slate-800 rounded-xl p-4 text-white placeholder-slate-600 font-medium transition-all duration-300 focus:border-cyan-500 focus:ring[...]
-        />
-    </div>
-);
-
-// 5. Componente Botón Primario/Secundario
-const Button = ({ children, onClick, variant = "primary", className = "", icon: Icon, isLoading = false, disabled = false, type = "button" }) => {
-    const baseStyle = "relative overflow-hidden rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"[...]
-    
-    const variants = {
-        primary: "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-900/20 hover:shadow-cyan-500/30 py-4 px-8",
-        secondary: "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 py-4 px-8",
-        danger: "bg-red-900/20 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 hover:border-red-500 py-3 px-6",
-        success: "bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-900/20 py-3 px-6",
-        ghost: "bg-transparent hover:bg-white/5 text-slate-400 hover:text-white py-2 px-4"
-    };
-
-    return (
-        <button 
-            type={type}
-            onClick={onClick} 
-            disabled={disabled || isLoading} 
-            className={`${baseStyle} ${variants[variant]} ${className}`}
-        >
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : Icon && <Icon className="w-5 h-5" />}
-            {children}
-        </button>
-    );
-};
-
-// 6. Modal de Confirmación Global (Reemplazo de window.confirm)
-const ConfirmationDialog = ({ config, onConfirm, onCancel }) => {
-    if (!config.isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black/90 backdrop-blur-md" onClick={onCancel}></div>
-            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] max-w-sm w-full relative z-10 shadow-2xl animate-fade-up">
-                
-                {/* Icono Central */}
-                <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 shadow-xl ${config.isDangerous ? 'bg-red-900/20 text-red-500 border border-red-500/20' : 'bg-cyan-[...]
-                    {config.isDangerous ? <AlertTriangle className="w-10 h-10" /> : <Info className="w-10 h-10" />}
-                </div>
-
-                <h3 className="text-2xl font-black text-white text-center mb-3">{config.title}</h3>
-                <p className="text-slate-400 text-center mb-8 text-sm leading-relaxed">{config.message}</p>
-
-                <div className="grid gap-3">
-                    <Button 
-                        onClick={onConfirm} 
-                        variant={config.isDangerous ? "danger" : "primary"}
-                        className="w-full py-4"
-                    >
-                        {config.confirmText || "Confirmar"}
-                    </Button>
-                    <Button 
-                        onClick={onCancel} 
-                        variant="secondary"
-                        className="w-full py-4"
-                    >
-                        {config.cancelText || "Cancelar"}
-                    </Button>
-                </div>
-            </div>
-        </div>
-    );
-};
-/**
- * =================================================================================================
- * CUSTOM HOOKS (LÓGICA REUTILIZABLE)
- * =================================================================================================
- * Estos hooks encapsulan lógica compleja para mantener el componente principal limpio y robusto.
- */
-
-// Hook para manejar valores con retardo (Búsquedas optimizadas)
-const useDebounce = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-        return () => clearTimeout(handler);
-    }, [value, delay]);
-    return debouncedValue;
-};
-
-// Hook para almacenamiento local seguro (Persistencia)
-const useLocalStorage = (key, initialValue) => {
-    const [storedValue, setStoredValue] = useState(() => {
-        if (typeof window === "undefined") return initialValue;
-        try {
-            const item = window.localStorage.getItem(key);
-            return item ? JSON.parse(item) : initialValue;
-        } catch (error) {
-            console.warn(`Error reading localStorage key "${key}":`, error);
-            return initialValue;
-        }
-    });
-
-    const setValue = (value) => {
-        try {
-            const valueToStore = value instanceof Function ? value(storedValue) : value;
-            setStoredValue(valueToStore);
-            if (typeof window !== "undefined") {
-                window.localStorage.setItem(key, JSON.stringify(valueToStore));
-            }
-        } catch (error) {
-            console.warn(`Error setting localStorage key "${key}":`, error);
-        }
-    };
-    return [storedValue, setValue];
-};
-
-/**
- * =================================================================================================
- * COMPONENTE PRINCIPAL (ORQUESTADOR DE LA APLICACIÓN)
- * =================================================================================================
- */
+// --- APLICACIÓN PRINCIPAL ---
 function App() {
-    // ---------------------------------------------------------------------------------------------
-    // 1. GESTIÓN DE ESTADO GLOBAL (STATE MANAGEMENT)
-    // ---------------------------------------------------------------------------------------------
+    // --- GESTIÓN DE ESTADO (EXPANDIDA) ---
     
-    // --- Control de Navegación y UI ---
-    const [view, setView] = useState('store'); // Vistas: store, cart, checkout, profile, admin, login...
-    const [adminTab, setAdminTab] = useState('dashboard'); // Tabs Admin: dashboard, products, orders...
-    const [isMenuOpen, setIsMenuOpen] = useState(false); // Menú hamburguesa móvil
-    const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false); // Sidebar admin móvil
-    const [isLoading, setIsLoading] = useState(true); // Carga inicial del sistema
-    const [notifications, setNotifications] = useState([]); // Sistema de Toasts
-    const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+    // Navegación y UI
+    const [view, setView] = useState('store'); // store, cart, checkout, profile, login, register, admin, about, guide
+    const [adminTab, setAdminTab] = useState('dashboard'); // dashboard, products, coupons, users, suppliers, settings, finance
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+    
+    // Usuarios y Autenticación
+    const [currentUser, setCurrentUser] = useState(() => { 
+        try { 
+            const saved = localStorage.getItem('nexus_user_data');
+            return saved ? JSON.parse(saved) : null; 
+        } catch(e) { return null; } 
+    });
+    const [systemUser, setSystemUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isProcessingOrder, setIsProcessingOrder] = useState(false); 
+    const [toasts, setToasts] = useState([]);
+    const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
-    // --- Datos del Usuario y Sesión ---
-    const [systemUser, setSystemUser] = useState(null); // Usuario de Firebase Auth
-    const [currentUser, setCurrentUser] = useLocalStorage('nexus_user_v2', null); // Datos completos del usuario (DB)
-    
-    // --- Datos de Negocio (Sincronizados con Firestore) ---
+    // Datos Principales
     const [products, setProducts] = useState([]);
+    const [cart, setCart] = useState(() => { 
+        try { 
+            const saved = JSON.parse(localStorage.getItem('nexus_cart'));
+            return Array.isArray(saved) ? saved : []; 
+        } catch(e) { return []; } 
+    });
+    const [liveCarts, setLiveCarts] = useState([]); // Monitor de carritos en tiempo real
     const [orders, setOrders] = useState([]);
     const [users, setUsers] = useState([]);
     const [coupons, setCoupons] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
+    const [expenses, setExpenses] = useState([]);
     const [settings, setSettings] = useState(defaultSettings);
-    
-    // --- Carrito de Compras (Complejo) ---
-    const [cart, setCart] = useLocalStorage('nexus_cart_v2', []);
-    const [liveCarts, setLiveCarts] = useState([]); // Monitor de carritos en tiempo real (Admin)
 
-    // --- Estados de Formularios y Filtros ---
+    // Estados de Interfaz de Usuario
     const [searchQuery, setSearchQuery] = useState('');
-    const debouncedSearch = useDebounce(searchQuery, 300);
-    const [selectedCategory, setSelectedCategory] = useState('Todos');
-    const [priceRange, setPriceRange] = useState({ min: 0, max: 1000000 }); // Filtro de precio
+    const [selectedCategory, setSelectedCategory] = useState('');
     
-    // --- Estados de Autenticación (Login/Register) ---
-    const [authForm, setAuthForm] = useState({
-        email: '', password: '', name: '', username: '', dni: '', phone: '', address: ''
+    // Formularios de Autenticación
+    const [authData, setAuthData] = useState({ 
+        email: '', 
+        password: '', 
+        name: '', 
+        username: '', 
+        dni: '', 
+        phone: '' 
     });
-    const [isLoginMode, setIsLoginMode] = useState(true);
-    const [isAuthLoading, setIsAuthLoading] = useState(false);
-
-    // --- Estados de Checkout (Proceso de Compra) ---
-    const [checkoutForm, setCheckoutForm] = useState({
-        address: '', city: '', province: '', zipCode: '', phone: '', notes: '', paymentMethod: ''
+    const [loginMode, setLoginMode] = useState(true);
+    
+    // Formulario de Checkout
+    const [checkoutData, setCheckoutData] = useState({ 
+        address: '', 
+        city: '', 
+        province: '', 
+        zipCode: '', 
+        paymentChoice: '' 
     });
     const [appliedCoupon, setAppliedCoupon] = useState(null);
-    const [isProcessingOrder, setIsProcessingOrder] = useState(false);
     const [showCouponModal, setShowCouponModal] = useState(false);
 
-    // --- Estados de Administración (CRUD) ---
-    // Productos
-    const [productForm, setProductForm] = useState({
-        id: null, name: '', description: '', basePrice: '', costPrice: '', 
-        stock: '', category: '', image: '', discount: 0, featured: false
-    });
-    const [showProductModal, setShowProductModal] = useState(false);
+    // --- ESTADOS DE ADMINISTRACIÓN (DETALLADOS) ---
     
-    // Cupones
-    const [couponForm, setCouponForm] = useState({
-        code: '', type: 'percentage', value: 0, minPurchase: 0, maxDiscount: 0,
-        expirationDate: '', usageLimit: 0, targetType: 'global', targetUser: ''
+    // Gestión de Productos
+    const [newProduct, setNewProduct] = useState({ 
+        name: '', 
+        basePrice: '', 
+        stock: '', 
+        category: '', 
+        image: '', 
+        description: '', 
+        discount: 0 
     });
-    const [showCouponFormModal, setShowCouponFormModal] = useState(false);
-
-    // Proveedores
-    const [supplierForm, setSupplierForm] = useState({
-        name: '', contactName: '', phone: '', email: '', website: '', notes: '', associatedProducts: []
+    const [editingId, setEditingId] = useState(null);
+    const [showProductForm, setShowProductForm] = useState(false);
+    
+    // Gestión Avanzada de Cupones (Restaurada la complejidad)
+    const [newCoupon, setNewCoupon] = useState({ 
+        code: '', 
+        type: 'percentage', // percentage, fixed
+        value: 0, 
+        minPurchase: 0, 
+        maxDiscount: 0, 
+        expirationDate: '', 
+        targetType: 'global', // global, specific_user
+        targetUser: '', 
+        usageLimit: '', // Limite total de usos
+        perUserLimit: 1, // Limite por usuario
+        isActive: true
+    });
+    
+    // Gestión de Proveedores
+    const [newSupplier, setNewSupplier] = useState({ 
+        name: '', 
+        contact: '', 
+        phone: '', 
+        ig: '', 
+        address: '',
+        cuit: '',
+        associatedProducts: [] 
     });
     const [showSupplierModal, setShowSupplierModal] = useState(false);
-
-    // Configuración
+    
+    // Configuración y Equipo
+    const [aboutText, setAboutText] = useState('');
     const [tempSettings, setTempSettings] = useState(defaultSettings);
+    const [newCategory, setNewCategory] = useState('');
     const [newTeamMember, setNewTeamMember] = useState({ email: '', role: 'employee', name: '' });
 
-    // Modales de Visualización
-    const [selectedOrder, setSelectedOrder] = useState(null); // Para ver detalles de pedido
-    const [selectedProduct, setSelectedProduct] = useState(null); // Para vista rápida
-    const fileInputRef = useRef(null); // Referencia para input de archivo oculto
+    // Estado para Detalle de Pedido (Modal)
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
-    // ---------------------------------------------------------------------------------------------
-    // 2. SISTEMA DE NOTIFICACIONES Y FEEDBACK
-    // ---------------------------------------------------------------------------------------------
+    // Referencias
+    const fileInputRef = useRef(null);
+
+    // --- FUNCIONES UTILITARIAS ---
+
+    // Mostrar notificaciones
+    const showToast = (msg, type = 'info') => { 
+        const id = Date.now(); 
+        setToasts(prev => { 
+            // Limitar a 3 toasts simultáneos
+            const filtered = prev.filter(t => Date.now() - t.id < 3000); 
+            return [...filtered, { id, message: msg, type }]; 
+        });
+    };
+
+    const removeToast = (id) => setToasts(p => p.filter(t => t.id !== id));
+
+    // Validar acceso por rol
+    const getRole = (email) => {
+        if (!email || !settings) return 'user';
+        const cleanEmail = email.trim().toLowerCase();
+        
+        // Super Admin Hardcodeado (Prioridad Máxima)
+        if (cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) return 'admin';
+        
+        // Buscar en el equipo
+        const team = settings.team || [];
+        const member = team.find(m => m.email && m.email.trim().toLowerCase() === cleanEmail);
+        return member ? member.role : 'user';
+    };
     
-    const addNotification = (message, type = 'info') => {
-        const id = Date.now();
-        setNotifications(prev => [...prev, { id, message, type }]);
+    const isAdmin = (email) => getRole(email) === 'admin';
+    const hasAccess = (email) => {
+        const role = getRole(email);
+        return role === 'admin' || role === 'employee';
     };
 
-    const removeNotification = (id) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-    };
+    // --- EFECTOS DE SINCRONIZACIÓN (FIREBASE) ---
 
-    const openConfirm = (title, message, onConfirm, isDangerous = false) => {
-        setConfirmDialog({
-            isOpen: true,
-            title,
-            message,
-            onConfirm: () => {
-                onConfirm();
-                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-            },
-            cancelText: "Cancelar",
-            confirmText: isDangerous ? "Eliminar" : "Confirmar",
-            isDangerous
-        });
-    };
-
-    // ---------------------------------------------------------------------------------------------
-    // 3. SINCRONIZACIÓN DE DATOS (FIREBASE LISTENERS)
-    // ---------------------------------------------------------------------------------------------
-
-    // A. Inicialización de Auth y Usuario
+    // 1. Sincronizar Carrito Local y Remoto (Live Cart)
     useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-            setSystemUser(user);
-            
-            if (user) {
-                // Si hay usuario autenticado, buscar su perfil completo en Firestore
+        localStorage.setItem('nexus_cart', JSON.stringify(cart));
+        
+        // Si hay usuario, subir carrito a DB para monitor de admin
+        if (currentUser && currentUser.id) {
+            const syncCartToDB = async () => {
                 try {
-                    // Primero intentamos por ID de Auth
-                    let userDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', user.uid);
-                    let userSnap = await getDoc(userDocRef);
-
-                    // Si no existe (login anónimo o migración), intentamos buscar por email si existe en local
-                    if (!userSnap.exists() && currentUser?.email) {
-                        const q = query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'users'), where("email", "==", currentUser.email));
-                        const querySnap = await getDocs(q);
-                        if (!querySnap.empty) {
-                            userSnap = querySnap.docs[0];
-                        }
-                    }
-
-                    if (userSnap && userSnap.exists()) {
-                        const userData = { ...userSnap.data(), id: userSnap.id };
-                        // Actualizar solo si hay cambios para evitar re-renders infinitos
-                        if (JSON.stringify(userData) !== JSON.stringify(currentUser)) {
-                            setCurrentUser(userData);
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error fetching user profile:", error);
-                }
-            } else {
-                // Si no hay usuario, iniciamos anónimamente para permitir lectura
-                signInAnonymously(auth).catch(e => console.error("Anon auth failed", e));
-            }
-            
-            setIsLoading(false);
-        });
-
-        return () => unsubscribeAuth();
-    }, []);
-
-    // B. Listeners de Colecciones (Datos en Tiempo Real)
-    useEffect(() => {
-        if (!systemUser) return;
-
-        // Listener de Productos
-        const unsubProducts = onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'products'), (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setProducts(data);
-        }, (error) => console.error("Error products listener:", error));
-
-        // Listener de Pedidos (Ordenados por fecha localmente luego)
-        const unsubOrders = onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'orders'), (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Ordenar descendente por fecha
-            data.sort((a, b) => new Date(b.date) - new Date(a.date));
-            setOrders(data);
-        }, (error) => console.error("Error orders listener:", error));
-
-        // Listener de Configuración
-        const unsubSettings = onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'settings'), (snapshot) => {
-            if (!snapshot.empty) {
-                const data = snapshot.docs[0].data();
-                // Fusión defensiva con defaults
-                const finalSettings = {
-                    ...defaultSettings,
-                    ...data,
-                    categories: data.categories || defaultSettings.categories,
-                    team: data.team || defaultSettings.team
-                };
-                setSettings(finalSettings);
-                setTempSettings(finalSettings); // Sincronizar temp para edición
-            } else {
-                // Inicializar si no existe
-                addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'settings'), defaultSettings);
-            }
-        });
-
-        // Listeners solo para Admin (Optimización)
-        let unsubUsers = () => {};
-        let unsubCoupons = () => {};
-        let unsubSuppliers = () => {};
-        let unsubLiveCarts = () => {};
-
-        // Validamos si el usuario actual tiene rol de acceso (aunque sea localmente por ahora)
-        const hasAdminAccess = currentUser?.role === 'admin' || currentUser?.role === 'employee' || systemUser.email === SUPER_ADMIN_EMAIL;
-
-        if (true) { // Habilitamos carga para todos por ahora para evitar problemas de permisos visuales, filtramos en UI
-            
-            // Usuarios
-            unsubUsers = onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'users'), (snapshot) => {
-                setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            });
-
-            // Cupones
-            unsubCoupons = onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'coupons'), (snapshot) => {
-                setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            });
-
-            // Proveedores
-            unsubSuppliers = onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'suppliers'), (snapshot) => {
-                setSuppliers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            });
-            
-            // Live Carts (Carritos activos)
-            unsubLiveCarts = onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'carts'), (snapshot) => {
-                const carts = snapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() }))
-                    .filter(c => c.items && c.items.length > 0); // Solo carritos con items
-                setLiveCarts(carts);
-            });
-        }
-
-        return () => {
-            unsubProducts();
-            unsubOrders();
-            unsubSettings();
-            unsubUsers();
-            unsubCoupons();
-            unsubSuppliers();
-            unsubLiveCarts();
-        };
-    }, [systemUser, currentUser]); // Dependencias del efecto
-
-    // C. Sincronización del Carrito Local a Remoto
-    useEffect(() => {
-        if (currentUser?.id && cart) {
-            const syncCartToCloud = async () => {
-                try {
-                    const cartRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'carts', currentUser.id);
-                    await setDoc(cartRef, {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
                         userId: currentUser.id,
-                        userName: currentUser.name || 'Anónimo',
-                        email: currentUser.email || '',
+                        userName: currentUser.name, // Guardamos nombre para facilitar visualización rápida
                         items: cart.map(item => ({
                             productId: item.product.id,
-                            name: item.product.name,
                             quantity: item.quantity,
-                            price: item.product.basePrice,
-                            image: item.product.image
+                            name: item.product.name,
+                            price: item.product.basePrice
                         })),
-                        lastUpdated: new Date().toISOString(),
-                        totalValue: cart.reduce((acc, item) => acc + (item.product.basePrice * item.quantity), 0)
+                        lastUpdated: new Date().toISOString()
                     });
-                } catch (e) {
-                    console.error("Error syncing cart to cloud:", e);
+                } catch (e) { 
+                    console.error("Error syncing cart", e); 
                 }
             };
-            
-            const timeout = setTimeout(syncCartToCloud, 2000); // Debounce de 2s
-            return () => clearTimeout(timeout);
+            // Debounce para no saturar escrituras
+            const debounceTimer = setTimeout(syncCartToDB, 1500);
+            return () => clearTimeout(debounceTimer);
         }
     }, [cart, currentUser]);
 
-    // ---------------------------------------------------------------------------------------------
-    // 4. LÓGICA DE NEGOCIO COMPUTADA (MÉTRICAS Y FILTROS)
-    // ---------------------------------------------------------------------------------------------
+    // 2. Persistencia de Sesión Local
+    useEffect(() => { 
+        if(currentUser) {
+            localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
+            // Pre-llenar checkout si hay datos
+            setCheckoutData(prev => ({ 
+                ...prev, 
+                address: currentUser.address || prev.address, 
+                city: currentUser.city || prev.city, 
+                province: currentUser.province || prev.province, 
+                zipCode: currentUser.zipCode || prev.zipCode 
+            }));
+        }
+    }, [currentUser]);
 
-    // Filtrado de Productos
-    const filteredProducts = useMemo(() => {
-        return products.filter(p => {
-            const matchesSearch = p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
-                                  p.category.toLowerCase().includes(debouncedSearch.toLowerCase());
-            const matchesCategory = selectedCategory === 'Todos' || p.category === selectedCategory;
-            const matchesPrice = p.basePrice >= priceRange.min && p.basePrice <= priceRange.max;
-            return matchesSearch && matchesCategory && matchesPrice;
-        });
-    }, [products, debouncedSearch, selectedCategory, priceRange]);
-
-    // Cálculo de Dashboard Admin (Completo)
-    const dashboardStats = useMemo(() => {
-        const stats = {
-            totalRevenue: 0,
-            totalProfit: 0,
-            totalOrders: orders.length,
-            pendingOrders: 0,
-            completedOrders: 0,
-            totalUsers: users.length,
-            activeCarts: liveCarts.length,
-            lowStockProducts: [],
-            topProducts: [], // Best Sellers
-            mostViewedProducts: [], // Simulado con 'interest'
-            recentActivity: []
-        };
-
-        const productSales = {}; // { productId: { quantity: 0, revenue: 0, name: '', image: '' } }
-
-        orders.forEach(order => {
-            // Contabilizar dinero solo de órdenes no canceladas
-            if (order.status !== 'Cancelado') {
-                stats.totalRevenue += Number(order.total) || 0;
-                
-                // Calcular ganancia real basada en costo histórico
-                const orderProfit = (order.items || []).reduce((acc, item) => {
-                    const cost = Number(item.cost_price) || 0;
-                    const sale = Number(item.unit_price) || 0;
-                    return acc + ((sale - cost) * item.quantity);
-                }, 0);
-                stats.totalProfit += orderProfit;
-            }
-
-            // Contadores de estado
-            if (order.status === 'Pendiente') stats.pendingOrders++;
-            if (order.status === 'Realizado') stats.completedOrders++;
-
-            // Análisis de Productos Vendidos
-            (order.items || []).forEach(item => {
-                if (!productSales[item.productId]) {
-                    productSales[item.productId] = { 
-                        id: item.productId,
-                        quantity: 0, 
-                        revenue: 0, 
-                        name: item.title, 
-                        image: item.image 
-                    };
+    // 3. Inicialización de Firebase Auth
+    useEffect(() => { 
+        const initializeAuth = async () => { 
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
                 }
-                productSales[item.productId].quantity += item.quantity;
-                productSales[item.productId].revenue += (item.unit_price * item.quantity);
-            });
-        });
-
-        // Top Productos (Más vendidos por cantidad)
-        stats.topProducts = Object.values(productSales)
-            .sort((a, b) => b.quantity - a.quantity)
-            .slice(0, 5);
-
-        // Productos con bajo stock
-        stats.lowStockProducts = products
-            .filter(p => p.stock <= 3)
-            .map(p => ({ ...p, status: p.stock === 0 ? 'Agotado' : 'Crítico' }));
-
-        // Simulación de "Más Vistos / Interés" basado en Carritos Activos + Favoritos
-        const interestMap = {};
-        liveCarts.forEach(c => c.items.forEach(i => {
-            interestMap[i.productId] = (interestMap[i.productId] || 0) + 3; // Carrito vale 3 puntos
-        }));
-        users.forEach(u => (u.favorites || []).forEach(fid => {
-            interestMap[fid] = (interestMap[fid] || 0) + 1; // Fav vale 1 punto
-        }));
+                
+                // Refrescar datos de usuario desde DB para asegurar consistencia
+                if (currentUser && currentUser.id) {
+                    try {
+                        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id);
+                        const userDocSnap = await getDoc(userDocRef);
+                        
+                        if (userDocSnap.exists()) {
+                            const freshUserData = { ...userDocSnap.data(), id: userDocSnap.id };
+                            // Verificar si hay cambios reales antes de actualizar estado
+                            if (JSON.stringify(freshUserData) !== JSON.stringify(currentUser)) {
+                                setCurrentUser(freshUserData);
+                            }
+                        }
+                    } catch (err) { 
+                        console.warn("No se pudo refrescar usuario al inicio:", err); 
+                    }
+                }
+            } catch (e) { 
+                console.error("Error en inicialización Auth:", e); 
+            }
+        }; 
         
-        stats.mostViewedProducts = Object.entries(interestMap)
-            .map(([id, score]) => {
-                const p = products.find(prod => prod.id === id);
-                return p ? { ...p, interestScore: score } : null;
-            })
-            .filter(Boolean)
-            .sort((a, b) => b.interestScore - a.interestScore)
-            .slice(0, 5);
-
-        return stats;
-    }, [orders, products, users, liveCarts]);
-    // ---------------------------------------------------------------------------------------------
-    // 5. MANEJADORES DE AUTENTICACIÓN Y USUARIOS
-    // ---------------------------------------------------------------------------------------------
-
-    const handleAuth = async (e) => {
-        if (e) e.preventDefault();
-        setIsAuthLoading(true);
-
-        try {
-            const usersRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'users');
+        initializeAuth(); 
+        
+        // Listener de Auth State
+        return onAuthStateChanged(auth, (user) => {
+            setSystemUser(user);
+            // Pequeño delay artificial para transiciones suaves
+            setTimeout(() => setIsLoading(false), 1000);
+        }); 
+    }, []);
+    
+    // 4. Suscripciones a Colecciones (Snapshot Listeners)
+    useEffect(() => {
+        if(!systemUser) return;
+        
+        const unsubscribeFunctions = [
+            // Productos
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), snapshot => { 
+                const productsData = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                setProducts(productsData); 
+                if(cart.length === 0) setIsLoading(false); 
+            }),
             
-            if (!isLoginMode) {
-                // --- REGISTRO DE NUEVO USUARIO ---
-                
-                // 1. Validaciones Exhaustivas
-                if (!authForm.name || authForm.name.length < 3) throw new Error("El nombre es demasiado corto.");
-                if (!authForm.username || authForm.username.length < 3) throw new Error("El usuario debe tener al menos 3 caracteres.");
-                if (!authForm.email.includes('@')) throw new Error("El formato del email no es válido.");
-                if (authForm.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
-                if (!authForm.dni) throw new Error("El DNI es obligatorio para la facturación.");
+            // Pedidos (Ordenados por fecha descendente)
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), snapshot => { 
+                const ordersData = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                setOrders(ordersData.sort((a,b) => new Date(b.date) - new Date(a.date)));
+            }),
+            
+            // Usuarios
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => { 
+                setUsers(snapshot.docs.map(d => ({id: d.id, ...d.data()})));
+            }),
+            
+            // Cupones
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), snapshot => { 
+                setCoupons(snapshot.docs.map(d => ({id: d.id, ...d.data()})));
+            }),
+            
+            // Proveedores
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => { 
+                setSuppliers(snapshot.docs.map(d => ({id: d.id, ...d.data()})));
+            }),
+            
+            // Gastos
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => { 
+                setExpenses(snapshot.docs.map(d => ({id: d.id, ...d.data()})));
+            }),
+            
+            // Carritos en Vivo (Solo filtramos los que tienen items)
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'carts'), snapshot => {
+                const activeCarts = snapshot.docs
+                    .map(d => ({id: d.id, ...d.data()}))
+                    .filter(c => c.items && c.items.length > 0);
+                setLiveCarts(activeCarts);
+            }),
+            
+            // Configuración Global
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), snapshot => { 
+                if(!snapshot.empty) { 
+                    const data = snapshot.docs[0].data(); 
+                    // Fusión defensiva con valores por defecto
+                    const mergedSettings = { 
+                        ...defaultSettings, 
+                        ...data, 
+                        team: data.team || defaultSettings.team, 
+                        categories: data.categories || defaultSettings.categories 
+                    };
+                    setSettings(mergedSettings); 
+                    setTempSettings(mergedSettings); 
+                    setAboutText(data.aboutUsText || defaultSettings.aboutUsText); 
+                } else {
+                    // Si no existe, crear configuración inicial
+                    addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), defaultSettings); 
+                }
+            })
+        ];
+        
+        // Limpiar suscripciones al desmontar
+        return () => unsubscribeFunctions.forEach(unsub => unsub());
+    }, [systemUser]);
 
-                // 2. Verificar duplicados (Email)
-                const qEmail = query(usersRef, where("email", "==", authForm.email));
-                const emailCheck = await getDocs(qEmail);
-                if (!emailCheck.empty) throw new Error("Este correo electrónico ya está registrado.");
+    // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
+// --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
-                // 3. Verificar duplicados (Usuario)
-                const qUser = query(usersRef, where("username", "==", authForm.username));
-                const userCheck = await getDocs(qUser);
-                if (!userCheck.empty) throw new Error("Este nombre de usuario ya está en uso.");
+    // 1. Lógica de Autenticación (Registro y Login Detallado)
+    const handleAuth = async (isRegister) => {
+        setIsLoading(true);
+        try {
+            const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+            
+            if (isRegister) {
+                // Validaciones explícitas para Registro
+                if (!authData.name || authData.name.length < 3) throw new Error("El nombre es muy corto.");
+                if (!authData.username) throw new Error("Debes elegir un nombre de usuario.");
+                if (!authData.email || !authData.email.includes('@')) throw new Error("Email inválido.");
+                if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
+                if (!authData.dni) throw new Error("El DNI es obligatorio para la facturación.");
+                if (!authData.phone) throw new Error("El teléfono es obligatorio para el contacto.");
 
-                // 4. Crear Objeto de Usuario
-                const newUser = {
-                    ...authForm,
-                    role: 'user', // Por defecto nadie es admin
-                    joinDate: new Date().toISOString(),
-                    favorites: [],
-                    ordersCount: 0,
-                    totalSpent: 0,
-                    lastLogin: new Date().toISOString(),
-                    avatar: '', // Futuro: avatar personalizado
-                    status: 'active'
+                // Verificar duplicados (Email)
+                const qEmail = query(usersRef, where("email", "==", authData.email));
+                const emailSnap = await getDocs(qEmail);
+                if (!emailSnap.empty) throw new Error("Este correo electrónico ya está registrado.");
+
+                // Verificar duplicados (Usuario)
+                const qUser = query(usersRef, where("username", "==", authData.username));
+                const userSnap = await getDocs(qUser);
+                if (!userSnap.empty) throw new Error("El nombre de usuario ya está en uso. Elige otro.");
+
+                // Creación del usuario
+                const newUser = { 
+                    ...authData, 
+                    role: 'user', 
+                    joinDate: new Date().toISOString(), 
+                    favorites: [], // Inicializar favoritos vacío
+                    ordersCount: 0
                 };
-
-                // 5. Guardar en Firestore
-                const docRef = await addDoc(usersRef, newUser);
-                const userWithId = { ...newUser, id: docRef.id };
                 
-                setCurrentUser(userWithId);
-                addNotification("¡Bienvenido! Tu cuenta ha sido creada con éxito.", "success");
+                const docRef = await addDoc(usersRef, newUser);
+                setCurrentUser({ ...newUser, id: docRef.id });
+                showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
 
             } else {
-                // --- INICIO DE SESIÓN ---
+                // Validaciones para Login
+                if (!authData.email) throw new Error("Ingresa tu email o usuario.");
+                if (!authData.password) throw new Error("Ingresa tu contraseña.");
 
-                // 1. Buscar por Email y Password
-                let q = query(usersRef, where("email", "==", authForm.email), where("password", "==", authForm.password));
-                let snap = await getDocs(q);
+                // Intentar login por Email
+                let q = query(usersRef, where("email", "==", authData.email), where("password", "==", authData.password));
+                let snapshot = await getDocs(q);
 
-                // 2. Si falla, intentar buscar por Nombre de Usuario y Password
-                if (snap.empty) {
-                    q = query(usersRef, where("username", "==", authForm.email), where("password", "==", authForm.password));
-                    snap = await getDocs(q);
+                // Si falla, intentar login por Username
+                if (snapshot.empty) {
+                    q = query(usersRef, where("username", "==", authData.email), where("password", "==", authData.password));
+                    snapshot = await getDocs(q);
+                }
+                
+                if (snapshot.empty) {
+                    throw new Error("Credenciales incorrectas. Verifica tus datos.");
                 }
 
-                if (snap.empty) throw new Error("Credenciales incorrectas. Verifica tus datos.");
-
-                // 3. Login Exitoso
-                const userData = { ...snap.docs[0].data(), id: snap.docs[0].id };
+                const userData = snapshot.docs[0].data();
+                const userId = snapshot.docs[0].id;
                 
-                // Actualizar última conexión
-                updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userData.id), {
-                    lastLogin: new Date().toISOString()
-                });
-
-                setCurrentUser(userData);
-                addNotification(`Hola de nuevo, ${userData.name}.`, "success");
+                setCurrentUser({ ...userData, id: userId });
+                showToast(`¡Hola de nuevo, ${userData.name}!`, "success");
             }
-
-            // Limpieza y Redirección
+            // Redirigir a tienda tras éxito
             setView('store');
-            setAuthForm({ email: '', password: '', name: '', username: '', dni: '', phone: '', address: '' });
-            
+            // Limpiar formulario
+            setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
+
         } catch (error) {
-            console.error("Auth Error:", error);
-            addNotification(error.message, "error");
+            console.error("Error de autenticación:", error);
+            showToast(error.message, "error");
         } finally {
-            setIsAuthLoading(false);
+            setIsLoading(false);
         }
     };
 
-    const handleLogout = () => {
-        openConfirm(
-            "Cerrar Sesión",
-            "¿Estás seguro de que quieres salir de tu cuenta?",
-            () => {
-                setCurrentUser(null);
-                setCart([]); // Opcional: limpiar carrito local al salir
-                setView('store');
-                addNotification("Has cerrado sesión correctamente.", "info");
-            }
-        );
+    // 2. Gestión de Favoritos (Wishlist)
+    const toggleFavorite = async (product) => {
+        if (!currentUser) {
+            showToast("Debes iniciar sesión para guardar favoritos.", "info");
+            return;
+        }
+        
+        const currentFavs = currentUser.favorites || [];
+        const isAlreadyFav = currentFavs.includes(product.id);
+        let newFavs = [];
+
+        if (isAlreadyFav) {
+            // Eliminar de favoritos
+            newFavs = currentFavs.filter(id => id !== product.id);
+            showToast("Eliminado de tus favoritos.", "info");
+        } else {
+            // Agregar a favoritos
+            newFavs = [...currentFavs, product.id];
+            showToast("¡Guardado en favoritos!", "success");
+        }
+        
+        // Actualización Optimista (UI instantánea)
+        setCurrentUser(prev => ({ ...prev, favorites: newFavs }));
+        
+        // Persistencia en Firebase
+        try {
+            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id);
+            await updateDoc(userRef, { favorites: newFavs });
+        } catch (e) {
+            console.error("Error guardando favorito:", e);
+            // Revertir si falla (opcional, por simplicidad no lo incluimos pero sería ideal)
+        }
     };
 
-    // ---------------------------------------------------------------------------------------------
-    // 6. GESTIÓN DEL CARRITO Y FAVORITOS
-    // ---------------------------------------------------------------------------------------------
-
-    const handleAddToCart = (product, quantity = 1) => {
+    // 3. Gestión del Carrito
+    const manageCart = (product, quantityDelta) => {
         setCart(prevCart => {
             const existingItemIndex = prevCart.findIndex(item => item.product.id === product.id);
-            const currentQty = existingItemIndex >= 0 ? prevCart[existingItemIndex].quantity : 0;
-            const newQty = currentQty + quantity;
-
-            // Validación de Stock Estricta
-            if (settings.enableStockCheck && newQty > product.stock) {
-                addNotification(`Stock insuficiente. Solo quedan ${product.stock} unidades disponibles.`, "warning");
+            const currentQuantity = existingItemIndex >= 0 ? prevCart[existingItemIndex].quantity : 0;
+            const newQuantity = currentQuantity + quantityDelta;
+            
+            // Validaciones de Stock
+            if (newQuantity > Number(product.stock)) {
+                showToast(`Lo sentimos, solo quedan ${product.stock} unidades disponibles.`, "warning");
                 return prevCart;
             }
 
-            if (newQty <= 0) {
-                // Eliminar si la cantidad llega a 0
-                return prevCart.filter(item => item.product.id !== product.id);
+            // Eliminar item si cantidad llega a 0
+            if (newQuantity <= 0) {
+                if (existingItemIndex >= 0) {
+                    showToast("Producto eliminado del carrito.", "info");
+                    return prevCart.filter(item => item.product.id !== product.id);
+                }
+                return prevCart;
             }
-
-            const newCart = [...prevCart];
+            
+            // Actualizar o Agregar
             if (existingItemIndex >= 0) {
-                newCart[existingItemIndex] = { ...newCart[existingItemIndex], quantity: newQty };
-                addNotification("Carrito actualizado.", "info");
+                // Actualizar cantidad existente
+                const updatedCart = [...prevCart];
+                updatedCart[existingItemIndex] = { ...updatedCart[existingItemIndex], quantity: newQuantity };
+                return updatedCart;
             } else {
-                newCart.push({ product, quantity: newQty });
-                addNotification(`"${product.name}" agregado al carrito.`, "success");
+                // Agregar nuevo item
+                showToast("¡Producto agregado al carrito!", "success");
+                return [...prevCart, { product: product, quantity: 1 }];
             }
-            return newCart;
         });
     };
 
-    const handleToggleFavorite = async (product) => {
-        if (!currentUser) {
-            addNotification("Inicia sesión para guardar tus favoritos.", "warning");
-            setView('login');
-            return;
-        }
-
-        const currentFavorites = currentUser.favorites || [];
-        const isFavorite = currentFavorites.includes(product.id);
-        
-        let newFavorites;
-        if (isFavorite) {
-            newFavorites = currentFavorites.filter(id => id !== product.id);
-            addNotification("Producto eliminado de favoritos.", "info");
-        } else {
-            newFavorites = [...currentFavorites, product.id];
-            addNotification("¡Guardado en favoritos!", "success");
-        }
-
-        // Actualización Optimista UI
-        setCurrentUser(prev => ({ ...prev, favorites: newFavorites }));
-
-        // Persistencia DB
-        try {
-            const userRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.id);
-            await updateDoc(userRef, { favorites: newFavorites });
-        } catch (error) {
-            console.error("Error updating favorites:", error);
-            // Revertir si falla (opcional, por ahora solo logueamos)
-        }
+    // 4. Cálculos de Precios y Descuentos
+    const calculateItemPrice = (basePrice, discount) => {
+        if (!discount || discount <= 0) return Number(basePrice);
+        const discounted = Number(basePrice) * (1 - discount / 100);
+        return Math.ceil(discounted);
     };
 
-    // ---------------------------------------------------------------------------------------------
-    // 7. LÓGICA DE CHECKOUT Y PEDIDOS
-    // ---------------------------------------------------------------------------------------------
+    const cartSubtotal = useMemo(() => {
+        return cart.reduce((total, item) => {
+            const price = calculateItemPrice(item.product.basePrice, item.product.discount);
+            return total + (price * item.quantity);
+        }, 0);
+    }, [cart]);
 
-    // Validar y aplicar cupón
-    const handleApplyCoupon = (couponCode) => {
-        const code = couponCode || prompt("Ingresa el código del cupón:"); // Fallback a prompt si no viene por UI
-        if (!code) return;
-
-        const coupon = coupons.find(c => c.code === code.toUpperCase().trim());
-
-        if (!coupon) {
-            addNotification("El cupón ingresado no existe.", "error");
-            return;
-        }
-
-        // Validaciones de Reglas de Negocio del Cupón
-        if (!coupon.isActive && coupon.isActive !== undefined) return addNotification("Este cupón ha sido desactivado.", "error");
-        if (new Date(coupon.expirationDate) < new Date()) return addNotification("Este cupón ha expirado.", "error");
-        if (coupon.usageLimit > 0 && (coupon.usedBy?.length || 0) >= coupon.usageLimit) return addNotification("Este cupón ha alcanzado su límite de uso global.", "error");
+    // Aplicar lógica compleja de cupones
+    const calculateDiscountAmount = (total, coupon) => {
+        if (!coupon) return 0;
         
-        // Validación de Usuario Específico (FEATURE RECUPERADA)
-        if (coupon.targetType === 'user' && coupon.targetUser && coupon.targetUser !== currentUser?.email) {
-            return addNotification("Este cupón no es válido para tu usuario.", "error");
+        // Validar expiración y límites nuevamente por seguridad
+        if (coupon.expirationDate && new Date(coupon.expirationDate) < new Date()) return 0;
+        
+        let discountValue = 0;
+        
+        if (coupon.type === 'fixed') {
+            discountValue = coupon.value;
+            // No descontar más que el total
+            if (discountValue > total) discountValue = total;
+        } else if (coupon.type === 'percentage') {
+            discountValue = total * (coupon.value / 100);
+            // Aplicar tope si existe
+            if (coupon.maxDiscount && coupon.maxDiscount > 0) {
+                if (discountValue > coupon.maxDiscount) {
+                    discountValue = coupon.maxDiscount;
+                }
+            }
         }
+        
+        return Math.ceil(discountValue);
+    };
 
-        // Validación de uso único por usuario
-        if (currentUser && (coupon.usedBy || []).includes(currentUser.id)) {
-            return addNotification("Ya has utilizado este cupón anteriormente.", "warning");
+    const discountAmount = appliedCoupon ? calculateDiscountAmount(cartSubtotal, appliedCoupon) : 0;
+    const finalTotal = Math.max(0, cartSubtotal - discountAmount);
+
+    // Selección de Cupón
+    const selectCoupon = (coupon) => {
+        // Validaciones previas
+        if (new Date(coupon.expirationDate) < new Date()) {
+            return showToast("Este cupón ha vencido.", "error");
         }
-
+        if (coupon.usageLimit && coupon.usedBy && coupon.usedBy.length >= coupon.usageLimit) {
+            return showToast("Este cupón ha agotado sus usos totales.", "error");
+        }
+        if (cartSubtotal < (coupon.minPurchase || 0)) {
+            return showToast(`El monto mínimo para este cupón es $${coupon.minPurchase}.`, "warning");
+        }
+        
         setAppliedCoupon(coupon);
-        addNotification("¡Cupón aplicado correctamente!", "success");
         setShowCouponModal(false);
+        
+        let msg = "¡Cupón aplicado correctamente!";
+        if (coupon.type === 'percentage' && coupon.maxDiscount > 0) {
+            msg += ` (Tope de reintegro: $${coupon.maxDiscount})`;
+        }
+        showToast(msg, "success");
     };
 
-    // Procesar Pedido Final
-    const handleConfirmOrder = async () => {
+    // 5. Confirmación de Pedido (Checkout)
+    const confirmOrder = async () => {
         if (isProcessingOrder) return;
         
-        // Validaciones Finales
-        if (!currentUser && !settings.enableGuestCheckout) {
-            addNotification("Debes iniciar sesión para comprar.", "warning");
-            setView('login');
-            return;
+        // Validaciones de Checkout
+        if (!currentUser) { 
+            setView('login'); 
+            return showToast("Por favor inicia sesión para finalizar la compra.", "info"); 
         }
-        if (!checkoutForm.address || !checkoutForm.city || !checkoutForm.paymentMethod) {
-            addNotification("Por favor completa todos los campos obligatorios.", "warning");
-            return;
+        
+        if (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode) {
+            return showToast("Por favor completa TODOS los datos de envío.", "warning");
+        }
+
+        if (!checkoutData.paymentChoice) {
+            return showToast("Selecciona un método de pago.", "warning");
         }
 
         setIsProcessingOrder(true);
-        const toastId = Date.now();
-        // Usamos un toast persistente simulado
-        addNotification("Procesando tu pedido, por favor no cierres la ventana...", "info");
+        showToast("Procesando tu pedido, por favor espera...", "info");
 
         try {
-            // Recálculo de seguridad de totales
-            const subtotal = cart.reduce((acc, item) => {
-                const { finalPrice } = calculateProductMetrics(item.product.basePrice, item.product.discount);
-                return acc + (finalPrice * item.quantity);
-            }, 0);
-
-            let discountVal = 0;
-            if (appliedCoupon) {
-                if (appliedCoupon.type === 'fixed') discountVal = appliedCoupon.value;
-                else discountVal = subtotal * (appliedCoupon.value / 100);
-                
-                if (appliedCoupon.maxDiscount && discountVal > appliedCoupon.maxDiscount) {
-                    discountVal = appliedCoupon.maxDiscount;
-                }
-            }
-            const total = Math.max(0, subtotal - discountVal);
-
-            // Construcción del Pedido
-            const newOrder = {
-                orderId: `ORD-${Date.now().toString().slice(-6)}`, // ID legible
-                userId: currentUser?.id || 'GUEST',
-                customer: {
-                    name: currentUser?.name || 'Invitado',
-                    email: currentUser?.email || authForm.email,
-                    phone: checkoutForm.phone || currentUser?.phone,
-                    dni: currentUser?.dni || ''
-                },
-                items: cart.map(i => {
-                    const metrics = calculateProductMetrics(i.product.basePrice, i.product.discount, i.product.costPrice);
-                    return {
-                        productId: i.product.id,
-                        title: i.product.name,
-                        quantity: i.quantity,
-                        unit_price: metrics.finalPrice,
-                        original_price: metrics.base,
-                        cost_price: metrics.cost, // Guardar costo para reporte de ganancias
-                        image: i.product.image
-                    };
-                }),
-                financials: {
-                    subtotal,
-                    discount: discountVal,
-                    total,
-                    currency: settings.currency
-                },
-                payment: {
-                    method: checkoutForm.paymentMethod,
-                    status: 'Pendiente'
-                },
-                shipping: {
-                    address: checkoutForm.address,
-                    city: checkoutForm.city,
-                    province: checkoutForm.province,
-                    zipCode: checkoutForm.zipCode,
-                    status: 'Pendiente'
-                },
-                status: 'Pendiente',
-                notes: checkoutForm.notes,
-                couponCode: appliedCoupon?.code || null,
-                date: new Date().toISOString(),
-                history: [
-                    { status: 'Pendiente', date: new Date().toISOString(), note: 'Pedido creado' }
-                ]
+            const orderId = `ORD-${Date.now().toString().slice(-6)}`; // Generar ID único corto
+            
+            const newOrder = { 
+                orderId: orderId,
+                userId: currentUser.id, 
+                customer: { 
+                    name: currentUser.name, 
+                    email: currentUser.email, 
+                    phone: currentUser.phone, 
+                    dni: currentUser.dni 
+                }, 
+                items: cart.map(i => ({ 
+                    productId: i.product.id, 
+                    title: i.product.name, 
+                    quantity: i.quantity, 
+                    unit_price: calculateItemPrice(i.product.basePrice, i.product.discount), 
+                    image: i.product.image 
+                })), 
+                subtotal: cartSubtotal, 
+                discount: discountAmount,
+                total: finalTotal, 
+                discountCode: appliedCoupon ? appliedCoupon.code : null, 
+                status: 'Pendiente', 
+                date: new Date().toISOString(), 
+                shippingAddress: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})`, 
+                paymentMethod: checkoutData.paymentChoice,
+                lastUpdate: new Date().toISOString()
             };
-
-            // Transacción en Lote (Batch Write)
-            const batch = writeBatch(db);
-
+            
             // 1. Guardar Pedido
-            const orderRef = doc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'orders'));
-            batch.set(orderRef, newOrder);
-
-            // 2. Actualizar Stock y Ventas de Productos
-            cart.forEach(item => {
-                const prodRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'products', item.product.id);
-                batch.update(prodRef, { 
-                    stock: increment(-item.quantity),
-                    salesCount: increment(item.quantity)
-                });
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
+            
+            // 2. Actualizar Datos de Usuario (Guardar última dirección)
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), { 
+                address: checkoutData.address, 
+                city: checkoutData.city, 
+                province: checkoutData.province, 
+                zipCode: checkoutData.zipCode,
+                ordersCount: increment(1)
+            });
+            
+            // 3. Limpiar Carrito "En Vivo" en DB
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), { 
+                userId: currentUser.id, 
+                items: [] 
             });
 
-            // 3. Actualizar Usuario (Stats y Dirección)
-            if (currentUser) {
-                const userRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.id);
-                batch.update(userRef, {
-                    ordersCount: increment(1),
-                    totalSpent: increment(total),
-                    address: checkoutForm.address,
-                    city: checkoutForm.city,
-                    province: checkoutForm.province,
-                    zipCode: checkoutForm.zipCode,
-                    phone: checkoutForm.phone
-                });
-                
-                // Limpiar Carrito Remoto
-                const cartRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'carts', currentUser.id);
-                batch.update(cartRef, { items: [] });
-            }
+            // 4. Actualizar Stock y Uso de Cupones (Atomic Batch)
+            const batch = writeBatch(db);
+            
+            // Descontar Stock
+            cart.forEach(item => {
+                const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.product.id);
+                batch.update(productRef, { stock: increment(-item.quantity) });
+            });
 
-            // 4. Marcar Cupón Usado
+            // Registrar uso de cupón
             if (appliedCoupon) {
-                const couponRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'coupons', appliedCoupon.id);
-                batch.update(couponRef, { usedBy: arrayUnion(currentUser?.id || 'GUEST') });
+                const couponRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
+                // Leemos el cupón actual para asegurar array
+                const couponDoc = await getDoc(couponRef);
+                if (couponDoc.exists()) {
+                    const currentUses = couponDoc.data().usedBy || [];
+                    batch.update(couponRef, { usedBy: [...currentUses, currentUser.id] });
+                }
             }
-
+            
             await batch.commit();
 
-            // Éxito
-            setCart([]);
-            setAppliedCoupon(null);
-            setView('profile'); // O página de éxito
-            addNotification("¡Pedido confirmado! Gracias por tu compra.", "success");
+            // 5. Finalización
+            setCart([]); 
+            setAppliedCoupon(null); 
+            setView('profile'); 
+            showToast("¡Pedido realizado con éxito! Gracias por tu compra.", "success");
 
-        } catch (error) {
-            console.error("Order Error:", error);
-            addNotification("Error al procesar el pedido. Intenta nuevamente.", "error");
+        } catch(e) { 
+            console.error("Error al procesar pedido:", e); 
+            showToast("Ocurrió un error al procesar el pedido. Intenta nuevamente.", "error"); 
         } finally {
             setIsProcessingOrder(false);
         }
     };
 
-    // ---------------------------------------------------------------------------------------------
-    // 8. CRUD ADMINISTRATIVO (PRODUCTOS, PEDIDOS, VENTAS)
-    // ---------------------------------------------------------------------------------------------
+    // --- FUNCIONES DE ADMINISTRACIÓN ---
 
-    // --- A. GESTIÓN DE PRODUCTOS ---
-    
-    const handleSaveProduct = async () => {
-        // Validaciones de formulario
-        if (!productForm.name) return addNotification("Falta el nombre del producto.", "warning");
-        if (!productForm.basePrice || Number(productForm.basePrice) <= 0) return addNotification("El precio debe ser mayor a 0.", "warning");
-        if (!productForm.category) return addNotification("Selecciona una categoría.", "warning");
+    // 6. Guardar Producto
+    const saveProductFn = async () => {
+        // Validaciones básicas
+        if (!newProduct.name) return showToast("El nombre del producto es obligatorio.", "warning");
+        if (!newProduct.basePrice || Number(newProduct.basePrice) <= 0) return showToast("El precio debe ser mayor a 0.", "warning");
+        if (!newProduct.category) return showToast("Selecciona una categoría.", "warning");
+
+        const productData = {
+            ...newProduct, 
+            basePrice: Number(newProduct.basePrice), 
+            stock: Number(newProduct.stock), 
+            discount: Number(newProduct.discount || 0), 
+            image: newProduct.image || 'https://via.placeholder.com/150',
+            lastUpdated: new Date().toISOString()
+        };
 
         try {
-            const productData = {
-                name: productForm.name,
-                description: productForm.description || '',
-                basePrice: Number(productForm.basePrice),
-                costPrice: Number(productForm.costPrice || 0), // Recuperado Costo
-                stock: Number(productForm.stock),
-                category: productForm.category,
-                image: productForm.image || 'https://via.placeholder.com/300?text=Sin+Imagen',
-                discount: Number(productForm.discount || 0),
-                featured: productForm.featured || false,
-                lastUpdated: new Date().toISOString()
-            };
-
-            if (productForm.id) {
-                // Editar
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'products', productForm.id), productData);
-                addNotification("Producto actualizado correctamente.", "success");
+            if (editingId) {
+                // Editar existente
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId), productData);
+                showToast("Producto actualizado correctamente.", "success");
             } else {
-                // Crear
-                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'products'), {
+                // Crear nuevo
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), {
                     ...productData,
-                    createdAt: new Date().toISOString(),
-                    salesCount: 0
+                    createdAt: new Date().toISOString()
                 });
-                addNotification("Producto creado exitosamente.", "success");
+                showToast("Producto creado correctamente.", "success");
             }
-            setShowProductModal(false);
-            setProductForm({ id: null, name: '', description: '', basePrice: '', costPrice: '', stock: '', category: '', image: '', discount: 0, featured: false });
-        } catch (error) {
-            console.error(error);
-            addNotification("Error guardando producto.", "error");
+            // Resetear formulario
+            setNewProduct({ name: '', basePrice: '', stock: '', category: '', image: '', description: '', discount: 0 }); 
+            setEditingId(null); 
+            setShowProductForm(false);
+        } catch(e) { 
+            console.error(e);
+            showToast("Error al guardar el producto.", "error"); 
         }
     };
 
-    const handleDeleteProduct = (product) => {
-        openConfirm(
-            "Eliminar Producto",
-            `¿Estás seguro de que quieres eliminar "${product.name}"? Esta acción es irreversible.`,
-            async () => {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'products', product.id));
-                    addNotification("Producto eliminado.", "success");
-                } catch (e) {
-                    addNotification("Error al eliminar.", "error");
-                }
-            },
-            true // isDangerous
-        );
-    };
-
-    // --- B. VENTA LOCAL / MANUAL (FEATURE CRÍTICA) ---
-    // Permite descontar stock manualmente para ventas en mostrador
-    const handleLocalSale = (product) => {
-        // Usamos un modal simulado con window.prompt por simplicidad en esta parte, 
-        // idealmente sería un modal UI, pero cumple el requerimiento funcional.
-        // Mejoramos usando el sistema de confirmación personalizado si tuviéramos input,
-        // pero aquí necesitamos input de cantidad. Usaremos un prompt seguro.
-        
-        // TODO: Reemplazar con Modal UI en V5 si se requiere más estética.
-        const qtyInput = window.prompt(`VENTA LOCAL - ${product.name}\n\nStock Actual: ${product.stock}\nIngrese cantidad a descontar:`, "1");
-        
-        if (qtyInput === null) return;
-        const qty = parseInt(qtyInput);
-
-        if (isNaN(qty) || qty <= 0) return addNotification("Cantidad inválida.", "warning");
-        if (qty > product.stock) return addNotification("No hay suficiente stock.", "error");
-
-        openConfirm(
-            "Confirmar Venta Local",
-            `¿Registrar venta de ${qty} unidades de "${product.name}"? Se descontará del stock.`,
-            async () => {
-                try {
-                    const productRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'products', product.id);
-                    await updateDoc(productRef, {
-                        stock: increment(-qty),
-                        salesCount: increment(qty),
-                        lastLocalSale: new Date().toISOString()
-                    });
-                    
-                    // Opcional: Registrar un "Pedido Fantasma" para que conste en ingresos
-                    // Esto ayuda a que el dashboard de ganancias sea real.
-                    const ghostOrder = {
-                        orderId: `LOC-${Date.now().toString().slice(-6)}`,
-                        userId: 'LOCAL_SALE',
-                        customer: { name: 'Venta Mostrador', email: '-' },
-                        items: [{
-                            productId: product.id,
-                            title: product.name,
-                            quantity: qty,
-                            unit_price: calculateProductMetrics(product.basePrice, product.discount).finalPrice,
-                            cost_price: Number(product.costPrice || 0),
-                            image: product.image
-                        }],
-                        total: calculateProductMetrics(product.basePrice, product.discount).finalPrice * qty,
-                        status: 'Realizado',
-                        date: new Date().toISOString(),
-                        isLocal: true
-                    };
-                    await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'orders'), ghostOrder);
-
-                    addNotification(`Venta registrada. Stock actualizado (-${qty}).`, "success");
-                } catch (e) {
-                    addNotification("Error registrando venta.", "error");
-                }
-            }
-        );
-    };
-
-    // --- C. GESTIÓN DE PEDIDOS ---
-
-    const handleFinalizeOrder = (order) => {
-        openConfirm(
-            "Finalizar Pedido",
-            `¿Marcar el pedido #${order.orderId} como ENTREGADO/FINALIZADO?`,
-            async () => {
-                try {
-                    const orderRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'orders', order.id);
-                    await updateDoc(orderRef, {
-                        status: 'Realizado',
-                        'payment.status': 'Pagado',
-                        'shipping.status': 'Entregado',
-                        lastUpdate: new Date().toISOString(),
-                        history: arrayUnion({ status: 'Realizado', date: new Date().toISOString(), note: 'Finalizado manualmente por Admin' })
-                    });
-                    addNotification("Pedido finalizado correctamente.", "success");
-                } catch (e) {
-                    addNotification("Error al finalizar pedido.", "error");
-                }
-            }
-        );
-    };
-
-    const handleDeleteOrder = (order) => {
-        openConfirm(
-            "Eliminar Pedido",
-            `ADVERTENCIA: ¿Eliminar permanentemente el pedido #${order.orderId}? Esto no restaurará el stock automáticamente.`,
-            async () => {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'orders', order.id));
-                    addNotification("Pedido eliminado del historial.", "success");
-                    setSelectedOrder(null);
-                } catch (e) {
-                    addNotification("Error al eliminar pedido.", "error");
-                }
-            },
-            true // Dangerous action
-        );
-    };
-
-    // ---------------------------------------------------------------------------------------------
-    // FIX: funciones/helpers que faltaban (isAdmin, hasAccess, saveCouponFn, saveSupplierFn)
-    // Se colocan aquí dentro del scope de App para evitar ReferenceError que causaba pantalla en negro
-    // ---------------------------------------------------------------------------------------------
-    const isAdmin = (email) => {
-        if (!email && !currentUser) return false;
-        if (currentUser?.role) return currentUser.role === 'admin';
-        return email === SUPER_ADMIN_EMAIL;
-    };
-
-    const hasAccess = (email) => {
-        if (currentUser?.role) return currentUser.role === 'admin' || currentUser.role === 'employee';
-        return email === SUPER_ADMIN_EMAIL;
-    };
-
+    // 7. Guardar Cupón (COMPLEJO y DETALLADO)
     const saveCouponFn = async () => {
-        try {
-            if (!couponForm.code) return addNotification("El código del cupón es obligatorio.", "warning");
-            if (!couponForm.value || Number(couponForm.value) <= 0) return addNotification("El valor del cupón debe ser mayor a 0.", "warning");
+        // Validaciones exhaustivas
+        if (!newCoupon.code || newCoupon.code.length < 3) return showToast("El código del cupón debe tener al menos 3 caracteres.", "warning");
+        if (!newCoupon.value || Number(newCoupon.value) <= 0) return showToast("El valor del descuento debe ser mayor a 0.", "warning");
+        
+        if (newCoupon.type === 'percentage' && Number(newCoupon.value) > 100) return showToast("El porcentaje no puede ser mayor a 100%.", "warning");
+        
+        if (newCoupon.targetType === 'specific_user' && !newCoupon.targetUser.includes('@')) {
+            return showToast("Si el cupón es para un usuario específico, ingresa un email válido.", "warning");
+        }
 
-            const couponData = {
-                code: (couponForm.code || '').toUpperCase().trim(),
-                type: couponForm.type || 'percentage',
-                value: Number(couponForm.value) || 0,
-                minPurchase: Number(couponForm.minPurchase) || 0,
-                maxDiscount: Number(couponForm.maxDiscount) || 0,
-                expirationDate: couponForm.expirationDate || null,
-                usageLimit: Number(couponForm.usageLimit) || 0,
-                targetType: couponForm.targetType || 'global',
-                targetUser: couponForm.targetType === 'user' ? (couponForm.targetUser || '') : '',
-                isActive: true,
-                usedBy: [],
-                createdAt: new Date().toISOString()
+        try {
+            const couponData = { 
+                ...newCoupon, 
+                code: newCoupon.code.toUpperCase().trim(), 
+                value: Number(newCoupon.value), 
+                minPurchase: Number(newCoupon.minPurchase || 0), 
+                maxDiscount: Number(newCoupon.maxDiscount || 0), 
+                usageLimit: Number(newCoupon.usageLimit || 0), 
+                perUserLimit: Number(newCoupon.perUserLimit || 1),
+                targetUser: newCoupon.targetType === 'global' ? '' : newCoupon.targetUser,
+                createdAt: new Date().toISOString(),
+                usedBy: [] // Inicializar array de usos
             };
 
-            await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'coupons'), couponData);
-            addNotification("Cupón creado correctamente.", "success");
-            setShowCouponFormModal(false);
-            setCouponForm({
-                code: '', type: 'percentage', value: 0, minPurchase: 0, maxDiscount: 0,
-                expirationDate: '', usageLimit: 0, targetType: 'global', targetUser: ''
-            });
-        } catch (e) {
-            console.error("Error saving coupon:", e);
-            addNotification("Error al guardar el cupón.", "error");
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), couponData);
+            
+            // Resetear formulario completamente
+            setNewCoupon({
+                code: '', type: 'percentage', value: 0, minPurchase: 0, maxDiscount: 0, 
+                expirationDate: '', targetType: 'global', targetUser: '', usageLimit: '', perUserLimit: 1
+            }); 
+            showToast("Cupón de descuento creado exitosamente.", "success");
+        } catch(e) { 
+            console.error(e);
+            showToast("Error al crear el cupón.", "error"); 
         }
     };
 
-    const saveSupplierFn = async () => {
+    // 8. Guardar Proveedor (Con validaciones de contacto)
+    const saveSupplierFn = async () => { 
+        if (!newSupplier.name) return showToast("El nombre de la empresa es obligatorio.", "warning");
+        
+        // Validación: Debe tener al menos UN método de contacto
+        if (!newSupplier.phone && !newSupplier.ig) {
+            return showToast("Debes ingresar al menos un método de contacto (Teléfono o Instagram).", "warning");
+        }
+        
+        const supplierData = {
+            ...newSupplier,
+            associatedProducts: newSupplier.associatedProducts || [],
+            createdAt: new Date().toISOString()
+        };
+
         try {
-            if (!supplierForm.name) return addNotification("El nombre del proveedor es obligatorio.", "warning");
-
-            const supplierData = {
-                name: supplierForm.name,
-                contactName: supplierForm.contactName || '',
-                phone: supplierForm.phone || '',
-                email: supplierForm.email || '',
-                website: supplierForm.website || '',
-                notes: supplierForm.notes || '',
-                associatedProducts: supplierForm.associatedProducts || [],
-                createdAt: new Date().toISOString()
-            };
-
-            await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'suppliers'), supplierData);
-            addNotification("Proveedor registrado correctamente.", "success");
-            setShowSupplierModal(false);
-            setSupplierForm({ name: '', contactName: '', phone: '', email: '', website: '', notes: '', associatedProducts: [] });
-        } catch (e) {
-            console.error("Error saving supplier:", e);
-            addNotification("Error al guardar el proveedor.", "error");
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), supplierData); 
+            setNewSupplier({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] }); 
+            setShowSupplierModal(false); 
+            showToast("Proveedor registrado correctamente.", "success"); 
+        } catch(e) {
+            console.error(e);
+            showToast("Error al guardar proveedor.", "error");
         }
     };
 
-    // ---------------------------------------------------------------------------------------------
-    // 9. MODALES DE FORMULARIOS (UI DE GESTIÓN AVANZADA)
-    // ---------------------------------------------------------------------------------------------
+    // 9. Configuración y Equipo (Settings)
+    const saveSettingsFn = async () => { 
+        if (!tempSettings) return;
+        
+        try {
+            const settingsQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'settings'));
+            const settingsSnap = await getDocs(settingsQuery);
+            
+            const dataToSave = { ...tempSettings, aboutUsText: aboutText }; 
+            
+            if (!settingsSnap.empty) {
+                // Actualizar existente
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', settingsSnap.docs[0].id), dataToSave); 
+            } else {
+                // Crear nuevo si no existe
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), dataToSave); 
+            }
+            
+            setSettings(dataToSave);
+            showToast("Configuración global guardada correctamente.", 'success'); 
+        } catch(e) {
+            console.error(e);
+            showToast("Error al guardar configuración.", "error");
+        }
+    };
 
-    // Helper para renderizar el Modal de Productos
-    const renderProductModal = () => (
-        <Modal 
-            isOpen={showProductModal} 
-            onClose={() => setShowProductModal(false)}
-            title={productForm.id ? "Editar Producto" : "Nuevo Producto"}
-            icon={Package}
-            size="lg"
-        >
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Columna Izquierda: Datos Principales */}
-                    <div className="space-y-4">
-                        <InputField 
-                            label="Nombre del Producto" 
-                            placeholder="Ej: Auriculares Gamer RGB" 
-                            value={productForm.name} 
-                            onChange={e => setProductForm({...productForm, name: e.target.value})}
-                            icon={Tag}
-                            required
-                        />
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputField 
-                                label="Precio Venta ($)" 
-                                type="number" 
-                                placeholder="0.00" 
-                                value={productForm.basePrice} 
-                                onChange={e => setProductForm({...productForm, basePrice: e.target.value})}
-                                icon={DollarSign}
-                                required
-                            />
-                            {/* CAMPO SOLICITADO: COSTO */}
-                            <InputField 
-                                label="Costo / Compra ($)" 
-                                type="number" 
-                                placeholder="0.00" 
-                                value={productForm.costPrice} 
-                                onChange={e => setProductForm({...productForm, costPrice: e.target.value})}
-                                icon={Wallet} 
-                            />
-                        </div>
+    // Gestión de Miembros del Equipo
+    const addTeamMemberFn = async () => { 
+        if (!newTeamMember.email.includes('@')) return showToast("Ingresa un email válido.", "warning"); 
+        if (!newTeamMember.name) return showToast("Ingresa el nombre del miembro.", "warning");
+        
+        const currentTeam = settings.team || [];
+        // Evitar duplicados
+        if (currentTeam.some(m => m.email === newTeamMember.email)) return showToast("Este email ya está en el equipo.", "warning");
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputField 
-                                label="Stock Disponible" 
-                                type="number" 
-                                placeholder="0" 
-                                value={productForm.stock} 
-                                onChange={e => setProductForm({...productForm, stock: e.target.value})}
-                                icon={Box}
-                                required
-                            />
-                            <InputField 
-                                label="Descuento (%)" 
-                                type="number" 
-                                placeholder="0" 
-                                value={productForm.discount} 
-                                onChange={e => setProductForm({...productForm, discount: e.target.value})}
-                                icon={Percent}
-                                max={100}
-                            />
-                        </div>
+        const updatedTeam = [...currentTeam, newTeamMember]; 
+        setTempSettings(prev => ({ ...prev, team: updatedTeam })); 
+        setNewTeamMember({ email: '', role: 'employee', name: '' });
+        showToast("Miembro agregado (Recuerda guardar la configuración).", "info");
+    };
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                <Layers className="w-3 h-3" /> Categoría
-                            </label>
-                            <select 
-                                className="w-full bg-[#0f0f13] border border-slate-800 rounded-xl p-4 text-white font-medium focus:border-cyan-500 outline-none transition-all"
-                                value={productForm.category}
-                                onChange={e => setProductForm({...productForm, category: e.target.value})}
-                            >
-                                <option value="">Seleccionar Categoría...</option>
-                                {settings.categories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
+    const removeTeamMemberFn = (email) => {
+        if (email === SUPER_ADMIN_EMAIL) return showToast("No se puede eliminar al Super Admin.", "error");
+        
+        const currentTeam = tempSettings.team || [];
+        const updatedTeam = currentTeam.filter(m => m.email !== email);
+        setTempSettings(prev => ({ ...prev, team: updatedTeam }));
+        showToast("Miembro eliminado (Recuerda guardar la configuración).", "info");
+    };
 
-                    {/* Columna Derecha: Multimedia y Detalles */}
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                <ImageIcon className="w-3 h-3" /> Imagen del Producto
-                            </label>
-                            
-                            {/* Previsualización de Imagen */}
-                            <div 
-                                className="w-full h-48 bg-[#0f0f13] border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-cyan-500/50[...]
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                {productForm.image && productForm.image.length > 100 ? (
-                                    <img src={productForm.image} alt="Preview" className="w-full h-full object-contain p-2" />
-                                ) : (
-                                    <>
-                                        <div className="p-4 bg-slate-800 rounded-full text-slate-400 group-hover:text-cyan-400 group-hover:bg-cyan-900/20 mb-2 transition-all">
-                                            <Upload className="w-6 h-6" />
-                                        </div>
-                                        <p className="text-xs text-slate-500 font-bold uppercase">Click para subir</p>
-                                    </>
-                                )}
-                                <input 
-                                    type="file" 
-                                    ref={fileInputRef} 
-                                    className="hidden" 
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => setProductForm({...productForm, image: reader.result});
-                                            reader.readAsDataURL(file);
-                                        }
-                                    }}
-                                />
+    // --- CÁLCULOS DEL DASHBOARD (CENTRALIZADOS) ---
+    const dashboardMetrics = useMemo(() => {
+        // 1. Demanda en Vivo y Favoritos (Trending)
+        const productStats = {}; // { id: { cart: 0, fav: 0, total: 0 } }
+        
+        // Contar apariciones en Carritos Activos (LiveCarts)
+        liveCarts.forEach(cart => {
+            if (cart.items) {
+                cart.items.forEach(item => {
+                    if (!productStats[item.productId]) productStats[item.productId] = { cart: 0, fav: 0, total: 0 };
+                    productStats[item.productId].cart += 1;
+                    productStats[item.productId].total += 1;
+                });
+            }
+        });
+
+        // Contar apariciones en Favoritos de Usuarios
+        users.forEach(u => {
+            if (u.favorites) {
+                u.favorites.forEach(pid => {
+                    if (!productStats[pid]) productStats[pid] = { cart: 0, fav: 0, total: 0 };
+                    productStats[pid].fav += 1;
+                    productStats[pid].total += 1;
+                });
+            }
+        });
+
+        // Ordenar productos por "calor" (total de interés)
+        const trendingProducts = Object.entries(productStats)
+            .map(([id, stats]) => {
+                const prod = products.find(p => p.id === id);
+                return prod ? { ...prod, stats } : null;
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.stats.total - a.stats.total)
+            .slice(0, 5); // Top 5
+
+        // 2. Finanzas
+        const revenue = orders
+            .filter(o => o.status !== 'Cancelado') // Excluir cancelados
+            .reduce((acc, o) => acc + (o.total || 0), 0);
+            
+        const expensesTotal = expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+        const netIncome = revenue - expensesTotal;
+
+        // 3. Producto Estrella (Ventas reales confirmadas)
+        const salesCount = {};
+        orders.forEach(o => {
+            if (o.status !== 'Cancelado') {
+                o.items.forEach(i => {
+                    salesCount[i.productId] = (salesCount[i.productId] || 0) + i.quantity;
+                });
+            }
+        });
+        
+        let starProductId = null;
+        let maxSales = 0;
+        Object.entries(salesCount).forEach(([id, count]) => {
+            if (count > maxSales) {
+                maxSales = count;
+                starProductId = id;
+            }
+        });
+        
+        const starProduct = starProductId ? products.find(p => p.id === starProductId) : null;
+
+        return { 
+            revenue, 
+            expensesTotal, 
+            netIncome, 
+            trendingProducts, 
+            starProduct, 
+            salesCount,
+            totalOrders: orders.length,
+            totalUsers: users.length
+        };
+    }, [orders, expenses, products, liveCarts, users]);
+
+    // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la Interfaz Gráfica completa y detallada. Por favor escribe "continuar".
+// --- COMPONENTES UI: MODALES DETALLADOS ---
+
+    // Modal de Detalles de Pedido (Visor Completo)
+    const OrderDetailsModal = ({ order, onClose }) => {
+        if (!order) return null;
+
+        return (
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
+                <div className="glass rounded-[2rem] w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border border-slate-800 relative">
+                    {/* Header del Modal */}
+                    <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                        <div>
+                            <h3 className="text-2xl font-black text-white flex items-center gap-2 neon-text">
+                                DETALLE DE PEDIDO <span className="text-cyan-400">#{order.orderId}</span>
+                            </h3>
+                            <div className="flex items-center gap-4 mt-2">
+                                <span className="text-slate-400 text-xs flex items-center gap-1 font-bold tracking-wider">
+                                    <Clock className="w-3 h-3"/> {new Date(order.date).toLocaleString()}
+                                </span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-black tracking-widest ${order.status === 'Realizado' ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30'}`}>
+                                    {order.status}
+                                </span>
                             </div>
                         </div>
-
-                        <TextAreaField 
-                            label="Descripción Detallada" 
-                            placeholder="Describe las características principales..." 
-                            value={productForm.description}
-                            onChange={e => setProductForm({...productForm, description: e.target.value})}
-                            rows={5}
-                        />
-
-                        {/* Switch de Destacado */}
-                        <div 
-                            className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${productForm.featured ? 'bg-yellow-900/10 border-yellow-500/30' : 'bg-sla[...]
-                            onClick={() => setProductForm({...productForm, featured: !productForm.featured})}
-                        >
-                            <div className="flex items-center gap-3">
-                                <Star className={`w-5 h-5 ${productForm.featured ? 'text-yellow-400 fill-yellow-400' : 'text-slate-500'}`} />
+                        <button onClick={onClose} className="p-3 bg-slate-800 rounded-full hover:bg-slate-700 hover:text-white transition shadow-lg border border-slate-700">
+                            <X className="w-5 h-5 text-slate-400"/>
+                        </button>
+                    </div>
+                    
+                    {/* Contenido Scrollable */}
+                    <div className="p-8 overflow-y-auto space-y-8 custom-scrollbar bg-[#050505]">
+                        
+                        {/* Estado Visual */}
+                        <div className="flex justify-between items-center bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-inner">
+                            <div className="flex items-center gap-4">
+                                <div className={`p-4 rounded-full shadow-lg ${order.status === 'Realizado' ? 'bg-green-500/20 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-yellow-500/20 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.2)]'}`}>
+                                    {order.status === 'Realizado' ? <CheckCircle className="w-8 h-8"/> : <Clock className="w-8 h-8"/>}
+                                </div>
                                 <div>
-                                    <p className={`font-bold text-sm ${productForm.featured ? 'text-yellow-100' : 'text-slate-400'}`}>Producto Destacado</p>
-                                    <p className="text-xs text-slate-500">Aparecerá primero en la tienda</p>
+                                    <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Estado Actual</p>
+                                    <p className={`text-xl font-black ${order.status === 'Realizado' ? 'text-green-400' : 'text-yellow-400'}`}>
+                                        {order.status === 'Realizado' ? 'Entregado / Finalizado' : 'Pendiente de Pago/Envío'}
+                                    </p>
                                 </div>
                             </div>
-                            <div className={`w-10 h-5 rounded-full relative transition-colors ${productForm.featured ? 'bg-yellow-500' : 'bg-slate-700'}`}>
-                                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${productForm.featured ? 'left-6' : 'left-1'}`}></div>
+                        </div>
+
+                        {/* Columnas de Info */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {/* Cliente */}
+                            <div className="bg-slate-900/30 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
+                                <h4 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                                    <User className="w-4 h-4"/> Datos del Cliente
+                                </h4>
+                                <div className="space-y-3">
+                                    <p className="text-white font-bold text-lg">{order.customer.name}</p>
+                                    <div className="space-y-1">
+                                        <p className="text-slate-400 text-sm flex justify-between border-b border-dashed border-slate-800/50 pb-1">
+                                            <span>Email:</span> <span className="text-white font-medium">{order.customer.email}</span>
+                                        </p>
+                                        <p className="text-slate-400 text-sm flex justify-between border-b border-dashed border-slate-800/50 pb-1">
+                                            <span>Teléfono:</span> <span className="text-white font-medium">{order.customer.phone || '-'}</span>
+                                        </p>
+                                        <p className="text-slate-400 text-sm flex justify-between">
+                                            <span>DNI:</span> <span className="text-white font-medium">{order.customer.dni || '-'}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Envío */}
+                            <div className="bg-slate-900/30 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
+                                <h4 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                                    <Truck className="w-4 h-4"/> Datos de Entrega
+                                </h4>
+                                <div className="space-y-3">
+                                    <p className="text-white font-medium text-sm leading-relaxed min-h-[3rem]">
+                                        {order.shippingAddress || 'Retiro en sucursal'}
+                                    </p>
+                                    <div className="pt-2 mt-2 border-t border-slate-800/50">
+                                        <p className="text-slate-400 text-xs uppercase font-bold mb-1">Método de Pago</p>
+                                        <div className="flex items-center gap-2">
+                                            <CreditCard className="w-4 h-4 text-cyan-400"/>
+                                            <p className="text-cyan-400 font-black text-sm uppercase">{order.paymentMethod}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Lista de Productos */}
+                        <div>
+                            <h4 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                                <Package className="w-4 h-4"/> Productos ({order.items.length})
+                            </h4>
+                            <div className="space-y-3">
+                                {order.items.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-cyan-900/30 transition group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-white w-12 h-12 flex items-center justify-center rounded-lg p-1 shadow-md group-hover:scale-105 transition">
+                                                {item.image ? <img src={item.image} className="w-full h-full object-contain"/> : <Package className="text-black"/>}
+                                            </div> 
+                                            <div>
+                                                <p className="text-white font-bold text-sm">{item.title}</p>
+                                                <p className="text-slate-500 text-xs flex items-center gap-2">
+                                                    <span className="bg-slate-800 text-slate-300 px-1.5 rounded text-[10px] font-bold">x{item.quantity}</span>
+                                                    <span>${item.unit_price.toLocaleString()} c/u</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className="text-white font-mono font-bold text-lg tracking-tight">
+                                            ${(item.unit_price * item.quantity).toLocaleString()}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Resumen Financiero */}
+                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3 shadow-lg">
+                            <div className="flex justify-between text-slate-400 text-sm font-medium">
+                                <span>Subtotal Productos</span>
+                                <span>${(order.subtotal || order.total).toLocaleString()}</span>
+                            </div>
+                            
+                            {order.discount > 0 && (
+                                <div className="flex justify-between text-green-400 text-sm font-bold bg-green-900/10 p-2 rounded-lg border border-green-900/30 dashed-border">
+                                    <span className="flex items-center gap-2">
+                                        <Ticket className="w-3 h-3"/> Descuento ({order.discountCode || 'Cupón'})
+                                    </span>
+                                    <span>-${order.discount.toLocaleString()}</span>
+                                </div>
+                            )}
+                            
+                            <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-800 border-dashed">
+                                <span className="text-white font-bold text-lg">Total Abonado</span>
+                                <span className="text-3xl font-black text-cyan-400 neon-text tracking-tighter">
+                                    ${order.total.toLocaleString()}
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div className="flex gap-4 pt-4 border-t border-slate-800">
-                    <Button variant="secondary" onClick={() => setShowProductModal(false)} className="flex-1">Cancelar</Button>
-                    <Button onClick={handleSaveProduct} className="flex-1" icon={Save}>Guardar Producto</Button>
-                </div>
             </div>
-        </Modal>
-    );
+        );
+    };
 
-    // Helper para renderizar el Modal de Cupones (Con TARGET USER RESTAURADO)
-    const renderCouponModal = () => (
-        <Modal 
-            isOpen={showCouponFormModal} 
-            onClose={() => setShowCouponFormModal(false)}
-            title="Gestión de Cupones"
-            icon={Ticket}
-        >
-            <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                    <InputField 
-                        label="Código del Cupón" 
-                        placeholder="Ej: OFERTA2024" 
-                        value={couponForm.code} 
-                        onChange={e => setCouponForm({...couponForm, code: e.target.value.toUpperCase()})}
-                        icon={Tag}
-                        required
-                    />
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1 block">Tipo de Descuento</label>
-                        <div className="flex bg-[#0f0f13] p-1 rounded-xl border border-slate-800">
-                            <button 
-                                onClick={() => setCouponForm({...couponForm, type: 'percentage'})}
-                                className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${couponForm.type === 'percentage' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-400 hover:text[...]
-                            >
-                                Porcentaje (%)
-                            </button>
-                            <button 
-                                onClick={() => setCouponForm({...couponForm, type: 'fixed'})}
-                                className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${couponForm.type === 'fixed' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-wh[...]
-                            >
-                                Monto Fijo ($)
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    // Modal Selector de Cupones (Visualmente Rico)
+    const CouponSelectorModal = () => {
+        if (!showCouponModal) return null;
+        
+        // Filtrado de cupones válidos
+        const availableCoupons = coupons.filter(c => {
+            const isNotExpired = !c.expirationDate || new Date(c.expirationDate) > new Date();
+            const isUserTarget = !c.targetUser || (currentUser && c.targetUser === currentUser.email);
+            const isGlobal = c.targetType === 'global';
+            const usedCount = c.usedBy ? c.usedBy.length : 0;
+            const notExhausted = !c.usageLimit || usedCount < c.usageLimit;
+            const userNotUsed = currentUser && c.usedBy && !c.usedBy.includes(currentUser.id);
+            
+            return isNotExpired && (isUserTarget || isGlobal) && notExhausted && userNotUsed;
+        });
 
-                <div className="grid grid-cols-2 gap-4">
-                    <InputField 
-                        label="Valor del Descuento" 
-                        type="number" 
-                        value={couponForm.value} 
-                        onChange={e => setCouponForm({...couponForm, value: e.target.value})}
-                        icon={couponForm.type === 'fixed' ? DollarSign : Percent}
-                    />
-                    <InputField 
-                        label="Compra Mínima ($)" 
-                        type="number" 
-                        value={couponForm.minPurchase} 
-                        onChange={e => setCouponForm({...couponForm, minPurchase: e.target.value})}
-                        icon={ShoppingCart}
-                    />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                    <InputField 
-                        label="Límite de Usos (0 = Infinito)" 
-                        type="number" 
-                        value={couponForm.usageLimit} 
-                        onChange={e => setCouponForm({...couponForm, usageLimit: e.target.value})}
-                        icon={Users}
-                    />
-                    <InputField 
-                        label="Fecha de Expiración" 
-                        type="date" 
-                        value={couponForm.expirationDate} 
-                        onChange={e => setCouponForm({...couponForm, expirationDate: e.target.value})}
-                        icon={Calendar}
-                    />
-                </div>
-
-                {/* SECCIÓN RESTAURADA: TARGET USER (CUPÓN PERSONALIZADO) */}
-                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Target className="w-4 h-4 text-purple-400" />
-                        <h4 className="text-sm font-bold text-white uppercase tracking-wider">Restricción de Usuario</h4>
-                    </div>
+        return (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up">
+                <div className="glass rounded-[2rem] w-full max-w-lg overflow-hidden relative shadow-2xl border border-purple-500/20 bg-[#050505]">
+                    <button onClick={()=>setShowCouponModal(false)} className="absolute top-6 right-6 p-2 bg-slate-900 rounded-full text-slate-400 hover:text-white transition z-10 hover:bg-slate-800">
+                        <X className="w-5 h-5"/>
+                    </button>
                     
-                    <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input 
-                                type="radio" 
-                                name="targetType" 
-                                checked={couponForm.targetType === 'global'}
-                                onChange={() => setCouponForm({...couponForm, targetType: 'global'})}
-                                className="accent-cyan-500"
-                            />
-                            <span className="text-sm text-slate-300">Global (Todos)</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input 
-                                type="radio" 
-                                name="targetType" 
-                                checked={couponForm.targetType === 'user'}
-                                onChange={() => setCouponForm({...couponForm, targetType: 'user'})}
-                                className="accent-purple-500"
-                            />
-                            <span className="text-sm text-slate-300">Usuario Específico</span>
-                        </label>
+                    <div className="p-8 bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-b border-slate-800">
+                        <h3 className="text-2xl font-black text-white mb-2 flex items-center gap-3">
+                            <div className="bg-purple-900/20 p-2 rounded-lg border border-purple-500/30">
+                                <Gift className="w-6 h-6 text-purple-400"/>
+                            </div>
+                            Mis Beneficios
+                        </h3>
+                        <p className="text-slate-400 text-sm">Selecciona un cupón para aplicar el descuento a tu compra.</p>
                     </div>
 
-                    {couponForm.targetType === 'user' && (
-                        <div className="animate-fade-in-down">
-                            <InputField 
-                                label="Email del Usuario Destino" 
-                                placeholder="usuario@ejemplo.com"
-                                value={couponForm.targetUser}
-                                onChange={e => setCouponForm({...couponForm, targetUser: e.target.value})}
-                                icon={User}
-                                required
-                            />
-                            <p className="text-[10px] text-slate-500 mt-2 ml-1">
-                                * Este cupón solo podrá ser canjeado por la cuenta asociada a este email.
-                            </p>
-                        </div>
-                    )}
+                    <div className="p-8 space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar bg-[#050505]">
+                        {availableCoupons.length === 0 ? (
+                            <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-2xl">
+                                <Ticket className="w-16 h-16 text-slate-700 mx-auto mb-4"/>
+                                <p className="text-slate-400 font-bold text-lg">No tienes cupones disponibles.</p>
+                                <p className="text-slate-600 text-sm mt-2">Mantente atento a nuestras redes sociales.</p>
+                            </div>
+                        ) : availableCoupons.map(c => {
+                            const canApply = cartSubtotal >= (c.minPurchase || 0);
+                            return (
+                                <div key={c.id} onClick={() => canApply && selectCoupon(c)} className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group ${canApply ? 'bg-slate-900 border-slate-700 hover:border-purple-500 cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:scale-[1.02]' : 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed grayscale'}`}>
+                                    {/* Decoración lateral */}
+                                    <div className={`absolute top-0 left-0 w-2 h-full ${canApply ? 'bg-purple-500' : 'bg-slate-700'}`}></div>
+                                    
+                                    <div className="p-5 pl-8 flex justify-between items-center">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="font-black text-xl text-white tracking-widest font-mono">{c.code}</span>
+                                                <span className="text-[10px] bg-purple-900/30 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30 uppercase font-bold">
+                                                    {c.type === 'fixed' ? 'DESCUENTO FIJO' : 'PORCENTAJE'}
+                                                </span>
+                                            </div>
+                                            <p className="text-purple-400 font-bold text-sm">
+                                                {c.type === 'fixed' ? `Ahorra $${c.value}` : `${c.value}% de Descuento`}
+                                                {c.maxDiscount > 0 && <span className="text-slate-500 text-xs ml-1 font-normal">(Tope ${c.maxDiscount})</span>}
+                                            </p>
+                                            
+                                            {/* Validación visual de mínimo de compra */}
+                                            {c.minPurchase > 0 && (
+                                                <p className={`text-xs mt-3 font-bold flex items-center gap-1 ${canApply ? 'text-slate-500' : 'text-red-400'}`}>
+                                                    {canApply ? <CheckCircle className="w-3 h-3"/> : <AlertCircle className="w-3 h-3"/>}
+                                                    Compra mínima: ${c.minPurchase}
+                                                </p>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Botón de acción */}
+                                        {canApply && (
+                                            <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white shadow-lg transform group-hover:scale-110 transition ml-4">
+                                                <Plus className="w-6 h-6"/>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-
-                <Button onClick={saveCouponFn} className="w-full" icon={Save}>Crear Cupón</Button>
             </div>
-        </Modal>
-    );
+        );
+    };
 
-    // Helper para renderizar el Modal de Proveedores
-    const renderSupplierModal = () => (
-        <Modal
-            isOpen={showSupplierModal}
-            onClose={() => setShowSupplierModal(false)}
-            title="Registrar Proveedor"
-            icon={Truck}
-        >
-            <div className="space-y-4">
-                <InputField 
-                    label="Nombre de la Empresa" 
-                    value={supplierForm.name} 
-                    onChange={e => setSupplierForm({...supplierForm, name: e.target.value})} 
-                    icon={Briefcase}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                    <InputField 
-                        label="Contacto" 
-                        value={supplierForm.contactName} 
-                        onChange={e => setSupplierForm({...supplierForm, contactName: e.target.value})} 
-                        icon={User}
-                    />
-                    <InputField 
-                        label="Teléfono" 
-                        value={supplierForm.phone} 
-                        onChange={e => setSupplierForm({...supplierForm, phone: e.target.value})} 
-                        icon={Phone}
-                    />
+    // Estado de Carga Inicial
+    if (isLoading && view === 'store') {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white">
+                <div className="relative">
+                    <div className="w-24 h-24 rounded-full border-4 border-slate-800 border-t-cyan-500 animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Zap className="w-8 h-8 text-cyan-500 animate-pulse"/>
+                    </div>
                 </div>
-                <InputField 
-                    label="Email / Web" 
-                    value={supplierForm.email} 
-                    onChange={e => setSupplierForm({...supplierForm, email: e.target.value})} 
-                    icon={Globe}
-                />
-                <TextAreaField 
-                    label="Notas Adicionales" 
-                    value={supplierForm.notes} 
-                    onChange={e => setSupplierForm({...supplierForm, notes: e.target.value})} 
-                />
-                <Button onClick={saveSupplierFn} className="w-full">Guardar Proveedor</Button>
+                <h1 className="text-3xl font-black tracking-[0.5em] mt-8 animate-pulse neon-text">SUSTORE</h1>
+                <p className="text-slate-500 text-sm mt-4 font-mono uppercase tracking-widest">Cargando sistema...</p>
             </div>
-        </Modal>
-    );
+        );
+    }
 
-    // ---------------------------------------------------------------------------------------------
-    // 10. ESTRUCTURA DE LAYOUT Y NAVEGACIÓN (RENDER)
-    // ---------------------------------------------------------------------------------------------
-
+    // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
-        <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#050505] font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+        <div className="min-h-screen flex flex-col relative overflow-hidden bg-grid font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
             
-            {/* --- BACKGROUND EFFECTS (Ambientación Cyberpunk) --- */}
-            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                {/* Orbes de luz difusa */}
-                <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-900/10 rounded-full blur-[180px] animate-pulse-slow"></div>
-                <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-cyan-900/10 rounded-full blur-[180px] animate-pulse-slow"></div>
-                
-                {/* Grid Overlay sutil */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+            {/* Efectos de Fondo Globales */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-cyan-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
             </div>
 
-            {/* --- COMPONENTES GLOBALES --- */}
-            
-            {/* Notificaciones (Toast Stack) */}
-            <div className="fixed top-24 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
-                <div className="pointer-events-auto flex flex-col gap-2">
-                    {notifications.map(n => (
-                        <ToastNotification 
-                            key={n.id} 
-                            id={n.id} 
-                            message={n.message} 
-                            type={n.type} 
-                            onClose={removeNotification} 
-                        />
+            {/* Contenedores Globales (Toasts y Modales) */}
+            <div className="fixed top-24 right-4 z-[9999] space-y-3 pointer-events-none">
+                {/* Toasts necesitan pointer-events-auto para poder cerrarlos */}
+                <div className="pointer-events-auto space-y-3">
+                    {toasts.map(t => (
+                        <Toast key={t.id} message={t.message} type={t.type} onClose={()=>removeToast(t.id)}/>
                     ))}
                 </div>
             </div>
-
-            {/* Diálogo de Confirmación */}
-            <ConfirmationDialog 
-                config={confirmDialog} 
-                onConfirm={confirmDialog.onConfirm} 
-                onCancel={() => setConfirmDialog({...confirmDialog, isOpen: false})} 
+            
+            <ConfirmModal 
+                isOpen={modalConfig.isOpen} 
+                title={modalConfig.title} 
+                message={modalConfig.message} 
+                onConfirm={modalConfig.onConfirm} 
+                onCancel={()=>setModalConfig({...modalConfig, isOpen:false})} 
+                confirmText={modalConfig.confirmText}
+                cancelText={modalConfig.cancelText}
+                isDangerous={modalConfig.isDangerous} 
             />
+            
+            <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+            <CouponSelectorModal />
 
-            {/* Modales de Gestión */}
-            {renderProductModal()}
-            {renderCouponModal()}
-            {renderSupplierModal()}
-            {/* Modal de Detalle de Pedido se renderiza condicionalmente abajo */}
-
-            {/* --- NAVBAR SUPERIOR (SOLO VISIBLE SI NO ES LOGIN/ADMIN FULLSCREEN) --- */}
-            {view !== 'login' && view !== 'register' && view !== 'admin' && (
-                <nav className="fixed top-0 w-full h-24 z-50 px-6 md:px-12 flex items-center justify-between border-b border-white/5 backdrop-blur-xl transition-all duration-300 bg-black/50 supports-[[...]
-                    
-                    {/* IZQUIERDA: MENÚ Y LOGO */}
+            {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
+            {view !== 'admin' && (
+                <nav className="fixed top-0 w-full h-24 glass z-50 px-6 md:px-12 flex items-center justify-between border-b border-slate-800/50 backdrop-blur-xl transition-all duration-300">
+                    {/* Logo y Menú */}
                     <div className="flex items-center gap-6">
-                        <button 
-                            onClick={()=>setIsMenuOpen(true)} 
-                            className="p-3 bg-white/5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition border border-white/5 group active:scale-95"
-                            aria-label="Abrir Menú"
-                        >
-                            <Menu className="w-6 h-6 group-hover:scale-110 transition" />
+                        <button onClick={()=>setIsMenuOpen(true)} className="p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition border border-slate-700/50 group">
+                            <Menu className="w-6 h-6 group-hover:scale-110 transition"/>
                         </button>
-                        
-                        <div 
-                            className="cursor-pointer group flex flex-col justify-center select-none" 
-                            onClick={()=>setView('store')}
-                        >
-                            <h1 className="text-3xl font-black text-white tracking-tighter italic relative">
-                                <span className="relative z-10 group-hover:text-cyan-400 transition-colors duration-300">
-                                    {settings?.storeName || 'SUSTORE'}
-                                </span>
-                                {/* Efecto Neon Sutil */}
-                                <span className="absolute top-0 left-0 w-full h-full text-cyan-500 blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300">
-                                    {settings?.storeName}
-                                </span>
-                            </h1>
-                            <div className="h-0.5 w-8 bg-cyan-500 rounded-full group-hover:w-full transition-all duration-500 mt-1 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+                        <div className="cursor-pointer group flex flex-col" onClick={()=>setView('store')}>
+                            <span className="text-3xl font-black text-white tracking-tighter italic group-hover:neon-text transition-all duration-300">
+                                {settings?.storeName || 'SUSTORE'}
+                            </span>
+                            <div className="h-1 w-1/2 bg-cyan-500 rounded-full group-hover:w-full transition-all duration-500"></div>
                         </div>
                     </div>
                     
-                    {/* CENTRO: BARRA DE BÚSQUEDA (Desktop) */}
-                    <div className="hidden lg:flex items-center relative w-1/3 max-w-xl group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl opacity-0 group-focus-within:opacity-20 transition-opacity duration-500 blur-md"></div[...]
-                        <div className="relative w-full flex items-center bg-[#0a0a0a] border border-white/10 rounded-2xl px-6 py-3.5 focus-within:border-cyan-500/50 transition-all shadow-inner">
-                            <Search className="w-5 h-5 text-slate-500 mr-4 group-focus-within:text-cyan-400 transition-colors" />
-                            <input 
-                                className="bg-transparent outline-none text-sm w-full text-white placeholder-slate-500 font-medium tracking-wide" 
-                                placeholder="¿Qué estás buscando hoy?" 
-                                value={searchQuery} 
-                                onChange={e => setSearchQuery(e.target.value)}
-                            />
-                            {searchQuery && (
-                                <button onClick={()=>setSearchQuery('')} className="ml-2 text-slate-600 hover:text-white transition">
-                                    <X className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
+                    {/* Barra de Búsqueda (Visible en Desktop) */}
+                    <div className="hidden lg:flex items-center bg-slate-900/50 border border-slate-700/50 rounded-2xl px-6 py-3 w-1/3 focus-within:border-cyan-500/50 focus-within:bg-slate-900 transition shadow-inner group">
+                        <Search className="w-5 h-5 text-slate-400 mr-3 group-focus-within:text-cyan-400 transition"/>
+                        <input 
+                            className="bg-transparent outline-none text-sm w-full text-white placeholder-slate-500 font-medium" 
+                            placeholder="¿Qué estás buscando hoy?" 
+                            value={searchQuery} 
+                            onChange={e=>setSearchQuery(e.target.value)}
+                        />
                     </div>
 
-                    {/* DERECHA: ACCIONES DE USUARIO */}
+                    {/* Acciones de Usuario */}
                     <div className="flex items-center gap-4">
                         {/* Botón Soporte */}
-                        <a 
-                            href={settings?.whatsappLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition[...]
-                        >
-                            <MessageCircle className="w-5 h-5 group-hover:animate-bounce" /> 
-                            <span className="hidden lg:inline">Soporte</span>
-                        </a>
+                        <button onClick={()=>window.open(settings?.whatsappLink, '_blank')} className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                            <MessageCircle className="w-5 h-5"/> Soporte
+                        </button>
                         
                         {/* Botón Carrito */}
-                        <button 
-                            onClick={()=>setView('cart')} 
-                            className="relative p-3 bg-white/5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 border border-white/5 transition group hover:border-cyan-500/30 active:scale[...]
-                        >
-                            <ShoppingBag className="w-6 h-6 group-hover:scale-110 transition" />
+                        <button onClick={()=>setView('cart')} className="relative p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group hover:border-cyan-500/30">
+                            <ShoppingBag className="w-6 h-6 group-hover:scale-110 transition"/>
                             {cart.length > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 bg-cyan-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 bor[...]
+                                <span className="absolute -top-2 -right-2 bg-cyan-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-[#050505] animate-bounce-short">
                                     {cart.length}
                                 </span>
                             )}
                         </button>
                         
-                        {/* Botón Perfil / Login */}
+                        {/* Perfil / Login */}
                         {currentUser ? (
-                            <div className="relative group">
-                                <button 
-                                    onClick={()=>setView('profile')} 
-                                    className="flex items-center gap-3 pl-2 pr-4 py-2 bg-white/5 rounded-xl border border-white/5 hover:border-cyan-500/50 transition group hover:bg-white/10"
-                                >
-                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white font-bold shadow-lg text-sm border border[...]
-                                        {currentUser.avatar ? (
-                                            <img src={currentUser.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                                        ) : (
-                                            currentUser.name.charAt(0)
-                                        )}
-                                    </div>
-                                    <div className="text-left hidden md:block">
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">Cuenta</p>
-                                        <p className="text-sm font-bold text-white leading-none group-hover:text-cyan-400 transition truncate max-w-[100px]">
-                                            {currentUser.name.split(' ')[0]}
-                                        </p>
-                                    </div>
-                                </button>
-                            </div>
+                            <button onClick={()=>setView('profile')} className="flex items-center gap-3 pl-2 pr-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700/50 hover:border-cyan-500/50 transition group">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg text-sm group-hover:scale-105 transition">
+                                    {currentUser.name.charAt(0)}
+                                </div>
+                                <div className="text-left hidden md:block">
+                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Hola,</p>
+                                    <p className="text-sm font-bold text-white leading-none group-hover:text-cyan-400 transition">{currentUser.name.split(' ')[0]}</p>
+                                </div>
+                            </button>
                         ) : (
-                            <button 
-                                onClick={()=>setView('login')} 
-                                className="px-6 py-3 bg-white text-black rounded-xl text-sm font-black hover:bg-cyan-400 transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba([...]
-                            >
-                                <User className="w-5 h-5" /> 
-                                <span className="hidden md:inline">INGRESAR</span>
+                            <button onClick={()=>setView('login')} className="px-6 py-3 bg-white text-black rounded-xl text-sm font-black hover:bg-cyan-400 transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center gap-2 transform hover:-translate-y-0.5">
+                                <User className="w-5 h-5"/> INGRESAR
                             </button>
                         )}
                     </div>
                 </nav>
             )}
-
-            {/* --- SIDEBAR MÓVIL (MENU OFF-CANVAS) --- */}
+            
+            {/* --- MENÚ MÓVIL (DETALLADO Y EXPLÍCITO) --- */}
             {isMenuOpen && (
                 <div className="fixed inset-0 z-[10000] flex justify-start">
-                    {/* Backdrop */}
-                    <div 
-                        className="fixed inset-0 bg-black/90 backdrop-blur-sm transition-opacity" 
-                        onClick={()=>setIsMenuOpen(false)}
-                    ></div>
+                    {/* Backdrop oscuro */}
+                    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onClick={()=>setIsMenuOpen(false)}></div>
                     
                     {/* Panel Lateral */}
                     <div className="relative w-80 bg-[#0a0a0a] h-full p-8 border-r border-slate-800 animate-fade-in-right flex flex-col shadow-2xl z-[10001]">
                         <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
                             <h2 className="text-3xl font-black text-white neon-text tracking-tight">MENÚ</h2>
-                            <button 
-                                onClick={()=>setIsMenuOpen(false)} 
-                                className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 border border-slate-800"
-                            >
-                                <X className="w-6 h-6" />
+                            <button onClick={()=>setIsMenuOpen(false)} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 border border-slate-800">
+                                <X className="w-6 h-6"/>
                             </button>
                         </div>
                         
+                        {/* Lista de Botones Explícita */}
                         <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2">
-                            {/* Enlaces de Navegación */}
-                            {[
-                                { id: 'store', icon: Home, label: 'Inicio' },
-                                { id: 'profile', icon: User, label: 'Mi Perfil' },
-                                { id: 'cart', icon: ShoppingBag, label: 'Mi Carrito', badge: cart.length },
-                                { id: 'about', icon: Info, label: 'Sobre Nosotros' },
-                                { id: 'help', icon: FileQuestion, label: 'Ayuda & FAQ' }
-                            ].map((item) => (
-                                <button 
-                                    key={item.id}
-                                    onClick={()=>{setView(item.id); setIsMenuOpen(false)}} 
-                                    className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group borde[...]
-                                >
-                                    <item.icon className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition-colors" /> 
-                                    {item.label}
-                                    {item.badge > 0 && (
-                                        <span className="ml-auto bg-cyan-900/30 text-cyan-400 text-xs px-2 py-1 rounded-full border border-cyan-500/20">
-                                            {item.badge}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
-
-                            <div className="h-px bg-slate-800 my-6 mx-4"></div>
-
-                            {/* Enlace Admin (Protegido) */}
-                            {currentUser && (currentUser.role === 'admin' || currentUser.role === 'employee' || currentUser.email === SUPER_ADMIN_EMAIL) && (
-                                <button 
-                                    onClick={()=>{setView('admin'); setIsMenuOpen(false)}} 
-                                    className="w-full text-left text-lg font-bold text-cyan-400 mt-2 pt-4 border-t border-slate-800 flex items-center gap-4 p-4 bg-cyan-900/10 rounded-xl hover:bg-cyan-[...]
-                                >
-                                    <Shield className="w-6 h-6" /> 
-                                    Panel Admin
-                                </button>
-                            )}
-
-                            {currentUser && (
-                                <button 
-                                    onClick={()=>{handleLogout(); setIsMenuOpen(false)}} 
-                                    className="w-full text-left text-lg font-bold text-red-400 mt-2 flex items-center gap-4 p-4 hover:bg-red-900/10 rounded-xl transition"
-                                >
-                                    <LogOut className="w-6 h-6" /> 
-                                    Cerrar Sesión
+                            <button onClick={()=>{setView('store');setIsMenuOpen(false)}} className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
+                                <Home className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition"/> Inicio
+                            </button>
+                            
+                            <button onClick={()=>{setView('profile');setIsMenuOpen(false)}} className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
+                                <User className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition"/> Mi Perfil
+                            </button>
+                            
+                            <button onClick={()=>{setView('cart');setIsMenuOpen(false)}} className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
+                                <div className="relative">
+                                    <ShoppingBag className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition"/>
+                                    {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-cyan-500 text-[10px] text-white rounded-full w-4 h-4 flex items-center justify-center font-bold">{cart.length}</span>}
+                                </div>
+                                Mi Carrito
+                            </button>
+                            
+                            <div className="h-px bg-slate-800 my-4 mx-4"></div>
+                            
+                            <button onClick={()=>{setView('about');setIsMenuOpen(false)}} className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
+                                <Info className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition"/> Sobre Nosotros
+                            </button>
+                            
+                            <button onClick={()=>{setView('guide');setIsMenuOpen(false)}} className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
+                                <FileQuestion className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition"/> Cómo Comprar
+                            </button>
+                            
+                            {/* Panel Admin (Solo si tiene permisos) */}
+                            {hasAccess(currentUser?.email) && (
+                                <button onClick={()=>{setView('admin');setIsMenuOpen(false)}} className="w-full text-left text-lg font-bold text-cyan-400 mt-6 pt-6 border-t border-slate-800 flex items-center gap-4 p-4 bg-cyan-900/10 rounded-xl hover:bg-cyan-900/20 transition border border-cyan-500/20">
+                                    <Shield className="w-6 h-6"/> Admin Panel
                                 </button>
                             )}
                         </div>
                         
-                        {/* Footer del Menú */}
-                        <div className="pt-6 border-t border-slate-800 text-center">
-                            <p className="text-xs text-slate-600 font-mono">v3.0.0 - {settings.storeName}</p>
+                        <div className="mt-8 pt-8 border-t border-slate-800 text-center">
+                            <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">{settings.storeName} © 2024</p>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Espaciador para no solapar contenido con el Navbar fijo */}
-            {view !== 'admin' && view !== 'login' && view !== 'register' && <div className="h-32"></div>}
-             {/* --- CONTENEDOR PRINCIPAL DE VISTAS (MAIN) --- */}
+            {/* Espaciador para el Navbar Fixed */}
+            {view !== 'admin' && <div className="h-32"></div>}
+
+            {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
             <main className={`flex-grow relative z-10 ${view === 'admin' ? 'h-screen flex overflow-hidden' : 'p-4 md:p-8'}`}>
                 
-                {/* --------------------------------------------------------------------------------
-                   1. VISTA TIENDA (CATÁLOGO Y HERO)
-                   -------------------------------------------------------------------------------- */}
+                {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
                     <div className="max-w-[1400px] mx-auto animate-fade-up">
                         
-                        {/* Banner de Anuncios */}
+                        {/* Anuncio Global (Marquesina) */}
                         {settings?.announcementMessage && (
-                            <div className="w-full bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border border-cyan-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden g[...]
+                            <div className="w-full bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border border-cyan-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-white/5 skew-x-12 -translate-x-full group-hover:translate-x-full transition duration-1000"></div>
                                 <p className="text-cyan-300 font-black text-xs md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3">
-                                    <Flame className="w-4 h-4 text-orange-500 animate-fire"/> 
-                                    {settings.announcementMessage} 
-                                    <Flame className="w-4 h-4 text-orange-500 animate-fire"/>
+                                    <Flame className="w-4 h-4 text-orange-500"/> {settings.announcementMessage} <Flame className="w-4 h-4 text-orange-500"/>
                                 </p>
                             </div>
                         )}
 
-                        {/* Hero Section (Banner Principal) */}
+                        {/* Banner Hero */}
                         <div className="relative w-full h-[400px] md:h-[550px] rounded-[3rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group relative bg-[#080808]">
+                            {/* Imagen de fondo */}
                             {settings?.heroUrl ? (
-                                <img src={settings.heroUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" alt="Hero" />
+                                <img src={settings.heroUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105"/>
                             ) : (
-                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black opacity-80"></div>
+                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-900 to-purple-900 opacity-20"></div>
                             )}
                             
+                            {/* Overlay de Texto */}
                             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10">
-                                <div className="max-w-3xl animate-fade-up">
-                                    <span className="inline-block py-1 px-3 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold uppercase tracking-widest mb-6 backdro[...]
-                                        Nueva Colección 2025
-                                    </span>
+                                <div className="max-w-2xl animate-fade-up">
+                                    <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 inline-block">Nueva Colección</span>
                                     <h1 className="text-5xl md:text-8xl font-black text-white leading-[0.9] drop-shadow-2xl mb-6">
                                         TECNOLOGÍA <br/>
                                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-pulse-slow">
                                             DEL FUTURO
                                         </span>
                                     </h1>
-                                    <p className="text-slate-400 text-lg mb-8 max-w-lg font-medium leading-relaxed">
-                                        Explora nuestra selección premium de dispositivos con garantía oficial.
+                                    <p className="text-slate-400 text-lg mb-8 max-w-lg font-medium">
+                                        Explora nuestra selección premium de dispositivos. Calidad garantizada y soporte técnico especializado.
                                     </p>
                                     <div className="flex gap-4">
-                                        <button onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})} className="px-8 py-4 bg-white text-black font-black rounded-xl ho[...]
+                                        <button onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center gap-2 group/btn">
                                             VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition"/>
                                         </button>
-                                        <button onClick={() => setView('about')} className="px-8 py-4 bg-transparent border border-white/20 text-white font-bold rounded-xl hover:bg-white/10 transition[...]
-                                            CONOCER MÁS
+                                        <button onClick={() => setView('guide')} className="px-8 py-4 glass text-white font-bold rounded-xl hover:bg-white/10 transition border border-white/10">
+                                            Ayuda
                                         </button>
                                     </div>
                                 </div>
@@ -2034,88 +1445,101 @@ function App() {
                         </div>
 
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className="sticky top-24 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-4 overflow-x-auto no-sc[...]
-                            <Filter className="w-5 h-5 text-slate-500 flex-shrink-0 ml-2" />
-                            <button 
-                                onClick={()=>setSelectedCategory('Todos')} 
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory==='Todos'?'bg-white text-black border-white shadow-[0_0_15px[...]
-                            >
+                        <div id="catalog" className="sticky top-24 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-4 overflow-x-auto no-scrollbar">
+                            <Filter className="w-5 h-5 text-slate-500 flex-shrink-0"/>
+                            <button onClick={()=>setSelectedCategory('')} className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory===''?'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]':'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
                                 Todos
                             </button>
                             {settings?.categories?.map(c => (
-                                <button 
-                                    key={c} 
-                                    onClick={()=>setSelectedCategory(c)} 
-                                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory===c?'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_[...]
-                                >
+                                <button key={c} onClick={()=>setSelectedCategory(c)} className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory===c?'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)]':'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
                                     {c}
                                 </button>
                             ))}
                         </div>
 
                         {/* Grid de Productos */}
-                        {filteredProducts.length === 0 ? (
-                            <div className="text-center py-32 border-2 border-dashed border-slate-800 rounded-[3rem] bg-slate-900/10">
-                                <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                                <h3 className="text-xl font-bold text-white mb-2">No encontramos productos</h3>
-                                <p className="text-slate-500">Intenta cambiar los filtros o busca con otro término.</p>
+                        {products.length === 0 ? (
+                            // Empty State explícito (sin componente externo para "bulk")
+                            <div className="flex flex-col items-center justify-center p-20 text-center border border-dashed border-slate-800 rounded-[3rem] bg-slate-950/30">
+                                <div className="p-8 bg-slate-900 rounded-full mb-6 shadow-2xl border border-slate-800">
+                                    <Package className="w-16 h-16 text-slate-600"/>
+                                </div>
+                                <h3 className="text-2xl font-black text-white mb-2">Catálogo Vacío</h3>
+                                <p className="text-slate-500 max-w-sm">No hay productos disponibles en este momento. Por favor revisa más tarde o contacta soporte.</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20">
-                                {filteredProducts.map(p => (
-                                    <div key={p.id} onClick={() => {}} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_[...]
+                                {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategory === '' || p.category === selectedCategory)).map(p => (
+                                    <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
                                         
                                         {/* Imagen y Badges */}
                                         <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden">
-                                            <img src={p.image} className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110" alt={p.name} />
+                                            {/* Efecto Glow Fondo */}
+                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
                                             
-                                            {/* Badges */}
-                                            <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-                                                {p.discount > 0 && (
-                                                    <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1">
-                                                        <Tag className="w-3 h-3"/> -{p.discount}%
-                                                    </span>
-                                                )}
-                                                {p.featured && (
-                                                    <span className="bg-yellow-500 text-black text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1">
-                                                        <Star className="w-3 h-3 fill-black"/> TOP
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <img src={p.image} className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"/>
+                                            
+                                            {/* Descuento Badge */}
+                                            {p.discount > 0 && (
+                                                <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20 animate-pulse">
+                                                    -{p.discount}% OFF
+                                                </span>
+                                            )}
 
-                                            {/* Acción Favorito */}
+                                            {/* Botón Favorito (Funcional) */}
                                             <button 
-                                                onClick={(e)=>{e.stopPropagation(); handleToggleFavorite(p)}} 
-                                                className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red[...]
+                                                onClick={(e)=>{e.stopPropagation(); toggleFavorite(p)}} 
+                                                className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500'}`}
                                             >
                                                 <Heart className={`w-5 h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`}/>
                                             </button>
+                                            
+                                            {/* Botón Rápido Agregar */}
+                                            <button 
+                                                onClick={(e)=>{e.stopPropagation(); manageCart(p, 1)}} 
+                                                className="absolute bottom-4 right-4 w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-110 hover:bg-cyan-400 hover:shadow-cyan-400/50 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300" 
+                                                title="Agregar al carrito"
+                                            >
+                                                <Plus className="w-6 h-6"/>
+                                            </button>
                                         </div>
 
-                                        {/* Info Producto */}
+                                        {/* Información */}
                                         <div className="p-6 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
                                             <div className="flex justify-between items-start mb-3">
-                                                <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">{p.category}</p[...]
-                                                {p.stock <= 0 && <span className="text-[10px] text-slate-500 font-bold bg-slate-800 px-2 py-1 rounded border border-slate-700">AGOTADO</span>}
-                                                {p.stock > 0 && p.stock < 5 && <span className="text-[10px] text-orange-400 font-bold bg-orange-900/20 px-2 py-1 rounded border border-orange-500/20">Ú[...]
+                                                <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">
+                                                    {p.category}
+                                                </p>
+                                                {/* Estado de Stock */}
+                                                {p.stock === 0 ? (
+                                                    <span className="text-[10px] text-slate-500 font-bold bg-slate-800 px-2 py-1 rounded border border-slate-700">AGOTADO</span>
+                                                ) : p.stock <= 3 ? (
+                                                    <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                                                        <AlertCircle className="w-3 h-3"/> Últimos {p.stock}
+                                                    </span>
+                                                ) : null}
                                             </div>
-                                            
-                                            <h3 className="text-white font-bold text-lg leading-tight mb-4 group-hover:text-cyan-200 transition line-clamp-2 min-h-[3rem]">{p.name}</h3>
-                                            
+
+                                            <h3 className="text-white font-bold text-lg leading-tight mb-4 group-hover:text-cyan-200 transition line-clamp-2 min-h-[3rem]">
+                                                {p.name}
+                                            </h3>
+
                                             <div className="mt-auto pt-4 border-t border-slate-800/50 flex items-end justify-between">
                                                 <div className="flex flex-col">
-                                                    {p.discount > 0 && <span className="text-xs text-slate-500 line-through font-medium mb-1">${p.basePrice}</span>}
+                                                    {p.discount > 0 && (
+                                                        <span className="text-xs text-slate-500 line-through font-medium mb-1">
+                                                            ${p.basePrice.toLocaleString()}
+                                                        </span>
+                                                    )}
                                                     <span className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
-                                                        ${calculateProductMetrics(p.basePrice, p.discount).finalPrice.toLocaleString()}
+                                                        ${calculateItemPrice(p.basePrice, p.discount).toLocaleString()}
                                                     </span>
                                                 </div>
-                                                <button 
-                                                    onClick={(e)=>{e.stopPropagation(); handleAddToCart(p, 1)}} 
-                                                    className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:bg-cyan-400 hover:scale-110 transition shadow-lg group/[...]
-                                                    disabled={p.stock <= 0}
-                                                >
-                                                    <Plus className="w-6 h-6 group-active/add:scale-75 transition-transform"/>
-                                                </button>
+                                                {p.discount > 0 && (
+                                                    <div className="w-8 h-8 rounded-full bg-green-900/20 border border-green-500/20 flex items-center justify-center">
+                                                        <Percent className="w-4 h-4 text-green-400"/>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -2124,395 +1548,1070 @@ function App() {
                         )}
                     </div>
                 )}
-
-                {/* --------------------------------------------------------------------------------
-                   2. VISTA CARRITO (CART)
-                   -------------------------------------------------------------------------------- */}
+                
+                {/* 2. VISTA DEL CARRITO DE COMPRAS */}
                 {view === 'cart' && (
-                    <div className="max-w-6xl mx-auto animate-fade-up px-4 md:px-8 pb-20 pt-8">
-                         <div className="flex items-center gap-4 mb-8">
-                            <button onClick={()=>setView('store')} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800"><Arro[...]
-                            <h1 className="text-4xl font-black text-white neon-text flex items-center gap-3"><ShoppingBag className="w-10 h-10 text-cyan-400"/> Tu Carrito</h1>
+                    <div className="max-w-6xl mx-auto animate-fade-up px-4 md:px-8 pb-20">
+                        <div className="flex items-center gap-4 mb-8 pt-8">
+                            <button onClick={()=>setView('store')} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 group">
+                                <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition"/>
+                            </button>
+                            <h1 className="text-4xl font-black text-white neon-text flex items-center gap-3">
+                                <ShoppingBag className="w-10 h-10 text-cyan-400"/> Mi Carrito
+                            </h1>
                         </div>
-
+                        
                         {cart.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-32 bg-slate-900/10 rounded-[3rem] border-2 border-dashed border-slate-800">
-                                <ShoppingBag className="w-24 h-24 text-slate-700 mb-6" />
-                                <h2 className="text-2xl font-black text-white mb-2">Tu carrito está vacío</h2>
-                                <p className="text-slate-500 mb-8">Parece que aún no has agregado nada.</p>
-                                <button onClick={()=>setView('store')} className="px-8 py-3 bg-cyan-600 rounded-xl text-white font-bold hover:bg-cyan-500 transition shadow-lg">Ir a la Tienda</button>
+                            <div className="flex flex-col items-center justify-center p-16 text-center border-2 border-dashed border-slate-800 rounded-[3rem] bg-slate-950/30">
+                                <div className="p-8 bg-slate-900 rounded-full mb-6 shadow-[0_0_20px_rgba(0,0,0,0.5)] border border-slate-800">
+                                    <ShoppingCart className="w-16 h-16 text-slate-600"/>
+                                </div>
+                                <h3 className="text-2xl font-black text-white mb-2">Tu carrito está vacío</h3>
+                                <p className="text-slate-500 text-sm max-w-xs mb-8 leading-relaxed">
+                                    ¡Es un buen momento para buscar ese producto que tanto quieres!
+                                </p>
+                                <button onClick={()=>setView('store')} className="px-8 py-4 bg-cyan-600 text-white rounded-xl font-bold transition shadow-lg hover:bg-cyan-500 hover:shadow-cyan-500/30 flex items-center gap-2">
+                                    Ir a la Tienda <ArrowRight className="w-5 h-5"/>
+                                </button>
                             </div>
                         ) : (
                             <div className="grid lg:grid-cols-3 gap-8">
                                 {/* Lista de Items */}
                                 <div className="lg:col-span-2 space-y-4">
-                                    {cart.map((item) => {
-                                        const { finalPrice } = calculateProductMetrics(item.product.basePrice, item.product.discount);
-                                        return (
-                                            <div key={item.product.id} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-3xl flex items-center gap-6 group hover:border-slate-700 transition">
-                                                <div className="w-24 h-24 bg-white rounded-2xl p-2 flex-shrink-0">
-                                                    <img src={item.product.image} className="w-full h-full object-contain" alt={item.product.name}/>
+                                    {cart.map((item) => (
+                                        <div key={item.product.id} className="bg-[#0a0a0a] border border-slate-800 p-4 md:p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center group relative overflow-hidden hover:border-cyan-900/50 transition duration-300">
+                                            {/* Imagen */}
+                                            <div className="w-full md:w-32 h-32 bg-white rounded-2xl flex items-center justify-center p-2 flex-shrink-0 shadow-lg">
+                                                <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain"/>
+                                            </div>
+                                            
+                                            {/* Info */}
+                                            <div className="flex-1 w-full text-center md:text-left z-10">
+                                                <div className="flex justify-between items-start w-full">
+                                                    <h3 className="font-bold text-white text-lg truncate mb-1 pr-4">{item.product.name}</h3>
+                                                    <button onClick={() => manageCart(item.product, -item.quantity)} className="text-slate-600 hover:text-red-500 transition p-2 bg-slate-900 rounded-lg hover:bg-red-900/20">
+                                                        <Trash2 className="w-5 h-5"/>
+                                                    </button>
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-[10px] text-cyan-400 uppercase font-black tracking-widest mb-1">{item.product.category}</p>
-                                                    <h3 className="font-bold text-white text-lg truncate">{item.product.name}</h3>
-                                                    <p className="text-slate-400 font-mono text-sm">${finalPrice.toLocaleString()} x unidad</p>
-                                                </div>
-                                                <div className="flex flex-col items-end gap-2">
-                                                    <p className="text-white font-black text-xl">${(finalPrice * item.quantity).toLocaleString()}</p>
-                                                    <div className="flex items-center gap-1 bg-slate-900 rounded-xl p-1 border border-slate-800">
-                                                        <button onClick={() => handleAddToCart(item.product, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white ho[...]
-                                                        <span className="w-8 text-center text-white font-bold text-sm">{item.quantity}</span>
-                                                        <button onClick={() => handleAddToCart(item.product, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hov[...]
+                                                
+                                                <p className="text-cyan-400 font-bold text-sm mb-4">
+                                                    ${calculateItemPrice(item.product.basePrice, item.product.discount).toLocaleString()} <span className="text-slate-600 font-normal">unitario</span>
+                                                </p>
+                                                
+                                                {/* Controles de Cantidad */}
+                                                <div className="flex items-center justify-center md:justify-start gap-4">
+                                                    <div className="flex items-center gap-3 bg-slate-900 rounded-xl p-1 border border-slate-700">
+                                                        <button onClick={() => manageCart(item.product, -1)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+                                                            <Minus className="w-4 h-4"/>
+                                                        </button>
+                                                        <span className="text-base font-bold w-8 text-center text-white">{item.quantity}</span>
+                                                        <button onClick={() => manageCart(item.product, 1)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+                                                            <Plus className="w-4 h-4"/>
+                                                        </button>
                                                     </div>
+                                                    <div className="hidden md:block h-8 w-px bg-slate-800 mx-2"></div>
+                                                    <p className="text-xs text-slate-500 font-bold uppercase hidden md:block">
+                                                        Subtotal: <span className="text-white text-lg ml-1">${(calculateItemPrice(item.product.basePrice, item.product.discount) * item.quantity).toLocaleString()}</span>
+                                                    </p>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                    ))}
                                 </div>
 
-                                {/* Resumen de Compra */}
+                                {/* Resumen y Checkout */}
                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] h-fit sticky top-28 shadow-2xl">
-                                    <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-2"><Calculator className="w-6 h-6 text-slate-500"/> Resumen</h3>
+                                    <h3 className="text-2xl font-black text-white mb-8 border-b border-slate-800 pb-4">Resumen de Compra</h3>
                                     
-                                    {/* Selector de Cupón */}
-                                    {appliedCoupon ? (
-                                        <div className="bg-purple-900/20 border border-purple-500/30 p-4 rounded-2xl flex justify-between items-center mb-6 relative overflow-hidden">
-                                            <div className="absolute left-0 top-0 h-full w-1 bg-purple-500"></div>
-                                            <div>
-                                                <p className="font-black text-purple-300 text-lg tracking-widest">{appliedCoupon.code}</p>
-                                                <p className="text-xs text-purple-400 font-bold">{appliedCoupon.type==='fixed'?`$${appliedCoupon.value} OFF`:`${appliedCoupon.value}% OFF`}</p>
+                                    {/* Sección de Cupones */}
+                                    <div className="mb-8">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block flex items-center gap-2">
+                                            <Tag className="w-4 h-4"/> Cupón de Descuento
+                                        </label>
+                                        {appliedCoupon ? (
+                                            <div className="bg-purple-900/20 border border-purple-500/30 p-4 rounded-2xl flex justify-between items-center relative overflow-hidden group animate-fade-up">
+                                                <div className="absolute inset-0 bg-purple-500/5 group-hover:bg-purple-500/10 transition"></div>
+                                                <div className="relative z-10">
+                                                    <p className="font-black text-purple-300 text-lg tracking-widest">{appliedCoupon.code}</p>
+                                                    <p className="text-xs text-purple-400 font-bold">
+                                                        {appliedCoupon.type === 'fixed' ? `$${appliedCoupon.value} OFF` : `${appliedCoupon.value}% OFF`}
+                                                    </p>
+                                                </div>
+                                                <button onClick={() => setAppliedCoupon(null)} className="p-2 bg-slate-900/50 rounded-full text-purple-300 hover:text-red-400 hover:bg-red-900/30 transition relative z-10 border border-transparent hover:border-red-500/30">
+                                                    <Trash2 className="w-4 h-4"/>
+                                                </button>
                                             </div>
-                                            <button onClick={()=>setAppliedCoupon(null)} className="p-2 bg-purple-900/30 rounded-full text-purple-300 hover:text-white hover:bg-purple-500 transition">
-                                                <X className="w-4 h-4"/>
+                                        ) : (
+                                            <button onClick={() => setShowCouponModal(true)} className="w-full py-4 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 hover:bg-purple-900/10 text-slate-400 hover:text-purple-300 rounded-2xl transition flex items-center justify-center gap-2 text-sm font-bold group">
+                                                <Ticket className="w-5 h-5 group-hover:rotate-12 transition"/> Ver cupones disponibles
                                             </button>
-                                        </div>
-                                    ) : (
-                                        <button 
-                                            onClick={()=>setShowCouponModal(true)} 
-                                            className="w-full py-4 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 text-slate-400 hover:text-purple-300 rounded-2xl mb-6 f[...]
-                                        >
-                                            <Ticket className="w-4 h-4 group-hover:rotate-12 transition"/> Tengo un cupón
-                                        </button>
-                                    )}
-
-                                    {/* Totales */}
-                                    <div className="space-y-4 border-b border-slate-800 pb-8 mb-8">
-                                        <div className="flex justify-between text-slate-400">
-                                            <span>Subtotal</span>
-                                            <span className="font-mono text-white">${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice[...]
-                                        </div>
-                                        {appliedCoupon && (
-                                            <div className="flex justify-between text-purple-400 font-bold">
-                                                <span>Descuento</span>
-                                                <span>- ${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice * item.quantity), 0) * (ap[...]
-                                            </div>
                                         )}
-                                        <div className="flex justify-between items-end text-white font-bold text-xl pt-4 border-t border-slate-800/50">
-                                            <span>Total Estimado</span>
-                                            <span className="text-3xl font-black text-cyan-400 neon-text">
-                                                ${cart.reduce((acc, item) => acc + (calculateProductMetrics(item.product.basePrice, item.product.discount).finalPrice * item.quantity), 0).toLocaleStrin[...]
-                                            </span>
-                                        </div>
                                     </div>
 
-                                    <button onClick={() => setView('checkout')} className="w-full bg-cyan-600 hover:bg-cyan-500 py-5 text-white font-bold text-lg rounded-2xl shadow-lg transition flex [...]
-                                        Iniciar Compra <ArrowRight className="w-5 h-5"/>
+                                    {/* Desglose de Precios */}
+                                    <div className="space-y-4 border-b border-slate-800 pb-8 mb-8">
+                                        <div className="flex justify-between text-slate-400 font-medium">
+                                            <span>Subtotal</span>
+                                            <span className="font-mono font-bold text-white">${cartSubtotal.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between text-slate-400 text-sm font-medium">
+                                            <span>Envío</span>
+                                            <span className="text-cyan-400 font-bold flex items-center gap-1"><Truck className="w-3 h-3"/> Gratis</span>
+                                        </div>
+                                        {appliedCoupon && (
+                                            <div className="flex justify-between text-purple-400 font-bold text-sm animate-pulse bg-purple-900/10 p-2 rounded-lg">
+                                                <span>Descuento aplicado</span>
+                                                <span>-${discountAmount.toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Total Final */}
+                                    <div className="flex justify-between items-end mb-8">
+                                        <span className="text-white font-bold text-lg">Total Final</span>
+                                        <span className="text-4xl font-black text-white neon-text tracking-tighter">
+                                            ${finalTotal.toLocaleString()}
+                                        </span>
+                                    </div>
+
+                                    {/* Botón Acción */}
+                                    <button onClick={() => setView('checkout')} className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 py-5 text-white font-bold text-lg rounded-2xl shadow-[0_0_25px_rgba(6,182,212,0.3)] hover:shadow-[0_0_35px_rgba(6,182,212,0.5)] transition-all flex items-center justify-center gap-3 transform hover:-translate-y-1">
+                                        Iniciar Compra <ArrowRight className="w-6 h-6"/>
                                     </button>
-                                    <p className="text-center text-[10px] text-slate-600 mt-4 uppercase tracking-widest font-bold">Pago 100% Seguro</p>
                                 </div>
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* --------------------------------------------------------------------------------
-                   3. VISTA CHECKOUT (FINALIZAR COMPRA)
-                   -------------------------------------------------------------------------------- */}
+                {/* 3. VISTA DE CHECKOUT (FINALIZAR COMPRA) */}
                 {view === 'checkout' && (
-                    <div className="max-w-2xl mx-auto pb-20 animate-fade-up pt-8">
-                        <button onClick={()=>setView('cart')} className="mb-8 text-slate-400 hover:text-white flex items-center gap-2 font-bold group">
-                            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition"/> Volver al Carrito
+                    <div className="max-w-5xl mx-auto pb-20 animate-fade-up px-4 md:px-8">
+                        <button onClick={()=>setView('cart')} className="mb-8 mt-8 text-slate-400 hover:text-white flex items-center gap-2 font-bold transition">
+                            <ArrowLeft className="w-5 h-5"/> Volver al Carrito
                         </button>
                         
-                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 md:p-12 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
-                            
-                            <h2 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
-                                <CheckCircle className="w-8 h-8 text-cyan-500"/> Finalizar Pedido
-                            </h2>
-
-                            <div className="space-y-8">
-                                {/* Datos de Contacto */}
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2">Información de Contacto</h3>
-                                    <InputField 
-                                        label="Teléfono / WhatsApp" 
-                                        icon={Phone} 
-                                        value={checkoutForm.phone} 
-                                        onChange={e => setCheckoutForm({...checkoutForm, phone: e.target.value})}
-                                        placeholder="+54 9 ..."
-                                    />
-                                    <TextAreaField 
-                                        label="Notas del Pedido (Opcional)"
-                                        placeholder="Instrucciones especiales para la entrega..."
-                                        value={checkoutForm.notes}
-                                        onChange={e => setCheckoutForm({...checkoutForm, notes: e.target.value})}
-                                        rows={2}
-                                    />
-                                </div>
-
+                        <div className="grid md:grid-cols-5 gap-8">
+                            {/* Columna Izquierda: Formularios */}
+                            <div className="md:col-span-3 space-y-8">
+                                
                                 {/* Datos de Envío */}
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2">Dirección de Envío</h3>
-                                    <InputField 
-                                        label="Calle y Altura" 
-                                        icon={MapPin}
-                                        value={checkoutForm.address} 
-                                        onChange={e => setCheckoutForm({...checkoutForm, address: e.target.value})}
-                                        required
-                                    />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <InputField label="Ciudad" value={checkoutForm.city} onChange={e => setCheckoutForm({...checkoutForm, city: e.target.value})} required />
-                                        <InputField label="Provincia" value={checkoutForm.province} onChange={e => setCheckoutForm({...checkoutForm, province: e.target.value})} required />
+                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-900/10 rounded-bl-[100px] pointer-events-none"></div>
+                                    <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                                        <MapPin className="text-cyan-400 w-6 h-6"/> Datos de Envío
+                                    </h2>
+                                    <div className="space-y-5 relative z-10">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Dirección y Altura</label>
+                                            <input 
+                                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition font-medium" 
+                                                placeholder="Ej: Av. Santa Fe 1234" 
+                                                value={checkoutData.address} 
+                                                onChange={e=>setCheckoutData({...checkoutData, address:e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-5">
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Ciudad</label>
+                                                <input 
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium" 
+                                                    placeholder="Ej: Rosario" 
+                                                    value={checkoutData.city} 
+                                                    onChange={e=>setCheckoutData({...checkoutData, city:e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Provincia</label>
+                                                <input 
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium" 
+                                                    placeholder="Ej: Santa Fe" 
+                                                    value={checkoutData.province} 
+                                                    onChange={e=>setCheckoutData({...checkoutData, province:e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Código Postal</label>
+                                            <input 
+                                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium" 
+                                                placeholder="Ej: 2000" 
+                                                value={checkoutData.zipCode} 
+                                                onChange={e=>setCheckoutData({...checkoutData, zipCode:e.target.value})}
+                                            />
+                                        </div>
                                     </div>
-                                    <InputField label="Código Postal" value={checkoutForm.zipCode} onChange={e => setCheckoutForm({...checkoutForm, zipCode: e.target.value})} />
                                 </div>
 
                                 {/* Método de Pago */}
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2">Método de Pago</h3>
-                                    <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-green-900/10 rounded-bl-[100px] pointer-events-none"></div>
+                                    <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                                        <CreditCard className="text-cyan-400 w-6 h-6"/> Método de Pago
+                                    </h2>
+                                    <div className="grid grid-cols-2 gap-4 relative z-10">
                                         {['Transferencia', 'Efectivo'].map(method => (
-                                            <div 
-                                                key={method}
-                                                onClick={() => setCheckoutForm({...checkoutForm, paymentMethod: method})}
-                                                className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${checkoutForm.paymentMethod === method ? 'bg-cyan-900/20 border[...]
+                                            <button 
+                                                key={method} 
+                                                onClick={()=>setCheckoutData({...checkoutData, paymentChoice:method})} 
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice===method ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
                                             >
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${checkoutForm.paymentMethod === method ? 'border-cyan-500' : 'border-sl[...]
-                                                    {checkoutForm.paymentMethod === method && <div className="w-2.5 h-2.5 rounded-full bg-cyan-500"></div>}
-                                                </div>
-                                                <span className="font-bold">{method}</span>
-                                            </div>
+                                                {checkoutData.paymentChoice===method && (
+                                                    <div className="absolute top-2 right-2 text-cyan-500 animate-fade-in">
+                                                        <CheckCircle className="w-5 h-5"/>
+                                                    </div>
+                                                )}
+                                                {method === 'Transferencia' ? <RefreshCw className="w-8 h-8 group-hover:scale-110 transition"/> : <DollarSign className="w-8 h-8 group-hover:scale-110 transition"/>}
+                                                <span className="text-sm font-black tracking-wider uppercase">{method}</span>
+                                            </button>
                                         ))}
                                     </div>
+                                    {checkoutData.paymentChoice === 'Transferencia' && (
+                                        <div className="mt-6 p-4 bg-cyan-900/10 border border-cyan-500/20 rounded-xl animate-fade-up">
+                                            <div className="flex items-start gap-3">
+                                                <Info className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0"/>
+                                                <p className="text-cyan-200 text-sm leading-relaxed">
+                                                    Al confirmar el pedido, recibirás un correo electrónico con los datos bancarios (CBU/Alias) para realizar la transferencia. Tu pedido se procesará una vez enviado el comprobante.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
+                            </div>
 
-                                {/* Confirmación */}
-                                <div className="pt-6 border-t border-slate-800">
+                            {/* Columna Derecha: Confirmación */}
+                            <div className="md:col-span-2">
+                                <div className="bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border border-slate-800 p-8 rounded-[2.5rem] sticky top-28 shadow-2xl">
+                                    <h3 className="font-black text-white mb-8 text-xl border-b border-slate-800 pb-4">Resumen Final</h3>
+                                    
+                                    <div className="space-y-4 mb-8">
+                                        <div className="flex justify-between text-slate-400">
+                                            <span>Productos ({cart.length})</span>
+                                            <span className="font-bold text-white">${cartSubtotal.toLocaleString()}</span>
+                                        </div>
+                                        
+                                        {discountAmount > 0 && (
+                                            <div className="flex justify-between text-purple-400 font-bold">
+                                                <span>Descuento</span>
+                                                <span>-${discountAmount.toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="h-px bg-slate-800 my-4 border-t border-dashed border-slate-700"></div>
+                                        
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-white font-bold">Total a Pagar</span>
+                                            <span className="text-3xl font-black text-white neon-text">${finalTotal.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                    
                                     <button 
-                                        onClick={handleConfirmOrder} 
+                                        onClick={confirmOrder} 
                                         disabled={isProcessingOrder} 
-                                        className="w-full py-5 bg-green-600 hover:bg-green-500 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 disabled:opacit[...]
+                                        className={`w-full py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 transition-all ${isProcessingOrder ? 'bg-slate-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 shadow-green-900/20 hover:scale-[1.02]'}`}
                                     >
-                                        {isProcessingOrder ? <Loader2 className="animate-spin w-6 h-6"/> : <CheckCircle className="w-6 h-6"/>} 
-                                        {isProcessingOrder ? 'Procesando...' : 'CONFIRMAR PEDIDO'}
+                                        {isProcessingOrder ? <Loader2 className="w-6 h-6 animate-spin"/> : <CheckCircle className="w-6 h-6"/>}
+                                        {isProcessingOrder ? 'Procesando...' : 'Confirmar Pedido'}
                                     </button>
+                                    
+                                    <p className="text-center text-slate-600 text-xs mt-6 leading-relaxed px-4">
+                                        Al confirmar, aceptas nuestros términos de servicio y política de privacidad.
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* --------------------------------------------------------------------------------
-                   4. PANEL DE ADMINISTRACIÓN (DASHBOARD COMPLETO)
-                   -------------------------------------------------------------------------------- */}
-                {view === 'admin' && hasAccess(currentUser?.email) && (
-                    <div className="flex h-screen bg-[#050505] overflow-hidden w-full font-sans fixed inset-0 z-[100]">
-                        {/* Sidebar Admin */}
-                        <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ${isAdminMenuOpen ? 'translate-x-0' : '[...]
-                            <div className="p-8 border-b border-slate-900 flex justify-between items-center">
-                                <h2 className="text-2xl font-black text-white flex items-center gap-2"><Shield className="text-cyan-400"/> ADMIN</h2>
-                                <button onClick={()=>setIsAdminMenuOpen(false)} className="md:hidden text-slate-500"><X/></button>
+                {/* 4. VISTA DE PERFIL (HISTORIAL Y FAVORITOS) */}
+                {view === 'profile' && currentUser && (
+                    <div className="max-w-6xl mx-auto pt-8 animate-fade-up px-4 md:px-8 pb-20">
+                        {/* Tarjeta de Usuario */}
+                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 md:p-12 rounded-[3rem] mb-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl">
+                            {/* Decoración Fondo */}
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
+                            
+                            {/* Avatar */}
+                            <div className="w-28 h-28 rounded-[2rem] bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-5xl font-black text-white shadow-2xl z-10 transform rotate-3 border-4 border-[#0a0a0a]">
+                                {currentUser.name.charAt(0)}
                             </div>
                             
-                            <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-                                <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2 mt-4">Analítica</p>
-                                <button onClick={()=>setAdminTab('dashboard')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='dash[...]
-                                
-                                <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2 mt-6">Gestión</p>
-                                <button onClick={()=>setAdminTab('orders')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='orders'[...]
-                                <button onClick={()=>setAdminTab('products')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='produ[...]
-                                
-                                {isAdmin(currentUser?.email) && <>
-                                    <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2 mt-6">Marketing & Config</p>
-                                    <button onClick={()=>setAdminTab('coupons')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='co[...]
-                                    <button onClick={()=>setAdminTab('suppliers')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='[...]
-                                    <button onClick={()=>setAdminTab('settings')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='s[...]
-                                </>}
-                            </nav>
-
-                            <div className="p-4 bg-slate-900/50 m-4 rounded-xl border border-slate-800">
-                                <p className="text-xs text-slate-500 font-bold mb-2">Usuario Actual</p>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center text-white text-xs font-bold">{currentUser.name.charAt(0)}</div>
-                                    <div className="overflow-hidden">
-                                        <p className="text-white text-sm font-bold truncate">{currentUser.name}</p>
-                                        <p className="text-cyan-400 text-[10px] uppercase font-black">{currentUser.role}</p>
-                                    </div>
+                            {/* Info */}
+                            <div className="text-center md:text-left z-10 flex-1">
+                                <h2 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">{currentUser.name}</h2>
+                                <p className="text-slate-400 flex items-center justify-center md:justify-start gap-2 font-medium mb-4">
+                                    <Mail className="w-4 h-4 text-cyan-500"/> {currentUser.email}
+                                </p>
+                                <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                                    <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-500 font-mono flex items-center gap-2">
+                                        <User className="w-3 h-3"/> {currentUser.dni || 'Sin DNI'}
+                                    </span>
+                                    <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-500 font-mono flex items-center gap-2">
+                                        <Phone className="w-3 h-3"/> {currentUser.phone || 'Sin Teléfono'}
+                                    </span>
+                                    <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-500 font-mono flex items-center gap-2">
+                                        <Shield className="w-3 h-3"/> {getRole(currentUser.email).toUpperCase()}
+                                    </span>
                                 </div>
                             </div>
-                            <div className="p-4 border-t border-slate-800">
-                                <button onClick={()=>setView('store')} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white font-bold text-sm transition fl[...]
-                                    <LogOut className="w-4 h-4"/> Salir del Panel
+                            
+                            {/* Acciones */}
+                            <div className="flex flex-col gap-3 z-10 w-full md:w-auto">
+                                {hasAccess(currentUser.email) && (
+                                    <button onClick={()=>setView('admin')} className="px-6 py-4 bg-slate-900 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-900/20 rounded-2xl font-bold transition flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/10">
+                                        <Shield className="w-5 h-5"/> Panel Admin
+                                    </button>
+                                )}
+                                <button onClick={()=>{localStorage.removeItem('nexus_user_data'); setCurrentUser(null); setView('store')}} className="px-6 py-4 bg-red-900/10 border border-red-500/20 text-red-500 hover:bg-red-900/20 rounded-2xl font-bold transition flex items-center justify-center gap-2 hover:border-red-500/40">
+                                    <LogOut className="w-5 h-5"/> Cerrar Sesión
                                 </button>
                             </div>
                         </div>
 
-                        {/* Main Content Admin */}
-                        <div className="flex-1 bg-[#050505] overflow-y-auto relative w-full p-6 md:p-10 custom-scrollbar">
-                            <button onClick={()=>setIsAdminMenuOpen(true)} className="md:hidden mb-6 p-2 bg-slate-900 rounded-lg text-white"><Menu/></button>
+                        <div className="grid lg:grid-cols-2 gap-10">
+                            {/* Columna Izquierda: Historial de Pedidos */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                                        <Package className="text-cyan-400 w-6 h-6"/> Mis Pedidos
+                                    </h3>
+                                    <span className="text-xs font-bold text-slate-500 bg-slate-900 px-3 py-1 rounded-full">
+                                        {orders.filter(o => o.userId === currentUser.id).length} Total
+                                    </span>
+                                </div>
+                                
+                                {orders.filter(o => o.userId === currentUser.id).length === 0 ? (
+                                    <div className="p-12 border-2 border-dashed border-slate-800 rounded-[2rem] text-center text-slate-500 bg-slate-900/20">
+                                        <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-50"/>
+                                        <p className="font-bold">Aún no has realizado compras.</p>
+                                        <button onClick={()=>setView('store')} className="mt-4 text-cyan-400 hover:underline text-sm font-bold">Ir a la tienda</button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                                        {orders.filter(o => o.userId === currentUser.id).map(o => (
+                                            <div key={o.id} onClick={()=>setSelectedOrder(o)} className="bg-[#0a0a0a] border border-slate-800 hover:border-cyan-500/50 p-6 rounded-2xl flex justify-between items-center cursor-pointer transition duration-300 group relative overflow-hidden">
+                                                {/* Hover Effect */}
+                                                <div className="absolute inset-0 bg-cyan-900/5 opacity-0 group-hover:opacity-100 transition"></div>
+                                                
+                                                <div className="relative z-10">
+                                                    <p className="font-bold text-white text-lg group-hover:text-cyan-400 transition mb-1 flex items-center gap-2">
+                                                        <span className="text-slate-500">#</span> {o.orderId}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 flex items-center gap-2 font-mono">
+                                                        <Calendar className="w-3 h-3"/> {new Date(o.date).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                                
+                                                <div className="text-right relative z-10">
+                                                    <p className="font-black text-white text-xl mb-2">${o.total.toLocaleString()}</p>
+                                                    <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider border ${o.status==='Realizado'?'bg-green-900/20 text-green-400 border-green-500/30':'bg-yellow-900/20 text-yellow-400 border-yellow-500/30'}`}>
+                                                        {o.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Columna Derecha: Favoritos */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                                        <Heart className="text-red-500 w-6 h-6 fill-current"/> Mis Favoritos
+                                    </h3>
+                                    <span className="text-xs font-bold text-slate-500 bg-slate-900 px-3 py-1 rounded-full">
+                                        {currentUser.favorites?.length || 0} Guardados
+                                    </span>
+                                </div>
+
+                                {!currentUser.favorites || currentUser.favorites.length === 0 ? (
+                                    <div className="p-12 border-2 border-dashed border-slate-800 rounded-[2rem] text-center text-slate-500 bg-slate-900/20">
+                                        <Heart className="w-12 h-12 mx-auto mb-4 opacity-50"/>
+                                        <p className="font-bold">Tu lista de deseos está vacía.</p>
+                                        <p className="text-xs mt-2 max-w-xs mx-auto">Guarda productos haciendo click en el corazón de las tarjetas.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                                        {currentUser.favorites.map(fid => {
+                                            const p = products.find(prod => prod.id === fid);
+                                            if(!p) return null;
+                                            return (
+                                                <div key={fid} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-2xl flex items-center gap-4 relative group hover:border-slate-600 transition">
+                                                    <div className="w-16 h-16 bg-white rounded-xl p-1 flex-shrink-0">
+                                                        <img src={p.image} className="w-full h-full object-contain"/>
+                                                    </div>
+                                                    
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-white line-clamp-1 group-hover:text-cyan-400 transition">{p.name}</p>
+                                                        <p className="text-cyan-400 font-bold text-sm mt-1">${p.basePrice.toLocaleString()}</p>
+                                                    </div>
+                                                    
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            onClick={()=>toggleFavorite(p)} 
+                                                            className="p-3 bg-slate-900 text-red-400 hover:bg-red-900/20 rounded-xl transition border border-slate-800 hover:border-red-500/30"
+                                                            title="Eliminar de favoritos"
+                                                        >
+                                                            <Trash2 className="w-4 h-4"/>
+                                                        </button>
+                                                        <button 
+                                                            onClick={()=>manageCart(p, 1)} 
+                                                            className="p-3 bg-slate-900 text-cyan-400 hover:bg-cyan-900/20 rounded-xl transition border border-slate-800 hover:border-cyan-500/30"
+                                                            title="Agregar al carrito"
+                                                        >
+                                                            <Plus className="w-4 h-4"/>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 5. MODAL DE AUTENTICACIÓN (LOGIN/REGISTER) */}
+                {(view === 'login' || view === 'register') && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/95 p-4 animate-fade-up backdrop-blur-xl">
+                        {/* Botón Cerrar */}
+                        <button onClick={()=>setView('store')} className="absolute top-8 right-8 p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition border border-slate-700 hover:bg-slate-800">
+                            <X className="w-6 h-6"/>
+                        </button>
+                        
+                        <div className="bg-[#0a0a0a] p-8 md:p-12 rounded-[3rem] w-full max-w-md shadow-2xl border border-slate-800 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600"></div>
                             
-                            {/* --- TAB DASHBOARD (MÉTRICAS COMPLETAS) --- */}
+                            <h2 className="text-4xl font-black text-white mb-2 text-center tracking-tight">
+                                {loginMode ? 'Bienvenido' : 'Crear Cuenta'}
+                            </h2>
+                            <p className="text-slate-500 text-center mb-8 text-sm">
+                                {loginMode ? 'Ingresa a tu cuenta para continuar.' : 'Únete a nosotros hoy mismo.'}
+                            </p>
+
+                            <form onSubmit={(e)=>{e.preventDefault(); handleAuth(!loginMode)}} className="space-y-4">
+                                {!loginMode && (
+                                    <div className="space-y-4 animate-fade-up">
+                                        <input className="input-cyber w-full p-4" placeholder="Nombre Completo" value={authData.name} onChange={e=>setAuthData({...authData, name:e.target.value})}/>
+                                        <input className="input-cyber w-full p-4" placeholder="Nombre de Usuario" value={authData.username} onChange={e=>setAuthData({...authData, username:e.target.value})}/>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input className="input-cyber p-4" placeholder="DNI" value={authData.dni} onChange={e=>setAuthData({...authData, dni:e.target.value})}/>
+                                            <input className="input-cyber p-4" placeholder="Teléfono" value={authData.phone} onChange={e=>setAuthData({...authData, phone:e.target.value})}/>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                <div className="space-y-4">
+                                    <input className="input-cyber w-full p-4" placeholder={loginMode ? "Email o Usuario" : "Email"} value={authData.email} onChange={e=>setAuthData({...authData, email:e.target.value})}/>
+                                    <input className="input-cyber w-full p-4" type="password" placeholder="Contraseña" value={authData.password} onChange={e=>setAuthData({...authData, password:e.target.value})}/>
+                                </div>
+                                
+                                <button type="submit" className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 py-4 text-white rounded-xl font-bold mt-6 transition transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2">
+                                    {isLoading ? <Loader2 className="animate-spin w-5 h-5"/> : (loginMode ? 'INGRESAR' : 'REGISTRARSE')}
+                                </button>
+                            </form>
+                            
+                            <button onClick={()=>setLoginMode(!loginMode)} className="w-full text-center text-slate-500 text-sm mt-8 font-bold hover:text-cyan-400 transition border-t border-slate-800 pt-6">
+                                {loginMode ? '¿No tienes cuenta? Regístrate gratis' : '¿Ya tienes cuenta? Inicia sesión'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* 6. VISTAS ESTÁTICAS (ABOUT & GUIDE) */}
+                {view === 'about' && (
+                    <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
+                        <button onClick={()=>setView('store')} className="mb-8 p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition"><ArrowLeft/></button>
+                        <h2 className="text-5xl font-black text-white mb-12 flex items-center gap-4 neon-text">
+                            <Info className="text-cyan-400 w-12 h-12"/> Sobre Nosotros
+                        </h2>
+                        <div className="bg-[#0a0a0a] border border-slate-800 p-12 rounded-[3rem] text-slate-300 text-xl leading-relaxed whitespace-pre-wrap shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+                            <p className="relative z-10">{settings.aboutUsText}</p>
+                            
+                            <div className="mt-12 pt-12 border-t border-slate-800 flex flex-col md:flex-row gap-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800"><Shield className="text-cyan-400"/></div>
+                                    <div><h4 className="font-bold text-white">Garantía Oficial</h4><p className="text-sm text-slate-500">En todos los productos</p></div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800"><Truck className="text-purple-400"/></div>
+                                    <div><h4 className="font-bold text-white">Envíos Seguros</h4><p className="text-sm text-slate-500">A todo el país</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {view === 'guide' && (
+                    <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
+                        <button onClick={()=>setView('store')} className="mb-8 p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition"><ArrowLeft/></button>
+                        <h2 className="text-5xl font-black text-white mb-12 flex items-center gap-4 neon-text">
+                            <FileQuestion className="text-cyan-400 w-12 h-12"/> Cómo Comprar
+                        </h2>
+                        <div className="bg-[#0a0a0a] border border-slate-800 p-12 rounded-[3rem] text-slate-300 shadow-2xl space-y-8">
+                            {[
+                                { title: "Selecciona Productos", text: "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
+                                { title: "Revisa tu Carrito", text: "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
+                                { title: "Datos de Envío", text: "Completa la información de entrega. Hacemos envíos a todo el país." },
+                                { title: "Pago y Confirmación", text: "Elige tu método de pago preferido. Si es transferencia, recibirás los datos por email." },
+                                { title: "¡Listo!", text: "Recibirás un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
+                            ].map((step, idx) => (
+                                <div key={idx} className="flex gap-6 items-start">
+                                    <div className="w-10 h-10 rounded-full bg-cyan-900/20 text-cyan-400 font-black flex items-center justify-center border border-cyan-500/20 flex-shrink-0 mt-1">
+                                        {idx + 1}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
+                                        <p className="text-slate-400 leading-relaxed">{step.text}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
+                {/* 7. PANEL DE ADMINISTRACIÓN (COMPLETO Y DETALLADO) */}
+                {view === 'admin' && hasAccess(currentUser?.email) && (
+                    <div className="flex h-screen bg-[#050505] overflow-hidden animate-fade-up relative w-full font-sans">
+                        
+                        {/* 7.1 Sidebar Admin */}
+                        <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static shadow-2xl`}>
+                            <div className="p-8 border-b border-slate-900">
+                                <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-cyan-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-900/20">
+                                        <Shield className="w-6 h-6"/>
+                                    </div>
+                                    ADMIN
+                                </h2>
+                                <p className="text-xs text-slate-500 mt-2 font-mono ml-1">v3.0.0 PRO</p>
+                            </div>
+                            
+                            <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-2 mt-2">Principal</p>
+                                
+                                <button onClick={()=>setAdminTab('dashboard')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='dashboard'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                    <LayoutDashboard className="w-5 h-5"/> Dashboard
+                                </button>
+                                
+                                <button onClick={()=>setAdminTab('orders')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='orders'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                    <ShoppingBag className="w-5 h-5"/> Pedidos
+                                </button>
+                                
+                                <button onClick={()=>setAdminTab('products')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='products'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                    <Package className="w-5 h-5"/> Productos
+                                </button>
+                                
+                                {isAdmin(currentUser?.email) && (
+                                    <>
+                                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-2 mt-6">Gestión</p>
+                                        
+                                        <button onClick={()=>setAdminTab('coupons')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='coupons'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <Ticket className="w-5 h-5"/> Cupones
+                                        </button>
+                                        
+                                        <button onClick={()=>setAdminTab('suppliers')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='suppliers'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <Truck className="w-5 h-5"/> Proveedores
+                                        </button>
+                                        
+                                        <button onClick={()=>setAdminTab('settings')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab==='settings'?'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30':'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <Settings className="w-5 h-5"/> Configuración
+                                        </button>
+                                    </>
+                                )}
+                            </nav>
+                            
+                            <div className="p-6 border-t border-slate-900">
+                                <button onClick={()=>setView('store')} className="w-full py-4 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition font-bold text-sm flex items-center justify-center gap-2 group border border-slate-800">
+                                    <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition"/> Volver a Tienda
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 7.2 Contenido Principal Admin */}
+                        <div className="flex-1 bg-[#050505] overflow-y-auto relative w-full p-6 md:p-10 custom-scrollbar">
+                            <button onClick={()=>setIsAdminMenuOpen(true)} className="md:hidden mb-6 p-2 bg-slate-900 rounded-lg text-white border border-slate-800">
+                                <Menu className="w-6 h-6"/>
+                            </button>
+                            
+                            {/* TAB: DASHBOARD */}
                             {adminTab === 'dashboard' && (
-                                <div className="space-y-8 animate-fade-up pb-20">
-                                    <div className="flex justify-between items-center">
-                                        <h1 className="text-3xl font-black text-white">Dashboard General</h1>
-                                        <div className="bg-slate-900 px-4 py-2 rounded-lg border border-slate-800 text-slate-400 text-xs font-mono">
+                                <div className="max-w-[1600px] mx-auto animate-fade-up space-y-8 pb-20">
+                                    <div className="flex justify-between items-end mb-4">
+                                        <div>
+                                            <h1 className="text-4xl font-black text-white neon-text">Panel de Control</h1>
+                                            <p className="text-slate-500 mt-2">Visión general del rendimiento de tu negocio.</p>
+                                        </div>
+                                        <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
                                             {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                         </div>
                                     </div>
                                     
                                     {/* Métricas Principales */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                        {[
-                                            { label: 'Ingresos Totales', value: formatCurrency(dashboardStats.totalRevenue), icon: DollarSign, color: 'text-white', bg: 'bg-slate-900' },
-                                            { label: 'Ganancia Neta', value: formatCurrency(dashboardStats.totalProfit), icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-900/10' },
-                                            { label: 'Pedidos Realizados', value: dashboardStats.totalOrders, icon: ShoppingBag, color: 'text-purple-400', bg: 'bg-purple-900/10' },
-                                            { label: 'Carritos Activos', value: dashboardStats.activeCarts, icon: ShoppingCart, color: 'text-cyan-400', bg: 'bg-cyan-900/10 animate-pulse' }
-                                        ].map((stat, i) => (
-                                            <div key={i} className={`border border-slate-800 p-6 rounded-[2rem] flex flex-col justify-between h-32 ${stat.bg}`}>
-                                                <div className="flex justify-between items-start">
-                                                    <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">{stat.label}</p>
-                                                    <stat.icon className={`w-5 h-5 ${stat.color}`}/>
-                                                </div>
-                                                <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
+                                        <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="p-3 bg-green-900/20 rounded-xl text-green-400"><DollarSign className="w-6 h-6"/></div>
+                                                <span className="text-[10px] font-bold bg-green-900/20 text-green-400 px-2 py-1 rounded-full">+12%</span>
                                             </div>
-                                        ))}
+                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">INGRESOS NETOS</p>
+                                            <p className="text-3xl font-black text-white tracking-tight">${dashboardMetrics.revenue.toLocaleString()}</p>
+                                        </div>
+
+                                        <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="p-3 bg-blue-900/20 rounded-xl text-blue-400"><ShoppingBag className="w-6 h-6"/></div>
+                                            </div>
+                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">PEDIDOS TOTALES</p>
+                                            <p className="text-3xl font-black text-white tracking-tight">{dashboardMetrics.totalOrders}</p>
+                                        </div>
+
+                                        <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="p-3 bg-purple-900/20 rounded-xl text-purple-400"><Users className="w-6 h-6"/></div>
+                                            </div>
+                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">CLIENTES REGISTRADOS</p>
+                                            <p className="text-3xl font-black text-white tracking-tight">{dashboardMetrics.totalUsers}</p>
+                                        </div>
+
+                                        <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="p-3 bg-cyan-900/20 rounded-xl text-cyan-400"><Eye className="w-6 h-6 animate-pulse"/></div>
+                                                <span className="text-[10px] font-bold bg-cyan-900/20 text-cyan-400 px-2 py-1 rounded-full animate-pulse">LIVE</span>
+                                            </div>
+                                            <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">USUARIOS COMPRANDO</p>
+                                            <p className="text-3xl font-black text-white tracking-tight">{liveCarts.length}</p>
+                                        </div>
                                     </div>
 
-                                    <div className="grid lg:grid-cols-2 gap-8">
-                                        {/* Top Productos (Más Vendidos) */}
-                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Trophy className="text-yellow-500"/> Productos Más Vendidos</h3>
-                                            <div className="space-y-4">
-                                                {dashboardStats.topProducts.length === 0 ? <p className="text-slate-500 text-sm">No hay datos de ventas aún.</p> : 
-                                                dashboardStats.topProducts.map((p, idx) => (
-                                                    <div key={p.id} className="flex items-center gap-4 border-b border-slate-800 pb-4 last:border-0 last:pb-0">
-                                                        <span className="text-2xl font-black text-slate-700 w-6">#{idx+1}</span>
-                                                        <img src={p.image} className="w-12 h-12 rounded-lg bg-white object-contain p-1" alt={p.name}/>
-                                                        <div className="flex-1">
-                                                            <p className="text-white font-bold text-sm truncate">{p.name}</p>
-                                                            <p className="text-slate-500 text-xs">{p.quantity} ventas</p>
-                                                        </div>
-                                                        <span className="text-green-400 font-mono font-bold">{formatCurrency(p.revenue)}</span>
+                                    {/* Sección "Heavy": Top Ventas y Demanda */}
+                                    <div className="grid lg:grid-cols-3 gap-8">
+                                        
+                                        {/* Tendencia de Demanda (Live Carts + Favoritos) */}
+                                        <div className="lg:col-span-2 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden">
+                                            <div className="flex justify-between items-center mb-8 relative z-10">
+                                                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                                                    <Flame className="text-orange-500 w-6 h-6"/> Tendencia de Demanda
+                                                </h3>
+                                                <div className="flex gap-2">
+                                                    <span className="text-[10px] font-bold bg-blue-900/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20">Carrito</span>
+                                                    <span className="text-[10px] font-bold bg-red-900/20 text-red-400 px-3 py-1 rounded-full border border-red-500/20">Favoritos</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="space-y-4 relative z-10">
+                                                {dashboardMetrics.trendingProducts.length === 0 ? (
+                                                    <div className="text-center py-10 text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                                                        No hay suficiente actividad reciente para mostrar tendencias.
                                                     </div>
-                                                ))}
+                                                ) : (
+                                                    dashboardMetrics.trendingProducts.map((p, idx) => (
+                                                        <div key={p.id} className="flex items-center justify-between p-4 bg-slate-900/40 rounded-xl border border-slate-800 hover:bg-slate-900/60 transition">
+                                                            <div className="flex items-center gap-4">
+                                                                <span className={`font-black text-xl w-8 text-center ${idx===0 ? 'text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]' : idx===1 ? 'text-slate-300' : idx===2 ? 'text-orange-400' : 'text-slate-600'}`}>
+                                                                    #{idx+1}
+                                                                </span>
+                                                                <div className="w-12 h-12 bg-white rounded-lg p-1 flex-shrink-0">
+                                                                    <img src={p.image} className="w-full h-full object-contain"/>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-bold text-white text-sm line-clamp-1">{p.name}</p>
+                                                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                                                                        Stock Disponible: <span className={p.stock < 5 ? 'text-red-400' : 'text-slate-400'}>{p.stock}</span>
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-6">
+                                                                <div className="text-center">
+                                                                    <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Cart</p>
+                                                                    <p className="font-mono text-lg font-bold text-blue-400">{p.stats.cart}</p>
+                                                                </div>
+                                                                <div className="h-8 w-px bg-slate-800"></div>
+                                                                <div className="text-center">
+                                                                    <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Fav</p>
+                                                                    <p className="font-mono text-lg font-bold text-red-400">{p.stats.fav}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
                                             </div>
                                         </div>
 
-                                        {/* Interés / Más Vistos (Simulado) */}
-                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Eye className="text-cyan-500"/> Mayor Interés (Vistas/Carritos)</h3>
-                                            <div className="space-y-6">
-                                                {dashboardStats.mostViewedProducts.map((p, idx) => (
-                                                    <div key={p.id} className="space-y-2">
-                                                        <div className="flex justify-between text-xs font-bold">
-                                                            <span className="text-white">{p.name}</span>
-                                                            <span className="text-cyan-400">{p.interestScore} ptos</span>
+                                        {/* Producto Estrella */}
+                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group flex flex-col items-center text-center">
+                                            <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-700"></div>
+                                            
+                                            <div className="bg-yellow-500/10 p-4 rounded-full mb-6 border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+                                                <Trophy className="w-10 h-10 text-yellow-400"/>
+                                            </div>
+                                            
+                                            <h3 className="text-xl font-black text-white mb-2 relative z-10">Producto Estrella</h3>
+                                            <p className="text-slate-500 text-xs uppercase tracking-widest font-bold mb-6">El más vendido</p>
+                                            
+                                            {dashboardMetrics.starProduct ? (
+                                                <div className="relative z-10 w-full bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                    <img src={dashboardMetrics.starProduct.image} className="w-32 h-32 mx-auto bg-white rounded-xl object-contain p-2 shadow-lg mb-4"/>
+                                                    <h4 className="text-white font-black text-lg line-clamp-2 leading-tight mb-2">{dashboardMetrics.starProduct.name}</h4>
+                                                    <div className="inline-block bg-yellow-900/20 border border-yellow-500/30 px-4 py-1 rounded-full">
+                                                        <p className="text-yellow-400 font-black text-xl">
+                                                            {dashboardMetrics.salesCount[dashboardMetrics.starProduct.id]} <span className="text-xs font-bold uppercase">Unidades</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-slate-500 text-sm mt-4">Esperando datos de ventas...</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* TAB: CONFIGURACIÓN (BLINDADA) */}
+                            {adminTab === 'settings' && (
+                                <div className="max-w-4xl mx-auto space-y-8 animate-fade-up pb-20">
+                                    <div className="flex justify-between items-center">
+                                        <h1 className="text-3xl font-black text-white neon-text">Configuración Global</h1>
+                                        <button onClick={saveSettingsFn} className="bg-cyan-600 px-8 py-3 rounded-xl text-white font-bold shadow-lg hover:bg-cyan-500 transition flex items-center gap-2">
+                                            <Save className="w-5 h-5"/> Guardar Cambios
+                                        </button>
+                                    </div>
+
+                                    {/* Gestión de Categorías */}
+                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
+                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                            <Tag className="w-5 h-5 text-purple-400"/> Categorías de Productos
+                                        </h3>
+                                        <div className="flex gap-4 mb-6">
+                                            <input 
+                                                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-purple-500 outline-none transition" 
+                                                placeholder="Nombre de nueva categoría (ej: Tablets)" 
+                                                value={newCategory} 
+                                                onChange={e=>setNewCategory(e.target.value)}
+                                            />
+                                            <button 
+                                                onClick={()=>{if(newCategory){setTempSettings({...tempSettings, categories:[...(tempSettings.categories||[]), newCategory]}); setNewCategory('');}}} 
+                                                className="bg-purple-600 px-6 rounded-xl text-white font-bold hover:bg-purple-500 transition shadow-lg"
+                                            >
+                                                <Plus className="w-5 h-5"/>
+                                            </button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-3">
+                                            {(tempSettings?.categories || []).map(c => (
+                                                <span key={c} className="bg-slate-900 border border-slate-700 px-4 py-2 rounded-xl text-sm text-slate-300 flex items-center gap-3 font-bold group hover:border-red-500/50 hover:bg-red-900/10 transition">
+                                                    {c} 
+                                                    <button onClick={()=>setTempSettings({...tempSettings, categories: tempSettings.categories.filter(x=>x!==c)})} className="text-slate-500 group-hover:text-red-400 transition">
+                                                        <X className="w-3 h-3"/>
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Gestión de Equipo (Admins) */}
+                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
+                                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                                            <Users className="w-5 h-5 text-cyan-400"/> Equipo & Accesos
+                                        </h3>
+                                        <p className="text-slate-500 text-sm mb-6">Gestiona quién tiene acceso al panel de administración.</p>
+                                        
+                                        <div className="flex gap-3 mb-6 bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+                                            <input className="flex-[2] bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-cyan-500 outline-none" placeholder="Nombre" value={newTeamMember.name} onChange={e=>setNewTeamMember({...newTeamMember, name:e.target.value})}/>
+                                            <input className="flex-[3] bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-cyan-500 outline-none" placeholder="Email (Usuario existente)" value={newTeamMember.email} onChange={e=>setNewTeamMember({...newTeamMember, email:e.target.value})}/>
+                                            <select className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-cyan-500 outline-none" value={newTeamMember.role} onChange={e=>setNewTeamMember({...newTeamMember, role:e.target.value})}>
+                                                <option value="employee">Empleado</option>
+                                                <option value="admin">Admin</option>
+                                            </select>
+                                            <button onClick={addTeamMemberFn} className="bg-cyan-600 px-5 rounded-xl text-white font-bold hover:bg-cyan-500 transition shadow-lg"><Plus className="w-5 h-5"/></button>
+                                        </div>
+                                        
+                                        <div className="space-y-3">
+                                            {(tempSettings?.team || []).map((m, idx) => (
+                                                <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border ${m.role==='admin'?'bg-cyan-900/20 border-cyan-500/30 text-cyan-400':'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                                                            {m.name ? m.name.charAt(0) : <User className="w-5 h-5"/>}
                                                         </div>
-                                                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                                                            <div 
-                                                                className="h-full bg-gradient-to-r from-cyan-600 to-blue-500 rounded-full" 
-                                                                style={{ width: `${Math.min(100, (p.interestScore / 10) * 100)}%` }}
-                                                            ></div>
+                                                        <div>
+                                                            <p className="text-white font-bold text-sm">{m.name || 'Sin nombre'}</p>
+                                                            <p className="text-xs text-slate-500">{m.email}</p>
                                                         </div>
                                                     </div>
-                                                ))}
-                                                {dashboardStats.mostViewedProducts.length === 0 && <p className="text-slate-500 text-sm">Sin actividad reciente de usuarios.</p>}
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-950 px-2 py-1 rounded border border-slate-800">{m.role}</span>
+                                                        {m.email === SUPER_ADMIN_EMAIL ? (
+                                                            <Lock className="w-4 h-4 text-cyan-500" title="Super Admin Protegido"/>
+                                                        ) : (
+                                                            <button onClick={()=>removeTeamMemberFn(m.email)} className="p-2 hover:bg-red-900/20 rounded-lg text-slate-600 hover:text-red-400 transition">
+                                                                <Trash2 className="w-4 h-4"/>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Textos Globales */}
+                                    <div className="space-y-6">
+                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
+                                            <h3 className="text-xl font-bold text-white mb-6">Mensajes y Textos</h3>
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Marquesina de Anuncio (Inicio)</label>
+                                                    <input className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition" placeholder="Ej: 🔥 ENVÍOS GRATIS 🔥" value={tempSettings?.announcementMessage || ''} onChange={e=>setTempSettings({...tempSettings, announcementMessage:e.target.value})}/>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto "Sobre Nosotros"</label>
+                                                    <textarea className="w-full h-40 bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition resize-none leading-relaxed custom-scrollbar" value={aboutText} onChange={e=>setAboutText(e.target.value)}/>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* --- TAB PEDIDOS (CON BOTONES RESTAURADOS) --- */}
-                            {adminTab === 'orders' && (
-                                <div className="space-y-6 animate-fade-up pb-20">
-                                    <h1 className="text-3xl font-black text-white">Gestión de Pedidos</h1>
-                                    <div className="space-y-4">
-                                        {orders.map(o => (
-                                            <div key={o.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-sl[...]
-                                                <div className="flex items-center gap-4 w-full lg:w-auto" onClick={()=>setSelectedOrder(o)}>
-                                                    <div className={`p-4 rounded-xl shrink-0 ${o.status==='Realizado'?'bg-green-900/20 text-green-400':'bg-yellow-900/20 text-yellow-400'}`}>
-                                                        {o.status==='Realizado' ? <CheckCircle/> : <Clock/>}
+                            {/* TAB: PROVEEDORES (CON SELECTOR VISUAL) */}
+                            {adminTab === 'suppliers' && (
+                                <div className="max-w-6xl mx-auto space-y-8 animate-fade-up pb-20">
+                                    <div className="flex justify-between items-center">
+                                        <h1 className="text-3xl font-black text-white">Proveedores</h1>
+                                        <button onClick={()=>setShowSupplierModal(true)} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-cyan-500 transition transform hover:-translate-y-1">
+                                            <Plus className="w-5 h-5"/> Nuevo Proveedor
+                                        </button>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {suppliers.map(s => (
+                                            <div key={s.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-600 transition duration-300 group">
+                                                <div className="flex justify-between items-start mb-6">
+                                                    <div className="p-4 bg-slate-900 rounded-xl text-slate-400 group-hover:text-cyan-400 transition group-hover:bg-cyan-900/20">
+                                                        <Truck className="w-8 h-8"/>
                                                     </div>
-                                                    <div className="cursor-pointer">
-                                                        <p className="font-bold text-white text-lg flex items-center gap-2">
-                                                            #{o.orderId} <span className="text-slate-500 text-sm font-normal">| {o.customer.name}</span>
-                                                        </p>
-                                                        <p className="text-slate-500 text-sm flex items-center gap-2 mt-1">
-                                                            <Calendar className="w-3 h-3"/> {formatDateShort(o.date)} 
-                                                            <span className="text-slate-700">|</span> 
-                                                            <span className="text-white font-mono">{formatCurrency(o.total)}</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="flex flex-wrap items-center gap-3 justify-end w-full lg:w-auto">
-                                                    <button onClick={()=>setSelectedOrder(o)} className="px-4 py-2 bg-slate-900 text-slate-300 rounded-lg text-xs font-bold hover:text-white border bord[...]
-                                                    
-                                                    {/* BOTÓN FINALIZAR (RESTORED) */}
-                                                    {o.status !== 'Realizado' && (
-                                                        <button onClick={()=>handleFinalizeOrder(o)} className="px-4 py-2 bg-green-900/20 text-green-400 border border-green-500/30 rounded-lg text-xs f[...]
-                                                            <CheckSquare className="w-3 h-3"/> Finalizar
-                                                        </button>
-                                                    )}
-                                                    
-                                                    {/* BOTÓN ELIMINAR (RESTORED) */}
-                                                    <button onClick={()=>handleDeleteOrder(o)} className="px-4 py-2 bg-red-900/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-bold hov[...]
-                                                        <Trash2 className="w-3 h-3"/> Eliminar
+                                                    <button onClick={async ()=>{if(window.confirm("¿Eliminar proveedor?")) await deleteDoc(doc(db,'artifacts',appId,'public','data','suppliers',s.id));}} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-900 rounded-lg transition">
+                                                        <Trash2 className="w-5 h-5"/>
                                                     </button>
                                                 </div>
+                                                
+                                                <h3 className="text-2xl font-bold text-white mb-2">{s.name}</h3>
+                                                
+                                                <div className="space-y-3 mb-6 p-4 bg-slate-900/30 rounded-xl border border-slate-800/50">
+                                                    <p className="text-slate-400 text-sm flex items-center gap-3">
+                                                        <User className="w-4 h-4 text-slate-500"/> {s.contact}
+                                                    </p>
+                                                    {s.phone && (
+                                                        <p className="text-slate-400 text-sm flex items-center gap-3">
+                                                            <Phone className="w-4 h-4 text-slate-500"/> {s.phone}
+                                                        </p>
+                                                    )}
+                                                    {s.ig && (
+                                                        <p className="text-slate-400 text-sm flex items-center gap-3">
+                                                            <Instagram className="w-4 h-4 text-slate-500"/> {s.ig}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div className="pt-4 border-t border-slate-800">
+                                                    <p className="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">Productos Suministrados</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {(s.associatedProducts && s.associatedProducts.length > 0) ? (
+                                                            s.associatedProducts.map(pid => {
+                                                                const p = products.find(prod => prod.id === pid);
+                                                                if(!p) return null;
+                                                                return (
+                                                                    <div key={pid} className="w-10 h-10 rounded-lg bg-white p-1 flex items-center justify-center border border-slate-600 tooltip-container" title={p.name}>
+                                                                        <img src={p.image} className="w-full h-full object-contain"/>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            <span className="text-xs text-slate-600 italic">No hay productos asignados</span>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* --- TAB PRODUCTOS (CON COSTO Y VENTA LOCAL) --- */}
-                            {adminTab === 'products' && (
-                                <div className="space-y-6 animate-fade-up pb-20">
-                                    <div className="flex justify-between items-center">
-                                        <h1 className="text-3xl font-black text-white">Inventario</h1>
-                                        <button onClick={()=>{setProductForm({}); setShowProductModal(true)}} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hove[...]
+                            {/* TAB: CUPONES (GESTIÓN AVANZADA) */}
+                            {adminTab === 'coupons' && (
+                                <div className="max-w-5xl mx-auto animate-fade-up pb-20">
+                                    <h1 className="text-3xl font-black text-white mb-8">Gestión de Cupones</h1>
+                                    
+                                    {/* Formulario de Creación */}
+                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
+                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                            <Plus className="w-5 h-5 text-purple-400"/> Crear Nuevo Cupón
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                            {/* Columna 1 */}
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Código del Cupón</label>
+                                                    <input className="input-cyber w-full p-4 font-mono text-lg uppercase tracking-widest" placeholder="Ej: VERANO2024" value={newCoupon.code} onChange={e=>setNewCoupon({...newCoupon,code:e.target.value.toUpperCase()})}/>
+                                                </div>
+                                                <div className="flex gap-4">
+                                                    <div className="flex-1">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo</label>
+                                                        <select className="input-cyber w-full p-4" value={newCoupon.type} onChange={e=>setNewCoupon({...newCoupon,type:e.target.value})}>
+                                                            <option value="percentage">Porcentaje (%)</option>
+                                                            <option value="fixed">Fijo ($)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Valor</label>
+                                                        <input className="input-cyber w-full p-4" type="number" placeholder="0" value={newCoupon.value} onChange={e=>setNewCoupon({...newCoupon,value:e.target.value})}/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Columna 2 */}
+                                            <div className="space-y-4">
+                                                <div className="flex gap-4">
+                                                    <div className="flex-1">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mínimo de Compra</label>
+                                                        <input className="input-cyber w-full p-4" type="number" placeholder="$0" value={newCoupon.minPurchase} onChange={e=>setNewCoupon({...newCoupon,minPurchase:e.target.value})}/>
+                                                    </div>
+                                                    {newCoupon.type === 'percentage' && (
+                                                        <div className="flex-1">
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tope Reintegro</label>
+                                                            <input className="input-cyber w-full p-4" type="number" placeholder="$0 (Opcional)" value={newCoupon.maxDiscount} onChange={e=>setNewCoupon({...newCoupon,maxDiscount:e.target.value})}/>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className="flex gap-4">
+                                                    <div className="flex-1">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Límite Usos (Total)</label>
+                                                        <input className="input-cyber w-full p-4" type="number" placeholder="Ej: 100" value={newCoupon.usageLimit} onChange={e=>setNewCoupon({...newCoupon,usageLimit:e.target.value})}/>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Vencimiento</label>
+                                                        <input className="input-cyber w-full p-4" type="date" value={newCoupon.expirationDate} onChange={e=>setNewCoupon({...newCoupon,expirationDate:e.target.value})}/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button onClick={saveCouponFn} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                                            <Save className="w-5 h-5"/> Guardar Cupón
+                                        </button>
                                     </div>
 
+                                    {/* Lista de Cupones Activos */}
+                                    <div className="grid gap-4">
+                                        {coupons.map(c => (
+                                            <div key={c.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center group hover:border-slate-700 transition">
+                                                <div className="flex items-center gap-6 mb-4 md:mb-0 w-full md:w-auto">
+                                                    <div className="w-16 h-16 bg-slate-900 rounded-xl flex items-center justify-center border border-slate-800 text-purple-400 font-black text-2xl">
+                                                        %
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-white font-black text-xl tracking-wider">{c.code}</h4>
+                                                        <p className="text-purple-400 font-bold text-sm">
+                                                            {c.type === 'fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}
+                                                            <span className="text-slate-500 font-normal ml-2">
+                                                                (Min: ${c.minPurchase})
+                                                            </span>
+                                                        </p>
+                                                        <p className="text-xs text-slate-600 mt-1 flex gap-3">
+                                                            <span>Usado: {c.usedBy ? c.usedBy.length : 0} veces</span>
+                                                            {c.usageLimit && <span>Límite: {c.usageLimit}</span>}
+                                                            {c.expirationDate && <span>Vence: {c.expirationDate}</span>}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button onClick={async () => {if(window.confirm("¿Eliminar este cupón?")) await deleteDoc(doc(db,'artifacts',appId,'public','data','coupons',c.id));}} className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800">
+                                                    <Trash2 className="w-5 h-5"/>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* TAB: PRODUCTOS (LISTA Y FORMULARIO) */}
+                            {adminTab === 'products' && (
+                                <div className="max-w-7xl mx-auto animate-fade-up pb-20">
+                                    <div className="flex justify-between items-center mb-8">
+                                        <h1 className="text-3xl font-black text-white">Inventario</h1>
+                                        <button onClick={()=>{setNewProduct({});setEditingId(null);setShowProductForm(true)}} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg">
+                                            <Plus className="w-5 h-5"/> Agregar Producto
+                                        </button>
+                                    </div>
+
+                                    {/* Formulario Productos (Expandido) */}
+                                    {showProductForm && (
+                                        <div className="bg-[#0a0a0a] border border-cyan-500/30 p-8 rounded-[2rem] mb-10 shadow-2xl relative">
+                                            <h3 className="text-xl font-bold text-white mb-6">
+                                                {editingId ? 'Editar Producto' : 'Nuevo Producto'}
+                                            </h3>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                                <div className="space-y-4">
+                                                    <input className="input-cyber w-full p-4" placeholder="Nombre del Producto" value={newProduct.name||''} onChange={e=>setNewProduct({...newProduct,name:e.target.value})}/>
+                                                    <div className="flex gap-4">
+                                                        <input className="input-cyber w-full p-4" type="number" placeholder="Precio ($)" value={newProduct.basePrice||''} onChange={e=>setNewProduct({...newProduct,basePrice:e.target.value})}/>
+                                                        <input className="input-cyber w-full p-4" type="number" placeholder="Stock" value={newProduct.stock||''} onChange={e=>setNewProduct({...newProduct,stock:e.target.value})}/>
+                                                    </div>
+                                                    <select className="input-cyber w-full p-4" value={newProduct.category||''} onChange={e=>setNewProduct({...newProduct,category:e.target.value})}>
+                                                        <option value="">Seleccionar Categoría...</option>
+                                                        {settings?.categories?.map(c=><option key={c} value={c}>{c}</option>)}
+                                                    </select>
+                                                </div>
+                                                
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800 cursor-pointer hover:bg-slate-900 transition h-[150px] justify-center relative" onClick={()=>fileInputRef.current.click()}>
+                                                        {newProduct.image ? (
+                                                            <img src={newProduct.image} className="h-full w-auto object-contain rounded-lg"/>
+                                                        ) : (
+                                                            <div className="text-center text-slate-500">
+                                                                <FolderPlus className="w-10 h-10 mx-auto mb-2"/>
+                                                                <p className="text-xs font-bold uppercase">Click para subir imagen</p>
+                                                            </div>
+                                                        )}
+                                                        <input type="file" ref={fileInputRef} onChange={(e)=>handleImage(e, setNewProduct)} className="hidden"/>
+                                                    </div>
+                                                    <input className="input-cyber w-full p-4" type="number" placeholder="Descuento (%)" value={newProduct.discount||0} onChange={e=>setNewProduct({...newProduct,discount:e.target.value})}/>
+                                                </div>
+                                            </div>
+                                            
+                                            <textarea className="input-cyber w-full h-32 p-4 mb-6 resize-none" placeholder="Descripción detallada del producto..." value={newProduct.description||''} onChange={e=>setNewProduct({...newProduct,description:e.target.value})}/>
+                                            
+                                            <div className="flex gap-4 justify-end">
+                                                <button onClick={()=>setShowProductForm(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition">Cancelar</button>
+                                                <button onClick={saveProductFn} className="px-8 py-3 bg-cyan-600 rounded-xl text-white font-bold shadow-lg hover:bg-cyan-500 transition">Guardar Producto</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Lista de Productos */}
                                     <div className="grid gap-3">
                                         {products.map(p => (
-                                            <div key={p.id} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center group hover:border-cy[...]
+                                            <div key={p.id} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-cyan-900/50 transition">
                                                 <div className="flex items-center gap-6 w-full sm:w-auto">
-                                                    <div className="w-16 h-16 bg-white rounded-xl p-2 flex-shrink-0 object-contain"><img src={p.image} className="w-full h-full object-contain" alt={p.n[...]
+                                                    <div className="w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0">
+                                                        <img src={p.image} className="w-full h-full object-contain"/>
+                                                    </div>
                                                     <div>
                                                         <p className="font-bold text-white text-lg">{p.name}</p>
-                                                        <div className="flex items-center gap-4 mt-1 text-xs">
-                                                            <span className={`font-mono font-bold ${p.stock < 5 ? 'text-red-400' : 'text-slate-400'}`}>Stock: {p.stock}</span>
-                                                            <span className="text-slate-500">|</span>
-                                                            <span className="text-cyan-400 font-bold">Venta: {formatCurrency(p.basePrice)}</span>
-                                                            <span className="text-slate-500">|</span>
-                                                            <span className="text-purple-400 font-bold">Costo: {formatCurrency(p.costPrice || 0)}</span>
-                                                        </div>
+                                                        <p className="text-xs text-slate-500 font-mono">
+                                                            Stock: <span className={p.stock < 5 ? 'text-red-400 font-bold' : 'text-slate-400'}>{p.stock}</span> | 
+                                                            <span className="text-cyan-400 font-bold ml-2">${p.basePrice}</span>
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                
                                                 <div className="flex gap-3 mt-4 sm:mt-0 w-full sm:w-auto justify-end">
-                                                    {/* BOTÓN VENTA LOCAL (RESTORED) */}
-                                                    <button onClick={()=>handleLocalSale(p)} className="p-3 bg-green-900/20 text-green-400 border border-green-500/30 rounded-xl hover:bg-green-500 hove[...]
-                                                        <Wallet className="w-5 h-5"/>
+                                                    <button onClick={()=>{setNewProduct(p);setEditingId(p.id);setShowProductForm(true)}} className="p-3 bg-slate-900 rounded-xl text-cyan-400 hover:bg-cyan-900/20 transition border border-slate-800">
+                                                        <Edit className="w-5 h-5"/>
                                                     </button>
-                                                    
-                                                    <button onClick={()=>{setProductForm(p); setShowProductModal(true)}} className="p-3 bg-slate-900 rounded-xl text-cyan-400 hover:bg-cyan-900/20 trans[...]
-                                                    <button onClick={()=>handleDeleteProduct(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-[...]
+                                                    <button onClick={()=>deleteProductFn(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-800">
+                                                        <Trash2 className="w-5 h-5"/>
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
@@ -2520,41 +2619,68 @@ function App() {
                                 </div>
                             )}
 
-                             {/* --- TAB CONFIGURACIÓN (EXPANDIDO) --- */}
-                             {adminTab === 'settings' && (
-                                <div className="space-y-8 animate-fade-up pb-20 max-w-4xl">
-                                    <div className="flex justify-between items-center">
-                                        <h1 className="text-3xl font-black text-white">Configuración de Tienda</h1>
-                                        <Button icon={Save} onClick={()=>addNotification("Guardando cambios...", "info")}>Guardar Todo</Button>
-                                    </div>
-                                    
-                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] space-y-6">
-                                        <h3 className="font-bold text-white text-xl border-b border-slate-800 pb-4">Identidad de Marca</h3>
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            <InputField label="Nombre de la Tienda" value={tempSettings.storeName} onChange={e=>setTempSettings({...tempSettings, storeName:e.target.value})} />
-                                            <InputField label="Mensaje de Anuncio (Barra Superior)" value={tempSettings.announcementMessage} onChange={e=>setTempSettings({...tempSettings, announcement[...]
+                        </div>
+
+                        {/* 7.3 Modal Proveedores (Selector Visual) */}
+                        {showSupplierModal && (
+                            <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-up">
+                                <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+                                    <div className="overflow-y-auto custom-scrollbar pr-2 pb-20">
+                                        <h3 className="text-2xl font-black text-white mb-6 sticky top-0 bg-[#0a0a0a] py-2 z-10">
+                                            {newSupplier.id ? 'Editar' : 'Nuevo'} Proveedor
+                                        </h3>
+                                        
+                                        <div className="space-y-4 mb-6">
+                                            <input className="input-cyber w-full p-4" placeholder="Nombre de la Empresa" value={newSupplier.name} onChange={e=>setNewSupplier({...newSupplier, name:e.target.value})}/>
+                                            <input className="input-cyber w-full p-4" placeholder="Nombre del Contacto" value={newSupplier.contact} onChange={e=>setNewSupplier({...newSupplier, contact:e.target.value})}/>
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <input className="input-cyber w-full p-4" placeholder="Teléfono" value={newSupplier.phone} onChange={e=>setNewSupplier({...newSupplier, phone:e.target.value})}/>
+                                                <input className="input-cyber w-full p-4" placeholder="Instagram (sin @)" value={newSupplier.ig} onChange={e=>setNewSupplier({...newSupplier, ig:e.target.value})}/>
+                                            </div>
+                                            
+                                            {/* Selector Visual de Productos */}
+                                            <div className="border-t border-slate-800 pt-6 mt-6">
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">
+                                                    Asignar Productos Suministrados
+                                                </label>
+                                                <div className="h-48 overflow-y-auto bg-slate-900/50 rounded-xl p-2 border border-slate-800 custom-scrollbar">
+                                                    {products.length === 0 ? (
+                                                        <p className="text-center text-slate-600 text-xs py-4">Carga productos primero.</p>
+                                                    ) : products.map(p => (
+                                                        <div 
+                                                            key={p.id} 
+                                                            onClick={()=>{
+                                                                const prev = newSupplier.associatedProducts || [];
+                                                                const exists = prev.includes(p.id);
+                                                                setNewSupplier({
+                                                                    ...newSupplier, 
+                                                                    associatedProducts: exists ? prev.filter(x=>x!==p.id) : [...prev, p.id]
+                                                                });
+                                                            }} 
+                                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer mb-1 transition ${newSupplier.associatedProducts?.includes(p.id) ? 'bg-cyan-900/30 border border-cyan-500/30' : 'hover:bg-slate-800 border border-transparent'}`}
+                                                        >
+                                                            <div className="w-8 h-8 bg-white rounded p-0.5 flex-shrink-0">
+                                                                <img src={p.image} className="w-full h-full object-contain"/>
+                                                            </div>
+                                                            <span className="text-xs text-white truncate flex-1 font-medium">{p.name}</span>
+                                                            {newSupplier.associatedProducts?.includes(p.id) && <CheckCircle className="w-4 h-4 text-cyan-400"/>}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <InputField label="URL del Logo" value={tempSettings.logoUrl} onChange={e=>setTempSettings({...tempSettings, logoUrl:e.target.value})} icon={Link} />
-                                        <InputField label="URL del Banner Principal (Hero)" value={tempSettings.heroUrl} onChange={e=>setTempSettings({...tempSettings, heroUrl:e.target.value})} icon={[...]
                                     </div>
 
-                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] space-y-6">
-                                        <h3 className="font-bold text-white text-xl border-b border-slate-800 pb-4">Redes Sociales y Contacto</h3>
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            <InputField label="Link de WhatsApp" value={tempSettings.whatsappLink} onChange={e=>setTempSettings({...tempSettings, whatsappLink:e.target.value})} icon={M[...]
-                                            <InputField label="Instagram User" value={tempSettings.instagramUser} onChange={e=>setTempSettings({...tempSettings, instagramUser:e.target.value})} icon={I[...]
-                                            <InputField label="Email de Soporte" value={tempSettings.sellerEmail} onChange={e=>setTempSettings({...tempSettings, sellerEmail:e.target.value})} icon={Mai[...]
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] space-y-6">
-                                        <h3 className="font-bold text-white text-xl border-b border-slate-800 pb-4">Sobre Nosotros</h3>
-                                        <TextAreaField label="Texto de la página 'Sobre Nosotros'" rows={6} value={tempSettings.aboutUsText} onChange={e=>setTempSettings({...tempSettings, aboutUsText[...]
+                                    {/* Footer Botones Fixed */}
+                                    <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent flex gap-4">
+                                        <button onClick={()=>setShowSupplierModal(false)} className="flex-1 py-4 text-slate-400 font-bold hover:text-white transition bg-slate-900 rounded-xl">Cancelar</button>
+                                        <button onClick={saveSupplierFn} className="flex-1 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold shadow-lg transition">Guardar</button>
                                     </div>
                                 </div>
-                             )}
+                            </div>
+                        )}
 
-                        </div>
                     </div>
                 )}
             </main>
@@ -2562,5 +2688,6 @@ function App() {
     );
 }
 
+// Renderizado Final
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
