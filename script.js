@@ -1528,9 +1528,22 @@ function App() {
         );
     }
 
+    // --- LÓGICA DE FILTRADO CONSOLIDADA ---
+    const filteredProducts = products.filter(p => {
+        const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === '' || p.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
+
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden bg-grid font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+            {/* DEBUGGER VISUAL (SOLO DESARROLLO) */}
+            {view === 'store' && (
+                <div className="fixed bottom-4 left-4 z-[9999] bg-black/80 text-green-400 font-mono text-xs p-2 rounded border border-green-900 pointer-events-none">
+                    [DEBUG] Total: {products.length} | Filtro: {filteredProducts.length} | Cat: {selectedCategory || 'ALL'}
+                </div>
+            )}
 
             {/* Efectos de Fondo Globales */}
             <div className="fixed inset-0 pointer-events-none z-0">
@@ -1763,7 +1776,7 @@ function App() {
                             </div>
                         ) : (
                             <>
-                                {products.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategory === '' || p.category === selectedCategory)).length === 0 && (
+                                {filteredProducts.length === 0 && (
                                     <div className="flex flex-col items-center justify-center p-20 text-center col-span-full animate-fade-in w-full">
                                         <div className="p-6 bg-slate-900/50 rounded-full mb-4 inline-block border border-slate-800">
                                             <Search className="w-12 h-12 text-slate-500" />
@@ -1782,7 +1795,7 @@ function App() {
                                     </div>
                                 )}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20">
-                                    {products.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategory === '' || p.category === selectedCategory)).map(p => (
+                                    {filteredProducts.map(p => (
                                         <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
 
                                             {/* Imagen y Badges */}
