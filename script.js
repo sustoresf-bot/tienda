@@ -1081,8 +1081,8 @@ function App() {
             .filter(o => o.status !== 'Cancelado') // Excluir cancelados
             .reduce((acc, o) => acc + (o.total || 0), 0);
 
-        const expensesTotal = expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
-        const purchasesTotal = purchases.reduce((acc, p) => acc + (p.cost || 0), 0);
+        const expensesTotal = expenses?.reduce((acc, e) => acc + (e.amount || 0), 0) || 0;
+        const purchasesTotal = purchases?.reduce((acc, p) => acc + (p.cost || 0), 0) || 0;
         const netIncome = revenue - expensesTotal - purchasesTotal;
 
         // 3. Producto Estrella (Ventas reales confirmadas)
@@ -2604,13 +2604,13 @@ function App() {
                                                 onClick={() => setNewPurchase(prev => ({ ...prev, isNewProduct: false }))}
                                                 className={`flex-1 p-6 text-center font-bold tracking-wider transition ${!newPurchase.isNewProduct ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
                                             >
-                                                <RefreshCw className="w-5 h-5 inline-block mr-2" /> REPONER STOCK
+                                                <Package className="w-5 h-5 inline-block mr-2" /> REPONER STOCK
                                             </button>
                                             <button
                                                 onClick={() => setNewPurchase(prev => ({ ...prev, isNewProduct: true }))}
                                                 className={`flex-1 p-6 text-center font-bold tracking-wider transition ${newPurchase.isNewProduct ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
                                             >
-                                                <Plus className="w-5 h-5 inline-block mr-2" /> PRODUCTO NUEVO
+                                                <CheckCircle className="w-5 h-5 inline-block mr-2" /> PRODUCTO NUEVO
                                             </button>
                                         </div>
 
