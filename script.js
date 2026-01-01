@@ -2647,32 +2647,55 @@ function App() {
 
                                             <div className="p-8">
                                                 {/* MODO: REPONER STOCK */}
-                                                {!newPurchase.isNewProduct && (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
-                                                        <div className="lg:col-span-2">
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto Existente</label>
-                                                            <select className="input-cyber w-full p-4" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
-                                                                <option value="">Seleccionar Producto...</option>
-                                                                {products.map(p => <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>)}
-                                                            </select>
+                                                {!newPurchase.isNewProduct && (() => {
+                                                    const selectedProduct = products.find(p => p.id === newPurchase.productId);
+                                                    const productPrice = selectedProduct?.purchasePrice || selectedProduct?.basePrice || 0;
+                                                    const autoCost = productPrice * newPurchase.quantity;
+
+                                                    return (
+                                                        <div className="space-y-6 animate-fade-in">
+                                                            {/* Preview del Producto Seleccionado */}
+                                                            {selectedProduct && (
+                                                                <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-6 flex items-center gap-6">
+                                                                    <div className="w-24 h-24 bg-white rounded-xl p-2 flex-shrink-0">
+                                                                        <img src={selectedProduct.image} className="w-full h-full object-contain" alt={selectedProduct.name} />
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <h4 className="text-xl font-bold text-white mb-1">{selectedProduct.name}</h4>
+                                                                        <p className="text-sm text-slate-400">Stock Actual: <span className="text-cyan-400 font-bold">{selectedProduct.stock}</span> unidades</p>
+                                                                        <p className="text-sm text-slate-400">Precio Unitario: <span className="text-green-400 font-bold">${productPrice.toLocaleString()}</span></p>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                        <p className="text-xs text-slate-500 uppercase font-bold mb-1">Costo Total</p>
+                                                                        <p className="text-3xl font-black text-cyan-400">${autoCost.toLocaleString()}</p>
+                                                                        <p className="text-xs text-slate-500 mt-1">{productPrice.toLocaleString()} × {newPurchase.quantity}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                                <div className="md:col-span-2">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto Existente</label>
+                                                                    <select className="input-cyber w-full p-4" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
+                                                                        <option value="">Seleccionar Producto...</option>
+                                                                        {products.map(p => <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>)}
+                                                                    </select>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad</label>
+                                                                    <input type="number" className="input-cyber w-full p-4" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
+                                                                </div>
+                                                                <div className="md:col-span-3">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Proveedor</label>
+                                                                    <select className="input-cyber w-full p-4" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
+                                                                        <option value="">Seleccionar...</option>
+                                                                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Proveedor</label>
-                                                            <select className="input-cyber w-full p-4" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
-                                                                <option value="">Seleccionar...</option>
-                                                                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                                            </select>
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad</label>
-                                                            <input type="number" className="input-cyber w-full p-4" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Costo Total ($)</label>
-                                                            <input type="number" className="input-cyber w-full p-4" placeholder="$0.00" value={newPurchase.cost} onChange={e => setNewPurchase({ ...newPurchase, cost: parseFloat(e.target.value) || 0 })} />
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                    );
+                                                })()}
 
                                                 {/* MODO: NUEVO PRODUCTO */}
                                                 {newPurchase.isNewProduct && (
@@ -2740,6 +2763,7 @@ function App() {
                                                         try {
                                                             let targetProductId = newPurchase.productId;
                                                             let targetProductName = "";
+                                                            let calculatedCost = 0;
 
                                                             if (newPurchase.isNewProduct) {
                                                                 // VALIDAR Y CREAR PRODUCTO
@@ -2761,10 +2785,15 @@ function App() {
                                                                 const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), newProdData);
                                                                 targetProductId = docRef.id;
                                                                 targetProductName = newProdData.name;
+                                                                calculatedCost = newPurchase.cost; // Usar costo manual para nuevos productos
                                                                 showToast("¡Producto nuevo creado!", "success");
                                                             } else {
                                                                 if (!targetProductId) return showToast("Selecciona un producto existente.", "warning");
-                                                                targetProductName = products.find(p => p.id === targetProductId)?.name || "Desconocido";
+                                                                const selectedProd = products.find(p => p.id === targetProductId);
+                                                                targetProductName = selectedProd?.name || "Desconocido";
+                                                                // Auto-calcular costo: precio de compra × cantidad
+                                                                const productPrice = selectedProd?.purchasePrice || selectedProd?.basePrice || 0;
+                                                                calculatedCost = productPrice * newPurchase.quantity;
                                                             }
 
                                                             // REGISTRAR COMPRA
@@ -2772,7 +2801,7 @@ function App() {
                                                                 productId: targetProductId,
                                                                 supplierId: newPurchase.supplierId,
                                                                 quantity: newPurchase.quantity,
-                                                                cost: newPurchase.cost,
+                                                                cost: calculatedCost,
                                                                 date: new Date().toISOString()
                                                             });
 
