@@ -245,7 +245,10 @@ function App() {
         cuit: '',
         associatedProducts: []
     });
-    const [showSupplierModal, setShowSupplierModal] = useState(false);
+
+
+    // Estado para EDICIÓN DE COMPRAS
+    const [editingPurchase, setEditingPurchase] = useState(null);
 
     // Configuración y Equipo
     const [aboutText, setAboutText] = useState('');
@@ -991,6 +994,48 @@ function App() {
         const updatedTeam = currentTeam.filter(m => m.email !== email);
         setTempSettings(prev => ({ ...prev, team: updatedTeam }));
         showToast("Miembro eliminado (Recuerda guardar la configuración).", "info");
+    };
+
+    // 10. Gestión de Compras (Editar/Eliminar con lógica de Stock)
+    const deletePurchaseFn = (purchase) => {
+        openConfirm("Eliminar Compra", `¿Eliminar registro de compra? Se descontarán ${purchase.quantity} unidades del stock del producto.`, async () => {
+            try {
+                // 1. Descontar Stock
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', purchase.productId), {
+                    stock: increment(-purchase.quantity)
+                });
+                // 2. Eliminar Compra
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'purchases', purchase.id));
+                showToast("Compra eliminada y stock revertido.", "success");
+            } catch (e) {
+                console.error(e);
+                showToast("Error al eliminar compra.", "error");
+            }
+        });
+    };
+
+    const updatePurchaseFn = async (pId, oldData, newData) => {
+        const qtyDiff = newData.quantity - oldData.quantity;
+
+        try {
+            // 1. Actualizar Stock si cambió la cantidad
+            if (qtyDiff !== 0) {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', oldData.productId), {
+                    stock: increment(qtyDiff)
+                });
+            }
+            // 2. Actualizar Registro
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'purchases', pId), {
+                quantity: newData.quantity,
+                cost: newData.cost,
+                supplierId: newData.supplierId
+            });
+            setEditingPurchase(null);
+            showToast("Compra actualizada y stock ajustado.", "success");
+        } catch (e) {
+            console.error(e);
+            showToast("Error al actualizar la compra.", "error");
+        }
     };
 
     // --- CÁLCULOS DEL DASHBOARD (CENTRALIZADOS) ---
@@ -2558,7 +2603,7 @@ function App() {
                                                 onClick={() => setNewPurchase(prev => ({ ...prev, isNewProduct: false }))}
                                                 className={`flex-1 p-6 text-center font-bold tracking-wider transition ${!newPurchase.isNewProduct ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
                                             >
-                                                <RotateCw className="w-5 h-5 inline-block mr-2" /> REPONER STOCK
+                                                <RefreshCw className="w-5 h-5 inline-block mr-2" /> REPONER STOCK
                                             </button>
                                             <button
                                                 onClick={() => setNewPurchase(prev => ({ ...prev, isNewProduct: true }))}
@@ -2731,20 +2776,65 @@ function App() {
                                                 const prod = products.find(prod => prod.id === p.productId);
                                                 const sup = suppliers.find(s => s.id === p.supplierId);
                                                 return (
-                                                    <div key={p.id} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800">
+                                                    <div key={p.id} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-slate-600 transition group">
                                                         <div>
-                                                            <p className="font-bold text-white">{prod?.name || 'Producto Eliminado'}</p>
+                                                            <p className="font-bold text-white flex items-center gap-2">
+                                                                {prod?.name || 'Producto Eliminado'}
+                                                                <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">STOCK ACTUAL: {prod?.stock || 0}</span>
+                                                            </p>
                                                             <p className="text-xs text-slate-500">{new Date(p.date).toLocaleDateString()} - Prov: {sup?.name || 'Desconocido'}</p>
                                                         </div>
-                                                        <div className="text-right">
-                                                            <p className="text-cyan-400 font-bold">+{p.quantity} u.</p>
-                                                            <p className="text-slate-400 text-xs font-mono">${(p.cost || 0).toLocaleString()}</p>
+                                                        <div className="flex items-center gap-6">
+                                                            <div className="text-right">
+                                                                <p className="text-cyan-400 font-bold">+{p.quantity} u.</p>
+                                                                <p className="text-slate-400 text-xs font-mono">${(p.cost || 0).toLocaleString()}</p>
+                                                            </div>
+                                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={() => setEditingPurchase(p)} className="p-2 bg-slate-800 hover:bg-blue-900/30 text-slate-400 hover:text-blue-400 rounded-lg transition">
+                                                                    <Edit className="w-4 h-4" />
+                                                                </button>
+                                                                <button onClick={() => deletePurchaseFn(p)} className="p-2 bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded-lg transition">
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                     </div>
+
+                                    {/* Modal Edición Compra */}
+                                    {editingPurchase && (
+                                        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
+                                            <div className="bg-[#0a0a0a] border border-slate-700 rounded-3xl p-8 w-full max-w-lg shadow-2xl relative">
+                                                <button onClick={() => setEditingPurchase(null)} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
+                                                <h3 className="text-2xl font-bold text-white mb-6">Editar Compra</h3>
+
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Cantidad comprada</label>
+                                                        <div className="text-xs text-yellow-500 mb-2">⚠ Modificar esto ajustará el stock del producto automáticamente.</div>
+                                                        <input type="number" className="input-cyber w-full p-3" value={editingPurchase.quantity} onChange={e => setEditingPurchase({ ...editingPurchase, quantity: parseInt(e.target.value) || 0 })} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Costo Total ($)</label>
+                                                        <input type="number" className="input-cyber w-full p-3" value={editingPurchase.cost} onChange={e => setEditingPurchase({ ...editingPurchase, cost: parseFloat(e.target.value) || 0 })} />
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => {
+                                                        const original = purchases.find(x => x.id === editingPurchase.id);
+                                                        if (original) updatePurchaseFn(editingPurchase.id, original, editingPurchase);
+                                                    }}
+                                                    className="w-full mt-6 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-xl transition shadow-lg"
+                                                >
+                                                    Guardar Cambios
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
