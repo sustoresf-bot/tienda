@@ -692,6 +692,11 @@ function App() {
     // Selección de Cupón
     const selectCoupon = (coupon) => {
         // Validaciones previas
+        if (coupon.targetType === 'specific_email' && currentUser) {
+            if (coupon.targetUser && coupon.targetUser.toLowerCase() !== currentUser.email.toLowerCase()) {
+                return showToast("Este cupón no está disponible para tu cuenta.", "error");
+            }
+        }
         if (new Date(coupon.expirationDate) < new Date()) {
             return showToast("Este cupón ha vencido.", "error");
         }
@@ -857,6 +862,23 @@ function App() {
             console.error(e);
             showToast("Error al guardar el producto.", "error");
         }
+    };
+
+    // 6.4. Image Upload Handler (Base64 for Vercel)
+    const handleImageUpload = (e, targetState, setTargetState) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            return showToast("Por favor selecciona una imagen válida.", "warning");
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setTargetState({ ...targetState, image: reader.result });
+            showToast("Imagen cargada correctamente.", "success");
+        };
+        reader.readAsDataURL(file);
     };
 
     // 6.5. Eliminar Producto
@@ -2814,55 +2836,128 @@ function App() {
                                                 })()}
 
                                                 {/* MODO: NUEVO PRODUCTO */}
+                                                {/* MODO: NUEVO PRODUCTO */}
                                                 {newPurchase.isNewProduct && (
                                                     <div className="space-y-6 animate-fade-in">
-                                                        {/* Datos del Producto */}
                                                         <div className="p-6 bg-slate-900/30 rounded-2xl border border-slate-800">
-                                                            <h4 className="text-cyan-400 font-bold mb-4 flex items-center gap-2"><Tag className="w-4 h-4" /> Detalles del Nuevo Producto</h4>
+                                                            <h4 className="text-cyan-400 font-bold mb-4 flex items-center gap-2">
+                                                                <Tag className="w-4 h-4" /> Datos del Producto
+                                                            </h4>
+
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                {/* Nombre */}
                                                                 <div className="md:col-span-2">
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre del Producto</label>
-                                                                    <input className="input-cyber w-full p-4" placeholder="Ej: Samsung Galaxy S24 Ultra" value={newPurchase.newProdName || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdName: e.target.value })} />
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        Nombre del Producto
+                                                                    </label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        placeholder="Ej: Samsung Galaxy S24"
+                                                                        value={newPurchase.newProdName || ''}
+                                                                        onChange={e => setNewPurchase({ ...newPurchase, newProdName: e.target.value })}
+                                                                    />
                                                                 </div>
+
+                                                                {/* Categoría */}
                                                                 <div>
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
-                                                                    <select className="input-cyber w-full p-4" value={newPurchase.newProdCategory || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdCategory: e.target.value })}>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        Categoría
+                                                                    </label>
+                                                                    <select
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={newPurchase.newProdCategory || ''}
+                                                                        onChange={e => setNewPurchase({ ...newPurchase, newProdCategory: e.target.value })}
+                                                                    >
                                                                         <option value="">Seleccionar...</option>
-                                                                        {settings?.categories?.map(c => <option key={c} value={c}>{c}</option>)}
+                                                                        {(settings?.categories || []).map(cat => (
+                                                                            <option key={cat} value={cat}>{cat}</option>
+                                                                        ))}
                                                                     </select>
                                                                 </div>
-                                                                <div>
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Precio de Venta ($)</label>
-                                                                    <input type="number" className="input-cyber w-full p-4" placeholder="0.00" value={newPurchase.newProdPrice || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdPrice: parseFloat(e.target.value) || 0 })} />
-                                                                </div>
-                                                                <div className="md:col-span-2">
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL de Imagen</label>
-                                                                    <div className="flex gap-2">
-                                                                        <input className="input-cyber w-full p-4" placeholder="https://..." value={newPurchase.newProdImage || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdImage: e.target.value })} />
-                                                                        {newPurchase.newProdImage && <img src={newPurchase.newProdImage} className="w-16 h-16 rounded-lg object-cover border border-slate-700" alt="Preview" />}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
 
-                                                        {/* Datos de Compra Inicial */}
-                                                        <div className="p-6 bg-slate-900/30 rounded-2xl border border-slate-800">
-                                                            <h4 className="text-green-400 font-bold mb-4 flex items-center gap-2"><Truck className="w-4 h-4" /> Datos de Compra Inicial (Stock)</h4>
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                {/* Precio de Venta */}
                                                                 <div>
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Proveedor</label>
-                                                                    <select className="input-cyber w-full p-4" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        Precio de Venta ($)
+                                                                    </label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-cyber w-full p-4"
+                                                                        placeholder="0"
+                                                                        value={newPurchase.newProdPrice || 0}
+                                                                        onChange={e => setNewPurchase({ ...newPurchase, newProdPrice: parseFloat(e.target.value) || 0 })}
+                                                                    />
+                                                                </div>
+
+                                                                {/* Imagen - UPLOAD */}
+                                                                <div className="md:col-span-2">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        Imagen del Producto
+                                                                    </label>
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        onChange={(e) => {
+                                                                            const file = e.target.files?.[0];
+                                                                            if (file) {
+                                                                                const reader = new FileReader();
+                                                                                reader.onloadend = () => {
+                                                                                    setNewPurchase({ ...newPurchase, newProdImage: reader.result });
+                                                                                };
+                                                                                reader.readAsDataURL(file);
+                                                                            }
+                                                                        }}
+                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-900/20 file:text-cyan-400 hover:file:bg-cyan-900/40"
+                                                                    />
+                                                                    {newPurchase.newProdImage && (
+                                                                        <div className="mt-3 bg-white rounded-xl p-3 w-32 h-32">
+                                                                            <img src={newPurchase.newProdImage} className="w-full h-full object-contain" alt="Preview" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Stock Inicial */}
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        Stock Inicial
+                                                                    </label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-cyber w-full p-4"
+                                                                        placeholder="0"
+                                                                        value={newPurchase.quantity || 0}
+                                                                        onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })}
+                                                                    />
+                                                                </div>
+
+                                                                {/* Proveedor */}
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        Proveedor
+                                                                    </label>
+                                                                    <select
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={newPurchase.supplierId || ''}
+                                                                        onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}
+                                                                    >
                                                                         <option value="">Seleccionar...</option>
                                                                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                                                     </select>
                                                                 </div>
-                                                                <div>
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad Inicial</label>
-                                                                    <input type="number" className="input-cyber w-full p-4" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Costo Total Compra ($)</label>
-                                                                    <input type="number" className="input-cyber w-full p-4" placeholder="0.00" value={newPurchase.cost} onChange={e => setNewPurchase({ ...newPurchase, cost: parseFloat(e.target.value) || 0 })} />
+
+                                                                {/* Costo de Compra */}
+                                                                <div className="md:col-span-2">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        Costo de Compra Total ($)
+                                                                    </label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-cyber w-full p-4"
+                                                                        placeholder="0.00"
+                                                                        value={newPurchase.cost || 0}
+                                                                        onChange={e => setNewPurchase({ ...newPurchase, cost: parseFloat(e.target.value) || 0 })}
+                                                                    />
+                                                                    <p className="text-xs text-slate-400 mt-1">Este es el costo total de la compra al proveedor</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -3198,6 +3293,36 @@ function App() {
                                                             <input className="input-cyber w-full p-4" type="date" value={newCoupon.expirationDate} onChange={e => setNewCoupon({ ...newCoupon, expirationDate: e.target.value })} />
                                                         </div>
                                                     </div>
+
+                                                    <div className="md:col-span-2">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                            Tipo de Cupón
+                                                        </label>
+                                                        <select
+                                                            className="input-cyber w-full p-4"
+                                                            value={newCoupon.targetType}
+                                                            onChange={e => setNewCoupon({ ...newCoupon, targetType: e.target.value })}
+                                                        >
+                                                            <option value="global">🌍 Para Todos los Usuarios</option>
+                                                            <option value="specific_email">👤 Usuario Específico (Email)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {newCoupon.targetType === 'specific_email' && (
+                                                        <div className="md:col-span-2">
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                Email del Usuario
+                                                            </label>
+                                                            <input
+                                                                type="email"
+                                                                className="input-cyber w-full p-4"
+                                                                placeholder="usuario@ejemplo.com"
+                                                                value={newCoupon.targetUser || ''}
+                                                                onChange={e => setNewCoupon({ ...newCoupon, targetUser: e.target.value })}
+                                                            />
+                                                            <p className="text-xs text-slate-400 mt-1">Solo este usuario podrá usar el cupón</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                             <button onClick={saveCouponFn} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
@@ -3338,21 +3463,49 @@ function App() {
                                                             <option value="">Seleccionar Categoría...</option>
                                                             {settings?.categories?.map(c => <option key={c} value={c}>{c}</option>)}
                                                         </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowCategoryModal(true)}
+                                                            className="w-full mt-2 py-2 bg-cyan-900/20 hover:bg-cyan-900/40 text-cyan-400 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-cyan-800"
+                                                        >
+                                                            <FolderPlus className="w-4 h-4" /> Nueva Categoría
+                                                        </button>
                                                     </div>
 
                                                     <div className="space-y-4">
-                                                        <div className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800 cursor-pointer hover:bg-slate-900 transition h-[150px] justify-center relative" onClick={() => fileInputRef.current.click()}>
-                                                            {newProduct.image ? (
-                                                                <img src={newProduct.image} className="h-full w-auto object-contain rounded-lg" />
-                                                            ) : (
-                                                                <div className="text-center text-slate-500">
-                                                                    <FolderPlus className="w-10 h-10 mx-auto mb-2" />
-                                                                    <p className="text-xs font-bold uppercase">Click para subir imagen</p>
-                                                                </div>
-                                                            )}
-                                                            <input type="file" ref={fileInputRef} onChange={(e) => handleImage(e, setNewProduct)} className="hidden" />
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                Imagen del Producto
+                                                            </label>
+                                                            <div className="space-y-3">
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => handleImageUpload(e, newProduct, setNewProduct)}
+                                                                    className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-900/20 file:text-cyan-400 hover:file:bg-cyan-900/40 transition"
+                                                                />
+                                                                {newProduct.image && (
+                                                                    <div className="bg-white rounded-xl p-3 w-32 h-32">
+                                                                        <img src={newProduct.image} className="w-full h-full object-contain" alt="Preview" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <input className="input-cyber w-full p-4" type="number" placeholder="Descuento (%)" value={newProduct.discount || 0} onChange={e => setNewProduct({ ...newProduct, discount: e.target.value })} />
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                Descuento (%)
+                                                            </label>
+                                                            <p className="text-xs text-slate-400 mb-2">Porcentaje de descuento sobre el precio base (0-100)</p>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="100"
+                                                                className="input-cyber w-full p-4"
+                                                                placeholder="0"
+                                                                value={newProduct.discount || 0}
+                                                                onChange={e => setNewProduct({ ...newProduct, discount: parseFloat(e.target.value) || 0 })}
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -3464,6 +3617,39 @@ function App() {
                         <AccessDenied onBack={() => setView('store')} />
                     ))}
             </main>
+            {/* MODAL: CREAR CATEGORÍA */}
+            {showCategoryModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
+                    <div className="glass p-8 rounded-[2rem] max-w-md w-full border border-cyan-800 shadow-2xl">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto bg-cyan-900/20 text-cyan-500">
+                            <FolderPlus className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-2xl font-black text-center mb-6 text-white">Nueva Categoría</h3>
+                        <input
+                            type="text"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            className="input-cyber w-full p-4 mb-6"
+                            placeholder="Nombre de la categoría"
+                            autoFocus
+                        />
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setNewCategory(''); setShowCategoryModal(false); }}
+                                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={createCategoryFn}
+                                className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition shadow-lg shadow-cyan-600/30"
+                            >
+                                Crear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
