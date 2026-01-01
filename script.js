@@ -427,10 +427,13 @@ function App() {
 
         const unsubscribeFunctions = [
             // Productos
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), snapshot => {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), (snapshot) => {
                 const productsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 setProducts(productsData);
                 if (cart.length === 0) setIsLoading(false);
+            }, (error) => {
+                console.error("Error fetching products:", error);
+                showToast("Error al cargar productos: " + error.message, "error");
             }),
 
             // Pedidos (Ordenados por fecha descendente)
@@ -1531,7 +1534,8 @@ function App() {
     // --- LÓGICA DE FILTRADO CONSOLIDADA ---
     const filteredProducts = products.filter(p => {
         const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = selectedCategory === '' || p.category === selectedCategory;
+        const categoryMatch = p.category ? p.category.trim() : '';
+        const matchesCategory = selectedCategory === '' || categoryMatch === selectedCategory;
         return matchesSearch && matchesCategory;
     });
 
