@@ -177,7 +177,7 @@ function App() {
 
     // Estados para Nuevos Formularios (Finanzas y Compras)
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
-    const [newPurchase, setNewPurchase] = useState({ productId: '', supplierId: '', quantity: 1, cost: 0 });
+    const [newPurchase, setNewPurchase] = useState({ productId: '', supplierId: '', quantity: 1, cost: 0, isNewProduct: false });
 
     // --- HELPERS ---
 
@@ -2658,7 +2658,7 @@ function App() {
                                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
                                                                 <select className="input-cyber w-full p-4" value={newPurchase.newProdCategory || ''} onChange={e => setNewPurchase({ ...newPurchase, newProdCategory: e.target.value })}>
                                                                     <option value="">Seleccionar...</option>
-                                                                    {settings.categories?.map(c => <option key={c} value={c}>{c}</option>)}
+                                                                    {settings?.categories?.map(c => <option key={c} value={c}>{c}</option>)}
                                                                 </select>
                                                             </div>
                                                             <div>
