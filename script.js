@@ -1762,83 +1762,103 @@ function App() {
                                 <p className="text-slate-500 max-w-sm">No hay productos disponibles en este momento. Por favor revisa más tarde o contacta soporte.</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20">
-                                {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategory === '' || p.category === selectedCategory)).map(p => (
-                                    <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
-
-                                        {/* Imagen y Badges */}
-                                        <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden">
-                                            {/* Efecto Glow Fondo */}
-                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
-
-                                            <img src={p.image} className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3" />
-
-                                            {/* Descuento Badge */}
-                                            {p.discount > 0 && (
-                                                <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20 animate-pulse">
-                                                    -{p.discount}% OFF
-                                                </span>
-                                            )}
-
-                                            {/* Botón Favorito (Funcional) */}
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
-                                                className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500'}`}
-                                            >
-                                                <Heart className={`w-5 h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
-                                            </button>
-
-                                            {/* Botón Rápido Agregar */}
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); manageCart(p, 1) }}
-                                                className="absolute bottom-4 right-4 w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-110 hover:bg-cyan-400 hover:shadow-cyan-400/50 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300"
-                                                title="Agregar al carrito"
-                                            >
-                                                <Plus className="w-6 h-6" />
-                                            </button>
+                            <>
+                                {products.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategory === '' || p.category === selectedCategory)).length === 0 && (
+                                    <div className="flex flex-col items-center justify-center p-20 text-center col-span-full animate-fade-in w-full">
+                                        <div className="p-6 bg-slate-900/50 rounded-full mb-4 inline-block border border-slate-800">
+                                            <Search className="w-12 h-12 text-slate-500" />
                                         </div>
-
-                                        {/* Información */}
-                                        <div className="p-6 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">
-                                                    {p.category}
-                                                </p>
-                                                {/* Estado de Stock */}
-                                                {p.stock === 0 ? (
-                                                    <span className="text-[10px] text-slate-500 font-bold bg-slate-800 px-2 py-1 rounded border border-slate-700">AGOTADO</span>
-                                                ) : p.stock <= 3 ? (
-                                                    <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
-                                                        <AlertCircle className="w-3 h-3" /> Últimos {p.stock}
-                                                    </span>
-                                                ) : null}
-                                            </div>
-
-                                            <h3 className="text-white font-bold text-lg leading-tight mb-4 group-hover:text-cyan-200 transition line-clamp-2 min-h-[3rem]">
-                                                {p.name}
-                                            </h3>
-
-                                            <div className="mt-auto pt-4 border-t border-slate-800/50 flex items-end justify-between">
-                                                <div className="flex flex-col">
-                                                    {p.discount > 0 && (
-                                                        <span className="text-xs text-slate-500 line-through font-medium mb-1">
-                                                            ${p.basePrice.toLocaleString()}
-                                                        </span>
-                                                    )}
-                                                    <span className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
-                                                        ${calculateItemPrice(p.basePrice, p.discount).toLocaleString()}
-                                                    </span>
-                                                </div>
-                                                {p.discount > 0 && (
-                                                    <div className="w-8 h-8 rounded-full bg-green-900/20 border border-green-500/20 flex items-center justify-center">
-                                                        <Percent className="w-4 h-4 text-green-400" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                        <h3 className="text-xl font-bold text-white mb-2">No se encontraron resultados</h3>
+                                        <p className="text-slate-500 mb-6 max-w-md mx-auto">
+                                            No hay productos que coincidan con <span className="text-white font-bold">"{searchQuery}"</span>
+                                            {selectedCategory && <span> en la categoría <span className="text-white font-bold">{selectedCategory}</span></span>}.
+                                        </p>
+                                        <button
+                                            onClick={() => { setSearchQuery(''); setSelectedCategory(''); }}
+                                            className="px-6 py-3 bg-cyan-900/20 hover:bg-cyan-900/40 text-cyan-400 rounded-xl font-bold transition border border-cyan-500/20"
+                                        >
+                                            Limpiar filtros
+                                        </button>
                                     </div>
-                                ))}
-                            </div>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20">
+                                    {products.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategory === '' || p.category === selectedCategory)).map(p => (
+                                        <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
+
+                                            {/* Imagen y Badges */}
+                                            <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden">
+                                                {/* Efecto Glow Fondo */}
+                                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+                                                <img src={p.image} className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3" />
+
+                                                {/* Descuento Badge */}
+                                                {p.discount > 0 && (
+                                                    <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20 animate-pulse">
+                                                        -{p.discount}% OFF
+                                                    </span>
+                                                )}
+
+                                                {/* Botón Favorito (Funcional) */}
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
+                                                    className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500'}`}
+                                                >
+                                                    <Heart className={`w-5 h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
+                                                </button>
+
+                                                {/* Botón Rápido Agregar */}
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); manageCart(p, 1) }}
+                                                    className="absolute bottom-4 right-4 w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-110 hover:bg-cyan-400 hover:shadow-cyan-400/50 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300"
+                                                    title="Agregar al carrito"
+                                                >
+                                                    <Plus className="w-6 h-6" />
+                                                </button>
+                                            </div>
+
+                                            {/* Información */}
+                                            <div className="p-6 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">
+                                                        {p.category}
+                                                    </p>
+                                                    {/* Estado de Stock */}
+                                                    {p.stock === 0 ? (
+                                                        <span className="text-[10px] text-slate-500 font-bold bg-slate-800 px-2 py-1 rounded border border-slate-700">AGOTADO</span>
+                                                    ) : p.stock <= 3 ? (
+                                                        <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                                                            <AlertCircle className="w-3 h-3" /> Últimos {p.stock}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+
+                                                <h3 className="text-white font-bold text-lg leading-tight mb-4 group-hover:text-cyan-200 transition line-clamp-2 min-h-[3rem]">
+                                                    {p.name}
+                                                </h3>
+
+                                                <div className="mt-auto pt-4 border-t border-slate-800/50 flex items-end justify-between">
+                                                    <div className="flex flex-col">
+                                                        {p.discount > 0 && (
+                                                            <span className="text-xs text-slate-500 line-through font-medium mb-1">
+                                                                ${p.basePrice.toLocaleString()}
+                                                            </span>
+                                                        )}
+                                                        <span className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
+                                                            ${calculateItemPrice(p.basePrice, p.discount).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                    {p.discount > 0 && (
+                                                        <div className="w-8 h-8 rounded-full bg-green-900/20 border border-green-500/20 flex items-center justify-center">
+                                                            <Percent className="w-4 h-4 text-green-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </div>
                 )}
