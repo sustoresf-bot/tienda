@@ -429,7 +429,10 @@ function App() {
         const unsubscribeFunctions = [
             // Productos
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), (snapshot) => {
-                const productsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                const productsData = snapshot.docs.map(d => {
+                    const data = d.data();
+                    return { id: d.id, ...data, stock: Number(data.stock) || 0 };
+                });
                 setProducts(productsData);
                 if (cart.length === 0) setIsLoading(false);
             }, (error) => {
@@ -721,6 +724,33 @@ function App() {
         showToast(msg, "success");
     };
 
+    // Enviar correo automático via Backend
+    const sendOrderConfirmationEmail = async (orderData, discountDetails) => {
+        try {
+            await fetch('/api/payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    orderId: orderData.orderId,
+                    customer: orderData.customer,
+                    items: orderData.items,
+                    total: orderData.total,
+                    subtotal: orderData.subtotal,
+                    discountDetails: discountDetails,
+                    shipping: orderData.shippingAddress,
+                    paymentMethod: orderData.paymentMethod,
+                    date: orderData.date
+                }),
+            });
+            console.log("Correo de confirmación enviado enviada API.");
+        } catch (error) {
+            console.error("Error al enviar email automático:", error);
+            // No bloqueamos el flujo si falla el email, solo logueamos
+        }
+    };
+
     // 5. Confirmación de Pedido (Checkout)
     const confirmOrder = async () => {
         if (isProcessingOrder) return;
@@ -813,10 +843,19 @@ function App() {
             await batch.commit();
 
             // 5. Finalización
+
+            // Disparar email en segundo plano (Fire and Forget)
+            const discountInfo = appliedCoupon ? {
+                percentage: appliedCoupon.value,
+                amount: discountAmount
+            } : null;
+
+            sendOrderConfirmationEmail(newOrder, discountInfo);
+
             setCart([]);
             setAppliedCoupon(null);
             setView('profile');
-            showToast("¡Pedido realizado con éxito! Gracias por tu compra.", "success");
+            showToast("¡Pedido realizado con éxito! Te hemos enviado un email con el detalle.", "success");
 
         } catch (e) {
             console.error("Error al procesar pedido:", e);
@@ -1119,7 +1158,7 @@ function App() {
     };
 
     const updatePurchaseFn = async (pId, oldData, newData) => {
-        const qtyDiff = newData.quantity - oldData.quantity;
+        const qtyDiff = (newData.quantity || 0) - (oldData.quantity || 0);
 
         try {
             // 1. Actualizar Stock si cambió la cantidad
@@ -3628,7 +3667,7 @@ function App() {
                                                         <div>
                                                             <p className="font-bold text-white text-lg">{p.name}</p>
                                                             <p className="text-xs text-slate-500 font-mono">
-                                                                Stock: <span className={p.stock < 5 ? 'text-red-400 font-bold' : 'text-slate-400'}>{p.stock}</span> |
+                                                                Stock: <span className={(p.stock || 0) < 5 ? 'text-red-400 font-bold' : 'text-slate-400'}>{p.stock || 0}</span> |
                                                                 <span className="text-cyan-400 font-bold ml-2">${p.basePrice}</span>
                                                             </p>
                                                         </div>
