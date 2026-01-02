@@ -216,6 +216,7 @@ function App() {
 
     // Estado para Proveedores (Restaurado)
     const [newSupplier, setNewSupplier] = useState({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] });
+    const [editingSupplierId, setEditingSupplierId] = useState(null);
     const [showSupplierModal, setShowSupplierModal] = useState(false);
 
     // Estado para Carrito de Compras (Pedidos Mayoristas)
@@ -868,7 +869,8 @@ function App() {
     };
 
     // 6.4. Image Upload Handler (Base64 for Vercel)
-    const handleImageUpload = (e, targetState, setTargetState) => {
+    // 6.4. Image Upload Handler (Optimized with Canvas Resize)
+    const handleImageUpload = (e, setTargetState, imageField = 'image') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -877,9 +879,37 @@ function App() {
         }
 
         const reader = new FileReader();
-        reader.onloadend = () => {
-            setTargetState({ ...targetState, image: reader.result });
-            showToast("Imagen cargada correctamente.", "success");
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 800;
+                const MAX_HEIGHT = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                setTargetState(prev => ({ ...prev, [imageField]: dataUrl }));
+                showToast("Imagen optimizada y cargada.", "success");
+            };
+            img.src = event.target.result;
         };
         reader.readAsDataURL(file);
     };
@@ -982,7 +1012,7 @@ function App() {
         }
     };
 
-    // 8. Guardar Proveedor (Con validaciones de contacto)
+    // 8. Guardar Proveedor (Crear / Editar)
     const saveSupplierFn = async () => {
         if (!newSupplier.name) return showToast("El nombre de la empresa es obligatorio.", "warning");
 
@@ -994,14 +1024,26 @@ function App() {
         const supplierData = {
             ...newSupplier,
             associatedProducts: newSupplier.associatedProducts || [],
-            createdAt: new Date().toISOString()
+            lastUpdated: new Date().toISOString()
         };
 
         try {
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), supplierData);
+            if (editingSupplierId) {
+                // Editar existente
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', editingSupplierId), supplierData);
+                showToast("Proveedor actualizado correctamente.", "success");
+            } else {
+                // Crear nuevo
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), {
+                    ...supplierData,
+                    createdAt: new Date().toISOString()
+                });
+                showToast("Proveedor registrado correctamente.", "success");
+            }
+
             setNewSupplier({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] });
+            setEditingSupplierId(null);
             setShowSupplierModal(false);
-            showToast("Proveedor registrado correctamente.", "success");
         } catch (e) {
             console.error(e);
             showToast("Error al guardar proveedor.", "error");
@@ -2741,7 +2783,7 @@ function App() {
                                     <div className="max-w-6xl mx-auto space-y-8 animate-fade-up pb-20">
                                         <div className="flex justify-between items-center">
                                             <h1 className="text-3xl font-black text-white">Proveedores</h1>
-                                            <button onClick={() => setShowSupplierModal(true)} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-cyan-500 transition transform hover:-translate-y-1">
+                                            <button onClick={() => { setNewSupplier({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] }); setEditingSupplierId(null); setShowSupplierModal(true); }} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-cyan-500 transition transform hover:-translate-y-1">
                                                 <Plus className="w-5 h-5" /> Nuevo Proveedor
                                             </button>
                                         </div>
@@ -2753,12 +2795,22 @@ function App() {
                                                         <div className="p-4 bg-slate-900 rounded-xl text-slate-400 group-hover:text-cyan-400 transition group-hover:bg-cyan-900/20">
                                                             <Truck className="w-8 h-8" />
                                                         </div>
-                                                        <button
-                                                            onClick={() => openConfirm("Eliminar Proveedor", "¿Eliminar proveedor?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)))}
-                                                            className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-900 rounded-lg transition"
-                                                        >
-                                                            <Trash2 className="w-5 h-5" />
-                                                        </button>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => { setNewSupplier(s); setEditingSupplierId(s.id); setShowSupplierModal(true); }}
+                                                                className="text-slate-600 hover:text-cyan-400 p-2 hover:bg-slate-900 rounded-lg transition"
+                                                                title="Editar"
+                                                            >
+                                                                <Edit className="w-5 h-5" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => openConfirm("Eliminar Proveedor", "¿Eliminar proveedor?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)))}
+                                                                className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-900 rounded-lg transition"
+                                                                title="Eliminar"
+                                                            >
+                                                                <Trash2 className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
                                                     </div>
 
                                                     <h3 className="text-2xl font-bold text-white mb-2">{s.name}</h3>
@@ -2949,16 +3001,7 @@ function App() {
                                                                     <input
                                                                         type="file"
                                                                         accept="image/*"
-                                                                        onChange={(e) => {
-                                                                            const file = e.target.files?.[0];
-                                                                            if (file) {
-                                                                                const reader = new FileReader();
-                                                                                reader.onloadend = () => {
-                                                                                    setNewPurchase({ ...newPurchase, newProdImage: reader.result });
-                                                                                };
-                                                                                reader.readAsDataURL(file);
-                                                                            }
-                                                                        }}
+                                                                        onChange={(e) => handleImageUpload(e, setNewPurchase, 'newProdImage')}
                                                                         className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-900/20 file:text-cyan-400 hover:file:bg-cyan-900/40"
                                                                     />
                                                                     {newPurchase.newProdImage && (
@@ -3533,7 +3576,7 @@ function App() {
                                                                 <input
                                                                     type="file"
                                                                     accept="image/*"
-                                                                    onChange={(e) => handleImageUpload(e, newProduct, setNewProduct)}
+                                                                    onChange={(e) => handleImageUpload(e, setNewProduct)}
                                                                     className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-900/20 file:text-cyan-400 hover:file:bg-cyan-900/40 transition"
                                                                 />
                                                                 {newProduct.image && (
@@ -3611,7 +3654,7 @@ function App() {
                                     <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
                                         <div className="overflow-y-auto custom-scrollbar pr-2 pb-20">
                                             <h3 className="text-2xl font-black text-white mb-6 sticky top-0 bg-[#0a0a0a] py-2 z-10">
-                                                {newSupplier.id ? 'Editar' : 'Nuevo'} Proveedor
+                                                {editingSupplierId ? 'Editar' : 'Nuevo'} Proveedor
                                             </h3>
 
                                             <div className="space-y-4 mb-6">
