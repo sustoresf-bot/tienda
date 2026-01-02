@@ -1541,7 +1541,8 @@ function App() {
 
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
-        <div className="min-h-screen flex flex-col relative overflow-x-hidden bg-grid font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+
+        <div className="min-h-screen flex flex-col relative w-full bg-grid bg-[#050505] font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
             {/* DEBUGGER VISUAL (SOLO DESARROLLO) */}
             {view === 'store' && (
                 <div className="fixed bottom-4 left-4 z-[9999] bg-black/80 text-green-400 font-mono text-xs p-2 rounded border border-green-900 pointer-events-none">
@@ -1709,7 +1710,7 @@ function App() {
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
-                    <div className="max-w-[1400px] mx-auto animate-fade-up">
+                    <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block">
 
                         {/* Anuncio Global (Marquesina) */}
                         {settings?.announcementMessage && (
