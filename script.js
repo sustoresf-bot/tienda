@@ -837,9 +837,9 @@ function App() {
 
         const productData = {
             ...newProduct,
-            basePrice: Number(newProduct.basePrice),
+            basePrice: Number(newProduct.basePrice) || 0,
             purchasePrice: Number(newProduct.purchasePrice || 0),
-            stock: Number(newProduct.stock),
+            stock: Number(newProduct.stock) || 0,
             discount: Number(newProduct.discount || 0),
             image: newProduct.image || 'https://via.placeholder.com/150',
             lastUpdated: new Date().toISOString()
@@ -2888,32 +2888,33 @@ function App() {
 
                                                     return (
                                                         <div className="space-y-6 animate-fade-in">
-                                                            {/* Preview del Producto Seleccionado */}
-                                                            {selectedProduct && (
-                                                                <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-6 flex items-center gap-6">
-                                                                    <div className="w-24 h-24 bg-white rounded-xl p-2 flex-shrink-0">
-                                                                        <img src={selectedProduct.image} className="w-full h-full object-contain" alt={selectedProduct.name} />
-                                                                    </div>
-                                                                    <div className="flex-1">
-                                                                        <h4 className="text-xl font-bold text-white mb-1">{selectedProduct.name}</h4>
-                                                                        <p className="text-sm text-slate-400">Stock Actual: <span className="text-cyan-400 font-bold">{selectedProduct.stock}</span> unidades</p>
-                                                                        <p className="text-sm text-slate-400">Precio Unitario: <span className="text-green-400 font-bold">${productPrice.toLocaleString()}</span></p>
-                                                                    </div>
-                                                                    <div className="text-right">
-                                                                        <p className="text-xs text-slate-500 uppercase font-bold mb-1">Costo Total</p>
-                                                                        <p className="text-3xl font-black text-cyan-400">${autoCost.toLocaleString()}</p>
-                                                                        <p className="text-xs text-slate-500 mt-1">{productPrice.toLocaleString()} × {newPurchase.quantity}</p>
-                                                                    </div>
-                                                                </div>
-                                                            )}
+                                                            {/* Preview del Producto Seleccionado (REMOVIDO de aquí para moverlo junto al input) */}
 
                                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                                 <div className="md:col-span-2">
                                                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto Existente</label>
-                                                                    <select className="input-cyber w-full p-4" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
-                                                                        <option value="">Seleccionar Producto...</option>
-                                                                        {products.map(p => <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>)}
-                                                                    </select>
+                                                                    <div className="flex gap-4 items-center">
+                                                                        {selectedProduct && (
+                                                                            <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700">
+                                                                                <img src={selectedProduct.image} className="w-full h-full object-contain" alt="Preview" />
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="flex-1">
+                                                                            <select className="input-cyber w-full p-4" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
+                                                                                <option value="">Seleccionar Producto...</option>
+                                                                                {products.map(p => (
+                                                                                    <option key={p.id} value={p.id}>
+                                                                                        {p.name} (Stock: {isNaN(Number(p.stock)) ? 0 : p.stock})
+                                                                                    </option>
+                                                                                ))}
+                                                                            </select>
+                                                                            {selectedProduct && (
+                                                                                <p className="text-xs text-cyan-400 mt-2 font-bold">
+                                                                                    Stock Actual: {isNaN(Number(selectedProduct.stock)) ? 0 : selectedProduct.stock} | Costo Total Estimado: ${autoCost.toLocaleString()}
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                                 <div>
                                                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad</label>
@@ -3111,9 +3112,12 @@ function App() {
                                                                 date: new Date().toISOString()
                                                             });
 
-                                                            // ACTUALIZAR STOCK
+                                                            // ACTUALIZAR STOCK (Fixing NaN issues)
+                                                            const currentStock = isNaN(Number(selectedProd?.stock)) ? 0 : Number(selectedProd.stock);
+                                                            const newStock = currentStock + newPurchase.quantity;
+
                                                             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', targetProductId), {
-                                                                stock: increment(newPurchase.quantity)
+                                                                stock: newStock
                                                             });
 
                                                             // Resetear Formulario
