@@ -1799,20 +1799,30 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-32 min-h-[500px] border-2 border-red-500">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-32">
                                     {filteredProducts.map(p => (
-                                        <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border-2 border-yellow-500 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
+                                        <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
 
                                             {/* Imagen y Badges */}
                                             <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden">
                                                 {/* Efecto Glow Fondo */}
                                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
-                                                <img
-                                                    src={p.image || 'https://via.placeholder.com/300?text=No+Image'}
-                                                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300?text=Error'; }}
-                                                    className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"
-                                                />
+                                                {p.image ? (
+                                                    <img
+                                                        src={p.image}
+                                                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                                                        className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"
+                                                    />
+                                                ) : null}
+
+                                                {/* Fallback Icon (se muestra si no hay imagen o si falla) */}
+                                                <div className="hidden w-full h-full flex items-center justify-center z-0 absolute inset-0" style={{ display: p.image ? 'none' : 'flex' }}>
+                                                    <div className="flex flex-col items-center justify-center text-slate-700">
+                                                        <ImageIcon className="w-16 h-16 mb-2 opacity-50" />
+                                                        <span className="text-xs font-bold uppercase tracking-widest opacity-50">Sin Imagen</span>
+                                                    </div>
+                                                </div>
 
                                                 {/* Descuento Badge */}
                                                 {p.discount > 0 && (
