@@ -1799,9 +1799,9 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-32 min-h-[500px] border-2 border-red-500">
                                     {filteredProducts.map(p => (
-                                        <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
+                                        <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border-2 border-yellow-500 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
 
                                             {/* Imagen y Badges */}
                                             <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden">
