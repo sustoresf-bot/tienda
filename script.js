@@ -1270,8 +1270,13 @@ function App() {
                     date: new Date().toISOString()
                 });
 
+                // ACTUALIZACIÓN DE STOCK MÁS ROBUSTA (Fixing NaN issues)
+                const product = products.find(p => p.id === item.productId);
+                const currentStock = isNaN(Number(product?.stock)) ? 0 : Number(product.stock);
+                const newStock = currentStock + item.quantity;
+
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', item.productId), {
-                    stock: increment(item.quantity)
+                    stock: newStock
                 });
             }
 
