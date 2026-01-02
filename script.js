@@ -225,6 +225,9 @@ function App() {
     // Estado para Modal de Crear Categoría
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
+    // Estado para Previsualización de Imágenes
+    const [previewImage, setPreviewImage] = useState(null);
+
     // --- HELPERS ---
 
     const openConfirm = (title, message, onConfirm) => {
@@ -296,6 +299,11 @@ function App() {
 
     // Estado para Detalle de Pedido (Modal)
     const [selectedOrder, setSelectedOrder] = useState(null);
+
+    // Estados para Dashboard Avanzado (Venta Manual, Analíticas, Producto Menos Vendido)
+    const [showManualSaleModal, setShowManualSaleModal] = useState(false);
+    const [metricsDetail, setMetricsDetail] = useState(null); // { type: 'revenue' | 'net_income' }
+    const [showLeastSold, setShowLeastSold] = useState(false);
 
     // Referencias
     const fileInputRef = useRef(null);
@@ -1000,13 +1008,36 @@ function App() {
     };
 
     const deleteOrderFn = (orderId) => {
-        openConfirm("Eliminar Pedido", "¿Eliminar este pedido permanentemente?", async () => {
+        openConfirm("Eliminar Pedido", "¿Eliminar este pedido permanentemente? El stock de los productos será devuelto al inventario.", async () => {
             try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId));
-                showToast("Pedido eliminado correctamente.", "success");
+                // 1. Obtener datos del pedido antes de eliminar
+                const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
+                const orderSnap = await getDoc(orderRef);
+
+                if (!orderSnap.exists()) {
+                    throw new Error("El pedido no existe o ya fue eliminado.");
+                }
+
+                const orderData = orderSnap.data();
+
+                // 2. Devolver Stock (Iterar items)
+                if (orderData.items && Array.isArray(orderData.items)) {
+                    for (const item of orderData.items) {
+                        if (item.productId && item.quantity > 0) {
+                            const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.productId);
+                            await updateDoc(productRef, {
+                                stock: increment(item.quantity)
+                            });
+                        }
+                    }
+                }
+
+                // 3. Eliminar Documento
+                await deleteDoc(orderRef);
+                showToast("Pedido eliminado y stock restaurado exitosamente.", "success");
             } catch (e) {
                 console.error(e);
-                showToast("Error al eliminar pedido.", "error");
+                showToast("Error al eliminar pedido: " + e.message, "error");
             }
         });
     };
@@ -1326,34 +1357,70 @@ function App() {
             .slice(0, 5); // Top 5
 
         // 2. Finanzas
-        const revenue = orders
-            .filter(o => o.status !== 'Cancelado') // Excluir cancelados
-            .reduce((acc, o) => acc + (o.total || 0), 0);
+        const validOrders = orders.filter(o => o.status !== 'Cancelado');
+        const revenue = validOrders.reduce((acc, o) => acc + (o.total || 0), 0);
 
         const expensesTotal = expenses?.reduce((acc, e) => acc + (e.amount || 0), 0) || 0;
         const purchasesTotal = purchases?.reduce((acc, p) => acc + (p.cost || 0), 0) || 0;
         const netIncome = revenue - expensesTotal - purchasesTotal;
 
-        // 3. Producto Estrella (Ventas reales confirmadas)
+        // 3. Producto Estrella y Menos Vendido (Ventas reales confirmadas)
         const salesCount = {};
-        orders.forEach(o => {
-            if (o.status !== 'Cancelado') {
-                o.items.forEach(i => {
-                    salesCount[i.productId] = (salesCount[i.productId] || 0) + i.quantity;
-                });
-            }
+        validOrders.forEach(o => {
+            o.items.forEach(i => {
+                salesCount[i.productId] = (salesCount[i.productId] || 0) + i.quantity;
+            });
         });
 
+        // Estrella (Más Vendido)
         let starProductId = null;
-        let maxSales = 0;
+        let maxSales = -1;
         Object.entries(salesCount).forEach(([id, count]) => {
             if (count > maxSales) {
                 maxSales = count;
                 starProductId = id;
             }
         });
-
         const starProduct = starProductId ? products.find(p => p.id === starProductId) : null;
+
+        // Menos Vendido (Peor Producto) - Buscar el mínimo entre TODOS los productos activos
+        let leastSoldProductId = null;
+        let minSales = Infinity;
+
+        products.forEach(p => {
+            const count = salesCount[p.id] || 0; // Si no está en salesCount, es 0
+            if (count < minSales) {
+                minSales = count;
+                leastSoldProductId = p.id;
+            }
+        });
+        const leastSoldProduct = leastSoldProductId ? products.find(p => p.id === leastSoldProductId) : null;
+
+        // 4. Analítica Temporal (Timeline)
+        const timeline = { daily: {}, monthly: {}, yearly: {} };
+
+        validOrders.forEach(o => {
+            const d = new Date(o.date);
+            const dayKey = d.toISOString().split('T')[0]; // YYYY-MM-DD
+            const monthKey = d.toISOString().slice(0, 7); // YYYY-MM
+            const yearKey = d.getFullYear().toString(); // YYYY
+
+            const agg = (obj, key, amount) => {
+                if (!obj[key]) obj[key] = { date: key, revenue: 0, orders: 0 };
+                obj[key].revenue += amount;
+                obj[key].orders += 1;
+            };
+
+            agg(timeline.daily, dayKey, o.total);
+            agg(timeline.monthly, monthKey, o.total);
+            agg(timeline.yearly, yearKey, o.total);
+        });
+
+        const analytics = {
+            daily: Object.values(timeline.daily).sort((a, b) => a.date.localeCompare(b.date)),
+            monthly: Object.values(timeline.monthly).sort((a, b) => a.date.localeCompare(b.date)),
+            yearly: Object.values(timeline.yearly).sort((a, b) => a.date.localeCompare(b.date))
+        };
 
         return {
             revenue,
@@ -1362,7 +1429,9 @@ function App() {
             netIncome,
             trendingProducts,
             starProduct,
+            leastSoldProduct,
             salesCount,
+            analytics,
             totalOrders: orders.length,
             totalUsers: users.length
         };
@@ -1600,6 +1669,300 @@ function App() {
             </div>
         );
     };
+    // Modal de Previsualización de Imagen (Lightbox)
+    const ImagePreviewModal = () => {
+        if (!previewImage) return null;
+
+        return (
+            <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in" onClick={() => setPreviewImage(null)}>
+                <div className="relative max-w-[90vw] max-h-[90vh] group">
+                    <img
+                        src={previewImage}
+                        className="w-full h-full object-contain rounded-lg shadow-2xl transition-transform duration-300 transform scale-100"
+                        onClick={(e) => e.stopPropagation()} // Evitar cierre al clickear imagen
+                    />
+                    <button
+                        onClick={() => setPreviewImage(null)}
+                        className="absolute -top-12 right-0 md:-right-12 p-2 text-white/70 hover:text-white transition"
+                    >
+                        <X className="w-8 h-8" />
+                    </button>
+                    {/* Hint para cerrar */}
+                    <p className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 text-white/50 text-xs uppercase tracking-widest font-bold">
+                        Click fuera para cerrar
+                    </p>
+                </div>
+            </div>
+        );
+    };
+
+    // Modal de Venta Manual (Offline / "En Casa")
+    const ManualSaleModal = () => {
+        const [saleData, setSaleData] = useState({
+            productId: '',
+            quantity: 1,
+            price: 0,
+            customerName: 'Cliente Offline',
+            paymentMethod: 'Efectivo',
+            notes: 'Venta presencial'
+        });
+
+        if (!showManualSaleModal) return null;
+
+        const product = products.find(p => p.id === saleData.productId);
+
+        const handleProductChange = (e) => {
+            const pid = e.target.value;
+            const prod = products.find(p => p.id === pid);
+            setSaleData({
+                ...saleData,
+                productId: pid,
+                price: prod ? Number(prod.basePrice) : 0
+            });
+        };
+
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            if (!product) return showToast("Selecciona un producto.", "warning");
+            if (saleData.quantity <= 0) return showToast("Cantidad inválida.", "warning");
+
+            try {
+                // Verificar Stock
+                const currentStock = Number(product.stock) || 0;
+                if (saleData.quantity > currentStock) {
+                    return showToast(`Stock insuficiente (Disponible: ${currentStock}).`, "error");
+                }
+
+                // Crear Orden "Offline"
+                const orderId = `man-${Date.now().toString().slice(-6)}`;
+                const total = saleData.quantity * saleData.price;
+
+                const newOrder = {
+                    orderId: orderId,
+                    userId: 'manual_admin', // Usuario sistema
+                    customer: {
+                        name: saleData.customerName,
+                        email: 'offline@store.com',
+                        phone: '-',
+                        dni: '-'
+                    },
+                    items: [{
+                        productId: product.id,
+                        title: product.name,
+                        quantity: Number(saleData.quantity),
+                        unit_price: Number(saleData.price),
+                        image: product.image
+                    }],
+                    subtotal: total,
+                    discount: 0,
+                    total: total,
+                    status: 'Realizado', // Ya entregado
+                    date: new Date().toISOString(),
+                    shippingAddress: 'Entrega Presencial (Offline)',
+                    paymentMethod: saleData.paymentMethod,
+                    source: 'manual_sale',
+                    notes: saleData.notes
+                };
+
+                // 1. Guardar Pedido
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
+
+                // 2. Descontar Stock
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
+                    stock: increment(-Number(saleData.quantity))
+                });
+
+                showToast("Venta registrada correctamente.", "success");
+                setShowManualSaleModal(false);
+            } catch (err) {
+                console.error(err);
+                showToast("Error al registrar venta manual.", "error");
+            }
+        };
+
+        return (
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up">
+                <div className="bg-[#0a0a0a] rounded-[2rem] w-full max-w-lg border border-slate-800 shadow-2xl relative overflow-hidden">
+                    <button onClick={() => setShowManualSaleModal(false)} className="absolute top-6 right-6 p-2 bg-slate-900 rounded-full text-slate-400 hover:text-white transition z-10">
+                        <X className="w-5 h-5" />
+                    </button>
+
+                    <div className="p-8 border-b border-slate-800">
+                        <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                            <Store className="w-6 h-6 text-green-400" /> Registrar Venta Manual
+                        </h3>
+                        <p className="text-slate-500 text-sm mt-1">Para ventas fuera de la plataforma web.</p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="p-8 space-y-4">
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Producto</label>
+                            <select
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                value={saleData.productId}
+                                onChange={handleProductChange}
+                            >
+                                <option value="">-- Seleccionar Producto --</option>
+                                {products.map(p => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.name} (Stock: {p.stock})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Cantidad</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                    value={saleData.quantity}
+                                    onChange={e => setSaleData({ ...saleData, quantity: Number(e.target.value) })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Precio Unit. ($)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                    value={saleData.price}
+                                    onChange={e => setSaleData({ ...saleData, price: Number(e.target.value) })}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Cliente / Notas</label>
+                            <input
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                value={saleData.customerName}
+                                onChange={e => setSaleData({ ...saleData, customerName: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Método de Pago</label>
+                            <select
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                value={saleData.paymentMethod}
+                                onChange={e => setSaleData({ ...saleData, paymentMethod: e.target.value })}
+                            >
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Tarjeta">Tarjeta (POS)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/20 transition transform hover:-translate-y-1 mt-4">
+                            REGISTRAR VENTA
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    };
+
+    // Modal de Analíticas Detalladas (Drill-down)
+    const MetricsDetailModal = () => {
+        const [timeframe, setTimeframe] = useState('monthly'); // daily, monthly, yearly
+        if (!metricsDetail) return null;
+
+        const data = dashboardMetrics.analytics[timeframe] || [];
+        const title = metricsDetail.type === 'revenue' ? 'Ingresos Brutos' : 'Beneficio Neto';
+        const colorClass = metricsDetail.type === 'revenue' ? 'text-green-400' : 'text-cyan-400';
+
+        // Calcular mejores/peores
+        const sortedByVal = [...data].sort((a, b) => b.revenue - a.revenue);
+        const bestPeriod = sortedByVal[0];
+        const worstPeriod = sortedByVal[sortedByVal.length - 1];
+
+        return (
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
+                <div className="bg-[#050505] rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col border border-slate-800 shadow-2xl relative overflow-hidden">
+                    {/* Header */}
+                    <div className="p-8 border-b border-slate-800 bg-slate-900/20 flex justify-between items-center">
+                        <div>
+                            <h3 className={`text-3xl font-black ${colorClass} flex items-center gap-3`}>
+                                <BarChart className="w-8 h-8" /> {title} - Analítica
+                            </h3>
+                            <p className="text-slate-500 text-sm mt-1">Desglose detallado de tu rendimiento.</p>
+                        </div>
+                        <button onClick={() => setMetricsDetail(null)} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition border border-slate-700">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="p-6 flex gap-4 bg-slate-900/10 border-b border-slate-800/50 justify-center">
+                        {['daily', 'monthly', 'yearly'].map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setTimeframe(t)}
+                                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition ${timeframe === t ? 'bg-slate-100 text-black' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
+                            >
+                                {t === 'daily' ? 'Diario' : t === 'monthly' ? 'Mensual' : 'Anual'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Stats Highlights */}
+                    <div className="grid grid-cols-2 gap-4 p-6 bg-slate-900/5">
+                        <div className="bg-green-900/10 border border-green-500/20 p-4 rounded-2xl flex items-center gap-4">
+                            <div className="p-3 bg-green-500/20 rounded-xl text-green-400">
+                                <TrendingUp className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Mejor Periodo</p>
+                                <p className="text-green-400 font-black text-lg">
+                                    {bestPeriod ? `$${bestPeriod.revenue.toLocaleString()}` : '-'}
+                                </p>
+                                <p className="text-[10px] text-slate-500 font-mono">{bestPeriod?.date || '-'}</p>
+                            </div>
+                        </div>
+                        <div className="bg-red-900/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-4">
+                            <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
+                                <TrendingDown className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Peor Periodo</p>
+                                <p className="text-red-400 font-black text-lg">
+                                    {worstPeriod ? `$${worstPeriod.revenue.toLocaleString()}` : '-'}
+                                </p>
+                                <p className="text-[10px] text-slate-500 font-mono">{worstPeriod?.date || '-'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Data List */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2">
+                        {data.length === 0 ? (
+                            <div className="text-center py-10 text-slate-500">No hay datos para este periodo.</div>
+                        ) : (
+                            data.slice().reverse().map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-4 bg-slate-900/30 rounded-xl border border-slate-800 hover:bg-slate-900/50 transition group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs border border-slate-700">
+                                            #{idx + 1}
+                                        </div>
+                                        <div>
+                                            <p className="text-white font-bold font-mono text-sm">{item.date}</p>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">{item.orders} Pedidos</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className={`font-black text-lg ${colorClass}`}>${item.revenue.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     // Estado de Carga Inicial
     if (isLoading && view === 'store') {
@@ -1665,6 +2028,7 @@ function App() {
 
             <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
             <CouponSelectorModal />
+            <ImagePreviewModal />
 
             {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
             {view !== 'admin' && (
@@ -1890,7 +2254,7 @@ function App() {
                                         <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
 
                                             {/* Imagen y Badges */}
-                                            <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden">
+                                            <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => p.image && setPreviewImage(p.image)}>
                                                 {/* Efecto Glow Fondo */}
                                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
@@ -1898,11 +2262,11 @@ function App() {
                                                     <img
                                                         src={p.image}
                                                         onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                                                        className="w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"
+                                                        className={`w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                                                     />
                                                 ) : null}
 
-                                                {/* Fallback Icon (se muestra si no hay imagen o si falla) */}
+                                                {/* Fallback Icon */}
                                                 <div className="hidden w-full h-full flex items-center justify-center z-0 absolute inset-0" style={{ display: p.image ? 'none' : 'flex' }}>
                                                     <div className="flex flex-col items-center justify-center text-slate-700">
                                                         <ImageIcon className="w-16 h-16 mb-2 opacity-50" />
@@ -1910,8 +2274,17 @@ function App() {
                                                     </div>
                                                 </div>
 
+                                                {/* OVERLAY AGOTADO (Mejorado) */}
+                                                {p.stock <= 0 && (
+                                                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                                                        <div className="border-4 border-red-500 p-4 -rotate-12 bg-black/80 shadow-[0_0_30px_rgba(239,68,68,0.5)] transform scale-110 animate-pulse">
+                                                            <span className="text-red-500 font-black text-2xl md:text-3xl tracking-[0.2em] uppercase">AGOTADO</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 {/* Descuento Badge */}
-                                                {p.discount > 0 && (
+                                                {p.discount > 0 && p.stock > 0 && (
                                                     <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20 animate-pulse">
                                                         -{p.discount}% OFF
                                                     </span>
@@ -1925,14 +2298,16 @@ function App() {
                                                     <Heart className={`w-5 h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
                                                 </button>
 
-                                                {/* Botón Rápido Agregar */}
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); manageCart(p, 1) }}
-                                                    className="absolute bottom-4 right-4 w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-110 hover:bg-cyan-400 hover:shadow-cyan-400/50 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300"
-                                                    title="Agregar al carrito"
-                                                >
-                                                    <Plus className="w-6 h-6" />
-                                                </button>
+                                                {/* Botón Rápido Agregar (Solo si hay stock) */}
+                                                {p.stock > 0 && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); manageCart(p, 1) }}
+                                                        className="absolute bottom-4 right-4 w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-110 hover:bg-cyan-400 hover:shadow-cyan-400/50 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300"
+                                                        title="Agregar al carrito"
+                                                    >
+                                                        <Plus className="w-6 h-6" />
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {/* Información */}
@@ -1941,10 +2316,8 @@ function App() {
                                                     <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">
                                                         {p.category}
                                                     </p>
-                                                    {/* Estado de Stock */}
-                                                    {p.stock === 0 ? (
-                                                        <span className="text-[10px] text-slate-500 font-bold bg-slate-800 px-2 py-1 rounded border border-slate-700">AGOTADO</span>
-                                                    ) : p.stock <= 3 ? (
+                                                    {/* Estado de Stock (Texto secundario solo si quedan pocos, Agotado ya está en imagen) */}
+                                                    {p.stock > 0 && p.stock <= 3 ? (
                                                         <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
                                                             <AlertCircle className="w-3 h-3" /> Últimos {p.stock}
                                                         </span>
@@ -2088,7 +2461,7 @@ function App() {
                                         </div>
                                         <div className="flex justify-between text-slate-400 text-sm font-medium">
                                             <span>Envío</span>
-                                            <span className="text-cyan-400 font-bold flex items-center gap-1"><Truck className="w-3 h-3" /> Gratis</span>
+                                            <span className="text-cyan-400 font-bold flex items-center gap-1"><Truck className="w-3 h-3" /> A coordinar con el vendedor</span>
                                         </div>
                                         {appliedCoupon && (
                                             <div className="flex justify-between text-purple-400 font-bold text-sm animate-pulse bg-purple-900/10 p-2 rounded-lg">
@@ -2581,28 +2954,37 @@ function App() {
                                 {/* TAB: DASHBOARD */}
                                 {adminTab === 'dashboard' && (
                                     <div className="max-w-[1600px] mx-auto animate-fade-up space-y-8 pb-20">
-                                        <div className="flex justify-between items-end mb-4">
+                                        <ManualSaleModal />
+                                        <MetricsDetailModal />
+
+                                        <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
                                             <div>
                                                 <h1 className="text-4xl font-black text-white neon-text">Panel de Control</h1>
                                                 <p className="text-slate-500 mt-2">Visión general del rendimiento de tu negocio.</p>
                                             </div>
-                                            <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
-                                                {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                            <div className="flex gap-4">
+                                                <button onClick={() => setShowManualSaleModal(true)} className="bg-green-600 px-6 py-2 rounded-xl text-white font-bold text-sm shadow-lg shadow-green-900/20 hover:bg-green-500 transition flex items-center gap-2 transform hover:-translate-y-1">
+                                                    <Store className="w-5 h-5" /> Registrar Venta
+                                                </button>
+                                                <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800 h-fit">
+                                                    {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </div>
                                             </div>
                                         </div>
 
                                         {/* Métricas Principales (Financieras) */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                            <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
+                                            <div onClick={() => setMetricsDetail({ type: 'revenue' })} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-green-500/50 hover:bg-green-900/10 cursor-pointer transition group relative overflow-hidden">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="p-3 bg-green-900/20 rounded-xl text-green-400"><DollarSign className="w-6 h-6" /></div>
                                                     <span className="text-[10px] font-bold bg-green-900/20 text-green-400 px-2 py-1 rounded-full">VENTAS</span>
                                                 </div>
-                                                <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">INGRESOS BRUTOS</p>
+                                                <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">INGRESOS BRUTOS (Click para Detalles)</p>
                                                 <p className="text-3xl font-black text-white tracking-tight">${dashboardMetrics.revenue.toLocaleString()}</p>
+                                                <div className="absolute top-4 right-4 text-green-500 opacity-0 group-hover:opacity-100 transition"><BarChart className="w-5 h-5" /></div>
                                             </div>
 
-                                            <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
+                                            <div onClick={() => setMetricsDetail({ type: 'net_income' })} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-cyan-500/50 hover:bg-cyan-900/10 cursor-pointer transition group relative overflow-hidden">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className={`p-3 rounded-xl ${dashboardMetrics.netIncome >= 0 ? 'bg-cyan-900/20 text-cyan-400' : 'bg-red-900/20 text-red-500'}`}>
                                                         {dashboardMetrics.netIncome >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
@@ -2611,10 +2993,11 @@ function App() {
                                                         {dashboardMetrics.netIncome >= 0 ? 'PROFIT' : 'LOSS'}
                                                     </span>
                                                 </div>
-                                                <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">BENEFICIO NETO</p>
+                                                <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">BENEFICIO NETO (Click para Detalles)</p>
                                                 <p className={`text-3xl font-black tracking-tight ${dashboardMetrics.netIncome >= 0 ? 'text-white' : 'text-red-500'}`}>
                                                     ${dashboardMetrics.netIncome.toLocaleString()}
                                                 </p>
+                                                <div className="absolute top-4 right-4 text-cyan-500 opacity-0 group-hover:opacity-100 transition"><BarChart className="w-5 h-5" /></div>
                                             </div>
 
                                             <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
@@ -2689,29 +3072,51 @@ function App() {
                                                 </div>
                                             </div>
 
-                                            {/* Producto Estrella */}
+                                            {/* Producto Estrella / Menos Vendido (Toggle) */}
                                             <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group flex flex-col items-center text-center">
-                                                <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-700"></div>
+                                                <div className={`absolute inset-0 bg-gradient-to-b ${showLeastSold ? 'from-red-500/10' : 'from-yellow-500/10'} via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-700`}></div>
 
-                                                <div className="bg-yellow-500/10 p-4 rounded-full mb-6 border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
-                                                    <Trophy className="w-10 h-10 text-yellow-400" />
+                                                <div className="absolute top-4 right-4 z-20">
+                                                    <button onClick={() => setShowLeastSold(!showLeastSold)} className="p-2 bg-slate-900 rounded-full text-slate-500 hover:text-white border border-slate-800 hover:border-slate-600 transition shadow-lg" title={showLeastSold ? "Ver Más Vendido" : "Ver Menos Vendido"}>
+                                                        {showLeastSold ? <Trophy className="w-4 h-4 text-yellow-500" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
+                                                    </button>
                                                 </div>
 
-                                                <h3 className="text-xl font-black text-white mb-2 relative z-10">Producto Estrella</h3>
-                                                <p className="text-slate-500 text-xs uppercase tracking-widest font-bold mb-6">El más vendido</p>
+                                                <div className={`${showLeastSold ? 'bg-red-500/10 border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]' : 'bg-yellow-500/10 border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]'} p-4 rounded-full mb-6 border`}>
+                                                    {showLeastSold ? <TrendingDown className="w-10 h-10 text-red-400" /> : <Trophy className="w-10 h-10 text-yellow-400" />}
+                                                </div>
 
-                                                {dashboardMetrics.starProduct ? (
-                                                    <div className="relative z-10 w-full bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                        <img src={dashboardMetrics.starProduct.image} className="w-32 h-32 mx-auto bg-white rounded-xl object-contain p-2 shadow-lg mb-4" />
-                                                        <h4 className="text-white font-black text-lg line-clamp-2 leading-tight mb-2">{dashboardMetrics.starProduct.name}</h4>
-                                                        <div className="inline-block bg-yellow-900/20 border border-yellow-500/30 px-4 py-1 rounded-full">
-                                                            <p className="text-yellow-400 font-black text-xl">
-                                                                {dashboardMetrics.salesCount[dashboardMetrics.starProduct.id]} <span className="text-xs font-bold uppercase">Unidades</span>
-                                                            </p>
+                                                <h3 className="text-xl font-black text-white mb-2 relative z-10">{showLeastSold ? 'Producto Menos Vendido' : 'Producto Estrella'}</h3>
+                                                <p className="text-slate-500 text-xs uppercase tracking-widest font-bold mb-6">{showLeastSold ? 'El de menor rendimiento' : 'El más vendido'}</p>
+
+                                                {!showLeastSold ? (
+                                                    dashboardMetrics.starProduct ? (
+                                                        <div className="relative z-10 w-full bg-slate-900/50 p-6 rounded-2xl border border-slate-800 animate-fade-in">
+                                                            <img src={dashboardMetrics.starProduct.image} className="w-32 h-32 mx-auto bg-white rounded-xl object-contain p-2 shadow-lg mb-4" />
+                                                            <h4 className="text-white font-black text-lg line-clamp-2 leading-tight mb-2">{dashboardMetrics.starProduct.name}</h4>
+                                                            <div className="inline-block bg-yellow-900/20 border border-yellow-500/30 px-4 py-1 rounded-full">
+                                                                <p className="text-yellow-400 font-black text-xl">
+                                                                    {dashboardMetrics.salesCount[dashboardMetrics.starProduct.id]} <span className="text-xs font-bold uppercase">Unidades</span>
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    ) : (
+                                                        <div className="text-slate-500 text-sm mt-4">Esperando datos de ventas...</div>
+                                                    )
                                                 ) : (
-                                                    <div className="text-slate-500 text-sm mt-4">Esperando datos de ventas...</div>
+                                                    dashboardMetrics.leastSoldProduct ? (
+                                                        <div className="relative z-10 w-full bg-slate-900/50 p-6 rounded-2xl border border-slate-800 animate-fade-in">
+                                                            <img src={dashboardMetrics.leastSoldProduct.image} className="w-32 h-32 mx-auto bg-white rounded-xl object-contain p-2 shadow-lg mb-4 grayscale opacity-80" />
+                                                            <h4 className="text-white font-black text-lg line-clamp-2 leading-tight mb-2">{dashboardMetrics.leastSoldProduct.name}</h4>
+                                                            <div className="inline-block bg-red-900/20 border border-red-500/30 px-4 py-1 rounded-full">
+                                                                <p className="text-red-400 font-black text-xl">
+                                                                    {dashboardMetrics.salesCount[dashboardMetrics.leastSoldProduct.id] || 0} <span className="text-xs font-bold uppercase">Unidades</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-slate-500 text-sm mt-4">No hay datos suficientes.</div>
+                                                    )
                                                 )}
                                             </div>
                                         </div>
@@ -3376,6 +3781,112 @@ function App() {
                                                     </div>
                                                 </div>
                                             ))}
+                                        </div>
+
+                                        {/* SECCIÓN: DISTRIBUCIÓN DE GANANCIAS */}
+                                        <div className="max-w-5xl mx-auto animate-fade-up pb-20 mt-12 pt-12 border-t border-slate-800">
+                                            <div className="flex justify-between items-center mb-8">
+                                                <div>
+                                                    <h2 className="text-2xl font-black text-white flex items-center gap-3">
+                                                        <DollarSign className="w-8 h-8 text-green-500" /> Distribución de Ganancias
+                                                    </h2>
+                                                    <p className="text-slate-500 mt-1">Calcula la participación de cada socio según su inversión inicial.</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Beneficio Neto</p>
+                                                    <p className={`text-3xl font-black ${dashboardMetrics.netIncome >= 0 ? 'text-green-400' : 'text-red-500'}`}>
+                                                        ${dashboardMetrics.netIncome.toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl">
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-left border-collapse">
+                                                        <thead>
+                                                            <tr className="bg-slate-900/50 border-b border-slate-800">
+                                                                <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Socio / Email</th>
+                                                                <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Inversión Inicial ($)</th>
+                                                                <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-center">% Part.</th>
+                                                                <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right text-green-500">Ganancia Est.</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-800/50">
+                                                            {(settings?.team || []).map((member, idx) => {
+                                                                const totalInvestment = (settings.team || []).reduce((acc, m) => acc + (Number(m.investment) || 0), 0);
+                                                                const memberInvestment = Number(member.investment) || 0;
+                                                                const sharePercentage = totalInvestment > 0 ? ((memberInvestment / totalInvestment) * 100) : 0;
+                                                                const memberProfit = (dashboardMetrics.netIncome * sharePercentage) / 100;
+
+                                                                return (
+                                                                    <tr key={idx} className="hover:bg-slate-900/20 transition">
+                                                                        <td className="p-6">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-bold text-white border border-slate-700">
+                                                                                    {member.name ? member.name.charAt(0) : '?'}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="font-bold text-white">{member.name || 'Sin Nombre'}</p>
+                                                                                    <p className="text-xs text-slate-500">{member.email}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="p-6 text-right">
+                                                                            <input
+                                                                                type="number"
+                                                                                className="input-cyber w-32 p-2 text-right font-mono font-bold"
+                                                                                placeholder="0"
+                                                                                value={memberInvestment}
+                                                                                onChange={async (e) => {
+                                                                                    const newAmount = parseFloat(e.target.value) || 0;
+                                                                                    const updatedTeam = [...(settings.team || [])];
+                                                                                    updatedTeam[idx] = { ...updatedTeam[idx], investment: newAmount };
+
+                                                                                    // Actualizar Estado Local
+                                                                                    setSettings({ ...settings, team: updatedTeam });
+
+                                                                                    // Persistir en Firestore (Debounce simple: guardar directo)
+                                                                                    try {
+                                                                                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings'), { team: updatedTeam });
+                                                                                    } catch (err) {
+                                                                                        console.error("Error updating investment:", err);
+                                                                                        showToast("Error al guardar inversión", "error");
+                                                                                    }
+                                                                                }}
+                                                                            />
+                                                                        </td>
+                                                                        <td className="p-6 text-center font-mono text-slate-300 font-bold">
+                                                                            {sharePercentage.toFixed(1)}%
+                                                                        </td>
+                                                                        <td className="p-6 text-right font-mono font-black text-green-400 text-lg">
+                                                                            ${memberProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                            {(!settings?.team || settings.team.length === 0) && (
+                                                                <tr>
+                                                                    <td colSpan="4" className="p-8 text-center text-slate-500">
+                                                                        No hay miembros en el equipo. Ve a "Configuración" para agregar socios.
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </tbody>
+                                                        <tfoot className="bg-slate-900/30 border-t border-slate-800">
+                                                            <tr>
+                                                                <td className="p-6 font-black text-white text-right">TOTALES</td>
+                                                                <td className="p-6 text-right font-black text-cyan-400 text-lg">
+                                                                    ${((settings?.team || []).reduce((acc, m) => acc + (Number(m.investment) || 0), 0)).toLocaleString()}
+                                                                </td>
+                                                                <td className="p-6 text-center font-bold text-slate-500">100%</td>
+                                                                <td className="p-6 text-right font-black text-green-500 text-xl">
+                                                                    ${dashboardMetrics.netIncome.toLocaleString()}
+                                                                </td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
