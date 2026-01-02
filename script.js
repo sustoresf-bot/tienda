@@ -3115,6 +3115,7 @@ function App() {
                                                             let targetProductId = newPurchase.productId;
                                                             let targetProductName = "";
                                                             let calculatedCost = 0;
+                                                            let selectedProd = null;
 
                                                             if (newPurchase.isNewProduct) {
                                                                 // VALIDAR Y CREAR PRODUCTO
@@ -3140,7 +3141,7 @@ function App() {
                                                                 showToast("¡Producto nuevo creado!", "success");
                                                             } else {
                                                                 if (!targetProductId) return showToast("Selecciona un producto existente.", "warning");
-                                                                const selectedProd = products.find(p => p.id === targetProductId);
+                                                                selectedProd = products.find(p => p.id === targetProductId);
                                                                 targetProductName = selectedProd?.name || "Desconocido";
                                                                 // Auto-calcular costo: precio de compra × cantidad
                                                                 const productPrice = selectedProd?.purchasePrice || selectedProd?.basePrice || 0;
@@ -3172,8 +3173,8 @@ function App() {
                                                             showToast(`Compra de "${targetProductName}" registrada exitosamente.`, "success");
 
                                                         } catch (e) {
-                                                            console.error(e);
-                                                            showToast("Error al procesar la operación.", "error");
+                                                            console.error("Error stock update:", e);
+                                                            showToast("Error: " + (e.message || "Operación fallida"), "error");
                                                         }
                                                     }}
                                                     className="w-full mt-8 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-5 rounded-2xl shadow-xl transition transform hover:scale-[1.01] flex items-center justify-center gap-3 text-lg"
