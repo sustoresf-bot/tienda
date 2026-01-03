@@ -327,6 +327,72 @@ function App() {
         setShowManualSaleModal(true);
     };
 
+    const confirmManualSale = async () => {
+        if (!saleData.productId) return;
+        if (saleData.quantity <= 0) {
+            showToast("La cantidad debe ser mayor a 0", "error");
+            return;
+        }
+
+        setIsProcessingOrder(true);
+        try {
+            // 1. Verificar Stock Actualizado
+            const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', saleData.productId);
+            const productSnap = await getDoc(productRef);
+
+            if (!productSnap.exists()) throw new Error("Producto no encontrado");
+
+            const currentStock = Number(productSnap.data().stock) || 0;
+            if (currentStock < saleData.quantity) {
+                showToast(`Stock insuficiente. Solo quedan ${currentStock} unidades.`, "error");
+                setIsProcessingOrder(false);
+                return;
+            }
+
+            // 2. Crear Orden
+            const total = saleData.quantity * saleData.price;
+            const newOrder = {
+                orderId: Date.now().toString().slice(-6),
+                date: new Date().toISOString(),
+                status: 'Realizado',
+                source: 'manual_sale', // Identificador clave
+                userId: 'manual_admin',
+                customer: {
+                    name: saleData.customerName || 'Cliente Mostrador',
+                    email: '-',
+                    phone: '-',
+                    dni: '-'
+                },
+                items: [{
+                    id: saleData.productId,
+                    title: products.find(p => p.id === saleData.productId)?.name || 'Producto',
+                    quantity: saleData.quantity,
+                    unit_price: saleData.price,
+                    image: products.find(p => p.id === saleData.productId)?.image || ''
+                }],
+                total: total,
+                paymentMethod: saleData.paymentMethod,
+                notes: saleData.notes
+            };
+
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
+
+            // 3. Descontar Stock
+            await updateDoc(productRef, {
+                stock: increment(-saleData.quantity)
+            });
+
+            showToast("Venta registrada exitosamente", "success");
+            setShowManualSaleModal(false);
+
+        } catch (error) {
+            console.error("Error en venta manual:", error);
+            showToast("Error al registrar venta: " + error.message, "error");
+        } finally {
+            setIsProcessingOrder(false);
+        }
+    };
+
     // Referencias
     const fileInputRef = useRef(null);
 
@@ -3263,8 +3329,8 @@ function App() {
                                         </div>
 
                                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {suppliers.map(s => (
-                                                <div key={s.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-600 transition duration-300 group">
+                                            {suppliers.map((s, idx) => (
+                                                <div key={s.id} style={{ animationDelay: `${idx * 0.05}s` }} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-600 transition duration-300 group animate-fade-up">
                                                     <div className="flex justify-between items-start mb-6">
                                                         <div className="p-4 bg-slate-900 rounded-xl text-slate-400 group-hover:text-cyan-400 transition group-hover:bg-cyan-900/20">
                                                             <Truck className="w-8 h-8" />
@@ -3670,11 +3736,11 @@ function App() {
                                         <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] p-8">
                                             <h3 className="text-xl font-bold text-white mb-6">Historial de Compras</h3>
                                             <div className="space-y-4">
-                                                {purchases.sort((a, b) => new Date(b.date) - new Date(a.date)).map(p => {
+                                                {purchases.sort((a, b) => new Date(b.date) - new Date(a.date)).map((p, idx) => {
                                                     const prod = products.find(prod => prod.id === p.productId);
                                                     const sup = suppliers.find(s => s.id === p.supplierId);
                                                     return (
-                                                        <div key={p.id} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-slate-600 transition group">
+                                                        <div key={p.id} style={{ animationDelay: `${idx * 0.05}s` }} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-slate-600 transition group animate-fade-up">
                                                             <div>
                                                                 <p className="font-bold text-white flex items-center gap-2">
                                                                     {prod?.name || 'Producto Eliminado'}
@@ -3786,8 +3852,8 @@ function App() {
 
                                         {/* Lista Gastos */}
                                         <div className="space-y-4">
-                                            {expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(Ex => (
-                                                <div key={Ex.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex justify-between items-center group hover:border-slate-700 transition">
+                                            {expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map((Ex, idx) => (
+                                                <div key={Ex.id} style={{ animationDelay: `${idx * 0.05}s` }} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex justify-between items-center group hover:border-slate-700 transition animate-fade-up">
                                                     <div>
                                                         <h4 className="text-white font-bold text-lg">{Ex.description}</h4>
                                                         <p className="text-slate-500 text-xs flex gap-3">
@@ -4012,8 +4078,8 @@ function App() {
 
                                         {/* Lista de Cupones Activos */}
                                         <div className="grid gap-4">
-                                            {coupons.map(c => (
-                                                <div key={c.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center group hover:border-slate-700 transition">
+                                            {coupons.map((c, idx) => (
+                                                <div key={c.id} style={{ animationDelay: `${idx * 0.05}s` }} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center group hover:border-slate-700 transition animate-fade-up">
                                                     <div className="flex items-center gap-6 mb-4 md:mb-0 w-full md:w-auto">
                                                         <div className="w-16 h-16 bg-slate-900 rounded-xl flex items-center justify-center border border-slate-800 text-purple-400 font-black text-2xl">
                                                             %
@@ -4057,8 +4123,12 @@ function App() {
                                             </div>
                                         ) : (
                                             <div className="space-y-4">
-                                                {orders.map(o => (
-                                                    <div key={o.id} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-slate-700 transition group">
+                                                {orders.map((o, idx) => (
+                                                    <div
+                                                        key={o.id}
+                                                        style={{ animationDelay: `${idx * 0.05}s` }}
+                                                        className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-slate-700 transition group animate-fade-up"
+                                                    >
                                                         {/* Info Principal */}
                                                         <div className="flex-1 w-full lg:w-auto">
                                                             <div className="flex items-center gap-4 mb-2">
@@ -4116,10 +4186,10 @@ function App() {
 
                                 {/* TAB: PRODUCTOS (LISTA Y FORMULARIO) */}
                                 {adminTab === 'products' && (
-                                    <div className="max-w-7xl mx-auto animate-fade-up pb-20">
+                                    <div className="max-w-7xl mx-auto animate-fade-in pb-20">
                                         <div className="flex justify-between items-center mb-8">
                                             <h1 className="text-3xl font-black text-white">Inventario</h1>
-                                            <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg">
+                                            <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-cyan-500 transition transform hover:scale-105 active:scale-95">
                                                 <Plus className="w-5 h-5" /> Agregar Producto
                                             </button>
                                         </div>
@@ -4200,8 +4270,12 @@ function App() {
 
                                         {/* Lista de Productos */}
                                         <div className="grid gap-3">
-                                            {products.map(p => (
-                                                <div key={p.id} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-cyan-900/50 transition">
+                                            {products.map((p, idx) => (
+                                                <div
+                                                    key={p.id}
+                                                    style={{ animationDelay: `${idx * 0.05}s` }}
+                                                    className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-cyan-900/50 transition animate-fade-up"
+                                                >
                                                     <div className="flex items-center gap-6 w-full sm:w-auto">
                                                         <div className="w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0">
                                                             <img src={p.image} className="w-full h-full object-contain" />
@@ -4215,13 +4289,13 @@ function App() {
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-3 mt-4 sm:mt-0 w-full sm:w-auto justify-end">
-                                                        <button onClick={() => openManualSaleModal(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800" title="Venta Manual (Descontar 1)">
+                                                        <button onClick={() => openManualSaleModal(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95" title="Venta Manual (Descontar 1)">
                                                             <DollarSign className="w-5 h-5" />
                                                         </button>
-                                                        <button onClick={() => { setNewProduct(p); setEditingId(p.id); setShowProductForm(true) }} className="p-3 bg-slate-900 rounded-xl text-cyan-400 hover:bg-cyan-900/20 transition border border-slate-800">
+                                                        <button onClick={() => { setNewProduct(p); setEditingId(p.id); setShowProductForm(true) }} className="p-3 bg-slate-900 rounded-xl text-cyan-400 hover:bg-cyan-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
                                                             <Edit className="w-5 h-5" />
                                                         </button>
-                                                        <button onClick={() => deleteProductFn(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-800">
+                                                        <button onClick={() => deleteProductFn(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
                                                             <Trash2 className="w-5 h-5" />
                                                         </button>
                                                     </div>
@@ -4235,7 +4309,7 @@ function App() {
 
                             {/* 7.3 Modal Proveedores (Selector Visual) */}
                             {showSupplierModal && (
-                                <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-up">
+                                <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in-scale">
                                     <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
                                         <div className="overflow-y-auto custom-scrollbar pr-2 pb-20">
                                             <h3 className="text-2xl font-black text-white mb-6 sticky top-0 bg-[#0a0a0a] py-2 z-10">
@@ -4299,7 +4373,7 @@ function App() {
             </main>
             {/* MODAL: CREAR CATEGORÍA */}
             {showCategoryModal && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in-scale p-4">
                     <div className="glass p-8 rounded-[2rem] max-w-md w-full border border-cyan-800 shadow-2xl">
                         <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto bg-cyan-900/20 text-cyan-500">
                             <FolderPlus className="w-8 h-8" />
@@ -4325,6 +4399,84 @@ function App() {
                                 className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition shadow-lg shadow-cyan-600/30"
                             >
                                 Crear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: VENTA MANUAL */}
+            {showManualSaleModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in-scale p-4">
+                    <div className="glass p-8 rounded-[2rem] max-w-md w-full border border-green-900 shadow-2xl">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto bg-green-900/20 text-green-500">
+                            <DollarSign className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-2xl font-black text-center mb-2 text-white">Venta Manual</h3>
+                        <p className="text-center text-slate-400 mb-6">
+                            {products.find(p => p.id === saleData.productId)?.name}
+                        </p>
+
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={saleData.quantity}
+                                    onChange={(e) => setSaleData({ ...saleData, quantity: Number(e.target.value) })}
+                                    className="input-cyber w-full p-4 text-center font-black text-2xl"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Precio Unitario</label>
+                                <input
+                                    type="number"
+                                    value={saleData.price}
+                                    onChange={(e) => setSaleData({ ...saleData, price: Number(e.target.value) })}
+                                    className="input-cyber w-full p-4"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cliente</label>
+                                <input
+                                    value={saleData.customerName}
+                                    onChange={(e) => setSaleData({ ...saleData, customerName: e.target.value })}
+                                    className="input-cyber w-full p-4"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Método de Pago</label>
+                                <select
+                                    value={saleData.paymentMethod}
+                                    onChange={(e) => setSaleData({ ...saleData, paymentMethod: e.target.value })}
+                                    className="input-cyber w-full p-4"
+                                >
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="Tarjeta">Tarjeta</option>
+                                </select>
+                            </div>
+                            <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-800">
+                                <span className="text-slate-400 font-bold">Total:</span>
+                                <span className="text-2xl font-black text-green-400">${(saleData.quantity * saleData.price).toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowManualSaleModal(false)}
+                                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmManualSale}
+                                disabled={isProcessingOrder}
+                                className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
+                            >
+                                {isProcessingOrder ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                                Confirmar
                             </button>
                         </div>
                     </div>
