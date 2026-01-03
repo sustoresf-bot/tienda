@@ -1384,34 +1384,41 @@ function App() {
         }
 
         try {
-            const batchId = `BATCH - ${Date.now()}`
+            const batch = writeBatch(db);
+            const batchId = `BATCH - ${Date.now()}`;
+            const timestamp = new Date().toISOString();
 
-            // Registrar cada compra y actualizar stock
+            // Registrar cada compra y actualizar stock en Lote (Batch)
             for (const item of purchaseCart) {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), {
+                // 1. Crear Referencia para Nueva Compra
+                const newPurchaseRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'));
+                batch.set(newPurchaseRef, {
                     productId: item.productId,
                     supplierId: item.supplierId,
                     quantity: item.quantity,
                     cost: item.cost,
                     batchId: batchId,
-                    date: new Date().toISOString()
+                    date: timestamp
                 });
 
-                // ACTUALIZACIÓN DE STOCK MÁS ROBUSTA (Fixing NaN issues)
+                // 2. Actualizar Stock del Producto (Fixing NaN issues on the fly)
                 const product = products.find(p => p.id === item.productId);
                 const currentStock = isNaN(Number(product?.stock)) ? 0 : Number(product.stock);
                 const newStock = currentStock + item.quantity;
 
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', item.productId), {
+                const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.productId);
+                batch.update(productRef, {
                     stock: newStock
                 });
             }
 
+            await batch.commit();
+
             setPurchaseCart([]);
             showToast(`Pedido finalizado: ${purchaseCart.length} productos registrados.`, "success");
         } catch (e) {
-            console.error(e);
-            showToast("Error al finalizar el pedido.", "error");
+            console.error("Error in batch purchase:", e);
+            showToast("Error al finalizar el pedido: " + e.message, "error");
         }
     };
 
@@ -3928,20 +3935,29 @@ function App() {
                                                                                 className="input-cyber w-32 p-2 text-right font-mono font-bold"
                                                                                 placeholder="0"
                                                                                 value={memberInvestment}
-                                                                                onChange={async (e) => {
-                                                                                    const newAmount = parseFloat(e.target.value) || 0;
+                                                                                onChange={(e) => {
+                                                                                    const newAmount = e.target.value; // Keep as string to allow typing
                                                                                     const updatedTeam = [...(settings.team || [])];
                                                                                     updatedTeam[idx] = { ...updatedTeam[idx], investment: newAmount };
+                                                                                    setSettings({ ...settings, team: updatedTeam });
+                                                                                }}
+                                                                                onBlur={async (e) => {
+                                                                                    const newAmount = parseFloat(e.target.value) || 0;
+                                                                                    const updatedTeam = [...(settings.team || [])];
+                                                                                    updatedTeam[idx] = { ...updatedTeam[idx], investment: newAmount }; // Normalize to number
 
-                                                                                    // Actualizar Estado Local
+                                                                                    // Actualizar Estado Local (con número)
                                                                                     setSettings({ ...settings, team: updatedTeam });
 
-                                                                                    // Persistir en Firestore (Debounce simple: guardar directo)
+                                                                                    // Persistir en Firestore (Solo al perder foco)
                                                                                     try {
-                                                                                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings'), { team: updatedTeam });
+                                                                                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings');
+                                                                                        // Usar setDoc con merge para asegurar que el documento exista
+                                                                                        await setDoc(docRef, { team: updatedTeam }, { merge: true });
+                                                                                        showToast("Inversión actualizada", "success");
                                                                                     } catch (err) {
                                                                                         console.error("Error updating investment:", err);
-                                                                                        showToast("Error al guardar inversión", "error");
+                                                                                        showToast("Error al guardar inversión: " + err.message, "error");
                                                                                     }
                                                                                 }}
                                                                             />
