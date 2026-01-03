@@ -467,7 +467,15 @@ function App() {
                 if (cart.length === 0) setIsLoading(false);
             }, (error) => {
                 console.error("Error fetching products:", error);
-                showToast("Error al cargar productos: " + error.message, "error");
+                if (error.code === 'permission-denied' || error.message.includes('permission')) {
+                    showToast("Error de permisos. Reiniciando sesión...", "warning");
+                    // Intentar recuperar sesión
+                    setTimeout(() => {
+                        auth.signOut().then(() => window.location.reload());
+                    }, 2000);
+                } else {
+                    showToast("Error al cargar productos: " + error.message, "error");
+                }
             }),
 
             // Pedidos (Ordenados por fecha descendente)
