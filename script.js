@@ -1424,14 +1424,19 @@ function App() {
 
     // --- CÁLCULOS DEL DASHBOARD (CENTRALIZADOS) ---
     const dashboardMetrics = useMemo(() => {
-        // 1. Demanda en Vivo y Favoritos (Trending)
-        const productStats = {}; // { id: { cart: 0, fav: 0, total: 0 } }
+        // 1. Demanda en Vivo y Favoritos (Trending) + VENTAS REALES
+        const productStats = {}; // { id: { cart: 0, fav: 0, sales: 0, total: 0 } }
+
+        // Helper para inicializar stats
+        const initStats = (id) => {
+            if (!productStats[id]) productStats[id] = { cart: 0, fav: 0, sales: 0, total: 0 };
+        };
 
         // Contar apariciones en Carritos Activos (LiveCarts)
         liveCarts.forEach(cart => {
             if (cart.items) {
                 cart.items.forEach(item => {
-                    if (!productStats[item.productId]) productStats[item.productId] = { cart: 0, fav: 0, total: 0 };
+                    initStats(item.productId);
                     productStats[item.productId].cart += 1;
                     productStats[item.productId].total += 1;
                 });
@@ -1442,9 +1447,42 @@ function App() {
         users.forEach(u => {
             if (u.favorites) {
                 u.favorites.forEach(pid => {
-                    if (!productStats[pid]) productStats[pid] = { cart: 0, fav: 0, total: 0 };
+                    initStats(pid);
                     productStats[pid].fav += 1;
                     productStats[pid].total += 1;
+                });
+            }
+        });
+
+        // 2. Finanzas y Ventas Confirmadas
+        const validOrders = orders.filter(o => o.status !== 'Cancelado');
+        const revenue = validOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+        const expensesTotal = expenses?.reduce((acc, e) => acc + (e.amount || 0), 0) || 0;
+        const purchasesTotal = purchases?.reduce((acc, p) => acc + (p.cost || 0), 0) || 0;
+        const netIncome = revenue - expensesTotal - purchasesTotal;
+
+        // 3. Producto Estrella y Menos Vendido (Ventas reales confirmadas)
+        const salesCount = {}; // { productId: quantity }
+        const productMetadata = {}; // { productId: { name, image } } -> Fallback para productos eliminados
+
+        validOrders.forEach(o => {
+            if (o.items && Array.isArray(o.items)) {
+                o.items.forEach(i => {
+                    const pid = i.productId;
+                    const qty = Number(i.quantity) || 0;
+
+                    // Acumular Ventas
+                    salesCount[pid] = (salesCount[pid] || 0) + qty;
+
+                    // Guardar Metadata (Nombre/Imagen) del item por si el producto ya no existe
+                    if (!productMetadata[pid]) {
+                        productMetadata[pid] = { name: i.title || i.name || 'Producto Desconocido', image: i.image };
+                    }
+
+                    // Sumar a Estadísticas de Tendencia (Peso x5 para ventas reales)
+                    initStats(pid);
+                    productStats[pid].sales += qty;
+                    productStats[pid].total += (qty * 5);
                 });
             }
         });
@@ -1452,28 +1490,24 @@ function App() {
         // Ordenar productos por "calor" (total de interés)
         const trendingProducts = Object.entries(productStats)
             .map(([id, stats]) => {
-                const prod = products.find(p => p.id === id);
-                return prod ? { ...prod, stats } : null;
+                // Intentar buscar en productos vivos, sino usar metadata del pedido
+                const liveProd = products.find(p => p.id === id);
+                const meta = productMetadata[id] || {};
+
+                // Si no hay producto vivo ni metadata (raro), retornar null
+                if (!liveProd && !meta.name) return null;
+
+                return {
+                    id: id,
+                    name: liveProd?.name || meta.name,
+                    image: liveProd?.image || meta.image,
+                    stock: liveProd?.stock || 0,
+                    stats
+                };
             })
             .filter(Boolean)
             .sort((a, b) => b.stats.total - a.stats.total)
             .slice(0, 5); // Top 5
-
-        // 2. Finanzas
-        const validOrders = orders.filter(o => o.status !== 'Cancelado');
-        const revenue = validOrders.reduce((acc, o) => acc + (o.total || 0), 0);
-
-        const expensesTotal = expenses?.reduce((acc, e) => acc + (e.amount || 0), 0) || 0;
-        const purchasesTotal = purchases?.reduce((acc, p) => acc + (p.cost || 0), 0) || 0;
-        const netIncome = revenue - expensesTotal - purchasesTotal;
-
-        // 3. Producto Estrella y Menos Vendido (Ventas reales confirmadas)
-        const salesCount = {};
-        validOrders.forEach(o => {
-            o.items.forEach(i => {
-                salesCount[i.productId] = (salesCount[i.productId] || 0) + i.quantity;
-            });
-        });
 
         // Estrella (Más Vendido)
         let starProductId = null;
@@ -1484,14 +1518,28 @@ function App() {
                 starProductId = id;
             }
         });
-        const starProduct = starProductId ? products.find(p => p.id === starProductId) : null;
+
+        // Resolver objeto completo para Estrella
+        let starProduct = null;
+        if (starProductId) {
+            const live = products.find(p => p.id === starProductId);
+            const meta = productMetadata[starProductId];
+            if (live || meta) {
+                starProduct = {
+                    id: starProductId,
+                    name: live?.name || meta?.name,
+                    image: live?.image || meta?.image
+                };
+            }
+        }
 
         // Menos Vendido (Peor Producto) - Buscar el mínimo entre TODOS los productos activos
+        // Nota: Solo consideramos productos que AÚN existen en inventario para "Menos Vendido"
         let leastSoldProductId = null;
         let minSales = Infinity;
 
         products.forEach(p => {
-            const count = salesCount[p.id] || 0; // Si no está en salesCount, es 0
+            const count = salesCount[p.id] || 0;
             if (count < minSales) {
                 minSales = count;
                 leastSoldProductId = p.id;
@@ -2032,27 +2080,44 @@ function App() {
                         </div>
                     </div>
 
-                    {/* Data List */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2">
+                    {/* CSS Bar Chart */}
+                    <div className="flex-1 p-6 relative flex items-end justify-between gap-2 overflow-x-auto custom-scrollbar">
                         {data.length === 0 ? (
-                            <div className="text-center py-10 text-slate-500">No hay datos para este periodo.</div>
+                            <div className="w-full text-center text-slate-500 my-auto">No hay datos para mostrar el gráfico.</div>
                         ) : (
-                            data.slice().reverse().map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-4 bg-slate-900/30 rounded-xl border border-slate-800 hover:bg-slate-900/50 transition group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs border border-slate-700">
-                                            #{idx + 1}
+                            (() => {
+                                const maxVal = Math.max(...data.map(d => d.revenue), 1); // Avoid div/0
+                                return data.slice().map((item, idx) => {
+                                    const heightPct = (item.revenue / maxVal) * 100;
+                                    const isPositive = metricsDetail.type !== 'net_income' || item.revenue >= 0;
+                                    // For net income, handle negative later if needed, assuming revenue is always positive here
+
+                                    return (
+                                        <div key={idx} className="flex flex-col items-center justify-end h-full gap-2 group min-w-[60px] cursor-pointer hover:bg-slate-900/30 rounded-xl p-1 transition-all">
+                                            {/* Tooltip on Hover */}
+                                            <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl pointer-events-none transition z-50 shadow-xl whitespace-nowrap">
+                                                <p className="text-white font-bold">{item.date}</p>
+                                                <p className={`font-black ${colorClass}`}>${item.revenue.toLocaleString()}</p>
+                                                <p className="text-[10px] text-slate-500">{item.orders} Pedidos</p>
+                                            </div>
+
+                                            {/* Bar */}
+                                            <div
+                                                className={`w-4 bg-gradient-to-t ${metricsDetail.type === 'revenue' ? 'from-green-900/50 to-green-500' : 'from-cyan-900/50 to-cyan-500'} rounded-t-full relative transition-all duration-500 group-hover:w-6 group-hover:brightness-125`}
+                                                style={{ height: `${Math.max(heightPct, 5)}%` }} // Min height 5%
+                                            >
+                                                {/* Glow alignment */}
+                                                <div className={`absolute top-0 left-0 right-0 h-4 rounded-full ${metricsDetail.type === 'revenue' ? 'bg-green-400' : 'bg-cyan-400'} blur-md opacity-20`}></div>
+                                            </div>
+
+                                            {/* Label */}
+                                            <p className="text-[10px] text-slate-600 font-bold -rotate-45 group-hover:rotate-0 group-hover:text-white transition origin-center mt-2 truncate w-full text-center">
+                                                {timeframe === 'monthly' ? item.date.slice(5) : timeframe === 'daily' ? item.date.slice(5) : item.date}
+                                            </p>
                                         </div>
-                                        <div>
-                                            <p className="text-white font-bold font-mono text-sm">{item.date}</p>
-                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">{item.orders} Pedidos</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className={`font-black text-lg ${colorClass}`}>${item.revenue.toLocaleString()}</p>
-                                    </div>
-                                </div>
-                            ))
+                                    );
+                                })
+                            })()
                         )}
                     </div>
                 </div>
@@ -2160,7 +2225,7 @@ function App() {
                             <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
                                 <MessageCircle className="w-5 h-5" /> WhatsApp
                             </button>
-                            <button onClick={() => window.open(settings?.instagram || settings?.instagramLink || 'https://instagram.com', '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+                            <button onClick={() => window.open(settings?.instagramLink || 'https://www.instagram.com/sustore_sf/', '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.3)]">
                                 <Instagram className="w-5 h-5" /> Instagram
                             </button>
                         </div>
@@ -2279,7 +2344,7 @@ function App() {
                             {settings?.heroUrl ? (
                                 <img src={settings.heroUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" />
                             ) : (
-                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-900 to-purple-900 opacity-20"></div>
+                                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" />
                             )}
 
                             {/* Overlay de Texto */}
@@ -2735,6 +2800,7 @@ function App() {
                         {/* Tarjeta de Usuario */}
                         <div className="bg-[#0a0a0a] border border-slate-800 p-8 md:p-12 rounded-[3rem] mb-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl">
                             {/* Decoración Fondo */}
+                            {/* Decoración Fondo */}
                             <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none"></div>
                             <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -2772,6 +2838,77 @@ function App() {
                                 <button onClick={() => { localStorage.removeItem('nexus_user_data'); setCurrentUser(null); setView('store') }} className="px-6 py-4 bg-red-900/10 border border-red-500/20 text-red-500 hover:bg-red-900/20 rounded-2xl font-bold transition flex items-center justify-center gap-2 hover:border-red-500/40">
                                     <LogOut className="w-5 h-5" /> Cerrar Sesión
                                 </button>
+                            </div>
+                        </div>
+
+                        {/* SECCIÓN: MIS CUPONES (NUEVO) */}
+                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-12 shadow-2xl animate-fade-up">
+                            <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                                <Ticket className="text-purple-400 w-6 h-6" /> Mis Cupones Disponibles
+                            </h3>
+
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    {/* Mostrar cupones GLOBALES (targetType='global') y ESPECIFICOS para este usuario */}
+                                    {(() => {
+                                        const myCoupons = coupons.filter(c =>
+                                            (c.targetType === 'global') ||
+                                            (c.targetType === 'specific_email' && c.targetUser === currentUser.email)
+                                        );
+
+                                        if (myCoupons.length === 0) return <p className="text-slate-500 italic">No tienes cupones disponibles en este momento.</p>;
+
+                                        return myCoupons.map(c => (
+                                            <div key={c.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex items-center justify-between group hover:border-purple-500/30 transition">
+                                                <div>
+                                                    <p className="font-black text-white text-lg tracking-widest">{c.code}</p>
+                                                    <p className="text-purple-400 text-sm font-bold">
+                                                        {c.type === 'fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}
+                                                    </p>
+                                                    {c.expirationDate && <p className="text-[10px] text-slate-500 mt-1">Vence: {c.expirationDate}</p>}
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(c.code);
+                                                        showToast("Código copiado", "success");
+                                                    }}
+                                                    className="px-4 py-2 bg-purple-900/20 text-purple-400 rounded-lg text-xs font-bold hover:bg-purple-500 hover:text-white transition border border-purple-500/20"
+                                                >
+                                                    COPIAR
+                                                </button>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+
+                                <div className="bg-slate-900/30 p-6 rounded-2xl border border-slate-800">
+                                    <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Canjear Código</h4>
+                                    <div className="flex gap-2">
+                                        <input
+                                            className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none uppercase font-mono"
+                                            placeholder="CÓDIGO"
+                                            id="couponRedeemInput"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                const code = document.getElementById('couponRedeemInput').value.trim().toUpperCase();
+                                                if (!code) return showToast("Ingresa un código", "warning");
+                                                const coupon = coupons.find(c => c.code === code);
+                                                if (coupon) {
+                                                    showToast("¡Cupón válido! Úsalo en el checkout.", "success");
+                                                } else {
+                                                    showToast("Cupón no encontrado o inválido", "error");
+                                                }
+                                            }}
+                                            className="bg-purple-600 px-6 rounded-xl text-white font-bold hover:bg-purple-500 transition shadow-lg"
+                                        >
+                                            Validar
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+                                        Ingresa el código aquí para verificar si es válido. Llévalo al checkout para aplicar el descuento.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
@@ -3322,6 +3459,41 @@ function App() {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {/* Configuración de Redes y Estilo (NUEVO) */}
+                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
+                                            <h3 className="text-xl font-bold text-white mb-6">Redes y Apariencia</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Instagram URL</label>
+                                                    <input
+                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition"
+                                                        placeholder="https://instagram.com/tu_tienda"
+                                                        value={tempSettings?.instagramLink || ''}
+                                                        onChange={e => setTempSettings({ ...tempSettings, instagramLink: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Link WhatsApp</label>
+                                                    <input
+                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition"
+                                                        placeholder="https://wa.me/..."
+                                                        value={tempSettings?.whatsappLink || ''}
+                                                        onChange={e => setTempSettings({ ...tempSettings, whatsappLink: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen Hero Principal (URL)</label>
+                                                    <input
+                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition"
+                                                        placeholder="https://..."
+                                                        value={tempSettings?.heroUrl || ''}
+                                                        onChange={e => setTempSettings({ ...tempSettings, heroUrl: e.target.value })}
+                                                    />
+                                                    <p className="text-xs text-slate-500 mt-2">Deja vacío para usar la imagen tecnológica por defecto.</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -3573,20 +3745,8 @@ function App() {
                                                                     />
                                                                 </div>
 
-                                                                {/* Proveedor */}
-                                                                <div>
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                        Proveedor
-                                                                    </label>
-                                                                    <select
-                                                                        className="input-cyber w-full p-4"
-                                                                        value={newPurchase.supplierId || ''}
-                                                                        onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}
-                                                                    >
-                                                                        <option value="">Seleccionar...</option>
-                                                                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                                                    </select>
-                                                                </div>
+                                                                {/* Selector de Proveedor ELIMINADO por solicitud del usuario */}
+                                                                {/* "elimina esa opcion de proveedor... no sirve y no la uso" */}
 
                                                                 {/* Costo de Compra */}
                                                                 <div className="md:col-span-2">
@@ -3611,7 +3771,7 @@ function App() {
                                                     onClick={async () => {
                                                         // Validaciones Comunes
                                                         if (newPurchase.quantity <= 0) return showToast("La cantidad debe ser mayor a 0.", "warning");
-                                                        if (!newPurchase.supplierId) return showToast("Selecciona un proveedor.", "warning");
+                                                        // if (!newPurchase.supplierId) return showToast("Selecciona un proveedor.", "warning"); // REMOVED VALIDATION
                                                         if (newPurchase.cost < 0) return showToast("El costo no puede ser negativo.", "warning");
 
                                                         try {
@@ -3748,13 +3908,25 @@ function App() {
                                                     const sup = suppliers.find(s => s.id === p.supplierId);
                                                     return (
                                                         <div key={p.id} style={{ animationDelay: `${idx * 0.05}s` }} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-slate-600 transition group animate-fade-up">
-                                                            <div>
-                                                                <p className="font-bold text-white flex items-center gap-2">
-                                                                    {prod?.name || 'Producto Eliminado'}
-                                                                    <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">STOCK ACTUAL: {prod?.stock || 0}</span>
-                                                                </p>
-                                                                <p className="text-xs text-slate-500">{new Date(p.date).toLocaleDateString()} - Prov: {sup?.name || 'Desconocido'}</p>
+                                                            <div className="flex items-center gap-4 flex-1">
+                                                                {/* Image Preview */}
+                                                                <div className="w-12 h-12 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700">
+                                                                    {prod?.image ? (
+                                                                        <img src={prod.image} className="w-full h-full object-contain" alt={prod.name} />
+                                                                    ) : (
+                                                                        <Package className="w-full h-full text-slate-400 p-2" />
+                                                                    )}
+                                                                </div>
+
+                                                                <div>
+                                                                    <p className="font-bold text-white flex items-center gap-2">
+                                                                        {prod?.name || 'Producto Eliminado'}
+                                                                        <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">STOCK ACTUAL: {prod?.stock || 0}</span>
+                                                                    </p>
+                                                                    <p className="text-xs text-slate-500">{new Date(p.date).toLocaleDateString()} {sup ? `- Prov: ${sup.name}` : ''}</p>
+                                                                </div>
                                                             </div>
+
                                                             <div className="flex items-center gap-6">
                                                                 <div className="text-right">
                                                                     <p className="text-cyan-400 font-bold">+{p.quantity} u.</p>
@@ -3898,6 +4070,65 @@ function App() {
                                                 </div>
                                             </div>
 
+                                            {/* Gráfico de Distribución (Pie Chart CSS) */}
+                                            <div className="mb-8 flex flex-col md:flex-row items-center justify-center gap-12 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                {(() => {
+                                                    const team = settings?.team || [];
+                                                    const totalInvestment = team.reduce((acc, m) => acc + (Number(m.investment) || 0), 0);
+
+                                                    if (totalInvestment === 0) return <p className="text-slate-500">Agrega inversión para ver el gráfico.</p>;
+
+                                                    let currentDeg = 0;
+                                                    const gradientSegments = team.map((member, idx) => {
+                                                        const value = Number(member.investment) || 0;
+                                                        const pct = (value / totalInvestment) * 100;
+                                                        const deg = (pct / 100) * 360;
+                                                        const start = currentDeg;
+                                                        const end = currentDeg + deg;
+                                                        currentDeg = end;
+
+                                                        // Colores cíclicos
+                                                        const colors = ['#22c55e', '#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444'];
+                                                        const color = colors[idx % colors.length];
+
+                                                        return `${color} ${start}deg ${end}deg`;
+                                                    }).join(', ');
+
+                                                    return (
+                                                        <>
+                                                            {/* El Gráfico */}
+                                                            <div className="relative w-48 h-48 rounded-full shadow-[0_0_50px_rgba(6,182,212,0.1)] hover:scale-105 transition duration-500"
+                                                                style={{ background: `conic-gradient(${gradientSegments})` }}>
+                                                                {/* Agujero del Donut */}
+                                                                <div className="absolute inset-4 bg-[#0a0a0a] rounded-full flex flex-col items-center justify-center border border-slate-800">
+                                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Total Inv.</p>
+                                                                    <p className="text-white font-black text-lg">${totalInvestment.toLocaleString()}</p>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Referencias */}
+                                                            <div className="grid grid-cols-1 gap-4">
+                                                                {team.map((member, idx) => {
+                                                                    const colors = ['#22c55e', '#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444'];
+                                                                    const color = colors[idx % colors.length];
+                                                                    const pct = totalInvestment > 0 ? ((Number(member.investment) || 0) / totalInvestment * 100).toFixed(1) : 0;
+
+                                                                    return (
+                                                                        <div key={idx} className="flex items-center gap-3">
+                                                                            <div className="w-4 h-4 rounded-full shadow-lg" style={{ backgroundColor: color }}></div>
+                                                                            <div>
+                                                                                <p className="text-white font-bold text-sm leading-none">{member.name || 'Socio'}</p>
+                                                                                <p className="text-slate-500 text-xs">{pct}% participación</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </div>
+
                                             <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl">
                                                 <div className="overflow-x-auto">
                                                     <table className="w-full text-left border-collapse">
@@ -3951,8 +4182,8 @@ function App() {
 
                                                                                     // Persistir en Firestore (Solo al perder foco)
                                                                                     try {
-                                                                                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings');
-                                                                                        // Usar setDoc con merge para asegurar que el documento exista
+                                                                                        // FIX: Agregar ID del documento ('config')
+                                                                                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
                                                                                         await setDoc(docRef, { team: updatedTeam }, { merge: true });
                                                                                         showToast("Inversión actualizada", "success");
                                                                                     } catch (err) {
@@ -4115,12 +4346,29 @@ function App() {
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={() => openConfirm("Eliminar Cupón", "¿Eliminar este cupón?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
-                                                        className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800"
-                                                    >
-                                                        <Trash2 className="w-5 h-5" />
-                                                    </button>
+                                                    <div className="flex gap-2 mt-4 md:mt-0">
+                                                        {c.targetType === 'global' && (
+                                                            <div className="bg-purple-900/30 text-purple-400 px-3 py-1 rounded-lg border border-purple-500/30 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                                                                <Globe className="w-3 h-3" /> Social
+                                                            </div>
+                                                        )}
+                                                        <button
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(c.code);
+                                                                showToast("Código copiado al portapapeles", "success");
+                                                            }}
+                                                            className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white p-3 rounded-xl transition border border-slate-800"
+                                                            title="Copiar Código"
+                                                        >
+                                                            <Copy className="w-5 h-5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => openConfirm("Eliminar Cupón", "¿Eliminar este cupón?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
+                                                            className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800"
+                                                        >
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -4387,6 +4635,82 @@ function App() {
                         <AccessDenied onBack={() => setView('store')} />
                     ))}
             </main>
+
+            {/* FOOTER PROFESIONAL (Visible solo fuera del Admin) */}
+            {view !== 'admin' && (
+                <footer className="bg-[#050505] border-t border-slate-900 pt-16 pb-8 relative overflow-hidden">
+                    {/* Decoración de Fondo */}
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-900/50 to-transparent"></div>
+                    <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-900/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+                    <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
+                        {/* Columna 1: Marca */}
+                        <div className="md:col-span-2 space-y-6">
+                            <h2 className="text-3xl font-black text-white tracking-tighter italic">
+                                {settings?.storeName || 'SUSTORE'}
+                                <span className="text-cyan-500">.SF</span>
+                            </h2>
+                            <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
+                                Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.
+                            </p>
+                            <div className="flex gap-4 pt-2">
+                                <button onClick={() => window.open(settings?.instagramLink || 'https://www.instagram.com/sustore_sf/', '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-pink-400 hover:bg-pink-900/10 transition border border-slate-800 hover:border-pink-500/30">
+                                    <Instagram className="w-5 h-5" />
+                                </button>
+                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-900/10 transition border border-slate-800 hover:border-green-500/30">
+                                    <MessageCircle className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Columna 2: Quick Links */}
+                        <div className="space-y-6">
+                            <h3 className="text-white font-bold uppercase tracking-widest text-xs">Enlaces Rápidos</h3>
+                            <ul className="space-y-3 text-sm text-slate-500 font-medium">
+                                <li>
+                                    <button onClick={() => setView('store')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
+                                        <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Inicio
+                                    </button>
+                                </li>
+                                <li>
+                                    <button onClick={() => setView('profile')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
+                                        <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Mi Cuenta
+                                    </button>
+                                </li>
+                                <li>
+                                    <button onClick={() => setView('guide')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
+                                        <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Ayuda & Soporte
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Columna 3: Soporte */}
+                        <div className="space-y-6">
+                            <h3 className="text-white font-bold uppercase tracking-widest text-xs">Contacto</h3>
+                            <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                ¿Tienes alguna duda? Estamos aquí para ayudarte.
+                            </p>
+                            <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="px-6 py-3 bg-cyan-900/10 text-cyan-400 rounded-xl text-sm font-bold border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition w-full md:w-auto">
+                                Contactar Soporte
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Copyright Bar */}
+                    <div className="border-t border-slate-900 bg-[#020202]">
+                        <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <p className="text-slate-600 text-xs font-mono">
+                                © 2026 {settings?.storeName || 'SUSTORE'}. All rights reserved.
+                            </p>
+                            <div className="flex gap-6">
+                                <span className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition">Privacy Policy</span>
+                                <span className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition">Terms of Service</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            )}
             {/* MODAL: CREAR CATEGORÍA */}
             {showCategoryModal && (
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in-scale p-4">
