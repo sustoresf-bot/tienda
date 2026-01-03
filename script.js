@@ -1454,8 +1454,8 @@ function App() {
             }
         });
 
-        // 2. Finanzas y Ventas Confirmadas
-        const validOrders = orders.filter(o => o.status !== 'Cancelado');
+        // 2. Finanzas y Ventas Confirmadas (Updated: Solo contar "Realizado")
+        const validOrders = orders.filter(o => o.status === 'Realizado');
         const revenue = validOrders.reduce((acc, o) => acc + (o.total || 0), 0);
         const expensesTotal = expenses?.reduce((acc, e) => acc + (e.amount || 0), 0) || 0;
         const purchasesTotal = purchases?.reduce((acc, p) => acc + (p.cost || 0), 0) || 0;
@@ -2721,7 +2721,7 @@ function App() {
                                         <CreditCard className="text-cyan-400 w-6 h-6" /> Método de Pago
                                     </h2>
                                     <div className="grid grid-cols-2 gap-4 relative z-10">
-                                        {['Transferencia', 'Efectivo'].map(method => (
+                                        {['Mercado Pago', 'Transferencia'].map(method => (
                                             <button
                                                 key={method}
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: method })}
@@ -2732,7 +2732,7 @@ function App() {
                                                         <CheckCircle className="w-5 h-5" />
                                                     </div>
                                                 )}
-                                                {method === 'Transferencia' ? <RefreshCw className="w-8 h-8 group-hover:scale-110 transition" /> : <DollarSign className="w-8 h-8 group-hover:scale-110 transition" />}
+                                                {method === 'Mercado Pago' ? <CreditCard className="w-8 h-8 group-hover:scale-110 transition" /> : <RefreshCw className="w-8 h-8 group-hover:scale-110 transition" />}
                                                 <span className="text-sm font-black tracking-wider uppercase">{method}</span>
                                             </button>
                                         ))}
@@ -4636,8 +4636,8 @@ function App() {
                     ))}
             </main>
 
-            {/* FOOTER PROFESIONAL (Visible solo fuera del Admin) */}
-            {view !== 'admin' && (
+            {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
+            {view !== 'admin' && view !== 'login' && view !== 'register' && (
                 <footer className="bg-[#050505] border-t border-slate-900 pt-16 pb-8 relative overflow-hidden">
                     {/* Decoración de Fondo */}
                     <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-900/50 to-transparent"></div>
