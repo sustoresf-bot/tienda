@@ -583,10 +583,10 @@ function App() {
                 setLiveCarts(activeCarts);
             }),
 
-            // Configuración Global
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), snapshot => {
-                if (!snapshot.empty) {
-                    const data = snapshot.docs[0].data();
+            // Configuración Global (Hardcoded to 'config' document for consistency)
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
                     // Fusión defensiva con valores por defecto
                     const mergedSettings = {
                         ...defaultSettings,
@@ -598,10 +598,11 @@ function App() {
                     setTempSettings(mergedSettings);
                     setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
                 } else {
-                    // Si no existe, crear configuración inicial
-                    addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), defaultSettings);
+                    // Si no existe, crear por defecto
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings)
+                        .then(() => console.log("Configuración inicial creada"));
                 }
-            })
+            }),
         ];
 
         // Limpiar suscripciones al desmontar
@@ -1221,18 +1222,10 @@ function App() {
         if (!tempSettings) return;
 
         try {
-            const settingsQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'settings'));
-            const settingsSnap = await getDocs(settingsQuery);
-
             const dataToSave = { ...tempSettings, aboutUsText: aboutText };
 
-            if (!settingsSnap.empty) {
-                // Actualizar existente
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', settingsSnap.docs[0].id), dataToSave);
-            } else {
-                // Crear nuevo si no existe
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), dataToSave);
-            }
+            // STRICT: Usar siempre 'config' como ID
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), dataToSave, { merge: true });
 
             setSettings(dataToSave);
             showToast("Configuración global guardada correctamente.", 'success');
