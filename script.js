@@ -583,24 +583,84 @@ function App() {
                 setLiveCarts(activeCarts);
             }),
 
-            // Configuración Global (Hardcoded to 'config' document for consistency)
-            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    // Fusión defensiva con valores por defecto
+            // Configuración Global (con Auto-Migración)
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), async (snapshot) => {
+                // 1. Buscar si existe el documento 'config'
+                const configDoc = snapshot.docs.find(d => d.id === 'config');
+
+                // 2. Buscar si existen documentos "viejos" (Legacy)
+                const legacyDocs = snapshot.docs.filter(d => d.id !== 'config');
+
+                if (legacyDocs.length > 0 && !configDoc) {
+                    // CASO A: Solo existe legacy. Migrar TODO a 'config'.
+                    const oldData = legacyDocs[0].data();
+                    console.log("Migrating legacy settings to config...", oldData);
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), oldData);
+                    // Opcional: Borrar el viejo para limpiar (o dejarlo por seguridad un tiempo)
+                    // await deleteDoc(legacyDocs[0].ref);
+                }
+                else if (legacyDocs.length > 0 && configDoc) {
+                    // CASO B: Existen ambos. Verificar si necesitamos recuperar categorías del viejo.
+                    const oldData = legacyDocs[0].data();
+                    const newData = configDoc.data();
+
+                    // Si el viejo tiene categorías custom y el nuevo tiene las default, migrar categorías
+                    const oldCats = oldData.categories || [];
+                    const newCats = newData.categories || [];
+
+                    // Heurística simple: Si el viejo tiene más categorías o diferentes, asumimos que vale la pena fusionar
+                    // O simplemente si el usuario dice "se borraron", forzamos la copia de categorías del viejo al nuevo.
+                    if (oldCats.length > 0 && JSON.stringify(oldCats) !== JSON.stringify(newCats)) {
+                        // Solo migramos categorías si parecen perdidas (esto corre en cliente, ojo con bucles)
+                        // Para evitar bucles infinitos, comparamos antes de escribir.
+
+                        // NOTA: Para no complicar, solo leemos del 'config' para el Estado, 
+                        // pero si detectamos legacy, tratamos de consolidar UNA VEZ.
+                    }
+                }
+
+                // 3. Fuente de Verdad para el Estado: SIEMPRE 'config' (o el legacy si config aun no esta listo)
+                // Preferimos 'config'. Si no existe, usamos el legacy temporalmente.
+                const effectiveDoc = configDoc || legacyDocs[0];
+
+                if (effectiveDoc) {
+                    const data = effectiveDoc.data();
                     const mergedSettings = {
                         ...defaultSettings,
                         ...data,
                         team: data.team || defaultSettings.team,
                         categories: data.categories || defaultSettings.categories
                     };
+
+                    // Si estamos leyendo de un legacy, forzamos la escritura en 'config' para la próxima
+                    if (effectiveDoc.id !== 'config') {
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), mergedSettings);
+                    }
+
                     setSettings(mergedSettings);
                     setTempSettings(mergedSettings);
                     setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
+
+                    // Si ya migramos y leímos exitosamente, podríamos borrar el legacy para evitar fantasmas
+                    if (configDoc && legacyDocs.length > 0) {
+                        // MIGRACIÓN DE CATEGORÍAS ESPECÍFICA (Rescate)
+                        const legacyData = legacyDocs[0].data();
+                        if (legacyData.categories && legacyData.categories.length > 0) {
+                            // Si el config tiene las default y el legacy tiene custom, pisar config
+                            const isDefault = JSON.stringify(mergedSettings.categories) === JSON.stringify(defaultSettings.categories);
+                            const isLegacyCustom = JSON.stringify(legacyData.categories) !== JSON.stringify(defaultSettings.categories);
+
+                            if (isDefault && isLegacyCustom) {
+                                console.log("Restoring categories from legacy...");
+                                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), {
+                                    categories: legacyData.categories
+                                });
+                            }
+                        }
+                    }
                 } else {
-                    // Si no existe, crear por defecto
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings)
-                        .then(() => console.log("Configuración inicial creada"));
+                    // Nada existe, crear default en config
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings);
                 }
             }),
         ];
