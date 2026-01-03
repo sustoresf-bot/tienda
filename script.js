@@ -305,6 +305,28 @@ function App() {
     const [metricsDetail, setMetricsDetail] = useState(null); // { type: 'revenue' | 'net_income' }
     const [showLeastSold, setShowLeastSold] = useState(false);
 
+    // Hoisted State for Manual Sale (So we can pre-fill it from Product List)
+    const [saleData, setSaleData] = useState({
+        productId: '',
+        quantity: 1,
+        price: 0,
+        customerName: 'Cliente Offline',
+        paymentMethod: 'Efectivo',
+        notes: 'Venta presencial'
+    });
+
+    const openManualSaleModal = (product) => {
+        setSaleData({
+            productId: product.id,
+            quantity: 1,
+            price: Number(product.basePrice) || 0,
+            customerName: 'Cliente Offline',
+            paymentMethod: 'Efectivo',
+            notes: 'Venta presencial'
+        });
+        setShowManualSaleModal(true);
+    };
+
     // Referencias
     const fileInputRef = useRef(null);
 
@@ -1698,14 +1720,7 @@ function App() {
 
     // Modal de Venta Manual (Offline / "En Casa")
     const ManualSaleModal = () => {
-        const [saleData, setSaleData] = useState({
-            productId: '',
-            quantity: 1,
-            price: 0,
-            customerName: 'Cliente Offline',
-            paymentMethod: 'Efectivo',
-            notes: 'Venta presencial'
-        });
+        // State is now hoisted to App (saleData, setSaleData)
 
         if (!showManualSaleModal) return null;
 
@@ -2059,10 +2074,15 @@ function App() {
 
                     {/* Acciones de Usuario */}
                     <div className="flex items-center gap-4">
-                        {/* Botón Soporte */}
-                        <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                            <MessageCircle className="w-5 h-5" /> Soporte
-                        </button>
+                        {/* Botones de Contacto */}
+                        <div className="hidden md:flex items-center gap-2">
+                            <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                                <MessageCircle className="w-5 h-5" /> WhatsApp
+                            </button>
+                            <button onClick={() => window.open(settings?.instagram || settings?.instagramLink || 'https://instagram.com', '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+                                <Instagram className="w-5 h-5" /> Instagram
+                            </button>
+                        </div>
 
                         {/* Botón Carrito */}
                         <button onClick={() => setView('cart')} className="relative p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group hover:border-cyan-500/30">
@@ -2963,9 +2983,6 @@ function App() {
                                                 <p className="text-slate-500 mt-2">Visión general del rendimiento de tu negocio.</p>
                                             </div>
                                             <div className="flex gap-4">
-                                                <button onClick={() => setShowManualSaleModal(true)} className="bg-green-600 px-6 py-2 rounded-xl text-white font-bold text-sm shadow-lg shadow-green-900/20 hover:bg-green-500 transition flex items-center gap-2 transform hover:-translate-y-1">
-                                                    <Store className="w-5 h-5" /> Registrar Venta
-                                                </button>
                                                 <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800 h-fit">
                                                     {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                                 </div>
@@ -3958,7 +3975,7 @@ function App() {
                                                             value={newCoupon.targetType}
                                                             onChange={e => setNewCoupon({ ...newCoupon, targetType: e.target.value })}
                                                         >
-                                                            <option value="global">🌍 Para Todos los Usuarios</option>
+                                                            <option value="global">🌍 Público / Canjeable (Redes Sociales)</option>
                                                             <option value="specific_email">👤 Usuario Específico (Email)</option>
                                                         </select>
                                                     </div>
@@ -4190,7 +4207,7 @@ function App() {
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-3 mt-4 sm:mt-0 w-full sm:w-auto justify-end">
-                                                        <button onClick={() => handleManualSale(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800" title="Venta Manual (Descontar 1)">
+                                                        <button onClick={() => openManualSaleModal(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800" title="Venta Manual (Descontar 1)">
                                                             <DollarSign className="w-5 h-5" />
                                                         </button>
                                                         <button onClick={() => { setNewProduct(p); setEditingId(p.id); setShowProductForm(true) }} className="p-3 bg-slate-900 rounded-xl text-cyan-400 hover:bg-cyan-900/20 transition border border-slate-800">
