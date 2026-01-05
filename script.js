@@ -7,7 +7,7 @@ import {
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
-    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones
+    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
@@ -480,14 +480,6 @@ function App() {
         }
     }, [cart, currentUser]);
 
-    // 2. Persistencia de Sesión Local
-    useEffect(() => {
-        if (currentUser) {
-            localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
-        } else {
-            localStorage.removeItem('nexus_user_data');
-        }
-    }, [currentUser]);
 
     // 3. Sistema de Auto-Update
     useEffect(() => {
@@ -503,6 +495,7 @@ function App() {
         });
         return () => unsubscribe();
     }, []);
+    // 2. Persistencia Detallada y Session
     useEffect(() => {
         if (currentUser) {
             localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
@@ -514,6 +507,8 @@ function App() {
                 province: currentUser.province || prev.province,
                 zipCode: currentUser.zipCode || prev.zipCode
             }));
+        } else {
+            localStorage.removeItem('nexus_user_data');
         }
     }, [currentUser]);
 
@@ -1625,14 +1620,14 @@ function App() {
                 const liveProd = products.find(p => p.id === id);
                 const meta = productMetadata[id] || {};
 
-                // Si no hay producto vivo ni metadata (raro), retornar null
-                if (!liveProd && !meta.name) return null;
+                // Si el producto no existe en el inventario actual (fue eliminado), no mostrarlo en tendencias
+                if (!liveProd) return null;
 
                 return {
                     id: id,
-                    name: liveProd?.name || meta.name,
-                    image: liveProd?.image || meta.image,
-                    stock: liveProd?.stock || 0,
+                    name: liveProd.name,
+                    image: liveProd.image,
+                    stock: liveProd.stock,
                     stats
                 };
             })
@@ -2292,7 +2287,9 @@ function App() {
             if (a.isFeatured && !b.isFeatured) return -1;
             if (!a.isFeatured && b.isFeatured) return 1;
             // Prioridad 2: Más vendidos
-            return (b.salesCount || 0) - (a.salesCount || 0);
+            const salesA = dashboardMetrics?.salesCount?.[a.id] || 0;
+            const salesB = dashboardMetrics?.salesCount?.[b.id] || 0;
+            return salesB - salesA;
         });
 
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
@@ -4751,13 +4748,23 @@ function App() {
                                                             }, 0).toLocaleString()}
                                                         </div>
                                                     </div>
-                                                    <input
-                                                        type="text"
-                                                        className="input-cyber w-full p-4"
-                                                        placeholder="URL Imagen (https://...)"
-                                                        value={newPromo.image}
-                                                        onChange={e => setNewPromo({ ...newPromo, image: e.target.value })}
-                                                    />
+                                                    <div className="mb-4">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen de la Promo</label>
+                                                        <input
+                                                            type="file"
+                                                            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
+                                                            accept="image/*"
+                                                            onChange={e => handleImageUpload(e, setNewPromo)}
+                                                        />
+                                                        {newPromo.image && (
+                                                            <div className="mt-2 relative group w-32 aspect-video overflow-hidden rounded-xl border border-slate-700">
+                                                                <img src={newPromo.image} className="w-full h-full object-cover" />
+                                                                <button onClick={() => setNewPromo({ ...newPromo, image: '' })} className="absolute top-1 right-1 bg-black/50 p-1 rounded-full text-white hover:bg-red-500 transition opacity-0 group-hover:opacity-100">
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                     <textarea
                                                         className="input-cyber w-full p-4 h-20 resize-none"
                                                         placeholder="Descripción breve..."
@@ -5135,7 +5142,7 @@ function App() {
                                                             <p className="text-xs text-slate-500 font-mono">
                                                                 Stock: <span className={(p.stock || 0) < 5 ? 'text-red-400 font-bold' : 'text-slate-400'}>{p.stock || 0}</span> |
                                                                 <span className="text-cyan-400 font-bold ml-2">${p.basePrice}</span> |
-                                                                <span className="text-green-400 ml-2">Ventas: {p.salesCount || 0}</span>
+                                                                <span className="text-green-400 ml-2">Ventas: {(dashboardMetrics?.salesCount?.[p.id] || 0)}</span>
                                                             </p>
                                                         </div>
                                                     </div>
