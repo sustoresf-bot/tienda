@@ -235,3 +235,220 @@ body {
         linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
+
+/* ===== MOBILE RESPONSIVE OPTIMIZATIONS ===== */
+
+/* Touch-friendly button sizes */
+@media (max-width: 768px) {
+
+    button,
+    a,
+    select,
+    input {
+        min-height: 44px;
+        /* iOS touch target minimum */
+    }
+
+    /* Reduce padding on mobile */
+    .p-8 {
+        padding: 1.25rem;
+    }
+
+    .p-6 {
+        padding: 1rem;
+    }
+
+    .p-12 {
+        padding: 1.5rem;
+    }
+
+    /* Smaller text on mobile */
+    .text-5xl {
+        font-size: 2rem;
+    }
+
+    .text-4xl {
+        font-size: 1.75rem;
+    }
+
+    .text-3xl {
+        font-size: 1.5rem;
+    }
+
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+
+    /* Compact cards on mobile */
+    .grid {
+        gap: 1rem;
+    }
+
+    /* Fix for cut-off cards */
+    .grid {
+        gap: 1rem;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    html {
+        font-size: 14px;
+    }
+
+    .text-5xl {
+        font-size: 1.75rem;
+    }
+
+    .text-4xl {
+        font-size: 1.5rem;
+    }
+
+    .gap-8 {
+        gap: 0.75rem;
+    }
+
+    .gap-6 {
+        gap: 0.5rem;
+    }
+}
+
+/* Smooth bounce animation for cart badge */
+.animate-bounce-short {
+    animation: bounceShort 0.5s ease;
+}
+
+@keyframes bounceShort {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Fade in from right for mobile menu */
+.animate-fade-in-right {
+    animation: fadeInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Custom scrollbar for overflow containers */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(6, 182, 212, 0.3);
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Promo card glow */
+.promo-glow {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+}
+
+/* Performance: GPU acceleration for animations */
+.animate-fade-up,
+.animate-fade-in,
+.animate-fade-in-scale,
+.animate-slide-in-right,
+.neon-box {
+    will-change: transform, opacity;
+}
+
+/* Safe area padding for notched phones */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+}
+
+/* --- FUTURISTIC UI EXTRAS --- */
+
+/* Animated Gradient Background */
+.animate-gradient-xy {
+    background-size: 200% 200%;
+    animation: gradient-xy 6s ease infinite;
+}
+
+@keyframes gradient-xy {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* TV / Large Screen Optimizations */
+@media (min-width: 1920px) {
+    .container-tv {
+        max-width: 1800px;
+        margin: 0 auto;
+    }
+
+    .text-tv-huge {
+        font-size: 6rem;
+    }
+
+    .grid-tv-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+/* Subtle Tech Glow */
+.tech-glow {
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.3), inset 0 0 10px rgba(6, 182, 212, 0.1);
+}
+
+.tech-border {
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+/* Infinite Brand Ticker Animation */
+.ticker-wrap {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.ticker-content {
+    display: inline-block;
+    animation: ticker 30s linear infinite;
+}
+
+@keyframes ticker {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    100% {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
