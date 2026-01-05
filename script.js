@@ -6,8 +6,8 @@ import {
     Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet,
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
-    ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2, Star, Percent,
-    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe
+    ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
+    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
@@ -155,6 +155,9 @@ class ErrorBoundary extends React.Component {
 
 // --- APLICACIÓN PRINCIPAL ---
 function App() {
+    // Versión del Sistema para Auto-Updates
+    const APP_VERSION = '1.0.0';
+
     // --- GESTIÓN DE ESTADO (EXPANDIDA) ---
 
     // Navegación y UI
@@ -181,6 +184,7 @@ function App() {
 
     // Datos Principales
     const [products, setProducts] = useState([]);
+    const [promos, setPromos] = useState([]); // Nuevo estado para Promos
     const [cart, setCart] = useState(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('nexus_cart'));
@@ -269,6 +273,21 @@ function App() {
     });
     const [editingId, setEditingId] = useState(null);
     const [showProductForm, setShowProductForm] = useState(false);
+    const [settingsTab, setSettingsTab] = useState('store'); // store, appearance, social, payments, shipping, seo, advanced, team
+
+    // Gestión de Promos
+    const [newPromo, setNewPromo] = useState({
+        name: '',
+        price: '',
+        image: '',
+        description: '',
+        items: [] // Array de { productId, quantity }
+    });
+    const [promoSearch, setPromoSearch] = useState('');
+    const [selectedPromoProduct, setSelectedPromoProduct] = useState('');
+    const [promoProductQty, setPromoProductQty] = useState(1);
+    const [isEditingPromo, setIsEditingPromo] = useState(false);
+    const [editingPromoId, setEditingPromoId] = useState(null);
 
     // Gestión Avanzada de Cupones (Restaurada la complejidad)
     const [newCoupon, setNewCoupon] = useState({
@@ -465,6 +484,28 @@ function App() {
     useEffect(() => {
         if (currentUser) {
             localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
+        } else {
+            localStorage.removeItem('nexus_user_data');
+        }
+    }, [currentUser]);
+
+    // 3. Sistema de Auto-Update
+    useEffect(() => {
+        const configRef = doc(db, 'artifacts', appId, 'public', 'config');
+        const unsubscribe = onSnapshot(configRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data.version && data.version !== APP_VERSION) {
+                    console.log(`Nueva versión detectada: ${data.version}. Actualizando...`);
+                    window.location.reload();
+                }
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+    useEffect(() => {
+        if (currentUser) {
+            localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
             // Pre-llenar checkout si hay datos
             setCheckoutData(prev => ({
                 ...prev,
@@ -581,6 +622,11 @@ function App() {
                     .map(d => ({ id: d.id, ...d.data() }))
                     .filter(c => c.items && c.items.length > 0);
                 setLiveCarts(activeCarts);
+            }),
+
+            // Promos
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), snapshot => {
+                setPromos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             }),
 
             // Configuración Global (con Auto-Migración)
@@ -789,9 +835,25 @@ function App() {
             const currentQuantity = existingItemIndex >= 0 ? prevCart[existingItemIndex].quantity : 0;
             const newQuantity = currentQuantity + quantityDelta;
 
-            // Validaciones de Stock
-            if (newQuantity > Number(product.stock)) {
-                showToast(`Lo sentimos, solo quedan ${product.stock} unidades disponibles.`, "warning");
+            // Validaciones de Stock (Manejo Dual: Producto Normal vs Promo)
+            let currentStock = 0;
+
+            if (product.isPromo) {
+                // Recalcular stock virtual al momento de agregar (por seguridad)
+                let maxPurchasable = Infinity;
+                product.items.forEach(item => {
+                    const p = products.find(prod => prod.id === item.productId);
+                    const pStock = p ? (Number(p.stock) || 0) : 0;
+                    const maxForThisItem = Math.floor(pStock / item.quantity);
+                    if (maxForThisItem < maxPurchasable) maxPurchasable = maxForThisItem;
+                });
+                currentStock = maxPurchasable;
+            } else {
+                currentStock = Number(product.stock);
+            }
+
+            if (newQuantity > currentStock) {
+                showToast(`Lo sentimos, el stock máximo disponible es ${currentStock}.`, "warning");
                 return prevCart;
             }
 
@@ -988,10 +1050,26 @@ function App() {
             // 4. Actualizar Stock y Uso de Cupones (Atomic Batch)
             const batch = writeBatch(db);
 
-            // Descontar Stock
+            // Descontar Stock (Maneja promos y productos normales)
             cart.forEach(item => {
-                const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.product.id);
-                batch.update(productRef, { stock: increment(-item.quantity) });
+                if (item.product.isPromo && item.product.items) {
+                    // PROMO: Descontar stock de cada componente + incrementar ventas
+                    item.product.items.forEach(promoItem => {
+                        const totalDecrement = promoItem.quantity * item.quantity;
+                        const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', promoItem.productId);
+                        batch.update(productRef, {
+                            stock: increment(-totalDecrement),
+                            salesCount: increment(totalDecrement) // Incrementar contador de ventas
+                        });
+                    });
+                } else {
+                    // Producto Normal
+                    const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.product.id);
+                    batch.update(productRef, {
+                        stock: increment(-item.quantity),
+                        salesCount: increment(item.quantity) // Incrementar contador de ventas
+                    });
+                }
             });
 
             // Registrar uso de cupón
@@ -2194,13 +2272,28 @@ function App() {
         );
     }
 
-    // --- LÓGICA DE FILTRADO CONSOLIDADA ---
-    const filteredProducts = products.filter(p => {
-        const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-        const categoryMatch = p.category ? p.category.trim() : '';
-        const matchesCategory = selectedCategory === '' || categoryMatch === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
+    // --- LÓGICA DE FILTRADO Y ORDENAMIENTO INTELIGENTE ---
+    const filteredProducts = products
+        .filter(p => {
+            const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+            // Lógica de Categorías Especiales
+            if (selectedCategory === 'Promos') return false; // El grid estándar se oculta para Promos
+            if (selectedCategory === 'Ofertas') {
+                return matchesSearch && (p.discount > 0);
+            }
+
+            const categoryMatch = p.category ? p.category.trim() : '';
+            const matchesCategory = selectedCategory === '' || categoryMatch === selectedCategory;
+            return matchesSearch && matchesCategory;
+        })
+        .sort((a, b) => {
+            // Prioridad 1: Productos Destacados primero
+            if (a.isFeatured && !b.isFeatured) return -1;
+            if (!a.isFeatured && b.isFeatured) return 1;
+            // Prioridad 2: Más vendidos
+            return (b.salesCount || 0) - (a.salesCount || 0);
+        });
 
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
@@ -2391,8 +2484,25 @@ function App() {
                             </div>
                         )}
 
+                        {/* Brand Ticker (Futuristic) */}
+                        <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-4">
+                            <div className="ticker-wrap">
+                                <div className="ticker-content font-mono text-cyan-500/50 text-sm tracking-[0.5em] uppercase flex items-center gap-12">
+                                    <span>Sustore Tech</span><span>•</span>
+                                    <span>Future Ready</span><span>•</span>
+                                    <span>Premium Quality</span><span>•</span>
+                                    <span>Next Gen Audio</span><span>•</span>
+                                    <span>Sustore Tech</span><span>•</span>
+                                    <span>Future Ready</span><span>•</span>
+                                    <span>Premium Quality</span><span>•</span>
+                                    <span>Next Gen Audio</span>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Banner Hero */}
-                        <div className="relative w-full h-[400px] md:h-[550px] rounded-[3rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group relative bg-[#080808]">
+                        <div className="relative w-full h-[400px] md:h-[550px] 2xl:h-[700px] rounded-[3rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group relative bg-[#080808] container-tv">
+                            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
                             {/* Imagen de fondo */}
                             {settings?.heroUrl ? (
                                 <img src={settings.heroUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" />
@@ -2401,33 +2511,76 @@ function App() {
                             )}
 
                             {/* Overlay de Texto */}
-                            <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10">
+                            <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10 p-12">
                                 <div className="max-w-2xl animate-fade-up">
-                                    <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 inline-block">Nueva Colección</span>
-                                    <h1 className="text-5xl md:text-8xl font-black text-white leading-[0.9] drop-shadow-2xl mb-6">
+                                    <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 inline-block">Nueva Colección 2026</span>
+                                    <h1 className="text-5xl md:text-8xl lg:text-9xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-6 neon-text">
                                         TECNOLOGÍA <br />
                                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-pulse-slow">
                                             DEL FUTURO
                                         </span>
                                     </h1>
-                                    <p className="text-slate-400 text-lg mb-8 max-w-lg font-medium">
-                                        Explora nuestra selección premium de dispositivos. Calidad garantizada y soporte técnico especializado.
+                                    <p className="text-slate-400 text-lg md:text-xl lg:text-2xl mb-8 max-w-lg font-medium">
+                                        Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado.
                                     </p>
-                                    <div className="flex gap-4">
-                                        <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center gap-2 group/btn">
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn">
                                             VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
                                         </button>
-                                        <button onClick={() => setView('guide')} className="px-8 py-4 glass text-white font-bold rounded-xl hover:bg-white/10 transition border border-white/10">
-                                            Ayuda
+                                        <button onClick={() => setView('guide')} className="px-8 py-4 glass text-white font-bold rounded-xl hover:bg-white/10 transition border border-white/10 flex items-center justify-center gap-2">
+                                            <Info className="w-5 h-5" /> Ayuda
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        {/* Why Choose Us Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 container-tv">
+                            <div className="p-8 rounded-[2rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                <div className="w-16 h-16 rounded-full bg-cyan-900/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                                    <Zap className="w-8 h-8 text-cyan-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Envío Ultra Rápido</h3>
+                                <p className="text-slate-400 text-sm">Recibí tus productos tecnológicos en tiempo récord con nuestro sistema logístico optimizado.</p>
+                            </div>
+                            <div className="p-8 rounded-[2rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                <div className="w-16 h-16 rounded-full bg-purple-900/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                                    <Shield className="w-8 h-8 text-purple-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Garantía Extendida</h3>
+                                <p className="text-slate-400 text-sm">Todos nuestros productos cuentan con garantía oficial y soporte técnico especializado.</p>
+                            </div>
+                            <div className="p-8 rounded-[2rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                <div className="w-16 h-16 rounded-full bg-green-900/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                                    <Headphones className="w-8 h-8 text-green-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Soporte 24/7</h3>
+                                <p className="text-slate-400 text-sm">¿Dudas? Nuestro equipo de expertos está disponible para ayudarte en todo momento.</p>
+                            </div>
+                        </div>
+
                         {/* Filtros de Categoría */}
                         <div id="catalog" className="sticky top-24 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-4 overflow-x-auto no-scrollbar">
                             <Filter className="w-5 h-5 text-slate-500 flex-shrink-0" />
+
+                            {/* BOTÓN PROMOS (SPECIAL) */}
+                            <button
+                                onClick={() => setSelectedCategory('Promos')}
+                                className={`px-6 py-2.5 rounded-xl font-black text-sm transition border whitespace-nowrap flex items-center gap-2 group relative overflow-hidden ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50'}`}
+                            >
+                                {selectedCategory === 'Promos' && <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 animate-gradient-xy"></div>}
+                                <span className="relative z-10 flex items-center gap-2"><Sparkles className="w-4 h-4" /> PROMOS</span>
+                            </button>
+
+                            {/* BOTÓN OFERTAS (SPECIAL) */}
+                            <button
+                                onClick={() => setSelectedCategory('Ofertas')}
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap flex items-center gap-2 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-400 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50'}`}
+                            >
+                                <Percent className="w-4 h-4" /> OFERTAS
+                            </button>
+
                             <button onClick={() => setSelectedCategory('')} className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory === '' ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
                                 Todos
                             </button>
@@ -2437,6 +2590,116 @@ function App() {
                                 </button>
                             ))}
                         </div>
+
+                        {/* SECCIÓN PROMOS (NUEVO) */}
+                        {/* SECCIÓN PROMOS (TAB VIEW) */}
+                        {selectedCategory === 'Promos' && (
+                            <div className="mb-16 animate-fade-in">
+                                {promos.length > 0 ? (
+                                    <>
+                                        <h2 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
+                                            <Tag className="w-8 h-8 text-purple-500 animate-pulse" /> PROMOCIONES ESPECIALES
+                                        </h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                            {promos.map(promo => {
+                                                // Calcular si hay stock para esta promo
+                                                // La disponibilidad depende del "item" con menor stock relativo
+                                                let maxPurchasable = Infinity;
+                                                promo.items.forEach(item => {
+                                                    const p = products.find(prod => prod.id === item.productId);
+                                                    const pStock = p ? (Number(p.stock) || 0) : 0;
+                                                    const maxForThisItem = Math.floor(pStock / item.quantity);
+                                                    if (maxForThisItem < maxPurchasable) maxPurchasable = maxForThisItem;
+                                                });
+
+                                                const hasStock = maxPurchasable > 0;
+
+                                                return (
+                                                    <div key={promo.id} className="bg-gradient-to-br from-purple-900/10 to-blue-900/10 rounded-[2.5rem] border border-purple-500/30 overflow-hidden group shadow-[0_0_30px_rgba(168,85,247,0.1)] hover:shadow-[0_0_50px_rgba(168,85,247,0.2)] transition duration-500 relative flex flex-col">
+                                                        <div className="aspect-[21/9] relative overflow-hidden">
+                                                            <img src={promo.image} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
+                                                            <div className="absolute top-4 right-4 bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                                                                Oferta Limitada
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="p-8 flex-1 flex flex-col">
+                                                            <h3 className="text-2xl font-black text-white mb-2 leading-tight">{promo.name}</h3>
+                                                            <p className="text-purple-300 text-sm mb-6 flex-1">{promo.description}</p>
+
+                                                            {/* Lista de productos incluidos */}
+                                                            <div className="mb-6 space-y-2">
+                                                                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Incluye:</p>
+                                                                {promo.items.map((item, idx) => {
+                                                                    const p = products.find(prod => prod.id === item.productId);
+                                                                    return (
+                                                                        <div key={idx} className="flex items-center gap-2 text-sm text-slate-400">
+                                                                            <CheckCircle className="w-3 h-3 text-purple-500" />
+                                                                            <span className="text-white font-bold">{item.quantity}x</span> {p ? p.name : 'Producto'}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+
+                                                            <div className="flex items-center justify-between mt-auto pt-6 border-t border-white/5">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-slate-500 text-xs font-bold line-through decoration-red-500 decoration-2">
+                                                                        ${promo.items.reduce((acc, item) => {
+                                                                            const p = products.find(prod => prod.id === item.productId);
+                                                                            return acc + ((Number(p?.basePrice) || 0) * item.quantity);
+                                                                        }, 0).toLocaleString()}
+                                                                    </span>
+                                                                    <span className="text-3xl font-black text-white neon-text text-purple-400">
+                                                                        ${Number(promo.price).toLocaleString()}
+                                                                    </span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (!hasStock) return showToast("Sin stock disponible para esta promo.", "warning");
+                                                                        // Lógica especial para agregar Promo al carrito
+                                                                        // Tratamos la promo como un "producto" pero con un flag especial
+                                                                        const promoProduct = {
+                                                                            id: promo.id,
+                                                                            name: promo.name,
+                                                                            basePrice: promo.price,
+                                                                            image: promo.image,
+                                                                            isPromo: true,
+                                                                            items: promo.items, // Guardamos la def de items para validar stock
+                                                                            stock: maxPurchasable // Stock virtual calculado
+                                                                        };
+                                                                        manageCart(promoProduct, 1);
+                                                                    }}
+                                                                    disabled={!hasStock}
+                                                                    className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition shadow-lg ${hasStock ? 'bg-white text-black hover:bg-purple-400 hover:text-white hover:scale-105' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+                                                                >
+                                                                    {hasStock ? <ShoppingCart className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                                                                    {hasStock ? 'AGREGAR' : 'AGOTADO'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center p-20 text-center border border-dashed border-slate-800 rounded-[3rem] bg-slate-950/30">
+                                        <div className="p-8 bg-slate-900 rounded-full mb-6 shadow-2xl border border-slate-800">
+                                            <Tag className="w-16 h-16 text-slate-600" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-white mb-2">Sin Promociones Activas</h3>
+                                        <p className="text-slate-500 max-w-sm">No hay promociones disponibles en este momento. ¡Volvé pronto!</p>
+                                        <button
+                                            onClick={() => setSelectedCategory('')}
+                                            className="mt-6 px-6 py-3 bg-cyan-900/20 hover:bg-cyan-900/40 text-cyan-400 rounded-xl font-bold transition border border-cyan-500/20"
+                                        >
+                                            Ver Todo el Catálogo
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Grid de Productos */}
                         {products.length === 0 ? (
@@ -2450,7 +2713,7 @@ function App() {
                             </div>
                         ) : (
                             <>
-                                {filteredProducts.length === 0 && (
+                                {filteredProducts.length === 0 && selectedCategory !== 'Promos' && (
                                     <div className="flex flex-col items-center justify-center p-20 text-center col-span-full animate-fade-in w-full">
                                         <div className="p-6 bg-slate-900/50 rounded-full mb-4 inline-block border border-slate-800">
                                             <Search className="w-12 h-12 text-slate-500" />
@@ -2502,9 +2765,23 @@ function App() {
                                                     </div>
                                                 )}
 
+                                                {/* BADGE: DESTACADO */}
+                                                {p.isFeatured && p.stock > 0 && (
+                                                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[10px] font-black px-4 py-1.5 rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1">
+                                                        <Star className="w-3 h-3 fill-current" /> Destacado
+                                                    </div>
+                                                )}
+
                                                 {/* Descuento Badge */}
-                                                {p.discount > 0 && p.stock > 0 && (
+                                                {p.discount > 0 && p.stock > 0 && !p.isFeatured && (
                                                     <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20 animate-pulse">
+                                                        -{p.discount}% OFF
+                                                    </span>
+                                                )}
+
+                                                {/* Combined Badge (Featured + Discount) */}
+                                                {p.discount > 0 && p.stock > 0 && p.isFeatured && (
+                                                    <span className="absolute top-10 left-0 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-r-lg shadow-lg z-20">
                                                         -{p.discount}% OFF
                                                     </span>
                                                 )}
@@ -3216,6 +3493,10 @@ function App() {
 
                                             <button onClick={() => setAdminTab('purchases')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'purchases' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <ShoppingCart className="w-5 h-5" /> Compras
+                                            </button>
+
+                                            <button onClick={() => setAdminTab('promos')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'promos' ? 'bg-purple-900/20 text-purple-400 border border-purple-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <Tag className="w-5 h-5" /> Promos
                                             </button>
 
                                             <button onClick={() => setAdminTab('finance')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'finance' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
@@ -4428,6 +4709,250 @@ function App() {
                                     </div>
                                 )}
 
+                                {/* TAB: PROMOS (NUEVO) */}
+                                {adminTab === 'promos' && (
+                                    <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                        <h1 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
+                                            <Tag className="w-8 h-8 text-purple-500" /> Gestión de Promos
+                                        </h1>
+
+                                        {/* Formulario Nueva Promo */}
+                                        <div className="bg-[#0a0a0a] border border-purple-500/30 p-8 rounded-[2rem] mb-10 shadow-2xl">
+                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                {isEditingPromo ? <Edit className="w-5 h-5 text-purple-400" /> : <Plus className="w-5 h-5 text-green-400" />}
+                                                {isEditingPromo ? 'Editar Promo' : 'Crear Nueva Promo'}
+                                            </h3>
+
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                {/* Datos Básicos */}
+                                                <div className="space-y-4">
+                                                    <input
+                                                        type="text"
+                                                        className="input-cyber w-full p-4"
+                                                        placeholder="Nombre de la Promo"
+                                                        value={newPromo.name}
+                                                        onChange={e => setNewPromo({ ...newPromo, name: e.target.value })}
+                                                    />
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="relative">
+                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                                                            <input
+                                                                type="number"
+                                                                className="input-cyber w-full p-4 pl-8"
+                                                                placeholder="Precio"
+                                                                value={newPromo.price}
+                                                                onChange={e => setNewPromo({ ...newPromo, price: e.target.value })}
+                                                            />
+                                                        </div>
+                                                        <div className="p-4 bg-slate-900 rounded-xl border border-slate-700 text-slate-400 font-mono text-sm flex items-center">
+                                                            Costo: ${newPromo.items.reduce((acc, item) => {
+                                                                const p = products.find(prod => prod.id === item.productId);
+                                                                return acc + ((Number(p?.basePrice) || 0) * item.quantity);
+                                                            }, 0).toLocaleString()}
+                                                        </div>
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        className="input-cyber w-full p-4"
+                                                        placeholder="URL Imagen (https://...)"
+                                                        value={newPromo.image}
+                                                        onChange={e => setNewPromo({ ...newPromo, image: e.target.value })}
+                                                    />
+                                                    <textarea
+                                                        className="input-cyber w-full p-4 h-20 resize-none"
+                                                        placeholder="Descripción breve..."
+                                                        value={newPromo.description}
+                                                        onChange={e => setNewPromo({ ...newPromo, description: e.target.value })}
+                                                    />
+                                                </div>
+
+                                                {/* Constructor de Bundle */}
+                                                <div className="bg-slate-900/40 p-6 rounded-2xl border border-slate-800">
+                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                                        <Package className="w-4 h-4" /> Productos Incluidos
+                                                    </p>
+
+                                                    <div className="flex gap-2 mb-4">
+                                                        <select
+                                                            className="input-cyber flex-1 p-3 text-sm"
+                                                            value={selectedPromoProduct}
+                                                            onChange={e => setSelectedPromoProduct(e.target.value)}
+                                                        >
+                                                            <option value="">Agregar producto...</option>
+                                                            {products.map(p => (
+                                                                <option key={p.id} value={p.id}>{p.name} (${Number(p.basePrice)})</option>
+                                                            ))}
+                                                        </select>
+                                                        <input
+                                                            type="number"
+                                                            className="input-cyber w-20 p-3 text-sm text-center"
+                                                            value={promoProductQty}
+                                                            min="1"
+                                                            onChange={e => setPromoProductQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                if (!selectedPromoProduct) return;
+                                                                const exists = newPromo.items.find(i => i.productId === selectedPromoProduct);
+                                                                if (exists) {
+                                                                    setNewPromo({
+                                                                        ...newPromo,
+                                                                        items: newPromo.items.map(i => i.productId === selectedPromoProduct ? { ...i, quantity: i.quantity + promoProductQty } : i)
+                                                                    });
+                                                                } else {
+                                                                    setNewPromo({
+                                                                        ...newPromo,
+                                                                        items: [...newPromo.items, { productId: selectedPromoProduct, quantity: promoProductQty }]
+                                                                    });
+                                                                }
+                                                                setSelectedPromoProduct('');
+                                                                setPromoProductQty(1);
+                                                            }}
+                                                            className="p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition"
+                                                        >
+                                                            <Plus className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar">
+                                                        {newPromo.items.map((item, idx) => {
+                                                            const p = products.find(prod => prod.id === item.productId);
+                                                            if (!p) return null;
+                                                            return (
+                                                                <div key={idx} className="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <img src={p.image} className="w-8 h-8 rounded bg-white object-contain p-0.5" />
+                                                                        <div>
+                                                                            <p className="text-sm font-bold text-white truncate max-w-[120px]">{p.name}</p>
+                                                                            <p className="text-xs text-slate-500">{item.quantity} un. x ${p.basePrice}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setNewPromo({ ...newPromo, items: newPromo.items.filter((_, i) => i !== idx) })}
+                                                                        className="text-red-500 hover:text-red-400 p-1"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        {newPromo.items.length === 0 && (
+                                                            <div className="text-center py-6 text-slate-600 italic text-sm border border-dashed border-slate-800 rounded-lg">
+                                                                Agrega productos para armar el combo
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-4 justify-end mt-6">
+                                                {isEditingPromo && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsEditingPromo(false);
+                                                            setEditingPromoId(null);
+                                                            setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
+                                                        }}
+                                                        className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
+                                                            return showToast("Completa nombre, precio y agrega productos.", "warning");
+                                                        }
+
+                                                        setIsLoading(true);
+                                                        try {
+                                                            if (isEditingPromo && editingPromoId) {
+                                                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
+                                                                showToast("Promo actualizada", "success");
+                                                            } else {
+                                                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
+                                                                    ...newPromo,
+                                                                    createdAt: new Date().toISOString()
+                                                                });
+                                                                showToast("Promo creada exitosamente", "success");
+                                                            }
+                                                            setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
+                                                            setIsEditingPromo(false);
+                                                            setEditingPromoId(null);
+                                                        } catch (e) {
+                                                            console.error(e);
+                                                            showToast("Error al guardar promo", "error");
+                                                        } finally {
+                                                            setIsLoading(false);
+                                                        }
+                                                    }}
+                                                    className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
+                                                >
+                                                    {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Lista de Promos */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {promos.map(promo => (
+                                                <div key={promo.id} className="bg-[#0a0a0a] border border-slate-800 rounded-2xl overflow-hidden hover:border-purple-500/30 transition group">
+                                                    <div className="aspect-video relative overflow-hidden">
+                                                        <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                                        <div className="absolute bottom-4 left-4 right-4">
+                                                            <h4 className="text-xl font-black text-white mb-1">{promo.name}</h4>
+                                                            <p className="text-purple-400 font-bold">${Number(promo.price).toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="p-6">
+                                                        <div className="flex flex-wrap gap-2 mb-4">
+                                                            {promo.items && promo.items.map((item, i) => {
+                                                                const p = products.find(prod => prod.id === item.productId);
+                                                                return (
+                                                                    <span key={i} className="text-xs bg-slate-900 text-slate-300 px-2 py-1 rounded border border-slate-700">
+                                                                        <span className="font-bold text-white">{item.quantity}x</span> {p ? p.name : 'Unknown'}
+                                                                    </span>
+                                                                )
+                                                            })}
+                                                        </div>
+
+                                                        <div className="flex gap-3">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setNewPromo({
+                                                                        name: promo.name,
+                                                                        price: promo.price,
+                                                                        image: promo.image,
+                                                                        description: promo.description || '',
+                                                                        items: promo.items || []
+                                                                    });
+                                                                    setEditingPromoId(promo.id);
+                                                                    setIsEditingPromo(true);
+                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                }}
+                                                                className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition border border-slate-700 flex items-center justify-center gap-2"
+                                                            >
+                                                                <Edit className="w-4 h-4" /> Editar
+                                                            </button>
+                                                            <button
+                                                                onClick={() => openConfirm('Eliminar Promo', '¿Estás seguro? Esto no se puede deshacer.', async () => {
+                                                                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', promo.id));
+                                                                    showToast("Promo eliminada", "info");
+                                                                })}
+                                                                className="px-4 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-500 rounded-xl transition border border-red-500/20"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* TAB: PEDIDOS (RESTAURADO) */}
                                 {adminTab === 'orders' && (
                                     <div className="max-w-6xl mx-auto animate-fade-up pb-20">
@@ -4594,18 +5119,45 @@ function App() {
                                                     className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-cyan-900/50 transition animate-fade-up"
                                                 >
                                                     <div className="flex items-center gap-6 w-full sm:w-auto">
-                                                        <div className="w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0">
+                                                        <div className="w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0 relative">
                                                             <img src={p.image} className="w-full h-full object-contain" />
+                                                            {p.isFeatured && (
+                                                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+                                                                    <Star className="w-3 h-3 text-black fill-current" />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <div>
-                                                            <p className="font-bold text-white text-lg">{p.name}</p>
+                                                            <p className="font-bold text-white text-lg flex items-center gap-2">
+                                                                {p.name}
+                                                                {p.isFeatured && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">DESTACADO</span>}
+                                                            </p>
                                                             <p className="text-xs text-slate-500 font-mono">
                                                                 Stock: <span className={(p.stock || 0) < 5 ? 'text-red-400 font-bold' : 'text-slate-400'}>{p.stock || 0}</span> |
-                                                                <span className="text-cyan-400 font-bold ml-2">${p.basePrice}</span>
+                                                                <span className="text-cyan-400 font-bold ml-2">${p.basePrice}</span> |
+                                                                <span className="text-green-400 ml-2">Ventas: {p.salesCount || 0}</span>
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <div className="flex gap-3 mt-4 sm:mt-0 w-full sm:w-auto justify-end">
+                                                    <div className="flex gap-2 mt-4 sm:mt-0 w-full sm:w-auto justify-end items-center">
+                                                        {/* Toggle Featured */}
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', p.id), {
+                                                                        isFeatured: !p.isFeatured
+                                                                    });
+                                                                    showToast(p.isFeatured ? "Producto quitado de destacados" : "Producto marcado como destacado", "success");
+                                                                } catch (e) {
+                                                                    console.error(e);
+                                                                    showToast("Error al actualizar", "error");
+                                                                }
+                                                            }}
+                                                            className={`p-3 rounded-xl transition border transform hover:scale-105 active:scale-95 ${p.isFeatured ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-yellow-400 hover:border-yellow-500/30'}`}
+                                                            title={p.isFeatured ? "Quitar de Destacados" : "Marcar como Destacado"}
+                                                        >
+                                                            <Star className={`w-5 h-5 ${p.isFeatured ? 'fill-current' : ''}`} />
+                                                        </button>
                                                         <button onClick={() => openManualSaleModal(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95" title="Venta Manual (Descontar 1)">
                                                             <DollarSign className="w-5 h-5" />
                                                         </button>
@@ -4623,6 +5175,712 @@ function App() {
                                 )}
 
                             </div>
+
+                            {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
+                            {adminTab === 'settings' && (
+                                <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                    <h1 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
+                                        <Settings className="w-8 h-8 text-cyan-500" /> Configuración de la Tienda
+                                    </h1>
+
+                                    {/* Sub-Navigation Tabs */}
+                                    <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-slate-800">
+                                        {[
+                                            { id: 'store', label: 'Tienda', icon: Store },
+                                            { id: 'appearance', label: 'Apariencia', icon: Palette },
+                                            { id: 'social', label: 'Redes', icon: Share2 },
+                                            { id: 'payments', label: 'Pagos', icon: CreditCard },
+                                            { id: 'shipping', label: 'Envíos', icon: Truck },
+                                            { id: 'seo', label: 'SEO', icon: Globe },
+                                            { id: 'advanced', label: 'Avanzado', icon: Cog },
+                                            { id: 'team', label: 'Equipo', icon: Users }
+                                        ].map(tab => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setSettingsTab(tab.id)}
+                                                className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition ${settingsTab === tab.id ? 'bg-cyan-600 text-white shadow-lg' : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'}`}
+                                            >
+                                                <tab.icon className="w-4 h-4" /> {tab.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* === STORE INFO === */}
+                                    {settingsTab === 'store' && (
+                                        <div className="space-y-6 animate-fade-up">
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Store className="w-5 h-5 text-cyan-400" /> Información de la Tienda
+                                                </h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre de la Tienda</label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.storeName || ''}
+                                                            onChange={e => setSettings({ ...settings, storeName: e.target.value })}
+                                                            placeholder="Mi Tienda"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Email de Contacto</label>
+                                                        <input
+                                                            type="email"
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.storeEmail || ''}
+                                                            onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
+                                                            placeholder="contacto@mitienda.com"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Teléfono</label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.storePhone || ''}
+                                                            onChange={e => setSettings({ ...settings, storePhone: e.target.value })}
+                                                            placeholder="+54 11 1234-5678"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Dirección</label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.storeAddress || ''}
+                                                            onChange={e => setSettings({ ...settings, storeAddress: e.target.value })}
+                                                            placeholder="Av. Corrientes 1234, CABA"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="mt-6">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción de la Tienda</label>
+                                                    <textarea
+                                                        className="input-cyber w-full p-4 h-24 resize-none"
+                                                        value={settings?.storeDescription || ''}
+                                                        onChange={e => setSettings({ ...settings, storeDescription: e.target.value })}
+                                                        placeholder="Breve descripción de tu tienda..."
+                                                    />
+                                                </div>
+                                                <div className="mt-6">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto de Nosotros</label>
+                                                    <textarea
+                                                        className="input-cyber w-full p-4 h-32 resize-none"
+                                                        value={settings?.aboutUsText || ''}
+                                                        onChange={e => setSettings({ ...settings, aboutUsText: e.target.value })}
+                                                        placeholder="Historia de tu marca, valores, misión..."
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Bell className="w-5 h-5 text-yellow-400" /> Anuncios
+                                                </h3>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Anuncio (Banner superior)</label>
+                                                    <input
+                                                        className="input-cyber w-full p-4"
+                                                        value={settings?.announcementMessage || ''}
+                                                        onChange={e => setSettings({ ...settings, announcementMessage: e.target.value })}
+                                                        placeholder="🔥 ¡Envío gratis en compras mayores a $50.000!"
+                                                    />
+                                                    <p className="text-xs text-slate-500 mt-2">Dejar vacío para ocultar el banner.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* === APPEARANCE === */}
+                                    {settingsTab === 'appearance' && (
+                                        <div className="space-y-6 animate-fade-up">
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <ImageIcon className="w-5 h-5 text-purple-400" /> Imágenes
+                                                </h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen Hero (Banner Principal)</label>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files[0];
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = () => setSettings({ ...settings, heroImage: reader.result });
+                                                                    reader.readAsDataURL(file);
+                                                                }
+                                                            }}
+                                                            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
+                                                        />
+                                                        {settings?.heroImage && (
+                                                            <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
+                                                                <img src={settings.heroImage} className="w-full h-full object-cover" alt="Hero Preview" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Logo de la Tienda</label>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files[0];
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = () => setSettings({ ...settings, logoImage: reader.result });
+                                                                    reader.readAsDataURL(file);
+                                                                }
+                                                            }}
+                                                            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-900/20 file:text-cyan-400 hover:file:bg-cyan-900/40 transition"
+                                                        />
+                                                        {settings?.logoImage && (
+                                                            <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
+                                                                <img src={settings.logoImage} className="w-full h-full object-contain" alt="Logo Preview" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Palette className="w-5 h-5 text-pink-400" /> Colores del Tema
+                                                </h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Primario</label>
+                                                        <div className="flex gap-3 items-center">
+                                                            <input
+                                                                type="color"
+                                                                value={settings?.primaryColor || '#06b6d4'}
+                                                                onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
+                                                                className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={settings?.primaryColor || '#06b6d4'}
+                                                                onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
+                                                                className="input-cyber flex-1 p-3 font-mono"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Secundario</label>
+                                                        <div className="flex gap-3 items-center">
+                                                            <input
+                                                                type="color"
+                                                                value={settings?.secondaryColor || '#8b5cf6'}
+                                                                onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
+                                                                className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={settings?.secondaryColor || '#8b5cf6'}
+                                                                onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
+                                                                className="input-cyber flex-1 p-3 font-mono"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Acento</label>
+                                                        <div className="flex gap-3 items-center">
+                                                            <input
+                                                                type="color"
+                                                                value={settings?.accentColor || '#22c55e'}
+                                                                onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
+                                                                className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={settings?.accentColor || '#22c55e'}
+                                                                onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
+                                                                className="input-cyber flex-1 p-3 font-mono"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* === SOCIAL MEDIA === */}
+                                    {settingsTab === 'social' && (
+                                        <div className="space-y-6 animate-fade-up">
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Share2 className="w-5 h-5 text-blue-400" /> Redes Sociales
+                                                </h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                                                            <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
+                                                        </label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.whatsappLink || ''}
+                                                            onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
+                                                            placeholder="https://wa.me/5491112345678"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                                                            <Instagram className="w-4 h-4 text-pink-400" /> Instagram
+                                                        </label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.instagramLink || ''}
+                                                            onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
+                                                            placeholder="https://instagram.com/mitienda"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                                                            <Facebook className="w-4 h-4 text-blue-500" /> Facebook
+                                                        </label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.facebookLink || ''}
+                                                            onChange={e => setSettings({ ...settings, facebookLink: e.target.value })}
+                                                            placeholder="https://facebook.com/mitienda"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                                                            <Twitter className="w-4 h-4 text-sky-400" /> Twitter/X
+                                                        </label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.twitterLink || ''}
+                                                            onChange={e => setSettings({ ...settings, twitterLink: e.target.value })}
+                                                            placeholder="https://twitter.com/mitienda"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                                                            <Music className="w-4 h-4 text-rose-400" /> TikTok
+                                                        </label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.tiktokLink || ''}
+                                                            onChange={e => setSettings({ ...settings, tiktokLink: e.target.value })}
+                                                            placeholder="https://tiktok.com/@mitienda"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                                                            <Youtube className="w-4 h-4 text-red-500" /> YouTube
+                                                        </label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.youtubeLink || ''}
+                                                            onChange={e => setSettings({ ...settings, youtubeLink: e.target.value })}
+                                                            placeholder="https://youtube.com/@mitienda"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* === PAYMENTS === */}
+                                    {settingsTab === 'payments' && (
+                                        <div className="space-y-6 animate-fade-up">
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <CreditCard className="w-5 h-5 text-green-400" /> Métodos de Pago
+                                                </h3>
+                                                <div className="space-y-6">
+                                                    {/* Transfer */}
+                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <Building className="w-6 h-6 text-blue-400" />
+                                                                <div>
+                                                                    <p className="font-bold text-white">Transferencia Bancaria</p>
+                                                                    <p className="text-xs text-slate-500">Pago por CBU/CVU</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, enabled: !settings?.paymentTransfer?.enabled } })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.paymentTransfer?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentTransfer?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                        {settings?.paymentTransfer?.enabled && (
+                                                            <textarea
+                                                                className="input-cyber w-full p-4 h-20 resize-none"
+                                                                value={settings?.paymentTransfer?.details || ''}
+                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, details: e.target.value } })}
+                                                                placeholder="CBU: 0000003100012345678901&#10;Alias: TIENDA.DEMO.MP&#10;Titular: Juan Pérez"
+                                                            />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Cash */}
+                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                <Banknote className="w-6 h-6 text-green-400" />
+                                                                <div>
+                                                                    <p className="font-bold text-white">Efectivo</p>
+                                                                    <p className="text-xs text-slate-500">Pago al recibir</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, paymentCash: !settings?.paymentCash })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.paymentCash ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentCash ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* MercadoPago */}
+                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <Smartphone className="w-6 h-6 text-sky-400" />
+                                                                <div>
+                                                                    <p className="font-bold text-white">MercadoPago</p>
+                                                                    <p className="text-xs text-slate-500">Link de pago</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, paymentMercadoPago: { ...settings?.paymentMercadoPago, enabled: !settings?.paymentMercadoPago?.enabled } })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.paymentMercadoPago?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentMercadoPago?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                        {settings?.paymentMercadoPago?.enabled && (
+                                                            <input
+                                                                className="input-cyber w-full p-4"
+                                                                value={settings?.paymentMercadoPago?.link || ''}
+                                                                onChange={e => setSettings({ ...settings, paymentMercadoPago: { ...settings?.paymentMercadoPago, link: e.target.value } })}
+                                                                placeholder="https://www.mercadopago.com.ar/checkout/v1/redirect?..."
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* === SHIPPING === */}
+                                    {settingsTab === 'shipping' && (
+                                        <div className="space-y-6 animate-fade-up">
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Truck className="w-5 h-5 text-orange-400" /> Opciones de Envío
+                                                </h3>
+                                                <div className="space-y-6">
+                                                    {/* Pickup */}
+                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <MapPin className="w-6 h-6 text-cyan-400" />
+                                                                <div>
+                                                                    <p className="font-bold text-white">Retiro en Local</p>
+                                                                    <p className="text-xs text-slate-500">El cliente pasa a buscar</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, enabled: !settings?.shippingPickup?.enabled } })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                        {settings?.shippingPickup?.enabled && (
+                                                            <input
+                                                                className="input-cyber w-full p-4"
+                                                                value={settings?.shippingPickup?.address || ''}
+                                                                onChange={e => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, address: e.target.value } })}
+                                                                placeholder="Dirección de retiro: Av. Corrientes 1234"
+                                                            />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Delivery */}
+                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <Package className="w-6 h-6 text-purple-400" />
+                                                                <div>
+                                                                    <p className="font-bold text-white">Envío a Domicilio</p>
+                                                                    <p className="text-xs text-slate-500">Delivery estándar</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, enabled: !settings?.shippingDelivery?.enabled } })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.shippingDelivery?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingDelivery?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                        {settings?.shippingDelivery?.enabled && (
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <label className="text-xs text-slate-500 mb-1 block">Costo de Envío ($)</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.shippingDelivery?.fee || 0}
+                                                                        onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, fee: parseFloat(e.target.value) || 0 } })}
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs text-slate-500 mb-1 block">Gratis desde ($)</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.shippingDelivery?.freeAbove || 0}
+                                                                        onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, freeAbove: parseFloat(e.target.value) || 0 } })}
+                                                                        placeholder="0 = nunca gratis"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* === SEO === */}
+                                    {settingsTab === 'seo' && (
+                                        <div className="space-y-6 animate-fade-up">
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Globe className="w-5 h-5 text-green-400" /> Optimización SEO
+                                                </h3>
+                                                <div className="space-y-6">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título del Sitio</label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.seoTitle || ''}
+                                                            onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
+                                                            placeholder="Mi Tienda Online | Los Mejores Productos"
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-1">Aparece en la pestaña del navegador</p>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta Descripción</label>
+                                                        <textarea
+                                                            className="input-cyber w-full p-4 h-20 resize-none"
+                                                            value={settings?.seoDescription || ''}
+                                                            onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
+                                                            placeholder="Tienda online de productos de alta calidad. Envíos a todo el país. ¡Visitanos!"
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-1">Descripción que aparece en Google (max 160 caracteres)</p>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Palabras Clave</label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.seoKeywords || ''}
+                                                            onChange={e => setSettings({ ...settings, seoKeywords: e.target.value })}
+                                                            placeholder="tienda online, productos, ofertas, descuentos"
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* === ADVANCED === */}
+                                    {settingsTab === 'advanced' && (
+                                        <div className="space-y-6 animate-fade-up">
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Cog className="w-5 h-5 text-slate-400" /> Configuración Avanzada
+                                                </h3>
+                                                <div className="space-y-4">
+                                                    {/* Maintenance Mode */}
+                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                        <div>
+                                                            <p className="font-bold text-white">Modo Mantenimiento</p>
+                                                            <p className="text-xs text-slate-500">Mostrar página de "Volvemos pronto"</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSettings({ ...settings, maintenanceMode: !settings?.maintenanceMode })}
+                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.maintenanceMode ? 'bg-red-500' : 'bg-slate-700'}`}
+                                                        >
+                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Show Stock */}
+                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                        <div>
+                                                            <p className="font-bold text-white">Mostrar Stock Disponible</p>
+                                                            <p className="text-xs text-slate-500">Los clientes ven cuántas unidades hay</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSettings({ ...settings, showStockCount: settings?.showStockCount === false ? true : false })}
+                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showStockCount !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                        >
+                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showStockCount !== false ? 'left-7' : 'left-1'}`}></div>
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Require Phone */}
+                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                        <div>
+                                                            <p className="font-bold text-white">Requerir Teléfono</p>
+                                                            <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSettings({ ...settings, requirePhone: settings?.requirePhone === false ? true : false })}
+                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.requirePhone !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                        >
+                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requirePhone !== false ? 'left-7' : 'left-1'}`}></div>
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Require DNI */}
+                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                        <div>
+                                                            <p className="font-bold text-white">Requerir DNI</p>
+                                                            <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSettings({ ...settings, requireDNI: settings?.requireDNI === false ? true : false })}
+                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.requireDNI !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                        >
+                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requireDNI !== false ? 'left-7' : 'left-1'}`}></div>
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Low Stock Threshold */}
+                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <div>
+                                                                <p className="font-bold text-white">Umbral de Stock Bajo</p>
+                                                                <p className="text-xs text-slate-500">Alerta cuando el stock es menor a este valor</p>
+                                                            </div>
+                                                        </div>
+                                                        <input
+                                                            type="number"
+                                                            className="input-cyber w-full p-4"
+                                                            value={settings?.lowStockThreshold || 5}
+                                                            onChange={e => setSettings({ ...settings, lowStockThreshold: parseInt(e.target.value) || 5 })}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <FolderPlus className="w-5 h-5 text-cyan-400" /> Categorías de Productos
+                                                </h3>
+                                                <div className="flex flex-wrap gap-2 mb-4">
+                                                    {(settings?.categories || []).map((cat, idx) => (
+                                                        <div key={idx} className="bg-slate-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-700">
+                                                            <span>{cat}</span>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, categories: settings.categories.filter((_, i) => i !== idx) })}
+                                                                className="text-red-400 hover:text-red-300"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <button
+                                                    onClick={() => setShowCategoryModal(true)}
+                                                    className="px-4 py-2 bg-cyan-900/20 text-cyan-400 rounded-lg font-bold text-sm border border-cyan-500/30 hover:bg-cyan-900/40 transition flex items-center gap-2"
+                                                >
+                                                    <Plus className="w-4 h-4" /> Agregar Categoría
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* === TEAM === */}
+                                    {settingsTab === 'team' && (
+                                        <div className="space-y-6 animate-fade-up">
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Users className="w-5 h-5 text-purple-400" /> Equipo y Socios
+                                                </h3>
+                                                <p className="text-slate-500 mb-6">Agrega los miembros del equipo y sus inversiones para calcular la distribución de ganancias.</p>
+
+                                                <div className="space-y-4 mb-6">
+                                                    {(settings?.team || []).map((member, idx) => (
+                                                        <div key={idx} className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                                                                {member.name?.charAt(0)?.toUpperCase() || '?'}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <input
+                                                                    className="input-cyber w-full p-2 mb-2"
+                                                                    value={member.name || ''}
+                                                                    onChange={e => {
+                                                                        const updated = [...(settings?.team || [])];
+                                                                        updated[idx] = { ...updated[idx], name: e.target.value };
+                                                                        setSettings({ ...settings, team: updated });
+                                                                    }}
+                                                                    placeholder="Nombre del socio"
+                                                                />
+                                                                <input
+                                                                    type="number"
+                                                                    className="input-cyber w-full p-2"
+                                                                    value={member.investment || ''}
+                                                                    onChange={e => {
+                                                                        const updated = [...(settings?.team || [])];
+                                                                        updated[idx] = { ...updated[idx], investment: parseFloat(e.target.value) || 0 };
+                                                                        setSettings({ ...settings, team: updated });
+                                                                    }}
+                                                                    placeholder="Inversión ($)"
+                                                                />
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, team: settings.team.filter((_, i) => i !== idx) })}
+                                                                className="p-2 text-red-400 hover:text-red-300"
+                                                            >
+                                                                <Trash2 className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <button
+                                                    onClick={() => setSettings({ ...settings, team: [...(settings?.team || []), { name: '', investment: 0 }] })}
+                                                    className="px-4 py-2 bg-purple-900/20 text-purple-400 rounded-lg font-bold text-sm border border-purple-500/30 hover:bg-purple-900/40 transition flex items-center gap-2"
+                                                >
+                                                    <UserPlus className="w-4 h-4" /> Agregar Socio
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Save Button */}
+                                    <div className="fixed bottom-8 right-8 z-50">
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    setIsLoading(true);
+                                                    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+                                                    await setDoc(settingsRef, settings, { merge: true });
+                                                    showToast("Configuración guardada exitosamente", "success");
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    showToast("Error al guardar", "error");
+                                                } finally {
+                                                    setIsLoading(false);
+                                                }
+                                            }}
+                                            className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-2xl shadow-2xl shadow-cyan-900/30 flex items-center gap-3 transition transform hover:scale-105"
+                                        >
+                                            <Save className="w-5 h-5" /> Guardar Cambios
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* 7.3 Modal Proveedores (Selector Visual) */}
                             {showSupplierModal && (
