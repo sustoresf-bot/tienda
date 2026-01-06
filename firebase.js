@@ -1,5 +1,6 @@
 // === FIREBASE CONFIGURATION ===
 // Configuración centralizada de Firebase para SUSTORE
+// Este archivo expone las variables globales necesarias en window
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
@@ -47,33 +48,16 @@ const defaultSettings = {
 };
 
 // --- HELPERS DE BASE DE DATOS ---
-
-// Referencia a colección de datos
 const getDataCollection = (collectionName) => {
     return collection(db, 'artifacts', appId, 'public', 'data', collectionName);
 };
 
-// Referencia a documento específico
 const getDataDoc = (collectionName, docId) => {
     return doc(db, 'artifacts', appId, 'public', 'data', collectionName, docId);
 };
 
-// Query paginada para productos
-const getPaginatedQuery = (collectionName, orderField = 'name', pageSize = 20, lastDoc = null) => {
-    const baseQuery = [
-        getDataCollection(collectionName),
-        orderBy(orderField),
-        limit(pageSize)
-    ];
-
-    if (lastDoc) {
-        return query(...baseQuery, startAfter(lastDoc));
-    }
-    return query(...baseQuery);
-};
-
-// --- EXPORTS ---
-export {
+// --- EXPONER EN WINDOW PARA OTROS MÓDULOS ---
+window.SustoreFirebase = {
     // Firebase instances
     app,
     auth,
@@ -109,6 +93,7 @@ export {
 
     // Helpers
     getDataCollection,
-    getDataDoc,
-    getPaginatedQuery
+    getDataDoc
 };
+
+console.log('[Firebase] ✅ Módulo cargado correctamente');

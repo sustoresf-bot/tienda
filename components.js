@@ -1,13 +1,14 @@
 // === COMPONENTES UI REUTILIZABLES ===
 // Componentes visuales compartidos para SUSTORE
+// Expuestos en window.SustoreComponents
 
 import React, { useEffect, useRef, useCallback } from 'react';
 import {
-    X, CheckCircle, AlertCircle, AlertTriangle, Info, Loader2
+    X, CheckCircle, AlertCircle, AlertTriangle, Info, Loader2, ArrowLeft, Shield
 } from 'lucide-react';
 
 // --- TOAST (NOTIFICACIÓN) ---
-export const Toast = ({ message, type, onClose }) => {
+const Toast = ({ message, type, onClose }) => {
     let containerClass = "fixed top-24 right-4 z-[9999] flex items-center gap-4 p-5 rounded-2xl border-l-4 backdrop-blur-xl animate-fade-up shadow-2xl transition-all duration-300";
     let iconContainerClass = "p-2 rounded-full";
     let IconComponent = Info;
@@ -51,7 +52,7 @@ export const Toast = ({ message, type, onClose }) => {
 };
 
 // --- MODAL DE CONFIRMACIÓN ---
-export const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDangerous = false }) => {
+const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDangerous = false }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
@@ -71,7 +72,7 @@ export const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, conf
 };
 
 // --- ERROR BOUNDARY ---
-export class ErrorBoundary extends React.Component {
+class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
         this.state = { hasError: false, error: null, errorInfo: null };
@@ -106,7 +107,7 @@ export class ErrorBoundary extends React.Component {
 }
 
 // --- LOADING SPINNER ---
-export const LoadingSpinner = ({ message = "Cargando...", fullScreen = true }) => {
+const LoadingSpinner = ({ message = "Cargando...", fullScreen = true }) => {
     const content = (
         <div className="flex flex-col items-center justify-center gap-4">
             <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
@@ -125,7 +126,7 @@ export const LoadingSpinner = ({ message = "Cargando...", fullScreen = true }) =
 };
 
 // --- INFINITE SCROLL TRIGGER ---
-export const InfiniteScrollTrigger = ({ onLoadMore, hasMore, isLoading }) => {
+const InfiniteScrollTrigger = ({ onLoadMore, hasMore, isLoading }) => {
     const triggerRef = useRef(null);
 
     const handleObserver = useCallback((entries) => {
@@ -160,17 +161,29 @@ export const InfiniteScrollTrigger = ({ onLoadMore, hasMore, isLoading }) => {
 };
 
 // --- ACCESO DENEGADO ---
-export const AccessDenied = ({ onBack }) => (
+const AccessDenied = ({ onBack }) => (
     <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-black flex items-center justify-center p-6">
         <div className="glass p-10 rounded-[2rem] max-w-md w-full text-center border border-red-500/30 shadow-[0_0_40px_rgba(220,38,38,0.15)]">
             <div className="w-24 h-24 rounded-full bg-red-900/20 flex items-center justify-center mx-auto mb-6">
-                <AlertTriangle className="w-12 h-12 text-red-500" />
+                <Shield className="w-12 h-12 text-red-500" />
             </div>
             <h1 className="text-2xl font-black text-white mb-3">ACCESO DENEGADO</h1>
             <p className="text-slate-400 mb-8">No tienes los permisos necesarios para acceder a esta sección. Contacta con el administrador si crees que es un error.</p>
-            <button onClick={onBack} className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition">
-                Volver a la Tienda
+            <button onClick={onBack} className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition flex items-center justify-center gap-2">
+                <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
             </button>
         </div>
     </div>
 );
+
+// --- EXPONER EN WINDOW ---
+window.SustoreComponents = {
+    Toast,
+    ConfirmModal,
+    ErrorBoundary,
+    LoadingSpinner,
+    InfiniteScrollTrigger,
+    AccessDenied
+};
+
+console.log('[Components] ✅ Módulo cargado correctamente');
