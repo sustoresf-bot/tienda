@@ -10,7 +10,7 @@ import {
     Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, sendPasswordResetEmail } from 'firebase/auth';
 import {
     getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc,
     where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter
@@ -156,6 +156,7 @@ function App() {
     const [view, setView] = useState('store'); // store, cart, checkout, profile, login, register, admin, about, guide
     const [adminTab, setAdminTab] = useState('dashboard');
     const [expenses, setExpenses] = useState([]);
+    const [investments, setInvestments] = useState([]);
     const [purchases, setPurchases] = useState([]);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null }); // dashboard, products, coupons, users, suppliers, settings, finance
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -208,6 +209,7 @@ function App() {
 
     // Estados para Nuevos Formularios (Finanzas y Compras)
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
+    const [newInvestment, setNewInvestment] = useState({ investor: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
     const [newPurchase, setNewPurchase] = useState({ productId: '', supplierId: '', quantity: 1, cost: 0, isNewProduct: false });
 
     // Estado para Proveedores (Restaurado)
@@ -601,6 +603,11 @@ function App() {
             // Compras
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
                 setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            }),
+
+            // Inversiones
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), snapshot => {
+                setInvestments(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             }),
 
             // Carritos en Vivo (Solo filtramos los que tienen items)
@@ -1681,6 +1688,14 @@ function App() {
         // 6. Recent Activity
         const recentActivity = [...orders].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
 
+        // 7. Financial Transactions (Ledger)
+        const transactions = [
+            ...validOrders.map(o => ({ id: o.id || o.orderId, type: 'income', category: 'Venta', date: o.date, amount: o.total, description: `Orden #${o.orderId}`, status: o.status })),
+            ...expenses.map(e => ({ id: e.id, type: 'expense', category: e.category || 'Gasto', date: e.date, amount: e.amount, description: e.description, status: 'Pagado' })),
+            ...(purchases || []).map(p => ({ id: p.id, type: 'expense', category: 'Compra Stock', date: p.date, amount: p.cost, description: `Prov: ${p.supplier || 'General'}`, status: 'Completado' })),
+            ...(investments || []).map(i => ({ id: i.id, type: 'income', category: 'Inversión', date: i.date, amount: i.amount, description: `Inv: ${i.investor}`, status: 'Recibido' }))
+        ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 100);
+
         return {
             revenue,
             expensesTotal,
@@ -1694,6 +1709,7 @@ function App() {
             salesByCategory,
             lowStockProducts,
             recentActivity,
+            transactions,
             totalOrders: orders.length,
             totalUsers: users.length
         };
@@ -2474,7 +2490,7 @@ function App() {
                         </div>
 
                         {/* Banner Hero */}
-                        <div className="relative w-full h-[400px] md:h-[550px] 2xl:h-[700px] rounded-[3rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group relative bg-[#080808] container-tv">
+                        <div className="relative w-full h-[50vh] md:h-[550px] 2xl:h-[700px] rounded-[3rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group relative bg-[#080808] container-tv">
                             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
                             {/* Imagen de fondo */}
                             {settings?.heroUrl ? (
@@ -2720,6 +2736,17 @@ function App() {
                                                         className={`w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                                                     />
                                                 ) : null}
+
+                                                {/* Botón Ver (Visible en Mobile/Touch) */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        p.image && setPreviewImage(p.image);
+                                                    }}
+                                                    className="absolute bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md p-3 rounded-full text-white border border-white/20 md:hidden"
+                                                >
+                                                    <Maximize2 className="w-5 h-5" />
+                                                </button>
 
                                                 {/* Fallback Icon */}
                                                 <div className="hidden w-full h-full flex items-center justify-center z-0 absolute inset-0" style={{ display: p.image ? 'none' : 'flex' }}>
@@ -3263,6 +3290,31 @@ function App() {
 
                             {/* Columna Derecha: Favoritos */}
                             <div className="space-y-6">
+                                {/* SEGURIDAD */}
+                                <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl relative overflow-hidden group hover:border-blue-500/30 transition">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-xl font-black text-white flex items-center gap-2">
+                                            <Lock className="text-blue-400 w-5 h-5" /> Seguridad
+                                        </h3>
+                                    </div>
+                                    <p className="text-slate-500 text-sm mb-4">
+                                        Si necesitas cambiar tu contraseña, te enviaremos un enlace seguro a tu correo electrónico.
+                                    </p>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await sendPasswordResetEmail(auth, currentUser.email);
+                                                showToast(`Enlace enviado a ${currentUser.email}`, 'success');
+                                            } catch (e) {
+                                                console.error(e);
+                                                showToast("Error al enviar enlace", 'error');
+                                            }
+                                        }}
+                                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl border border-slate-700 hover:border-blue-500/50 transition flex items-center justify-center gap-2 group-hover:bg-blue-900/10"
+                                    >
+                                        <Mail className="w-4 h-4" /> Enviar enlace de cambio de contraseña
+                                    </button>
+                                </div>
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-2xl font-black text-white flex items-center gap-3">
                                         <Heart className="text-red-500 w-6 h-6 fill-current" /> Mis Favoritos
@@ -3479,6 +3531,10 @@ function App() {
                                             <button onClick={() => setAdminTab('settings')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'settings' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <Settings className="w-5 h-5" /> Configuración
                                             </button>
+
+                                            <button onClick={() => setAdminTab('users')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'users' ? 'bg-pink-900/20 text-pink-400 border border-pink-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <Users className="w-5 h-5" /> Usuarios
+                                            </button>
                                         </>
                                     )}
                                 </nav>
@@ -3502,260 +3558,168 @@ function App() {
                                         <ManualSaleModal />
                                         <MetricsDetailModal />
 
-                                        <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+                                        <div className="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
                                             <div>
                                                 <h1 className="text-4xl font-black text-white neon-text">Panel de Control</h1>
-                                                <p className="text-slate-500 mt-2">Visión general del rendimiento de tu negocio.</p>
+                                                <p className="text-slate-500 mt-2">Resumen administrativo y financiero.</p>
                                             </div>
-                                            <div className="flex gap-4">
-                                                <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800 h-fit">
-                                                    {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                                </div>
+                                            <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
+                                                {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                             </div>
                                         </div>
 
-                                        {/* Métricas Principales (Financieras) */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                            <div onClick={() => setMetricsDetail({ type: 'revenue' })} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-green-500/50 hover:bg-green-900/10 cursor-pointer transition group relative overflow-hidden">
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div className="p-3 bg-green-900/20 rounded-xl text-green-400"><DollarSign className="w-6 h-6" /></div>
-                                                    <span className="text-[10px] font-bold bg-green-900/20 text-green-400 px-2 py-1 rounded-full">VENTAS</span>
-                                                </div>
-                                                <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">INGRESOS BRUTOS (Click para Detalles)</p>
-                                                <p className="text-3xl font-black text-white tracking-tight">${dashboardMetrics.revenue.toLocaleString()}</p>
-                                                <div className="absolute top-4 right-4 text-green-500 opacity-0 group-hover:opacity-100 transition"><BarChart className="w-5 h-5" /></div>
-                                            </div>
-
-                                            <div onClick={() => setMetricsDetail({ type: 'net_income' })} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-cyan-500/50 hover:bg-cyan-900/10 cursor-pointer transition group relative overflow-hidden">
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div className={`p-3 rounded-xl ${dashboardMetrics.netIncome >= 0 ? 'bg-cyan-900/20 text-cyan-400' : 'bg-red-900/20 text-red-500'}`}>
-                                                        {dashboardMetrics.netIncome >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+                                        {/* SECCIÓN 1: ANALÍTICA FINANCIERA (Lista Gráfica) */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                            {/* INGRESOS BRUTOS */}
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-green-500/30 transition">
+                                                <div className="flex justify-between items-center mb-6">
+                                                    <div>
+                                                        <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-1">Ingresos Brutos</p>
+                                                        <h2 className="text-4xl font-black text-white tracking-tighter">${dashboardMetrics.revenue.toLocaleString()}</h2>
                                                     </div>
-                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${dashboardMetrics.netIncome >= 0 ? 'bg-cyan-900/20 text-cyan-400' : 'bg-red-900/20 text-red-500'}`}>
-                                                        {dashboardMetrics.netIncome >= 0 ? 'PROFIT' : 'LOSS'}
-                                                    </span>
-                                                </div>
-                                                <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">BENEFICIO NETO (Click para Detalles)</p>
-                                                <p className={`text-3xl font-black tracking-tight ${dashboardMetrics.netIncome >= 0 ? 'text-white' : 'text-red-500'}`}>
-                                                    ${dashboardMetrics.netIncome.toLocaleString()}
-                                                </p>
-                                                <div className="absolute top-4 right-4 text-cyan-500 opacity-0 group-hover:opacity-100 transition"><BarChart className="w-5 h-5" /></div>
-                                            </div>
-
-                                            <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div className="p-3 bg-red-900/20 rounded-xl text-red-400"><Wallet className="w-6 h-6" /></div>
-                                                </div>
-                                                <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">GASTOS + COMPRAS</p>
-                                                <p className="text-3xl font-black text-white tracking-tight">${(dashboardMetrics.expensesTotal + (dashboardMetrics.purchasesTotal || 0)).toLocaleString()}</p>
-                                            </div>
-
-                                            <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-700 transition">
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div className="p-3 bg-cyan-900/20 rounded-xl text-cyan-400"><Eye className="w-6 h-6 animate-pulse" /></div>
-                                                    <span className="text-[10px] font-bold bg-cyan-900/20 text-cyan-400 px-2 py-1 rounded-full animate-pulse">LIVE</span>
-                                                </div>
-                                                <p className="text-slate-500 font-black text-[10px] tracking-widest mb-1">USUARIOS ACTIVOS</p>
-                                                <p className="text-3xl font-black text-white tracking-tight">{liveCarts.length}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Sección "Heavy": Tendencias y Nuevas Métricas */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                                            {/* Column 1: Tendencia de Demanda (Live + Fav) */}
-                                            <div className="lg:col-span-2 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden h-fit">
-                                                <div className="flex justify-between items-center mb-8 relative z-10">
-                                                    <h3 className="text-xl font-black text-white flex items-center gap-2">
-                                                        <Flame className="text-orange-500 w-6 h-6" /> Tendencia de Demanda
-                                                    </h3>
-                                                    <div className="flex gap-2">
-                                                        <span className="text-[10px] font-bold bg-blue-900/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20">Carrito</span>
-                                                        <span className="text-[10px] font-bold bg-red-900/20 text-red-400 px-3 py-1 rounded-full border border-red-500/20">Favoritos</span>
+                                                    <div className="p-4 bg-green-900/20 text-green-400 rounded-2xl">
+                                                        <DollarSign className="w-8 h-8" />
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-4 relative z-10">
-                                                    {dashboardMetrics.trendingProducts.length === 0 ? (
-                                                        <div className="text-center py-10 text-slate-500 border border-dashed border-slate-800 rounded-xl">
-                                                            No hay suficiente actividad reciente para mostrar tendencias.
-                                                        </div>
-                                                    ) : (
-                                                        dashboardMetrics.trendingProducts.map((p, idx) => (
-                                                            <div key={p.id} className="flex items-center justify-between p-4 bg-slate-900/40 rounded-xl border border-slate-800 hover:bg-slate-900/60 transition">
-                                                                <div className="flex items-center gap-4">
-                                                                    <span className={`font-black text-xl w-8 text-center ${idx === 0 ? 'text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-slate-600'}`}>
-                                                                        #{idx + 1}
-                                                                    </span>
-                                                                    <div className="w-12 h-12 bg-white rounded-lg p-1 flex-shrink-0">
-                                                                        <img src={p.image} className="w-full h-full object-contain" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="font-bold text-white text-sm line-clamp-1">{p.name}</p>
-                                                                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                                                                            Stock: <span className={p.stock < 5 ? 'text-red-400' : 'text-slate-400'}>{p.stock}</span>
-                                                                        </p>
-                                                                    </div>
+                                                {/* Lista Gráfica (Ultimos 6 meses) */}
+                                                <div className="space-y-4 mt-8 border-t border-slate-800 pt-6">
+                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Rendimiento Mensual</p>
+                                                    {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
+                                                        const maxRev = Math.max(...dashboardMetrics.analytics.monthly.map(x => x.revenue));
+                                                        const percentage = maxRev > 0 ? (m.revenue / maxRev) * 100 : 0;
+
+                                                        return (
+                                                            <div key={i} className="group/item">
+                                                                <div className="flex justify-between text-xs mb-1">
+                                                                    <span className="text-slate-400 font-mono">{m.date}</span>
+                                                                    <span className="text-white font-bold">${m.revenue.toLocaleString()}</span>
                                                                 </div>
-                                                                <div className="flex items-center gap-6">
-                                                                    <div className="text-center">
-                                                                        <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Cart</p>
-                                                                        <p className="font-mono text-lg font-bold text-blue-400">{p.stats.cart}</p>
-                                                                    </div>
-                                                                    <div className="h-8 w-px bg-slate-800"></div>
-                                                                    <div className="text-center">
-                                                                        <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Fav</p>
-                                                                        <p className="font-mono text-lg font-bold text-red-400">{p.stats.fav}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Column 2: Stacked Cards (Star Product + Sales by Category) */}
-                                            <div className="space-y-6">
-
-                                                {/* Producto Estrella */}
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2.5rem] relative overflow-hidden group flex flex-col items-center text-center">
-                                                    <div className="absolute inset-0 bg-yellow-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-700"></div>
-
-                                                    <div className="flex items-center gap-2 mb-6">
-                                                        <Trophy className="w-6 h-6 text-yellow-400" />
-                                                        <h3 className="text-xl font-black text-white">Top Ventas</h3>
-                                                    </div>
-
-                                                    {dashboardMetrics.starProduct ? (
-                                                        <div className="relative z-10 w-full animate-fade-in">
-                                                            <img src={dashboardMetrics.starProduct.image} className="w-24 h-24 mx-auto bg-white rounded-xl object-contain p-2 shadow-lg mb-4" />
-                                                            <h4 className="text-white font-black text-base line-clamp-1 leading-tight mb-2">{dashboardMetrics.starProduct.name}</h4>
-                                                            <div className="inline-block bg-yellow-900/20 border border-yellow-500/30 px-3 py-1 rounded-full">
-                                                                <p className="text-yellow-400 font-black text-lg">
-                                                                    {dashboardMetrics.starProduct.sales} <span className="text-[10px] font-bold uppercase">Ventas</span>
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="text-slate-500 text-xs py-8">Esperando datos de ventas...</div>
-                                                    )}
-                                                </div>
-
-                                                {/* Ventas por Categoría */}
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2.5rem] relative overflow-hidden">
-                                                    <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
-                                                        <PieChart className="w-5 h-5 text-purple-400" /> Categorías Top
-                                                    </h3>
-                                                    <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                                                        {dashboardMetrics.salesByCategory.slice(0, 5).map((cat, idx) => (
-                                                            <div key={idx}>
-                                                                <div className="flex justify-between text-xs font-bold text-slate-400 mb-1">
-                                                                    <span>{cat.name}</span>
-                                                                    <span>{cat.percentage}%</span>
-                                                                </div>
-                                                                <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                                                <div className="h-2 bg-slate-800 rounded-full overflow-hidden w-full">
                                                                     <div
-                                                                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
-                                                                        style={{ width: `${cat.percentage}%` }}
+                                                                        className="h-full bg-gradient-to-r from-green-600 to-emerald-400 rounded-full transition-all duration-1000 group-hover/item:brightness-125"
+                                                                        style={{ width: `${percentage}%` }}
                                                                     ></div>
                                                                 </div>
                                                             </div>
-                                                        ))}
-                                                        {dashboardMetrics.salesByCategory.length === 0 && (
-                                                            <p className="text-xs text-slate-500 text-center py-4">Sin datos de ventas.</p>
-                                                        )}
+                                                        );
+                                                    })}
+                                                    {dashboardMetrics.analytics.monthly.length === 0 && <p className="text-slate-600 text-xs">Sin datos suficientes.</p>}
+                                                </div>
+                                            </div>
+
+                                            {/* BENEFICIO NETO */}
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-cyan-500/30 transition">
+                                                <div className="flex justify-between items-center mb-6">
+                                                    <div>
+                                                        <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-1">Beneficio Neto (Estimado)</p>
+                                                        <h2 className={`text-4xl font-black tracking-tighter ${dashboardMetrics.netIncome >= 0 ? 'text-cyan-400' : 'text-red-500'}`}>
+                                                            ${dashboardMetrics.netIncome.toLocaleString()}
+                                                        </h2>
+                                                    </div>
+                                                    <div className={`p-4 rounded-2xl ${dashboardMetrics.netIncome >= 0 ? 'bg-cyan-900/20 text-cyan-400' : 'bg-red-900/20 text-red-500'}`}>
+                                                        {dashboardMetrics.netIncome >= 0 ? <TrendingUp className="w-8 h-8" /> : <TrendingDown className="w-8 h-8" />}
                                                     </div>
                                                 </div>
 
+                                                {/* Lista Gráfica (Comparativa Ingreso vs Gasto) */}
+                                                <div className="space-y-4 mt-8 border-t border-slate-800 pt-6">
+                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Ingresos vs Gastos (Últimos Meses)</p>
+                                                    {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
+                                                        // Estimación simplificada de gastos mensuales (proporcional solo para visualización si no hay data exacta mensual de gastos guardada historica)
+                                                        // En una real app, se calcularía real desde expenses.
+                                                        // Como `expenses` tiene fecha, podemos calcularlo.
+                                                        const monthExpenses = expenses.filter(e => e.date.startsWith(m.date)).reduce((acc, c) => acc + c.amount, 0)
+                                                            + (purchases || []).filter(p => p.date.startsWith(m.date)).reduce((acc, c) => acc + c.cost, 0);
+
+                                                        const totalVol = m.revenue + monthExpenses;
+                                                        const revPct = totalVol > 0 ? (m.revenue / totalVol) * 100 : 0;
+
+                                                        return (
+                                                            <div key={i} className="group/item">
+                                                                <div className="flex justify-between text-xs mb-1">
+                                                                    <span className="text-slate-400 font-mono">{m.date}</span>
+                                                                    <span className="text-cyan-400 font-bold">+${(m.revenue - monthExpenses).toLocaleString()}</span>
+                                                                </div>
+                                                                <div className="flex h-2 bg-slate-800 rounded-full overflow-hidden w-full">
+                                                                    <div title={`Ingresos: $${m.revenue}`} className="h-full bg-cyan-500 transition-all duration-1000" style={{ width: `${revPct}%` }}></div>
+                                                                    <div title={`Gastos: $${monthExpenses}`} className="h-full bg-red-500 transition-all duration-1000" style={{ width: `${100 - revPct}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {dashboardMetrics.analytics.monthly.length === 0 && <p className="text-slate-600 text-xs">Sin datos suficientes.</p>}
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* Row 2: Alertas de Stock y Actividad Reciente */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                                            {/* Stock Alert */}
-                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] flex flex-col">
-                                                <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
-                                                    <AlertTriangle className="w-6 h-6 text-red-500" /> Alerta de Stock
-                                                </h3>
-
-                                                <div className="flex-1 space-y-3 overflow-y-auto max-h-[400px] custom-scrollbar pr-2">
-                                                    {dashboardMetrics.lowStockProducts.length === 0 ? (
-                                                        <div className="h-full flex flex-col items-center justify-center text-slate-500 opacity-50">
-                                                            <CheckCircle className="w-12 h-12 mb-2" />
-                                                            <p className="text-sm">Todo en orden</p>
-                                                        </div>
-                                                    ) : (
-                                                        dashboardMetrics.lowStockProducts.map(p => (
-                                                            <div key={p.id} className="flex items-center gap-3 p-3 bg-red-900/10 border border-red-500/20 rounded-xl">
-                                                                <div className="w-10 h-10 bg-white rounded-lg p-1 flex-shrink-0">
-                                                                    <img src={p.image} className="w-full h-full object-contain" />
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-white font-bold text-xs line-clamp-1">{p.name}</p>
-                                                                    <p className="text-red-400 text-xs font-bold">Quedan: {p.stock}</p>
-                                                                </div>
-                                                                <button onClick={() => { setAdminTab('products'); setSearchQuery(p.name); }} className="p-2 hover:bg-red-900/30 rounded-lg text-red-300 transition">
-                                                                    <ArrowRight className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                </div>
+                                        {/* SECCIÓN 2: KPIs RÁPIDOS */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
+                                                <p className="text-slate-500 text-[10px] uppercase font-bold text-center">Usuarios Totales</p>
+                                                <p className="text-white font-black text-2xl text-center mt-1">{dashboardMetrics.totalUsers}</p>
                                             </div>
+                                            <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
+                                                <p className="text-slate-500 text-[10px] uppercase font-bold text-center">Pedidos Totales</p>
+                                                <p className="text-white font-black text-2xl text-center mt-1">{dashboardMetrics.totalOrders}</p>
+                                            </div>
+                                            <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
+                                                <p className="text-slate-500 text-[10px] uppercase font-bold text-center">Ticket Promedio</p>
+                                                <p className="text-white font-black text-2xl text-center mt-1">
+                                                    ${dashboardMetrics.totalOrders > 0 ? Math.round(dashboardMetrics.revenue / dashboardMetrics.totalOrders).toLocaleString() : 0}
+                                                </p>
+                                            </div>
+                                            <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
+                                                <p className="text-slate-500 text-[10px] uppercase font-bold text-center">Stock Bajo</p>
+                                                <p className={`font-black text-2xl text-center mt-1 ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                                    {dashboardMetrics.lowStockProducts.length}
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                            {/* Recent Orders Table */}
-                                            <div className="lg:col-span-2 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem]">
-                                                <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="text-xl font-black text-white flex items-center gap-2">
-                                                        <Clock className="w-6 h-6 text-cyan-400" /> Última Actividad
-                                                    </h3>
-                                                    <button onClick={() => setAdminTab('orders')} className="text-xs text-cyan-400 font-bold hover:text-cyan-300 transition">Ver Todo</button>
-                                                </div>
+                                        {/* SECCIÓN 3: LIBRO MAYOR (REGISTRO ADMINISTRATIVO) */}
+                                        <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
+                                            <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
+                                                <FileText className="w-6 h-6 text-purple-400" /> Registro de Movimientos
+                                            </h3>
 
-                                                <div className="overflow-x-auto">
-                                                    <table className="w-full text-left border-collapse">
-                                                        <thead>
-                                                            <tr className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-800">
-                                                                <th className="pb-3 pl-2">ID</th>
-                                                                <th className="pb-3">Cliente</th>
-                                                                <th className="pb-3">Estado</th>
-                                                                <th className="pb-3 text-right pr-2">Total</th>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
+                                                            <th className="pb-4 pl-4">Fecha</th>
+                                                            <th className="pb-4">Tipo</th>
+                                                            <th className="pb-4">Concepto</th>
+                                                            <th className="pb-4">Estado</th>
+                                                            <th className="pb-4 text-right pr-4">Monto</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="text-sm font-medium">
+                                                        {dashboardMetrics.transactions.map((t, idx) => (
+                                                            <tr key={`${t.type}-${idx}`} className="border-b border-slate-800/50 hover:bg-slate-900/20 transition group">
+                                                                <td className="py-4 pl-4 text-slate-400 font-mono text-xs">{new Date(t.date).toLocaleDateString()}</td>
+                                                                <td className="py-4">
+                                                                    <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider ${t.type === 'income' ? 'bg-green-900/20 text-green-400 border border-green-500/20' : 'bg-red-900/20 text-red-400 border border-red-500/20'
+                                                                        }`}>
+                                                                        {t.category}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="py-4 text-white group-hover:text-purple-300 transition">
+                                                                    {t.description}
+                                                                </td>
+                                                                <td className="py-4 text-xs text-slate-500">
+                                                                    {t.status}
+                                                                </td>
+                                                                <td className={`py-4 text-right pr-4 font-mono font-bold ${t.type === 'income' ? 'text-green-400' : 'text-red-400'}`}>
+                                                                    {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+                                                                </td>
                                                             </tr>
-                                                        </thead>
-                                                        <tbody className="text-sm">
-                                                            {dashboardMetrics.recentActivity.map(o => (
-                                                                <tr key={o.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition group">
-                                                                    <td className="py-4 pl-2 font-mono text-slate-400 group-hover:text-white transition">#{o.orderId}</td>
-                                                                    <td className="py-4">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs text-slate-300 font-bold uppercase">
-                                                                                {(o.customer?.name || 'C').charAt(0)}
-                                                                            </div>
-                                                                            <span className="text-slate-300 font-medium">{o.customer?.name || 'Anónimo'}</span>
-                                                                        </div>
-                                                                    </td>
-                                                                    <td className="py-4">
-                                                                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${o.status === 'Realizado' ? 'bg-green-900/20 text-green-400' :
-                                                                            o.status === 'Pendiente' ? 'bg-yellow-900/20 text-yellow-400' :
-                                                                                'bg-slate-800 text-slate-400'
-                                                                            }`}>
-                                                                            {o.status}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="py-4 text-right pr-2 font-mono font-bold text-white">
-                                                                        ${o.total?.toLocaleString()}
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                            {dashboardMetrics.recentActivity.length === 0 && (
-                                                                <tr>
-                                                                    <td colSpan="4" className="text-center py-8 text-slate-500">Sin actividad reciente.</td>
-                                                                </tr>
-                                                            )}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
+                                                        ))}
+                                                        {dashboardMetrics.transactions.length === 0 && (
+                                                            <tr><td colSpan="5" className="text-center py-8 text-slate-500">Sin movimientos registrados.</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
@@ -4248,86 +4212,195 @@ function App() {
                                     </div>
                                 )}
 
-                                {/* TAB: FINANZAS (GASTOS) */}
+                                {/* TAB: FINANZAS (GASTOS E INVERSIONES) */}
                                 {adminTab === 'finance' && (
-                                    <div className="max-w-5xl mx-auto animate-fade-up pb-20">
-                                        <h1 className="text-3xl font-black text-white mb-8">Finanzas y Gastos</h1>
+                                    <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                        <h1 className="text-4xl font-black text-white mb-8 neon-text">Finanzas y Capital</h1>
 
-                                        {/* Formulario Gastos */}
-                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
-                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                <Wallet className="w-5 h-5 text-red-400" /> Registrar Nuevo Gasto
-                                            </h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="md:col-span-2">
-                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
-                                                    <input className="input-cyber w-full p-4" placeholder="Ej: Pago de Internet, Alquiler..." value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Monto ($)</label>
-                                                    <input type="number" className="input-cyber w-full p-4" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })} />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
-                                                    <select className="input-cyber w-full p-4" value={newExpense.category} onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}>
-                                                        <option>General</option>
-                                                        <option>Servicios</option>
-                                                        <option>Impuestos</option>
-                                                        <option>Mantenimiento</option>
-                                                        <option>Marketing</option>
-                                                        <option>Sueldos</option>
-                                                        <option>Otros</option>
-                                                    </select>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                                            {/* SECCIÓN: REGISTRAR INVERSIÓN (NUEVO) */}
+                                            <div className="bg-[#0a0a0a] border border-cyan-900/30 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-bl-[100px] pointer-events-none"></div>
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <TrendingUp className="w-5 h-5 text-cyan-400" /> Registrar Inversión / Aporte
+                                                </h3>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Inversor (Socio)</label>
+                                                        <div className="relative">
+                                                            <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
+                                                            <select
+                                                                className="input-cyber w-full pl-12 p-4 appearance-none"
+                                                                value={newInvestment.investor}
+                                                                onChange={e => setNewInvestment({ ...newInvestment, investor: e.target.value })}
+                                                            >
+                                                                <option value="">Seleccionar Socio...</option>
+                                                                {(settings?.team || []).map((member, idx) => (
+                                                                    <option key={idx} value={member.name || member.email}>
+                                                                        {member.name || member.email}
+                                                                    </option>
+                                                                ))}
+                                                                <option value="other">Otro / Externo</option>
+                                                            </select>
+                                                        </div>
+                                                        {newInvestment.investor === 'other' && (
+                                                            <input
+                                                                className="input-cyber w-full p-4 mt-2"
+                                                                placeholder="Nombre del Inversor Externo"
+                                                                onChange={e => setNewInvestment({ ...newInvestment, investor: e.target.value })}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Monto ($)</label>
+                                                            <input
+                                                                type="number"
+                                                                className="input-cyber w-full p-4 font-mono font-bold text-cyan-400"
+                                                                placeholder="0.00"
+                                                                value={newInvestment.amount}
+                                                                onChange={e => setNewInvestment({ ...newInvestment, amount: parseFloat(e.target.value) || 0 })}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Fecha</label>
+                                                            <input
+                                                                type="date"
+                                                                className="input-cyber w-full p-4"
+                                                                value={newInvestment.date}
+                                                                onChange={e => setNewInvestment({ ...newInvestment, date: e.target.value })}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Notas (Opcional)</label>
+                                                        <input
+                                                            className="input-cyber w-full p-4"
+                                                            placeholder="Ej: Inversión Inicial, Refuerzo de capital..."
+                                                            value={newInvestment.notes}
+                                                            onChange={e => setNewInvestment({ ...newInvestment, notes: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!newInvestment.investor || newInvestment.amount <= 0) return showToast("Completa los datos correctamente.", "warning");
+                                                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), {
+                                                                ...newInvestment,
+                                                                timestamp: new Date().toISOString()
+                                                            });
+                                                            setNewInvestment({ investor: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
+                                                            showToast("Inversión registrada correctamente.", "success");
+                                                        }}
+                                                        className="w-full mt-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-cyan-500/20"
+                                                    >
+                                                        <Save className="w-5 h-5" /> Registrar Aporte
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={async () => {
-                                                    if (!newExpense.description || newExpense.amount <= 0) return showToast("Completa los datos correctamente.", "warning");
-                                                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), {
-                                                        ...newExpense,
-                                                        date: new Date().toISOString()
-                                                    });
-                                                    setNewExpense({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
-                                                    showToast("Gasto registrado correctamente.", "success");
-                                                }}
-                                                className="w-full mt-6 bg-red-900/50 hover:bg-red-900 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-red-500/20"
-                                            >
-                                                <Save className="w-5 h-5" /> Registrar Gasto
-                                            </button>
-                                        </div>
 
-                                        {/* Lista Gastos */}
-                                        <div className="space-y-4">
-                                            {expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map((Ex, idx) => (
-                                                <div key={Ex.id} style={{ animationDelay: `${idx * 0.05}s` }} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex justify-between items-center group hover:border-slate-700 transition animate-fade-up">
+                                            {/* SECCIÓN: REGISTRAR GASTO */}
+                                            <div className="bg-[#0a0a0a] border border-red-900/30 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-[100px] pointer-events-none"></div>
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    <Wallet className="w-5 h-5 text-red-400" /> Registrar Gasto / Egreso
+                                                </h3>
+                                                <div className="space-y-4">
                                                     <div>
-                                                        <h4 className="text-white font-bold text-lg">{Ex.description}</h4>
-                                                        <p className="text-slate-500 text-xs flex gap-3">
-                                                            <span className="text-red-400 font-bold bg-red-900/10 px-2 rounded border border-red-500/10">{Ex.category}</span>
-                                                            <span>{new Date(Ex.date).toLocaleDateString()}</span>
-                                                        </p>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                        <input className="input-cyber w-full p-4" placeholder="Ej: Pago de Internet, Alquiler..." value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} />
                                                     </div>
-                                                    <div className="flex items-center gap-6">
-                                                        <p className="text-xl font-mono font-bold text-red-500">-${Ex.amount.toLocaleString()}</p>
-                                                        <button
-                                                            onClick={() => openConfirm("Eliminar Gasto", "¿Estás seguro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', Ex.id)))}
-                                                            className="p-3 bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 rounded-xl transition border border-slate-800"
-                                                        >
-                                                            <Trash2 className="w-5 h-5" />
-                                                        </button>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Monto ($)</label>
+                                                            <input type="number" className="input-cyber w-full p-4 font-mono font-bold text-red-400" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })} />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
+                                                            <select className="input-cyber w-full p-4" value={newExpense.category} onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}>
+                                                                <option>General</option>
+                                                                <option>Servicios</option>
+                                                                <option>Impuestos</option>
+                                                                <option>Mantenimiento</option>
+                                                                <option>Marketing</option>
+                                                                <option>Sueldos</option>
+                                                                <option>Otros</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!newExpense.description || newExpense.amount <= 0) return showToast("Completa los datos correctamente.", "warning");
+                                                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), {
+                                                                ...newExpense,
+                                                                date: new Date().toISOString()
+                                                            });
+                                                            setNewExpense({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
+                                                            showToast("Gasto registrado correctamente.", "success");
+                                                        }}
+                                                        className="w-full mt-2 bg-red-900/50 hover:bg-red-900 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-red-500/20"
+                                                    >
+                                                        <Save className="w-5 h-5" /> Registrar Gasto
+                                                    </button>
                                                 </div>
-                                            ))}
+                                            </div>
                                         </div>
 
-                                        {/* SECCIÓN: DISTRIBUCIÓN DE GANANCIAS */}
-                                        <div className="max-w-5xl mx-auto animate-fade-up pb-20 mt-12 pt-12 border-t border-slate-800">
+                                        {/* TABLAS DETALLADAS */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                                            {/* Historial de Inversiones */}
+                                            <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] p-8 h-[500px] flex flex-col">
+                                                <h3 className="text-lg font-bold text-white mb-4">Historial de Inversiones</h3>
+                                                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+                                                    {investments.length === 0 ? <p className="text-slate-500 text-sm italic text-center py-10">Sin inversiones registradas.</p> :
+                                                        investments.sort((a, b) => new Date(b.date) - new Date(a.date)).map((inv, idx) => (
+                                                            <div key={inv.id} className="bg-slate-900/30 border border-slate-800 p-4 rounded-xl flex justify-between items-center group hover:border-cyan-500/30 transition">
+                                                                <div>
+                                                                    <p className="text-white font-bold text-sm">{inv.investor}</p>
+                                                                    <p className="text-slate-500 text-xs">{new Date(inv.date).toLocaleDateString()} {inv.notes && `- ${inv.notes}`}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-4">
+                                                                    <p className="text-cyan-400 font-mono font-bold">+${inv.amount.toLocaleString()}</p>
+                                                                    <button onClick={() => openConfirm("Eliminar Inversión", "¿Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investments', inv.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            {/* Historial de Gastos */}
+                                            <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] p-8 h-[500px] flex flex-col">
+                                                <h3 className="text-lg font-bold text-white mb-4">Historial de Gastos</h3>
+                                                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+                                                    {expenses.length === 0 ? <p className="text-slate-500 text-sm italic text-center py-10">Sin gastos registrados.</p> :
+                                                        expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map((ex, idx) => (
+                                                            <div key={ex.id} className="bg-slate-900/30 border border-slate-800 p-4 rounded-xl flex justify-between items-center group hover:border-red-500/30 transition">
+                                                                <div>
+                                                                    <p className="text-white font-bold text-sm">{ex.description}</p>
+                                                                    <p className="text-slate-500 text-xs flex gap-2">
+                                                                        <span className="text-red-300 font-bold bg-red-900/20 px-1.5 rounded">{ex.category}</span>
+                                                                        <span>{new Date(ex.date).toLocaleDateString()}</span>
+                                                                    </p>
+                                                                </div>
+                                                                <div className="flex items-center gap-4">
+                                                                    <p className="text-red-400 font-mono font-bold">-${ex.amount.toLocaleString()}</p>
+                                                                    <button onClick={() => openConfirm("Eliminar Gasto", "¿Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', ex.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* SECCIÓN: DISTRIBUCIÓN DE GANANCIAS (AUTOMÁTICA) */}
+                                        <div className="animate-fade-up pt-12 border-t border-slate-800">
                                             <div className="flex justify-between items-center mb-8">
                                                 <div>
                                                     <h2 className="text-2xl font-black text-white flex items-center gap-3">
                                                         <DollarSign className="w-8 h-8 text-green-500" /> Distribución de Ganancias
                                                     </h2>
-                                                    <p className="text-slate-500 mt-1">Calcula la participación de cada socio según su inversión inicial.</p>
+                                                    <p className="text-slate-500 mt-1">Cálculo automático basado en las inversiones registradas.</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Beneficio Neto</p>
@@ -4337,160 +4410,94 @@ function App() {
                                                 </div>
                                             </div>
 
-                                            {/* Gráfico de Distribución (Pie Chart CSS) */}
-                                            <div className="mb-8 flex flex-col md:flex-row items-center justify-center gap-12 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                            {/* Gráfico y Tabla */}
+                                            <div className="flex flex-col gap-8 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                 {(() => {
                                                     const team = settings?.team || [];
-                                                    const totalInvestment = team.reduce((acc, m) => acc + (Number(m.investment) || 0), 0);
+                                                    // Calcular Total Invertido por Miembro desde la colección 'investments'
+                                                    const memberInvestments = team.map(member => {
+                                                        const totalInv = investments
+                                                            .filter(inv => inv.investor === member.name || inv.investor === member.email) // Match by Name or Email
+                                                            .reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0);
+                                                        return { ...member, totalInv };
+                                                    });
 
-                                                    if (totalInvestment === 0) return <p className="text-slate-500">Agrega inversión para ver el gráfico.</p>;
+                                                    const totalCapital = memberInvestments.reduce((acc, m) => acc + m.totalInv, 0);
 
-                                                    let currentDeg = 0;
-                                                    const gradientSegments = team.map((member, idx) => {
-                                                        const value = Number(member.investment) || 0;
-                                                        const pct = (value / totalInvestment) * 100;
-                                                        const deg = (pct / 100) * 360;
-                                                        const start = currentDeg;
-                                                        const end = currentDeg + deg;
-                                                        currentDeg = end;
-
-                                                        // Colores cíclicos
-                                                        const colors = ['#22c55e', '#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444'];
-                                                        const color = colors[idx % colors.length];
-
-                                                        return `${color} ${start}deg ${end}deg`;
-                                                    }).join(', ');
+                                                    if (totalCapital === 0) return <p className="text-slate-500 text-center py-12">Registra inversiones para ver la distribución de ganancias.</p>;
 
                                                     return (
                                                         <>
-                                                            {/* El Gráfico */}
-                                                            <div className="relative w-48 h-48 rounded-full shadow-[0_0_50px_rgba(6,182,212,0.1)] hover:scale-105 transition duration-500"
-                                                                style={{ background: `conic-gradient(${gradientSegments})` }}>
-                                                                {/* Agujero del Donut */}
-                                                                <div className="absolute inset-4 bg-[#0a0a0a] rounded-full flex flex-col items-center justify-center border border-slate-800">
-                                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Total Inv.</p>
-                                                                    <p className="text-white font-black text-lg">${totalInvestment.toLocaleString()}</p>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Referencias */}
-                                                            <div className="grid grid-cols-1 gap-4">
-                                                                {team.map((member, idx) => {
-                                                                    const colors = ['#22c55e', '#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444'];
-                                                                    const color = colors[idx % colors.length];
-                                                                    const pct = totalInvestment > 0 ? ((Number(member.investment) || 0) / totalInvestment * 100).toFixed(1) : 0;
-
+                                                            {/* Barra de Progreso Distribución */}
+                                                            <div className="w-full h-8 bg-slate-900 rounded-full flex overflow-hidden">
+                                                                {memberInvestments.map((member, idx) => {
+                                                                    const pct = (member.totalInv / totalCapital) * 100;
+                                                                    const colors = ['bg-green-500', 'bg-cyan-500', 'bg-purple-500', 'bg-pink-500', 'bg-yellow-500', 'bg-red-500'];
+                                                                    if (pct <= 0) return null;
                                                                     return (
-                                                                        <div key={idx} className="flex items-center gap-3">
-                                                                            <div className="w-4 h-4 rounded-full shadow-lg" style={{ backgroundColor: color }}></div>
-                                                                            <div>
-                                                                                <p className="text-white font-bold text-sm leading-none">{member.name || 'Socio'}</p>
-                                                                                <p className="text-slate-500 text-xs">{pct}% participación</p>
-                                                                            </div>
-                                                                        </div>
+                                                                        <div key={idx} className={`${colors[idx % colors.length]} h-full transition-all duration-500`} style={{ width: `${pct}%` }} title={`${member.name}: ${pct.toFixed(1)}%`}></div>
                                                                     );
                                                                 })}
+                                                            </div>
+
+                                                            {/* Tabla de Distribución */}
+                                                            <div className="overflow-x-auto">
+                                                                <table className="w-full text-left border-collapse">
+                                                                    <thead>
+                                                                        <tr className="bg-slate-900/50 border-b border-slate-800">
+                                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Socio</th>
+                                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Capital Aportado</th>
+                                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-center">% Part.</th>
+                                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right text-green-500">Ganancia Est.</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody className="divide-y divide-slate-800/50">
+                                                                        {memberInvestments.map((member, idx) => {
+                                                                            const sharePercentage = totalCapital > 0 ? ((member.totalInv / totalCapital) * 100) : 0;
+                                                                            const memberProfit = (dashboardMetrics.netIncome * sharePercentage) / 100;
+                                                                            const colors = ['text-green-500', 'text-cyan-500', 'text-purple-500', 'text-pink-500', 'text-yellow-500', 'text-red-500'];
+
+                                                                            return (
+                                                                                <tr key={idx} className="hover:bg-slate-900/20 transition">
+                                                                                    <td className="p-6">
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <div className={`w-3 h-3 rounded-full ${colors[idx % colors.length].replace('text-', 'bg-')}`}></div>
+                                                                                            <div>
+                                                                                                <p className="font-bold text-white">{member.name || 'Sin Nombre'}</p>
+                                                                                                <p className="text-xs text-slate-500">{member.email}</p>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td className="p-6 text-right font-mono font-bold text-white">
+                                                                                        ${member.totalInv.toLocaleString()}
+                                                                                    </td>
+                                                                                    <td className="p-6 text-center font-mono text-slate-300 font-bold">
+                                                                                        {sharePercentage.toFixed(1)}%
+                                                                                    </td>
+                                                                                    <td className="p-6 text-right font-mono font-black text-green-400 text-lg">
+                                                                                        ${memberProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                                    </td>
+                                                                                </tr>
+                                                                            );
+                                                                        })}
+                                                                    </tbody>
+                                                                    <tfoot className="bg-slate-900/30 border-t border-slate-800">
+                                                                        <tr>
+                                                                            <td className="p-6 font-black text-white text-right">TOTAL CAPITAL</td>
+                                                                            <td className="p-6 text-right font-black text-cyan-400 text-lg">
+                                                                                ${totalCapital.toLocaleString()}
+                                                                            </td>
+                                                                            <td className="p-6 text-center font-bold text-slate-500">100%</td>
+                                                                            <td className="p-6 text-right font-black text-green-500 text-xl">
+                                                                                ${dashboardMetrics.netIncome.toLocaleString()}
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tfoot>
+                                                                </table>
                                                             </div>
                                                         </>
                                                     );
                                                 })()}
-                                            </div>
-
-                                            <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl">
-                                                <div className="overflow-x-auto">
-                                                    <table className="w-full text-left border-collapse">
-                                                        <thead>
-                                                            <tr className="bg-slate-900/50 border-b border-slate-800">
-                                                                <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Socio / Email</th>
-                                                                <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Inversión Inicial ($)</th>
-                                                                <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-center">% Part.</th>
-                                                                <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right text-green-500">Ganancia Est.</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-slate-800/50">
-                                                            {(settings?.team || []).map((member, idx) => {
-                                                                const totalInvestment = (settings.team || []).reduce((acc, m) => acc + (Number(m.investment) || 0), 0);
-                                                                const memberInvestment = Number(member.investment) || 0;
-                                                                const sharePercentage = totalInvestment > 0 ? ((memberInvestment / totalInvestment) * 100) : 0;
-                                                                const memberProfit = (dashboardMetrics.netIncome * sharePercentage) / 100;
-
-                                                                return (
-                                                                    <tr key={idx} className="hover:bg-slate-900/20 transition">
-                                                                        <td className="p-6">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-bold text-white border border-slate-700">
-                                                                                    {member.name ? member.name.charAt(0) : '?'}
-                                                                                </div>
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">{member.name || 'Sin Nombre'}</p>
-                                                                                    <p className="text-xs text-slate-500">{member.email}</p>
-                                                                                </div>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="p-6 text-right">
-                                                                            <input
-                                                                                type="number"
-                                                                                className="input-cyber w-32 p-2 text-right font-mono font-bold"
-                                                                                placeholder="0"
-                                                                                value={memberInvestment}
-                                                                                onChange={(e) => {
-                                                                                    const newAmount = e.target.value; // Keep as string to allow typing
-                                                                                    const updatedTeam = [...(settings.team || [])];
-                                                                                    updatedTeam[idx] = { ...updatedTeam[idx], investment: newAmount };
-                                                                                    setSettings({ ...settings, team: updatedTeam });
-                                                                                }}
-                                                                                onBlur={async (e) => {
-                                                                                    const newAmount = parseFloat(e.target.value) || 0;
-                                                                                    const updatedTeam = [...(settings.team || [])];
-                                                                                    updatedTeam[idx] = { ...updatedTeam[idx], investment: newAmount }; // Normalize to number
-
-                                                                                    // Actualizar Estado Local (con número)
-                                                                                    setSettings({ ...settings, team: updatedTeam });
-
-                                                                                    // Persistir en Firestore (Solo al perder foco)
-                                                                                    try {
-                                                                                        // FIX: Agregar ID del documento ('config')
-                                                                                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
-                                                                                        await setDoc(docRef, { team: updatedTeam }, { merge: true });
-                                                                                        showToast("Inversión actualizada", "success");
-                                                                                    } catch (err) {
-                                                                                        console.error("Error updating investment:", err);
-                                                                                        showToast("Error al guardar inversión: " + err.message, "error");
-                                                                                    }
-                                                                                }}
-                                                                            />
-                                                                        </td>
-                                                                        <td className="p-6 text-center font-mono text-slate-300 font-bold">
-                                                                            {sharePercentage.toFixed(1)}%
-                                                                        </td>
-                                                                        <td className="p-6 text-right font-mono font-black text-green-400 text-lg">
-                                                                            ${memberProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                        </td>
-                                                                    </tr>
-                                                                );
-                                                            })}
-                                                            {(!settings?.team || settings.team.length === 0) && (
-                                                                <tr>
-                                                                    <td colSpan="4" className="p-8 text-center text-slate-500">
-                                                                        No hay miembros en el equipo. Ve a "Configuración" para agregar socios.
-                                                                    </td>
-                                                                </tr>
-                                                            )}
-                                                        </tbody>
-                                                        <tfoot className="bg-slate-900/30 border-t border-slate-800">
-                                                            <tr>
-                                                                <td className="p-6 font-black text-white text-right">TOTALES</td>
-                                                                <td className="p-6 text-right font-black text-cyan-400 text-lg">
-                                                                    ${((settings?.team || []).reduce((acc, m) => acc + (Number(m.investment) || 0), 0)).toLocaleString()}
-                                                                </td>
-                                                                <td className="p-6 text-center font-bold text-slate-500">100%</td>
-                                                                <td className="p-6 text-right font-black text-green-500 text-xl">
-                                                                    ${dashboardMetrics.netIncome.toLocaleString()}
-                                                                </td>
-                                                            </tr>
-                                                        </tfoot>
-                                                    </table>
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -4638,6 +4645,82 @@ function App() {
                                                     </div>
                                                 </div>
                                             ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* TAB: USERS (NUEVO) */}
+                                {adminTab === 'users' && (
+                                    <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                        <h1 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
+                                            <Users className="w-8 h-8 text-pink-400" /> Gestión de Usuarios
+                                        </h1>
+
+                                        <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2rem] overflow-hidden shadow-xl">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="border-b border-slate-800 bg-slate-900/50">
+                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Usuario</th>
+                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Email</th>
+                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Rol</th>
+                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-800">
+                                                        {users.map(u => (
+                                                            <tr key={u.id} className="hover:bg-slate-900/20 transition">
+                                                                <td className="p-6">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
+                                                                            {(u.name || '?').charAt(0).toUpperCase()}
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-bold text-white max-w-[150px] truncate">{u.name}</p>
+                                                                            <p className="text-xs text-slate-500">Reg: {new Date(u.joinDate).toLocaleDateString()}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-6 text-slate-300 font-medium">{u.email}</td>
+                                                                <td className="p-6">
+                                                                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${u.role === 'admin' ? 'bg-purple-900/20 text-purple-400 border border-purple-500/30' : 'bg-slate-800 text-slate-400'}`}>
+                                                                        {u.role}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-6 flex justify-end gap-2">
+                                                                    <button
+                                                                        onClick={() => openConfirm('Reestablecer Contraseña', `¿Enviar correo de recuperación a ${u.email}?`, async () => {
+                                                                            try {
+                                                                                await sendPasswordResetEmail(auth, u.email);
+                                                                                showToast(`Correo enviado a ${u.email}`, 'success');
+                                                                            } catch (e) {
+                                                                                showToast('Error al enviar correo: ' + e.message, 'error');
+                                                                            }
+                                                                        })}
+                                                                        className="p-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+                                                                        title="Enviar Email de Reset Password"
+                                                                    >
+                                                                        <Lock className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => openConfirm('Cambiar Rol', `¿Cambiar rol de ${u.name} a ${u.role === 'admin' ? 'Usuario' : 'Admin'}?`, async () => {
+                                                                            try {
+                                                                                const newRole = u.role === 'admin' ? 'user' : 'admin';
+                                                                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id), { role: newRole });
+                                                                                showToast('Rol actualizado', 'success');
+                                                                            } catch (e) { showToast('Error actualizando rol', 'error'); }
+                                                                        })}
+                                                                        className="p-2 bg-slate-900 text-slate-400 hover:text-pink-400 hover:bg-slate-800 rounded-lg transition"
+                                                                        title="Cambiar Rol"
+                                                                    >
+                                                                        <Shield className="w-4 h-4" />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -4837,61 +4920,109 @@ function App() {
                                         </div>
 
                                         {/* Lista de Promos */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {promos.map(promo => (
-                                                <div key={promo.id} className="bg-[#0a0a0a] border border-slate-800 rounded-2xl overflow-hidden hover:border-purple-500/30 transition group">
-                                                    <div className="aspect-video relative overflow-hidden">
-                                                        <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                                                        <div className="absolute bottom-4 left-4 right-4">
-                                                            <h4 className="text-xl font-black text-white mb-1">{promo.name}</h4>
-                                                            <p className="text-purple-400 font-bold">${Number(promo.price).toLocaleString()}</p>
-                                                        </div>
-                                                    </div>
+                                        {/* Lista de Promos */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {promos.map(promo => {
+                                                const totalCost = (promo.items || []).reduce((acc, item) => {
+                                                    const p = products.find(prod => prod.id === item.productId);
+                                                    return acc + ((Number(p?.basePrice) || 0) * item.quantity);
+                                                }, 0);
+                                                const price = Number(promo.price) || 0;
+                                                const profit = price - totalCost;
+                                                const margin = totalCost > 0 ? ((profit / totalCost) * 100).toFixed(1) : 0;
+                                                const isProfitable = profit > 0;
 
-                                                    <div className="p-6">
-                                                        <div className="flex flex-wrap gap-2 mb-4">
-                                                            {promo.items && promo.items.map((item, i) => {
-                                                                const p = products.find(prod => prod.id === item.productId);
-                                                                return (
-                                                                    <span key={i} className="text-xs bg-slate-900 text-slate-300 px-2 py-1 rounded border border-slate-700">
-                                                                        <span className="font-bold text-white">{item.quantity}x</span> {p ? p.name : 'Unknown'}
+                                                return (
+                                                    <div key={promo.id} className="bg-[#0a0a0a] border border-slate-800 rounded-2xl overflow-hidden hover:border-purple-500/30 transition group flex flex-col">
+                                                        <div className="aspect-video relative overflow-hidden">
+                                                            <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                                                            <div className="absolute bottom-4 left-4 right-4">
+                                                                <h4 className="text-xl font-black text-white mb-1 drop-shadow-lg">{promo.name}</h4>
+                                                                <div className="flex items-center gap-3">
+                                                                    <p className="text-3xl text-purple-400 font-black drop-shadow-lg">${price.toLocaleString()}</p>
+                                                                    {totalCost > 0 && (
+                                                                        <div className={`px-2 py-1 rounded text-xs font-bold border ${isProfitable ? 'bg-green-900/30 border-green-500/30 text-green-400' : 'bg-red-900/30 border-red-500/30 text-red-400'}`}>
+                                                                            {margin}% MG
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="p-6 flex-1 flex flex-col">
+                                                            {/* Productos Incluidos con Miniaturas */}
+                                                            <div className="mb-6 flex-1">
+                                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Include:</p>
+                                                                <div className="flex flex-col gap-2">
+                                                                    {(promo.items || []).map((item, i) => {
+                                                                        const p = products.find(prod => prod.id === item.productId);
+                                                                        return (
+                                                                            <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-slate-900/50 border border-slate-800/50">
+                                                                                <div className="w-10 h-10 bg-white rounded-lg p-0.5 flex-shrink-0">
+                                                                                    <img src={p?.image} className="w-full h-full object-contain" />
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className="text-sm font-bold text-white truncate">{p?.name || 'Producto Eliminado'}</p>
+                                                                                    <p className="text-xs text-slate-500">{item.quantity} x ${Number(p?.basePrice || 0).toLocaleString()} (Costo)</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        )
+                                                                    })}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Análisis de Rentabilidad */}
+                                                            <div className="mb-6 p-4 bg-slate-900/40 rounded-xl border border-dashed border-slate-800">
+                                                                <div className="flex justify-between text-sm mb-1">
+                                                                    <span className="text-slate-500">Costo Real:</span>
+                                                                    <span className="text-slate-300 font-mono">${totalCost.toLocaleString()}</span>
+                                                                </div>
+                                                                <div className="flex justify-between text-sm mb-1">
+                                                                    <span className="text-slate-500">Precio Venta:</span>
+                                                                    <span className="text-slate-300 font-mono">${price.toLocaleString()}</span>
+                                                                </div>
+                                                                <div className="border-t border-slate-800 my-2"></div>
+                                                                <div className="flex justify-between text-sm font-bold">
+                                                                    <span className={isProfitable ? "text-green-500" : "text-red-500"}>Ganancia Neta:</span>
+                                                                    <span className={`font-mono ${isProfitable ? "text-green-400" : "text-red-400"}`}>
+                                                                        {isProfitable ? '+' : ''}${profit.toLocaleString()}
                                                                     </span>
-                                                                )
-                                                            })}
-                                                        </div>
+                                                                </div>
+                                                            </div>
 
-                                                        <div className="flex gap-3">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setNewPromo({
-                                                                        name: promo.name,
-                                                                        price: promo.price,
-                                                                        image: promo.image,
-                                                                        description: promo.description || '',
-                                                                        items: promo.items || []
-                                                                    });
-                                                                    setEditingPromoId(promo.id);
-                                                                    setIsEditingPromo(true);
-                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                                }}
-                                                                className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition border border-slate-700 flex items-center justify-center gap-2"
-                                                            >
-                                                                <Edit className="w-4 h-4" /> Editar
-                                                            </button>
-                                                            <button
-                                                                onClick={() => openConfirm('Eliminar Promo', '¿Estás seguro? Esto no se puede deshacer.', async () => {
-                                                                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', promo.id));
-                                                                    showToast("Promo eliminada", "info");
-                                                                })}
-                                                                className="px-4 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-500 rounded-xl transition border border-red-500/20"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
+                                                            <div className="flex gap-3 mt-auto">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setNewPromo({
+                                                                            name: promo.name,
+                                                                            price: promo.price,
+                                                                            image: promo.image,
+                                                                            description: promo.description || '',
+                                                                            items: promo.items || []
+                                                                        });
+                                                                        setEditingPromoId(promo.id);
+                                                                        setIsEditingPromo(true);
+                                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                    }}
+                                                                    className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition border border-slate-700 flex items-center justify-center gap-2 group-hover:border-purple-500/30"
+                                                                >
+                                                                    <Edit className="w-4 h-4" /> Editar
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => openConfirm('Eliminar Promo', '¿Estás seguro? Esto no se puede deshacer.', async () => {
+                                                                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', promo.id));
+                                                                        showToast("Promo eliminada", "info");
+                                                                    })}
+                                                                    className="px-4 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-500 rounded-xl transition border border-red-500/20"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
@@ -5788,18 +5919,10 @@ function App() {
                                                                         </select>
                                                                     </div>
                                                                     <div>
-                                                                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Inversión Inicial ($)</label>
-                                                                        <input
-                                                                            type="number"
-                                                                            className="input-cyber w-full p-2 text-sm"
-                                                                            value={member.investment || ''}
-                                                                            onChange={e => {
-                                                                                const updated = [...(settings?.team || [])];
-                                                                                updated[idx] = { ...updated[idx], investment: parseFloat(e.target.value) || 0 };
-                                                                                setSettings({ ...settings, team: updated });
-                                                                            }}
-                                                                            placeholder="0.00"
-                                                                        />
+                                                                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Total Invertido</label>
+                                                                        <div className="input-cyber w-full p-2 text-sm bg-slate-900/50 text-slate-400 flex items-center cursor-not-allowed">
+                                                                            $ {investments.filter(inv => inv.investor === member.name || inv.investor === member.email).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toLocaleString()}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                                 <button
