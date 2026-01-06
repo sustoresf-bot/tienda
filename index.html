@@ -1,4 +1,3 @@
-<!-- 1. index.html (Copia todo esto en la raíz) -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,48 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sustore - Tecnología del Futuro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/styles.css">
-    <style>
-        .boot-loader {
-            position: fixed; inset: 0; background: #050505;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 9999; color: #06b6d4; font-family: monospace; padding: 20px;
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
         }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid rgba(6, 182, 212, 0.1);
-            border-top: 4px solid #06b6d4; border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        #error-terminal {
-            display: none; width: 90%; max-width: 800px;
-            background: #1a1a1a; border: 1px solid #ef4444;
-            border-top: 25px solid #ef4444; border-radius: 8px;
-            margin-top: 20px; padding: 15px; color: #ef4444; position: relative;
-        }
-    </style>
+    }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="root">
-        <div class="boot-loader">
-            <div class="spinner"></div>
-            <div style="font-weight: 900; letter-spacing: 2px;">NEXUS OS v3.0 BOOTING...</div>
-            <div id="error-terminal"><div id="error-content"></div></div>
-            <p style="margin-top: 20px; color: #334155; font-size: 10px;">Si esta pantalla no desaparece, envía captura del recuadro rojo.</p>
-        </div>
-    </div>
-    <script type="module" src="/app.js"></script>
-    <script>
-        window.onerror = function(msg, url, line, col, error) {
-            document.getElementById('error-terminal').style.display = 'block';
-            document.getElementById('error-content').innerText = 'ERROR: ' + msg + '\nSTACK: ' + (error?.stack || 'N/A');
-        };
-        setTimeout(() => {
-            if (document.querySelector('.boot-loader')?.style.opacity !== '0') {
-                document.getElementById('error-terminal').style.display = 'block';
-                document.getElementById('error-content').innerText = 'TIMEOUT: El sistema no respondió en 8s.';
-            }
-        }, 8000);
-    </script>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module" src="script.js"></script>
 </body>
 </html>
