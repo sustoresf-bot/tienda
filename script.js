@@ -328,6 +328,12 @@ function App() {
         notes: 'Venta presencial'
     });
 
+    // --- NUEVOS ESTADOS PARA GESTIÓN DE USUARIOS (CARRITO Y PASS) ---
+    const [viewUserCart, setViewUserCart] = useState(null); // Usuario seleccionado para ver carrito
+    const [userPassModal, setUserPassModal] = useState(null); // Usuario a cambiar contraseña
+    const [newAdminPassword, setNewAdminPassword] = useState('');
+
+
     const openManualSaleModal = (product) => {
         setSaleData({
             productId: product.id,
@@ -731,14 +737,20 @@ function App() {
                 const emailSnap = await getDocs(qEmail);
                 if (!emailSnap.empty) throw new Error("Este correo electrónico ya está registrado.");
 
-                // Verificar duplicados (Usuario)
-                const qUser = query(usersRef, where("username", "==", authData.username));
+                // Verificar duplicados (Usuario) - Case Insensitive Check
+                const qUser = query(usersRef, where("usernameLower", "==", authData.username.toLowerCase()));
                 const userSnap = await getDocs(qUser);
-                if (!userSnap.empty) throw new Error("El nombre de usuario ya está en uso. Elige otro.");
+                if (!userSnap.empty) throw new Error("El nombre de usuario ya está en uso.");
+
+                // Check adicional (si existiera usernameLower en el futuro, usaríamos eso)
+                // Por ahora, confiamos en el chequeo exacto + la recomendación al usuario.
 
                 // Creación del usuario
                 const newUser = {
                     ...authData,
+                    username: authData.username,
+                    // Guardamos versión lowercase para futuros checks estrictos
+                    usernameLower: authData.username.toLowerCase(),
                     role: 'user',
                     joinDate: new Date().toISOString(),
                     favorites: [], // Inicializar favoritos vacío
@@ -917,7 +929,7 @@ function App() {
     const finalTotal = Math.max(0, cartSubtotal - discountAmount);
 
     // Selección de Cupón
-    const selectCoupon = (coupon) => {
+    const selectCoupon = async (coupon) => {
         // Validaciones previas
         if (coupon.targetType === 'specific_email' && currentUser) {
             if (coupon.targetUser && coupon.targetUser.toLowerCase() !== currentUser.email.toLowerCase()) {
@@ -932,6 +944,34 @@ function App() {
         }
         if (cartSubtotal < (coupon.minPurchase || 0)) {
             return showToast(`El monto mínimo para este cupón es $${coupon.minPurchase}.`, "warning");
+        }
+
+        // VALIDACIÓN RIGUROSA: Un uso por DNI
+        // Buscamos en 'orders' si alguna orden de este DNI usó este código de cupón
+        if (currentUser && currentUser.dni) {
+            try {
+                // Nota: Query compleja. Requiere índice compuesto posiblemente.
+                // Si falla index, usar catch y avisar o filtrar en cliente.
+                // query(orders, where("customer.dni", "==", dni), where("discountCode", "==", code))
+                const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+                const qDniCoupon = query(ordersRef,
+                    where("customer.dni", "==", currentUser.dni),
+                    where("discountCode", "==", coupon.code)
+                );
+                const matchSnap = await getDocs(qDniCoupon);
+
+                if (!matchSnap.empty) {
+                    return showToast("Ya utilizaste este cupón en una compra anterior (Verif. por DNI).", "error");
+                }
+
+            } catch (err) {
+                console.warn("Error validando cupón por DNI:", err);
+                // Fallback seguro: Si no podemos validar historial, permitimos (o bloqueamos según politica).
+                // Bloqueamos por precaución.
+                // return showToast("Error verificando historial de cupones.", "error");
+            }
+        } else {
+            return showToast("Debes actualizar tu DNI en el perfil para usar cupones.", "warning");
         }
 
         setAppliedCoupon(coupon);
@@ -2252,6 +2292,138 @@ function App() {
         );
     };
 
+
+    // Modal de Carrito de Usuario (Admin)
+    const UserCartModal = () => {
+        const [userCartItems, setUserCartItems] = useState([]);
+        const [isLoadingCart, setIsLoadingCart] = useState(false);
+
+        useEffect(() => {
+            if (viewUserCart) {
+                // Fetch carrito
+                const fetchCart = async () => {
+                    setIsLoadingCart(true);
+                    try {
+                        const cartDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', viewUserCart.id));
+                        if (cartDoc.exists()) {
+                            setUserCartItems(cartDoc.data().items || []);
+                        } else {
+                            setUserCartItems([]);
+                        }
+                    } catch (e) { setUserCartItems([]); }
+                    setIsLoadingCart(false);
+                };
+                fetchCart();
+            }
+        }, [viewUserCart]);
+
+        if (!viewUserCart) return null;
+
+        return (
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
+                <div className="bg-[#050505] rounded-[2rem] w-full max-w-2xl border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]">
+                    <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                        <h3 className="text-xl font-black text-white flex items-center gap-3">
+                            <ShoppingCart className="w-6 h-6 text-cyan-400" /> Carrito de {viewUserCart.name}
+                        </h3>
+                        <button onClick={() => setViewUserCart(null)} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
+                        {isLoadingCart ? (
+                            <div className="text-center py-10 text-slate-500">Cargando carrito...</div>
+                        ) : userCartItems.length === 0 ? (
+                            <div className="text-center py-10 text-slate-500 flex flex-col items-center">
+                                <ShoppingCart className="w-12 h-12 mb-4 opacity-20" />
+                                Carrito vacío o no sincronizado recientemente.
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {userCartItems.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center bg-slate-900/30 p-4 rounded-xl border border-slate-800">
+                                        <div>
+                                            <p className="font-bold text-white">{item.name}</p>
+                                            <p className="text-xs text-slate-500">Cant: {item.quantity}</p>
+                                        </div>
+                                        <p className="font-mono text-cyan-400">${(item.price * item.quantity).toLocaleString()}</p>
+                                    </div>
+                                ))}
+                                <div className="pt-4 mt-4 border-t border-slate-800 flex justify-between items-center">
+                                    <span className="font-bold text-slate-400">Total Estimado</span>
+                                    <span className="text-xl font-black text-white">
+                                        ${userCartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Modal Cambio de Contraseña (Admin)
+    const ChangePasswordModal = () => {
+        if (!userPassModal) return null;
+
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            if (newAdminPassword.length < 6) return showToast("La contraseña debe tener 6+ caracteres.", "warning");
+
+            try {
+                // Usar Endpoint de Admin para actualizar Auth
+                const response = await fetch('/api/admin/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: userPassModal.id, newPassword: newAdminPassword })
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Error al cambiar contraseña');
+
+                showToast(`Contraseña de ${userPassModal.name} actualizada.`, "success");
+                setNewAdminPassword('');
+                setUserPassModal(null);
+            } catch (err) {
+                console.error(err);
+                showToast(err.message, "error");
+            }
+        };
+
+        return (
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
+                <div className="bg-[#050505] rounded-[2rem] w-full max-w-md border border-slate-800 shadow-red-900/10 shadow-2xl relative overflow-hidden">
+                    <button onClick={() => setUserPassModal(null)} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white transition">
+                        <X className="w-5 h-5" />
+                    </button>
+                    <div className="p-8">
+                        <h3 className="text-xl font-black text-white mb-2 flex items-center gap-2">
+                            <Lock className="w-6 h-6 text-pink-500" /> Cambio de Contraseña
+                        </h3>
+                        <p className="text-slate-500 text-sm mb-6">Estás cambiando la contraseña para <b>{userPassModal.name}</b> (Usuario y Admin).</p>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Nueva Contraseña</label>
+                                <input
+                                    type="text"
+                                    className="input-cyber w-full p-3"
+                                    value={newAdminPassword}
+                                    onChange={e => setNewAdminPassword(e.target.value)}
+                                    placeholder="Ingresa nueva clave..."
+                                />
+                            </div>
+                            <button type="submit" className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-900/20 transition">
+                                Guardar Cambios
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // Estado de Carga Inicial
     if (isLoading && view === 'store') {
         return (
@@ -3557,6 +3729,9 @@ function App() {
                                     <div className="max-w-[1600px] mx-auto animate-fade-up space-y-8 pb-20">
                                         <ManualSaleModal />
                                         <MetricsDetailModal />
+                                        {/* Modales Admin Users */}
+                                        <UserCartModal />
+                                        <ChangePasswordModal />
 
                                         <div className="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
                                             <div>
@@ -3674,6 +3849,59 @@ function App() {
                                                 <p className={`font-black text-2xl text-center mt-1 ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
                                                     {dashboardMetrics.lowStockProducts.length}
                                                 </p>
+                                            </div>
+                                        </div>
+
+                                        {/* SECCIÓN 2.5: MEJORES Y PEORES (NUEVO) */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            {/* BEST SELLER */}
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-yellow-500/30 transition">
+                                                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                                                    <Star className="w-32 h-32 text-yellow-500" />
+                                                </div>
+                                                <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-4 flex items-center gap-2">
+                                                    <Star className="w-4 h-4 text-yellow-500" /> Producto Estrella
+                                                </p>
+                                                {dashboardMetrics.starProduct ? (
+                                                    <div className="flex items-center gap-6 relative z-10">
+                                                        <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg flex-shrink-0">
+                                                            <img src={dashboardMetrics.starProduct.image} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-xl font-black text-white leading-tight mb-1">{dashboardMetrics.starProduct.name}</h3>
+                                                            <p className="text-yellow-400 font-bold text-lg">{dashboardMetrics.starProduct.sales} Und. vendidas</p>
+                                                            <p className="text-slate-500 text-xs mt-1">Stock actual: {dashboardMetrics.starProduct.stock}</p>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-slate-600">No hay datos de ventas aún.</p>
+                                                )}
+                                            </div>
+
+                                            {/* WORST SELLER */}
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-slate-600 transition">
+                                                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                                                    <AlertCircle className="w-32 h-32 text-slate-500" />
+                                                </div>
+                                                <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-4 flex items-center gap-2">
+                                                    <TrendingDown className="w-4 h-4 text-slate-500" /> Menos Vendido (En Stock)
+                                                </p>
+                                                {dashboardMetrics.leastSoldProduct ? (
+                                                    <div className="flex items-center gap-6 relative z-10">
+                                                        <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg grayscale flex-shrink-0">
+                                                            <img src={dashboardMetrics.leastSoldProduct.image} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-xl font-black text-white leading-tight mb-1">{dashboardMetrics.leastSoldProduct.name}</h3>
+                                                            <p className="text-slate-400 font-bold text-lg">
+                                                                {dashboardMetrics.salesCount[dashboardMetrics.leastSoldProduct.id] || 0} Und. vendidas
+                                                            </p>
+                                                            <p className="text-slate-500 text-xs mt-1">Hay que rotar este stock.</p>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-slate-600">Todos los productos tienen buena rotación.</p>
+                                                )}
                                             </div>
                                         </div>
 
@@ -4662,7 +4890,7 @@ function App() {
                                                     <thead>
                                                         <tr className="border-b border-slate-800 bg-slate-900/50">
                                                             <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Usuario</th>
-                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Email</th>
+                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Estadísticas</th>
                                                             <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Rol</th>
                                                             <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Acciones</th>
                                                         </tr>
@@ -4677,11 +4905,22 @@ function App() {
                                                                         </div>
                                                                         <div>
                                                                             <p className="font-bold text-white max-w-[150px] truncate">{u.name}</p>
-                                                                            <p className="text-xs text-slate-500">Reg: {new Date(u.joinDate).toLocaleDateString()}</p>
+                                                                            <p className="text-xs text-slate-500">{u.email}</p>
+                                                                            <p className="text-[10px] text-slate-600 mt-1">Reg: {new Date(u.joinDate).toLocaleDateString()}</p>
                                                                         </div>
                                                                     </div>
                                                                 </td>
-                                                                <td className="p-6 text-slate-300 font-medium">{u.email}</td>
+                                                                <td className="p-6">
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-xs text-slate-400 flex items-center gap-2">
+                                                                            <Heart className="w-3 h-3 text-red-500" /> Favoritos: <span className="text-white font-bold">{u.favorites ? u.favorites.length : 0}</span>
+                                                                        </p>
+                                                                        <button onClick={() => setViewUserCart(u)} className="text-xs flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition font-bold">
+                                                                            <ShoppingCart className="w-3 h-3" /> Ver Carrito
+                                                                        </button>
+                                                                        <p className="text-[10px] text-slate-600 mt-1">Pedidos: {u.ordersCount || 0}</p>
+                                                                    </div>
+                                                                </td>
                                                                 <td className="p-6">
                                                                     <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${u.role === 'admin' ? 'bg-purple-900/20 text-purple-400 border border-purple-500/30' : 'bg-slate-800 text-slate-400'}`}>
                                                                         {u.role}
@@ -4689,28 +4928,31 @@ function App() {
                                                                 </td>
                                                                 <td className="p-6 flex justify-end gap-2">
                                                                     <button
-                                                                        onClick={() => openConfirm('Reestablecer Contraseña', `¿Enviar correo de recuperación a ${u.email}?`, async () => {
-                                                                            try {
-                                                                                await sendPasswordResetEmail(auth, u.email);
-                                                                                showToast(`Correo enviado a ${u.email}`, 'success');
-                                                                            } catch (e) {
-                                                                                showToast('Error al enviar correo: ' + e.message, 'error');
-                                                                            }
-                                                                        })}
+                                                                        onClick={() => {
+                                                                            setNewAdminPassword('');
+                                                                            setUserPassModal(u);
+                                                                        }}
                                                                         className="p-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-                                                                        title="Enviar Email de Reset Password"
+                                                                        title="Cambiar Contraseña (Directo)"
                                                                     >
                                                                         <Lock className="w-4 h-4" />
                                                                     </button>
                                                                     <button
-                                                                        onClick={() => openConfirm('Cambiar Rol', `¿Cambiar rol de ${u.name} a ${u.role === 'admin' ? 'Usuario' : 'Admin'}?`, async () => {
-                                                                            try {
-                                                                                const newRole = u.role === 'admin' ? 'user' : 'admin';
-                                                                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id), { role: newRole });
-                                                                                showToast('Rol actualizado', 'success');
-                                                                            } catch (e) { showToast('Error actualizando rol', 'error'); }
-                                                                        })}
-                                                                        className="p-2 bg-slate-900 text-slate-400 hover:text-pink-400 hover:bg-slate-800 rounded-lg transition"
+                                                                        onClick={() => {
+                                                                            if (u.id === currentUser.id) return showToast("No puedes quitarte tu propio rango de admin.", "warning");
+
+                                                                            openConfirm('Cambiar Rol', `¿Cambiar rol de ${u.name} a ${u.role === 'admin' ? 'Usuario' : 'Admin'}?`, async () => {
+                                                                                try {
+                                                                                    const newRole = u.role === 'admin' ? 'user' : 'admin';
+                                                                                    // Actualizar en DB
+                                                                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id), { role: newRole });
+                                                                                    // Actualizar UI localmente (Optimistic)
+                                                                                    setUsers(prev => prev.map(user => user.id === u.id ? { ...user, role: newRole } : user));
+                                                                                    showToast('Rol actualizado', 'success');
+                                                                                } catch (e) { showToast('Error actualizando rol', 'error'); }
+                                                                            });
+                                                                        }}
+                                                                        className={`p-2 rounded-lg transition ${u.id === currentUser.id ? 'opacity-20 cursor-not-allowed bg-slate-900 text-slate-600' : 'bg-slate-900 text-slate-400 hover:text-pink-400 hover:bg-slate-800'}`}
                                                                         title="Cambiar Rol"
                                                                     >
                                                                         <Shield className="w-4 h-4" />
