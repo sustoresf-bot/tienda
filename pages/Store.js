@@ -9,7 +9,7 @@ export const Store = ({
     products, promos, settings, selectedCategory, setSelectedCategory,
     searchQuery, setSearchQuery, currentUser, toggleFavorite, manageCart,
     calculateItemPrice, setView, filteredProducts, setPreviewImage,
-    hasMore, loadMoreProducts, isLoading
+    nexusHasMore, loadMoreProducts, isLoading
 }) => {
     return (
         <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block">
@@ -67,7 +67,7 @@ export const Store = ({
             </div>
 
             {/* Load More Trigger */}
-            {hasMore && (
+            {nexusHasMore && (
                 <div className="mt-12 flex justify-center">
                     <button
                         onClick={loadMoreProducts}
