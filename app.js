@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useStore } from 'hooks/useStore';
 import { useCart } from 'hooks/useCart';
@@ -17,6 +17,8 @@ import {
     Shield, Search, X, Heart, LogOut as LogOutIcon
 } from 'lucide-react';
 
+console.log("Nexus Store App Initializing...");
+
 function App() {
     const [view, setView] = useState('store');
     const [adminTab, setAdminTab] = useState('dashboard');
@@ -28,11 +30,25 @@ function App() {
     const [isProcessingOrder, setIsProcessingOrder] = useState(false);
     const [showCouponModal, setShowCouponModal] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [authMode, setAuthMode] = useState(true); // true = login, false = register
+    const [authData, setAuthData] = useState({ email: '', password: '', name: '', username: '' });
+    const [isAuthLoading, setIsAuthLoading] = useState(false);
 
     // Custom Hooks
     const { products, promos, orders, users, settings, loadMoreProducts, nexusHasMore, isLoading } = useStore();
     const { cart, addToCart, removeFromCart, clearCart, cartTotal } = useCart();
     const { currentUser, login, register, logout } = useAuth();
+
+    // Filtered Products logic
+    const filteredProducts = useMemo(() => {
+        return products.filter(p => {
+            const matchesCategory = !selectedCategory || p.category === selectedCategory;
+            const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+        });
+    }, [products, selectedCategory, searchQuery]);
 
     // Metrics
     const metrics = useAdminMetrics(products, orders, [], [], settings);
@@ -41,7 +57,6 @@ function App() {
     const showToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
-        setTimeout(() => removeToast(id), 5000);
     };
     const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
 
@@ -53,6 +68,10 @@ function App() {
     }, [appliedCoupon, cartTotal]);
 
     const finalTotal = Math.max(0, cartTotal - discountAmount);
+
+    useEffect(() => {
+        console.log("App mounted. Current user:", currentUser?.email);
+    }, [currentUser]);
 
     return (
         <ErrorBoundary>
@@ -77,7 +96,7 @@ function App() {
                                 {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-cyan-500 text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
                             </button>
                             {currentUser ? (
-                                <button onClick={() => setView('profile')} className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center font-bold">{currentUser.name.charAt(0)}</button>
+                                <button onClick={() => setView('profile')} className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center font-bold">{currentUser.name?.charAt(0) || 'U'}</button>
                             ) : (
                                 <button onClick={() => setView('login')} className="p-2 hover:bg-slate-900 rounded-lg transition"><User /></button>
                             )}
@@ -115,9 +134,12 @@ function App() {
                     {view === 'store' && (
                         <Store
                             products={products} promos={promos} settings={settings}
-                            currentUser={currentUser} manageCart={addToCart}
+                            selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
+                            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+                            currentUser={currentUser} toggleFavorite={(p) => showToast("Guardado en favoritos", "success")}
+                            manageCart={addToCart}
                             calculateItemPrice={calculateItemPrice} setView={setView}
-                            filteredProducts={products} nexusHasMore={nexusHasMore} loadMoreProducts={loadMoreProducts}
+                            filteredProducts={filteredProducts} nexusHasMore={nexusHasMore} loadMoreProducts={loadMoreProducts}
                             isLoading={isLoading} setPreviewImage={setPreviewImage}
                         />
                     )}
@@ -137,7 +159,6 @@ function App() {
                             handleConfirmOrder={async (data) => {
                                 setIsProcessingOrder(true);
                                 try {
-                                    // Simulated delay
                                     await new Promise(r => setTimeout(r, 2000));
                                     showToast("Pedido enviado exitosamente", "success");
                                     clearCart();
@@ -153,7 +174,7 @@ function App() {
                         <Profile
                             currentUser={currentUser} orders={orders} products={products}
                             setView={setView} logout={logout} hasAccess={hasAccess(currentUser?.email, settings)}
-                            toggleFavorite={(p) => showToast("Favoritos próximamente")} manageCart={addToCart}
+                            toggleFavorite={(p) => showToast("Función próximamente")} manageCart={addToCart}
                         />
                     )}
                     {view === 'admin' && (
@@ -166,15 +187,24 @@ function App() {
                     )}
                     {view === 'login' && (
                         <Auth
-                            loginMode={true} setLoginMode={() => setView('register')}
-                            authData={{}} setAuthData={() => { }}
-                            handleAuth={async (email, password) => {
+                            loginMode={authMode} setLoginMode={setAuthMode}
+                            authData={authData} setAuthData={setAuthData}
+                            isLoading={isAuthLoading}
+                            handleAuth={async () => {
+                                setIsAuthLoading(true);
                                 try {
-                                    await login(email, password);
+                                    if (authMode) {
+                                        await login(authData.email, authData.password);
+                                        showToast("¡Bienvenido de nuevo!", "success");
+                                    } else {
+                                        await register(authData);
+                                        showToast("¡Cuenta creada con éxito!", "success");
+                                    }
                                     setView('store');
-                                    showToast("¡Bienvenido de nuevo!", "success");
                                 } catch (e) {
                                     showToast(e.message, "error");
+                                } finally {
+                                    setIsAuthLoading(false);
                                 }
                             }}
                         />
@@ -182,7 +212,7 @@ function App() {
                 </main>
 
                 <footer className="mt-auto bg-[#050505] border-t border-slate-800 py-12 px-8 text-center text-slate-600">
-                    <p className="text-xs font-bold uppercase tracking-widest">{settings.storeName} © {new Date().getFullYear()}</p>
+                    <p className="text-xs font-bold uppercase tracking-widest">{settings?.storeName || 'Nexus Store'} © {new Date().getFullYear()}</p>
                 </footer>
             </div>
 
@@ -202,5 +232,10 @@ const MenuBtn = ({ icon: Icon, label, onClick, color = "text-slate-300" }) => (
     </button>
 );
 
-const root = createRoot(document.getElementById('root'));
-root.render(<App />);
+const rootElement = document.getElementById('root');
+if (rootElement) {
+    const root = createRoot(rootElement);
+    root.render(<App />);
+} else {
+    console.error("No root element found to mount React!");
+}
