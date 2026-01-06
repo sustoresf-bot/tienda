@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchProducts, subscribeToCollection } from 'services';
-import { defaultSettings } from 'constants';
+import { fetchProducts, subscribeToCollection } from '@services';
+import { defaultSettings } from '@constants';
 
 export const useStore = () => {
     const [products, setProducts] = useState([]);

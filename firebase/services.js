@@ -2,7 +2,7 @@ import {
     collection, query, where, getDocs, addDoc, updateDoc, deleteDoc,
     doc, orderBy, limit, startAfter, onSnapshot, setDoc, writeBatch
 } from 'firebase/firestore';
-import { db, appId } from 'config';
+import { db, appId } from '@config';
 
 const DATA_PATH = ['artifacts', appId, 'public', 'data'];
 

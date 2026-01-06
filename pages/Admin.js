@@ -5,8 +5,8 @@ import {
     DollarSign, TrendingUp, TrendingDown, Eye, Flame, BarChart3, Plus, Search, Trash2,
     Palette, Share2, Globe, Cog, Users, Store as StoreIcon, Save, X
 } from 'lucide-react';
-import { isAdmin, hasAccess } from 'utils';
-import { updateDocument } from 'services';
+import { isAdmin, hasAccess } from '@utils';
+import { updateDocument } from '@services';
 
 export const Admin = ({
     currentUser, settings, adminTab, setAdminTab, setView,

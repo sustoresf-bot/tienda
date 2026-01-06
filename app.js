@@ -1,17 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useStore } from 'hooks/useStore';
-import { useCart } from 'hooks/useCart';
-import { useAuth } from 'hooks/useAuth';
-import { useAdminMetrics } from 'hooks/useAdminMetrics';
-import { Store } from 'pages/Store';
-import { Admin } from 'pages/Admin';
-import { Auth } from 'pages/Auth';
-import { Cart } from 'pages/Cart';
-import { Checkout } from 'pages/Checkout';
-import { Profile } from 'pages/Profile';
-import { ErrorBoundary, Toast, ConfirmModal } from 'components/Common';
-import { calculateItemPrice, hasAccess } from 'utils';
+import { useStore } from '@hooks/useStore';
+import { useCart } from '@hooks/useCart';
+import { useAuth } from '@hooks/useAuth';
+import { useAdminMetrics } from '@hooks/useAdminMetrics';
+import { Store } from '@pages/Store';
+import { Admin } from '@pages/Admin';
+import { Auth } from '@pages/Auth';
+import { Cart } from '@pages/Cart';
+import { Checkout } from '@pages/Checkout';
+import { Profile } from '@pages/Profile';
+import { ErrorBoundary, Toast, ConfirmModal } from '@components/Common';
+import { calculateItemPrice, hasAccess } from '@utils';
 import {
     Menu, ShoppingBag, User, Home, Info, FileQuestion,
     Shield, Search, X, Heart, LogOut as LogOutIcon
@@ -20,6 +20,7 @@ import {
 console.log("Nexus Store App Initializing...");
 
 function App() {
+    console.log("App Component Rendering...");
     const [view, setView] = useState('store');
     const [adminTab, setAdminTab] = useState('dashboard');
     const [toasts, setToasts] = useState([]);
@@ -71,6 +72,12 @@ function App() {
 
     useEffect(() => {
         console.log("App mounted. Current user:", currentUser?.email);
+        // Remove boot loader
+        const bootLoader = document.querySelector('.boot-loader');
+        if (bootLoader) {
+            bootLoader.style.opacity = '0';
+            setTimeout(() => bootLoader.remove(), 500);
+        }
     }, [currentUser]);
 
     return (
@@ -232,10 +239,14 @@ const MenuBtn = ({ icon: Icon, label, onClick, color = "text-slate-300" }) => (
     </button>
 );
 
-const rootElement = document.getElementById('root');
-if (rootElement) {
-    const root = createRoot(rootElement);
-    root.render(<App />);
-} else {
-    console.error("No root element found to mount React!");
+try {
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+        const root = createRoot(rootElement);
+        root.render(<App />);
+    } else {
+        console.error("No root element found to mount React!");
+    }
+} catch (e) {
+    console.error("Fatal React Mount Error:", e);
 }

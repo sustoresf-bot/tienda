@@ -1,4 +1,4 @@
-import { SUPER_ADMIN_EMAIL } from './constants.js';
+import { SUPER_ADMIN_EMAIL } from '@constants';
 
 export const isAdmin = (email, settings) => {
     if (!email) return false;
