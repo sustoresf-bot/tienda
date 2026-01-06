@@ -8,7 +8,8 @@ import {
 export const Store = ({
     products, promos, settings, selectedCategory, setSelectedCategory,
     searchQuery, setSearchQuery, currentUser, toggleFavorite, manageCart,
-    calculateItemPrice, setView, filteredProducts, setPreviewImage
+    calculateItemPrice, setView, filteredProducts, setPreviewImage,
+    hasMore, loadMoreProducts, isLoading
 }) => {
     return (
         <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block">
