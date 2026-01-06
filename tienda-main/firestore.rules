@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función para verificar si el usuario es Admin
+    function isAdmin(appId) {
+      return request.auth != null && 
+             (request.auth.token.email == 'lautarocorazza63@gmail.com' || 
+              get(/databases/$(database)/documents/artifacts/$(appId)/public/data/settings/config).data.team.any(m => m.email == request.auth.token.email && m.role == 'admin'));
+    }
+
+    // Reglas para Productos
+    match /artifacts/{appId}/public/data/products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin(appId);
+    }
+    
+    // Reglas para Configuración
+    match /artifacts/{appId}/public/data/settings/{configId} {
+      allow read: if true;
+      allow write: if isAdmin(appId);
+    }
+
+    // Reglas para Pedidos (Usuarios crean, Admins ven todos)
+    match /artifacts/{appId}/public/data/orders/{orderId} {
+      allow read: if request.auth != null && (request.auth.token.email == resource.data.customerEmail || isAdmin(appId));
+      allow create: if true; // Permitir anónimos para compras rápidas si es necesario, o restringir a auth
+      allow update: if isAdmin(appId);
+    }
+
+    // Denegar por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
