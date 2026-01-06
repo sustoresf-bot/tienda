@@ -5,7 +5,7 @@ import { defaultSettings } from 'constants';
 export const useStore = () => {
     const [products, setProducts] = useState([]);
     const [lastDoc, setLastDoc] = useState(null);
-    const [hasMore, setHasMore] = useState(true);
+    const [nexusHasMore, setNexusHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
 
     // Other data
@@ -16,14 +16,14 @@ export const useStore = () => {
 
     // Fetch products with pagination
     const loadMoreProducts = useCallback(async () => {
-        if (isLoading || !hasMore) return;
+        if (isLoading || !nexusHasMore) return;
 
         setIsLoading(true);
         try {
             const { products: newProducts, lastDoc: newLastDoc } = await fetchProducts(20, lastDoc);
             setProducts(prev => [...prev, ...newProducts]);
             setLastDoc(newLastDoc);
-            if (newProducts.length < 20) setHasMore(false);
+            if (newProducts.length < 20) setNexusHasMore(false);
         } catch (error) {
             console.error("Error loading products:", error);
         } finally {
@@ -50,6 +50,6 @@ export const useStore = () => {
 
     return {
         products, promos, orders, users, settings,
-        loadMoreProducts, hasMore, isLoading
+        loadMoreProducts, nexusHasMore, isLoading
     };
 };
