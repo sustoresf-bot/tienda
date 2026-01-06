@@ -180,7 +180,7 @@ function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessingOrder, setIsProcessingOrder] = useState(false);
     const [toasts, setToasts] = useState([]);
-    const [modalConfig, setModalConfig] = useState({ isOpen: false });
+
 
     // Datos Principales
     const [products, setProducts] = useState([]);
@@ -312,7 +312,7 @@ function App() {
 
     // Configuración y Equipo
     const [aboutText, setAboutText] = useState('');
-    const [tempSettings, setTempSettings] = useState(defaultSettings);
+
     const [newCategory, setNewCategory] = useState('');
     const [newTeamMember, setNewTeamMember] = useState({ email: '', role: 'employee', name: '' });
 
@@ -679,7 +679,6 @@ function App() {
                     }
 
                     setSettings(mergedSettings);
-                    setTempSettings(mergedSettings);
                     setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
 
                     // Si ya migramos y leímos exitosamente, podríamos borrar el legacy para evitar fantasmas
@@ -1351,46 +1350,7 @@ function App() {
     };
 
     // 9. Configuración y Equipo (Settings)
-    const saveSettingsFn = async () => {
-        if (!tempSettings) return;
 
-        try {
-            const dataToSave = { ...tempSettings, aboutUsText: aboutText };
-
-            // STRICT: Usar siempre 'config' como ID
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), dataToSave, { merge: true });
-
-            setSettings(dataToSave);
-            showToast("Configuración global guardada correctamente.", 'success');
-        } catch (e) {
-            console.error(e);
-            showToast("Error al guardar configuración.", "error");
-        }
-    };
-
-    // Gestión de Miembros del Equipo
-    const addTeamMemberFn = async () => {
-        if (!newTeamMember.email.includes('@')) return showToast("Ingresa un email válido.", "warning");
-        if (!newTeamMember.name) return showToast("Ingresa el nombre del miembro.", "warning");
-
-        const currentTeam = settings.team || [];
-        // Evitar duplicados
-        if (currentTeam.some(m => m.email === newTeamMember.email)) return showToast("Este email ya está en el equipo.", "warning");
-
-        const updatedTeam = [...currentTeam, newTeamMember];
-        setTempSettings(prev => ({ ...prev, team: updatedTeam }));
-        setNewTeamMember({ email: '', role: 'employee', name: '' });
-        showToast("Miembro agregado (Recuerda guardar la configuración).", "info");
-    };
-
-    const removeTeamMemberFn = (email) => {
-        if (email === SUPER_ADMIN_EMAIL) return showToast("No se puede eliminar al Super Admin.", "error");
-
-        const currentTeam = tempSettings.team || [];
-        const updatedTeam = currentTeam.filter(m => m.email !== email);
-        setTempSettings(prev => ({ ...prev, team: updatedTeam }));
-        showToast("Miembro eliminado (Recuerda guardar la configuración).", "info");
-    };
 
     // 10. Gestión de Compras (Editar/Eliminar con lógica de Stock)
     const deletePurchaseFn = (purchase) => {
@@ -1648,13 +1608,15 @@ function App() {
         // Resolver objeto completo para Estrella
         let starProduct = null;
         if (starProductId) {
-            const live = products.find(p => p.id === starProductId);
+            const liveStar = products.find(p => p.id === starProductId);
             const meta = productMetadata[starProductId];
-            if (live || meta) {
+            if (liveStar || meta) {
                 starProduct = {
                     id: starProductId,
-                    name: live?.name || meta?.name,
-                    image: live?.image || meta?.image
+                    name: liveStar ? liveStar.name : meta.name,
+                    image: liveStar ? liveStar.image : meta.image,
+                    sales: maxSales,
+                    stock: liveStar ? liveStar.stock : 0
                 };
             }
         }
@@ -1675,6 +1637,7 @@ function App() {
 
         // 4. Analítica Temporal (Timeline)
         const timeline = { daily: {}, monthly: {}, yearly: {} };
+        const categoryStats = {}; // { catName: { revenue: 0, items: 0 } }
 
         validOrders.forEach(o => {
             const d = new Date(o.date);
@@ -1691,6 +1654,17 @@ function App() {
             agg(timeline.daily, dayKey, o.total);
             agg(timeline.monthly, monthKey, o.total);
             agg(timeline.yearly, yearKey, o.total);
+
+            // Sales By Category
+            if (o.items) {
+                o.items.forEach(item => {
+                    const prod = products.find(p => p.id === item.productId || p.id === item.id);
+                    const cat = prod ? prod.category : 'Otros';
+                    if (!categoryStats[cat]) categoryStats[cat] = { name: cat, revenue: 0, items: 0, percentage: 0 };
+                    categoryStats[cat].revenue += (item.unit_price * item.quantity);
+                    categoryStats[cat].items += item.quantity;
+                });
+            }
         });
 
         const analytics = {
@@ -1698,6 +1672,22 @@ function App() {
             monthly: Object.values(timeline.monthly).sort((a, b) => a.date.localeCompare(b.date)),
             yearly: Object.values(timeline.yearly).sort((a, b) => a.date.localeCompare(b.date))
         };
+
+        // Format salesByCategory
+        const totalSalesVolume = Object.values(categoryStats).reduce((acc, c) => acc + c.items, 0);
+        const salesByCategory = Object.values(categoryStats)
+            .map(c => ({
+                ...c,
+                percentage: totalSalesVolume > 0 ? Math.round((c.items / totalSalesVolume) * 100) : 0
+            }))
+            .sort((a, b) => b.items - a.items);
+
+        // 5. Low Stock Alerts
+        const lowStockThreshold = settings?.lowStockThreshold || 5;
+        const lowStockProducts = products.filter(p => !p.promoItems && (Number(p.stock) <= lowStockThreshold));
+
+        // 6. Recent Activity
+        const recentActivity = [...orders].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
 
         return {
             revenue,
@@ -1709,10 +1699,13 @@ function App() {
             leastSoldProduct,
             salesCount,
             analytics,
+            salesByCategory,
+            lowStockProducts,
+            recentActivity,
             totalOrders: orders.length,
             totalUsers: users.length
         };
-    }, [orders, expenses, purchases, products, liveCarts, users]);
+    }, [orders, expenses, purchases, products, liveCarts, users, settings]);
 
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la Interfaz Gráfica completa y detallada. Por favor escribe "continuar".
     // --- COMPONENTES UI: MODALES DETALLADOS ---
@@ -2319,16 +2312,7 @@ function App() {
                 </div>
             </div>
 
-            <ConfirmModal
-                isOpen={modalConfig.isOpen}
-                title={modalConfig.title}
-                message={modalConfig.message}
-                onConfirm={modalConfig.onConfirm}
-                onCancel={() => setModalConfig({ ...modalConfig, isOpen: false })}
-                confirmText={modalConfig.confirmText}
-                cancelText={modalConfig.cancelText}
-                isDangerous={modalConfig.isDangerous}
-            />
+
 
             <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
             <CouponSelectorModal />
@@ -3584,11 +3568,11 @@ function App() {
                                             </div>
                                         </div>
 
-                                        {/* Sección "Heavy": Top Ventas y Demanda */}
-                                        <div className="grid lg:grid-cols-3 gap-8">
+                                        {/* Sección "Heavy": Tendencias y Nuevas Métricas */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                                            {/* Tendencia de Demanda (Live Carts + Favoritos) */}
-                                            <div className="lg:col-span-2 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden">
+                                            {/* Column 1: Tendencia de Demanda (Live + Fav) */}
+                                            <div className="lg:col-span-2 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden h-fit">
                                                 <div className="flex justify-between items-center mb-8 relative z-10">
                                                     <h3 className="text-xl font-black text-white flex items-center gap-2">
                                                         <Flame className="text-orange-500 w-6 h-6" /> Tendencia de Demanda
@@ -3617,7 +3601,7 @@ function App() {
                                                                     <div>
                                                                         <p className="font-bold text-white text-sm line-clamp-1">{p.name}</p>
                                                                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                                                                            Stock Disponible: <span className={p.stock < 5 ? 'text-red-400' : 'text-slate-400'}>{p.stock}</span>
+                                                                            Stock: <span className={p.stock < 5 ? 'text-red-400' : 'text-slate-400'}>{p.stock}</span>
                                                                         </p>
                                                                     </div>
                                                                 </div>
@@ -3638,195 +3622,155 @@ function App() {
                                                 </div>
                                             </div>
 
-                                            {/* Producto Estrella / Menos Vendido (Toggle) */}
-                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group flex flex-col items-center text-center">
-                                                <div className={`absolute inset-0 bg-gradient-to-b ${showLeastSold ? 'from-red-500/10' : 'from-yellow-500/10'} via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-700`}></div>
+                                            {/* Column 2: Stacked Cards (Star Product + Sales by Category) */}
+                                            <div className="space-y-6">
 
-                                                <div className="absolute top-4 right-4 z-20">
-                                                    <button onClick={() => setShowLeastSold(!showLeastSold)} className="p-2 bg-slate-900 rounded-full text-slate-500 hover:text-white border border-slate-800 hover:border-slate-600 transition shadow-lg" title={showLeastSold ? "Ver Más Vendido" : "Ver Menos Vendido"}>
-                                                        {showLeastSold ? <Trophy className="w-4 h-4 text-yellow-500" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
-                                                    </button>
-                                                </div>
+                                                {/* Producto Estrella */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2.5rem] relative overflow-hidden group flex flex-col items-center text-center">
+                                                    <div className="absolute inset-0 bg-yellow-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-700"></div>
 
-                                                <div className={`${showLeastSold ? 'bg-red-500/10 border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]' : 'bg-yellow-500/10 border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]'} p-4 rounded-full mb-6 border`}>
-                                                    {showLeastSold ? <TrendingDown className="w-10 h-10 text-red-400" /> : <Trophy className="w-10 h-10 text-yellow-400" />}
-                                                </div>
+                                                    <div className="flex items-center gap-2 mb-6">
+                                                        <Trophy className="w-6 h-6 text-yellow-400" />
+                                                        <h3 className="text-xl font-black text-white">Top Ventas</h3>
+                                                    </div>
 
-                                                <h3 className="text-xl font-black text-white mb-2 relative z-10">{showLeastSold ? 'Producto Menos Vendido' : 'Producto Estrella'}</h3>
-                                                <p className="text-slate-500 text-xs uppercase tracking-widest font-bold mb-6">{showLeastSold ? 'El de menor rendimiento' : 'El más vendido'}</p>
-
-                                                {!showLeastSold ? (
-                                                    dashboardMetrics.starProduct ? (
-                                                        <div className="relative z-10 w-full bg-slate-900/50 p-6 rounded-2xl border border-slate-800 animate-fade-in">
-                                                            <img src={dashboardMetrics.starProduct.image} className="w-32 h-32 mx-auto bg-white rounded-xl object-contain p-2 shadow-lg mb-4" />
-                                                            <h4 className="text-white font-black text-lg line-clamp-2 leading-tight mb-2">{dashboardMetrics.starProduct.name}</h4>
-                                                            <div className="inline-block bg-yellow-900/20 border border-yellow-500/30 px-4 py-1 rounded-full">
-                                                                <p className="text-yellow-400 font-black text-xl">
-                                                                    {dashboardMetrics.salesCount[dashboardMetrics.starProduct.id]} <span className="text-xs font-bold uppercase">Unidades</span>
+                                                    {dashboardMetrics.starProduct ? (
+                                                        <div className="relative z-10 w-full animate-fade-in">
+                                                            <img src={dashboardMetrics.starProduct.image} className="w-24 h-24 mx-auto bg-white rounded-xl object-contain p-2 shadow-lg mb-4" />
+                                                            <h4 className="text-white font-black text-base line-clamp-1 leading-tight mb-2">{dashboardMetrics.starProduct.name}</h4>
+                                                            <div className="inline-block bg-yellow-900/20 border border-yellow-500/30 px-3 py-1 rounded-full">
+                                                                <p className="text-yellow-400 font-black text-lg">
+                                                                    {dashboardMetrics.starProduct.sales} <span className="text-[10px] font-bold uppercase">Ventas</span>
                                                                 </p>
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <div className="text-slate-500 text-sm mt-4">Esperando datos de ventas...</div>
-                                                    )
-                                                ) : (
-                                                    dashboardMetrics.leastSoldProduct ? (
-                                                        <div className="relative z-10 w-full bg-slate-900/50 p-6 rounded-2xl border border-slate-800 animate-fade-in">
-                                                            <img src={dashboardMetrics.leastSoldProduct.image} className="w-32 h-32 mx-auto bg-white rounded-xl object-contain p-2 shadow-lg mb-4 grayscale opacity-80" />
-                                                            <h4 className="text-white font-black text-lg line-clamp-2 leading-tight mb-2">{dashboardMetrics.leastSoldProduct.name}</h4>
-                                                            <div className="inline-block bg-red-900/20 border border-red-500/30 px-4 py-1 rounded-full">
-                                                                <p className="text-red-400 font-black text-xl">
-                                                                    {dashboardMetrics.salesCount[dashboardMetrics.leastSoldProduct.id] || 0} <span className="text-xs font-bold uppercase">Unidades</span>
-                                                                </p>
+                                                        <div className="text-slate-500 text-xs py-8">Esperando datos de ventas...</div>
+                                                    )}
+                                                </div>
+
+                                                {/* Ventas por Categoría */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2.5rem] relative overflow-hidden">
+                                                    <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+                                                        <PieChart className="w-5 h-5 text-purple-400" /> Categorías Top
+                                                    </h3>
+                                                    <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                                                        {dashboardMetrics.salesByCategory.slice(0, 5).map((cat, idx) => (
+                                                            <div key={idx}>
+                                                                <div className="flex justify-between text-xs font-bold text-slate-400 mb-1">
+                                                                    <span>{cat.name}</span>
+                                                                    <span>{cat.percentage}%</span>
+                                                                </div>
+                                                                <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                                                                        style={{ width: `${cat.percentage}%` }}
+                                                                    ></div>
+                                                                </div>
                                                             </div>
+                                                        ))}
+                                                        {dashboardMetrics.salesByCategory.length === 0 && (
+                                                            <p className="text-xs text-slate-500 text-center py-4">Sin datos de ventas.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                        {/* Row 2: Alertas de Stock y Actividad Reciente */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                                            {/* Stock Alert */}
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] flex flex-col">
+                                                <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
+                                                    <AlertTriangle className="w-6 h-6 text-red-500" /> Alerta de Stock
+                                                </h3>
+
+                                                <div className="flex-1 space-y-3 overflow-y-auto max-h-[400px] custom-scrollbar pr-2">
+                                                    {dashboardMetrics.lowStockProducts.length === 0 ? (
+                                                        <div className="h-full flex flex-col items-center justify-center text-slate-500 opacity-50">
+                                                            <CheckCircle className="w-12 h-12 mb-2" />
+                                                            <p className="text-sm">Todo en orden</p>
                                                         </div>
                                                     ) : (
-                                                        <div className="text-slate-500 text-sm mt-4">No hay datos suficientes.</div>
-                                                    )
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* TAB: CONFIGURACIÓN (BLINDADA) */}
-                                {adminTab === 'settings' && (
-                                    <div className="max-w-4xl mx-auto space-y-8 animate-fade-up pb-20">
-                                        <div className="flex justify-between items-center">
-                                            <h1 className="text-3xl font-black text-white neon-text">Configuración Global</h1>
-                                            <button onClick={saveSettingsFn} className="bg-cyan-600 px-8 py-3 rounded-xl text-white font-bold shadow-lg hover:bg-cyan-500 transition flex items-center gap-2">
-                                                <Save className="w-5 h-5" /> Guardar Cambios
-                                            </button>
-                                        </div>
-
-                                        {/* Gestión de Categorías */}
-                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                <Tag className="w-5 h-5 text-purple-400" /> Categorías de Productos
-                                            </h3>
-                                            <div className="flex gap-4 mb-6">
-                                                <input
-                                                    className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-purple-500 outline-none transition"
-                                                    placeholder="Nombre de nueva categoría (ej: Tablets)"
-                                                    value={newCategory}
-                                                    onChange={e => setNewCategory(e.target.value)}
-                                                />
-                                                <button
-                                                    onClick={() => { if (newCategory) { setTempSettings({ ...tempSettings, categories: [...(tempSettings.categories || []), newCategory] }); setNewCategory(''); } }}
-                                                    className="bg-purple-600 px-6 rounded-xl text-white font-bold hover:bg-purple-500 transition shadow-lg"
-                                                >
-                                                    <Plus className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                            <div className="flex flex-wrap gap-3">
-                                                {(tempSettings?.categories || []).map(c => (
-                                                    <span key={c} className="bg-slate-900 border border-slate-700 px-4 py-2 rounded-xl text-sm text-slate-300 flex items-center gap-3 font-bold group hover:border-red-500/50 hover:bg-red-900/10 transition">
-                                                        {c}
-                                                        <button onClick={() => setTempSettings({ ...tempSettings, categories: tempSettings.categories.filter(x => x !== c) })} className="text-slate-500 group-hover:text-red-400 transition">
-                                                            <X className="w-3 h-3" />
-                                                        </button>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Gestión de Equipo (Admins) */}
-                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-                                            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                                <Users className="w-5 h-5 text-cyan-400" /> Equipo & Accesos
-                                            </h3>
-                                            <p className="text-slate-500 text-sm mb-6">Gestiona quién tiene acceso al panel de administración.</p>
-
-                                            <div className="flex gap-3 mb-6 bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-                                                <input className="flex-[2] bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-cyan-500 outline-none" placeholder="Nombre" value={newTeamMember.name} onChange={e => setNewTeamMember({ ...newTeamMember, name: e.target.value })} />
-                                                <input className="flex-[3] bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-cyan-500 outline-none" placeholder="Email (Usuario existente)" value={newTeamMember.email} onChange={e => setNewTeamMember({ ...newTeamMember, email: e.target.value })} />
-                                                <select className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-cyan-500 outline-none" value={newTeamMember.role} onChange={e => setNewTeamMember({ ...newTeamMember, role: e.target.value })}>
-                                                    <option value="employee">Empleado</option>
-                                                    <option value="admin">Admin</option>
-                                                </select>
-                                                <button onClick={addTeamMemberFn} className="bg-cyan-600 px-5 rounded-xl text-white font-bold hover:bg-cyan-500 transition shadow-lg"><Plus className="w-5 h-5" /></button>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                {(tempSettings?.team || []).map((m, idx) => (
-                                                    <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border ${m.role === 'admin' ? 'bg-cyan-900/20 border-cyan-500/30 text-cyan-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                                                                {m.name ? m.name.charAt(0) : <User className="w-5 h-5" />}
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-white font-bold text-sm">{m.name || 'Sin nombre'}</p>
-                                                                <p className="text-xs text-slate-500">{m.email}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-950 px-2 py-1 rounded border border-slate-800">{m.role}</span>
-                                                            {m.email === SUPER_ADMIN_EMAIL ? (
-                                                                <Lock className="w-4 h-4 text-cyan-500" title="Super Admin Protegido" />
-                                                            ) : (
-                                                                <button onClick={() => removeTeamMemberFn(m.email)} className="p-2 hover:bg-red-900/20 rounded-lg text-slate-600 hover:text-red-400 transition">
-                                                                    <Trash2 className="w-4 h-4" />
+                                                        dashboardMetrics.lowStockProducts.map(p => (
+                                                            <div key={p.id} className="flex items-center gap-3 p-3 bg-red-900/10 border border-red-500/20 rounded-xl">
+                                                                <div className="w-10 h-10 bg-white rounded-lg p-1 flex-shrink-0">
+                                                                    <img src={p.image} className="w-full h-full object-contain" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-white font-bold text-xs line-clamp-1">{p.name}</p>
+                                                                    <p className="text-red-400 text-xs font-bold">Quedan: {p.stock}</p>
+                                                                </div>
+                                                                <button onClick={() => { setAdminTab('products'); setSearchQuery(p.name); }} className="p-2 hover:bg-red-900/30 rounded-lg text-red-300 transition">
+                                                                    <ArrowRight className="w-4 h-4" />
                                                                 </button>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Recent Orders Table */}
+                                            <div className="lg:col-span-2 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem]">
+                                                <div className="flex justify-between items-center mb-6">
+                                                    <h3 className="text-xl font-black text-white flex items-center gap-2">
+                                                        <Clock className="w-6 h-6 text-cyan-400" /> Última Actividad
+                                                    </h3>
+                                                    <button onClick={() => setAdminTab('orders')} className="text-xs text-cyan-400 font-bold hover:text-cyan-300 transition">Ver Todo</button>
+                                                </div>
+
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-left border-collapse">
+                                                        <thead>
+                                                            <tr className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                                                                <th className="pb-3 pl-2">ID</th>
+                                                                <th className="pb-3">Cliente</th>
+                                                                <th className="pb-3">Estado</th>
+                                                                <th className="pb-3 text-right pr-2">Total</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="text-sm">
+                                                            {dashboardMetrics.recentActivity.map(o => (
+                                                                <tr key={o.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition group">
+                                                                    <td className="py-4 pl-2 font-mono text-slate-400 group-hover:text-white transition">#{o.orderId}</td>
+                                                                    <td className="py-4">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs text-slate-300 font-bold uppercase">
+                                                                                {(o.customer?.name || 'C').charAt(0)}
+                                                                            </div>
+                                                                            <span className="text-slate-300 font-medium">{o.customer?.name || 'Anónimo'}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="py-4">
+                                                                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${o.status === 'Realizado' ? 'bg-green-900/20 text-green-400' :
+                                                                            o.status === 'Pendiente' ? 'bg-yellow-900/20 text-yellow-400' :
+                                                                                'bg-slate-800 text-slate-400'
+                                                                            }`}>
+                                                                            {o.status}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="py-4 text-right pr-2 font-mono font-bold text-white">
+                                                                        ${o.total?.toLocaleString()}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                            {dashboardMetrics.recentActivity.length === 0 && (
+                                                                <tr>
+                                                                    <td colSpan="4" className="text-center py-8 text-slate-500">Sin actividad reciente.</td>
+                                                                </tr>
                                                             )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Textos Globales */}
-                                        <div className="space-y-6">
-                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-                                                <h3 className="text-xl font-bold text-white mb-6">Mensajes y Textos</h3>
-                                                <div className="space-y-6">
-                                                    <div>
-                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Marquesina de Anuncio (Inicio)</label>
-                                                        <input className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition" placeholder="Ej: 🔥 ENVÍOS GRATIS 🔥" value={tempSettings?.announcementMessage || ''} onChange={e => setTempSettings({ ...tempSettings, announcementMessage: e.target.value })} />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto "Sobre Nosotros"</label>
-                                                        <textarea className="w-full h-40 bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition resize-none leading-relaxed custom-scrollbar" value={aboutText} onChange={e => setAboutText(e.target.value)} />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Configuración de Redes y Estilo (NUEVO) */}
-                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-                                            <h3 className="text-xl font-bold text-white mb-6">Redes y Apariencia</h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div>
-                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Instagram URL</label>
-                                                    <input
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition"
-                                                        placeholder="https://instagram.com/tu_tienda"
-                                                        value={tempSettings?.instagramLink || ''}
-                                                        onChange={e => setTempSettings({ ...tempSettings, instagramLink: e.target.value })}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Link WhatsApp</label>
-                                                    <input
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition"
-                                                        placeholder="https://wa.me/..."
-                                                        value={tempSettings?.whatsappLink || ''}
-                                                        onChange={e => setTempSettings({ ...tempSettings, whatsappLink: e.target.value })}
-                                                    />
-                                                </div>
-                                                <div className="md:col-span-2">
-                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen Hero Principal (URL)</label>
-                                                    <input
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-cyan-500 outline-none transition"
-                                                        placeholder="https://..."
-                                                        value={tempSettings?.heroUrl || ''}
-                                                        onChange={e => setTempSettings({ ...tempSettings, heroUrl: e.target.value })}
-                                                    />
-                                                    <p className="text-xs text-slate-500 mt-2">Deja vacío para usar la imagen tecnológica por defecto.</p>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 )}
+
+                                {/* TAB: CONFIGURACIÓN (BLINDADA) - REMOVED (Consolidated in main Settings tab below) */}
+
 
                                 {/* TAB: PROVEEDORES (CON SELECTOR VISUAL) */}
                                 {adminTab === 'suppliers' && (
@@ -5309,19 +5253,12 @@ function App() {
                                                         <input
                                                             type="file"
                                                             accept="image/*"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files[0];
-                                                                if (file) {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = () => setSettings({ ...settings, heroImage: reader.result });
-                                                                    reader.readAsDataURL(file);
-                                                                }
-                                                            }}
+                                                            onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl')}
                                                             className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
                                                         />
-                                                        {settings?.heroImage && (
+                                                        {settings?.heroUrl && (
                                                             <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
-                                                                <img src={settings.heroImage} className="w-full h-full object-cover" alt="Hero Preview" />
+                                                                <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
                                                             </div>
                                                         )}
                                                     </div>
@@ -5330,19 +5267,12 @@ function App() {
                                                         <input
                                                             type="file"
                                                             accept="image/*"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files[0];
-                                                                if (file) {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = () => setSettings({ ...settings, logoImage: reader.result });
-                                                                    reader.readAsDataURL(file);
-                                                                }
-                                                            }}
+                                                            onChange={(e) => handleImageUpload(e, setSettings, 'logoUrl')}
                                                             className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-900/20 file:text-cyan-400 hover:file:bg-cyan-900/40 transition"
                                                         />
-                                                        {settings?.logoImage && (
+                                                        {settings?.logoUrl && (
                                                             <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
-                                                                <img src={settings.logoImage} className="w-full h-full object-contain" alt="Logo Preview" />
+                                                                <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
                                                             </div>
                                                         )}
                                                     </div>
@@ -5812,42 +5742,78 @@ function App() {
                                         <div className="space-y-6 animate-fade-up">
                                             <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                    <Users className="w-5 h-5 text-purple-400" /> Equipo y Socios
+                                                    <Users className="w-5 h-5 text-purple-400" /> Equipo y Accesos
                                                 </h3>
-                                                <p className="text-slate-500 mb-6">Agrega los miembros del equipo y sus inversiones para calcular la distribución de ganancias.</p>
+                                                <p className="text-slate-500 mb-6">Gestiona los miembros del equipo, sus roles de acceso y participación en ganancias.</p>
 
                                                 <div className="space-y-4 mb-6">
                                                     {(settings?.team || []).map((member, idx) => (
-                                                        <div key={idx} className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                                                        <div key={idx} className="flex flex-col md:flex-row md:items-center gap-4 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                                                                 {member.name?.charAt(0)?.toUpperCase() || '?'}
                                                             </div>
-                                                            <div className="flex-1">
-                                                                <input
-                                                                    className="input-cyber w-full p-2 mb-2"
-                                                                    value={member.name || ''}
-                                                                    onChange={e => {
-                                                                        const updated = [...(settings?.team || [])];
-                                                                        updated[idx] = { ...updated[idx], name: e.target.value };
-                                                                        setSettings({ ...settings, team: updated });
-                                                                    }}
-                                                                    placeholder="Nombre del socio"
-                                                                />
-                                                                <input
-                                                                    type="number"
-                                                                    className="input-cyber w-full p-2"
-                                                                    value={member.investment || ''}
-                                                                    onChange={e => {
-                                                                        const updated = [...(settings?.team || [])];
-                                                                        updated[idx] = { ...updated[idx], investment: parseFloat(e.target.value) || 0 };
-                                                                        setSettings({ ...settings, team: updated });
-                                                                    }}
-                                                                    placeholder="Inversión ($)"
-                                                                />
+                                                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                                <div>
+                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Nombre</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-2 text-sm"
+                                                                        value={member.name || ''}
+                                                                        onChange={e => {
+                                                                            const updated = [...(settings?.team || [])];
+                                                                            updated[idx] = { ...updated[idx], name: e.target.value };
+                                                                            setSettings({ ...settings, team: updated });
+                                                                        }}
+                                                                        placeholder="Nombre"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Email (Acceso)</label>
+                                                                    <input
+                                                                        type="email"
+                                                                        className="input-cyber w-full p-2 text-sm"
+                                                                        value={member.email || ''}
+                                                                        onChange={e => {
+                                                                            const updated = [...(settings?.team || [])];
+                                                                            updated[idx] = { ...updated[idx], email: e.target.value };
+                                                                            setSettings({ ...settings, team: updated });
+                                                                        }}
+                                                                        placeholder="usuario@email.com"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Rol</label>
+                                                                    <select
+                                                                        className="input-cyber w-full p-2 text-sm"
+                                                                        value={member.role || 'employee'}
+                                                                        onChange={e => {
+                                                                            const updated = [...(settings?.team || [])];
+                                                                            updated[idx] = { ...updated[idx], role: e.target.value };
+                                                                            setSettings({ ...settings, team: updated });
+                                                                        }}
+                                                                    >
+                                                                        <option value="employee">Empleado</option>
+                                                                        <option value="admin">Admin</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Inversión Inicial ($)</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-cyber w-full p-2 text-sm"
+                                                                        value={member.investment || ''}
+                                                                        onChange={e => {
+                                                                            const updated = [...(settings?.team || [])];
+                                                                            updated[idx] = { ...updated[idx], investment: parseFloat(e.target.value) || 0 };
+                                                                            setSettings({ ...settings, team: updated });
+                                                                        }}
+                                                                        placeholder="0.00"
+                                                                    />
+                                                                </div>
                                                             </div>
                                                             <button
                                                                 onClick={() => setSettings({ ...settings, team: settings.team.filter((_, i) => i !== idx) })}
-                                                                className="p-2 text-red-400 hover:text-red-300"
+                                                                className="p-3 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition flex-shrink-0"
+                                                                title="Eliminar Miembro"
                                                             >
                                                                 <Trash2 className="w-5 h-5" />
                                                             </button>
@@ -5856,10 +5822,10 @@ function App() {
                                                 </div>
 
                                                 <button
-                                                    onClick={() => setSettings({ ...settings, team: [...(settings?.team || []), { name: '', investment: 0 }] })}
-                                                    className="px-4 py-2 bg-purple-900/20 text-purple-400 rounded-lg font-bold text-sm border border-purple-500/30 hover:bg-purple-900/40 transition flex items-center gap-2"
+                                                    onClick={() => setSettings({ ...settings, team: [...(settings?.team || []), { name: '', email: '', role: 'employee', investment: 0 }] })}
+                                                    className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-600/30 flex items-center gap-2 transition"
                                                 >
-                                                    <UserPlus className="w-4 h-4" /> Agregar Socio
+                                                    <UserPlus className="w-5 h-5" /> Agregar Nuevo Miembro
                                                 </button>
                                             </div>
                                         </div>
@@ -5871,7 +5837,7 @@ function App() {
                                             onClick={async () => {
                                                 try {
                                                     setIsLoading(true);
-                                                    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+                                                    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
                                                     await setDoc(settingsRef, settings, { merge: true });
                                                     showToast("Configuración guardada exitosamente", "success");
                                                 } catch (e) {
