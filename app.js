@@ -23,8 +23,14 @@ function App() {
     const [toasts, setToasts] = useState([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    // Page States
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+    const [showCouponModal, setShowCouponModal] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
+
     // Custom Hooks
-    const { products, promos, orders, users, settings, loadMoreProducts, hasMore } = useStore();
+    const { products, promos, orders, users, settings, loadMoreProducts, hasMore, isLoading } = useStore();
     const { cart, addToCart, removeFromCart, clearCart, cartTotal } = useCart();
     const { currentUser, login, register, logout } = useAuth();
 
@@ -39,7 +45,14 @@ function App() {
     };
     const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
 
-    const finalTotal = cartTotal;
+    const discountAmount = useMemo(() => {
+        if (!appliedCoupon) return 0;
+        return appliedCoupon.type === 'fixed'
+            ? appliedCoupon.value
+            : (cartTotal * (appliedCoupon.value / 100));
+    }, [appliedCoupon, cartTotal]);
+
+    const finalTotal = Math.max(0, cartTotal - discountAmount);
 
     return (
         <ErrorBoundary>
@@ -51,7 +64,7 @@ function App() {
                     ))}
                 </div>
 
-                {/* Navbar */}
+                {/* Main Navbar */}
                 <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-slate-800 px-6 py-4">
                     <div className="max-w-[1400px] mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -105,21 +118,34 @@ function App() {
                             currentUser={currentUser} manageCart={addToCart}
                             calculateItemPrice={calculateItemPrice} setView={setView}
                             filteredProducts={products} hasMore={hasMore} loadMoreProducts={loadMoreProducts}
+                            isLoading={isLoading} setPreviewImage={setPreviewImage}
                         />
                     )}
                     {view === 'cart' && (
                         <Cart
                             cart={cart} manageCart={addToCart} cartSubtotal={cartTotal}
-                            finalTotal={finalTotal} setView={setView}
+                            finalTotal={finalTotal} setView={setView} discountAmount={discountAmount}
+                            appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon}
+                            setShowCouponModal={setShowCouponModal}
                         />
                     )}
                     {view === 'checkout' && (
                         <Checkout
                             cart={cart} cartSubtotal={cartTotal} finalTotal={finalTotal}
-                            setView={setView} handleConfirmOrder={(data) => {
-                                showToast("Pedido enviado exitosamente", "success");
-                                clearCart();
-                                setView('store');
+                            setView={setView} discountAmount={discountAmount}
+                            isProcessingOrder={isProcessingOrder}
+                            handleConfirmOrder={async (data) => {
+                                setIsProcessingOrder(true);
+                                try {
+                                    // Simulated delay
+                                    await new Promise(r => setTimeout(r, 2000));
+                                    showToast("Pedido enviado exitosamente", "success");
+                                    clearCart();
+                                    setAppliedCoupon(null);
+                                    setView('store');
+                                } finally {
+                                    setIsProcessingOrder(false);
+                                }
                             }}
                         />
                     )}
@@ -134,8 +160,8 @@ function App() {
                         <Admin
                             currentUser={currentUser} settings={settings}
                             adminTab={adminTab} setAdminTab={setAdminTab} setView={setView}
-                            dashboardMetrics={metrics} liveCarts={[]}
-                            showToast={showToast}
+                            dashboardMetrics={metrics} liveCarts={[]} showToast={showToast}
+                            products={products} orders={orders}
                         />
                     )}
                     {view === 'login' && (
@@ -155,10 +181,17 @@ function App() {
                     )}
                 </main>
 
-                <footer className="mt-auto bg-[#050505] border-t border-slate-800 py-12 px-8 text-center">
-                    <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">{settings.storeName} © {new Date().getFullYear()}</p>
+                <footer className="mt-auto bg-[#050505] border-t border-slate-800 py-12 px-8 text-center text-slate-600">
+                    <p className="text-xs font-bold uppercase tracking-widest">{settings.storeName} © {new Date().getFullYear()}</p>
                 </footer>
             </div>
+
+            {/* Common Modals */}
+            {previewImage && (
+                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-8 backdrop-blur-md" onClick={() => setPreviewImage(null)}>
+                    <img src={previewImage} className="max-w-full max-h-full rounded-2xl shadow-2xl animate-zoom-in" />
+                </div>
+            )}
         </ErrorBoundary>
     );
 }
