@@ -30,7 +30,7 @@ function App() {
     const [previewImage, setPreviewImage] = useState(null);
 
     // Custom Hooks
-    const { products, promos, orders, users, settings, loadMoreProducts, hasMore, isLoading } = useStore();
+    const { products, promos, orders, users, settings, loadMoreProducts, nexusHasMore, isLoading } = useStore();
     const { cart, addToCart, removeFromCart, clearCart, cartTotal } = useCart();
     const { currentUser, login, register, logout } = useAuth();
 
@@ -117,7 +117,7 @@ function App() {
                             products={products} promos={promos} settings={settings}
                             currentUser={currentUser} manageCart={addToCart}
                             calculateItemPrice={calculateItemPrice} setView={setView}
-                            filteredProducts={products} hasMore={hasMore} loadMoreProducts={loadMoreProducts}
+                            filteredProducts={products} nexusHasMore={nexusHasMore} loadMoreProducts={loadMoreProducts}
                             isLoading={isLoading} setPreviewImage={setPreviewImage}
                         />
                     )}
