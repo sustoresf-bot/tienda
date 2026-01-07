@@ -4040,6 +4040,65 @@ function App() {
                     </div>
                 )}
 
+                {view === 'privacy' && (
+                    <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
+                        <button onClick={() => setView('store')} className="mb-8 p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition"><ArrowLeft /></button>
+                        <h2 className="text-5xl font-black text-white mb-12 flex items-center gap-4 neon-text">
+                            <Shield className="text-cyan-400 w-12 h-12" /> Política de Privacidad
+                        </h2>
+                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 md:p-12 rounded-[3rem] text-slate-300 shadow-2xl space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                            <div className="prose prose-invert max-w-none">
+                                <p className="text-sm text-slate-500 mb-8 italic">Última actualización: 07 de enero de 2026</p>
+
+                                <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cómo y por qué podríamos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su información personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
+                                <ul className="list-disc pl-5 space-y-2">
+                                    <li>Visita nuestro sitio web en <a href="https://sustore.vercel.app" className="text-cyan-400 hover:underline">https://sustore.vercel.app</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
+                                    <li>Interactúe con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
+                                </ul>
+
+                                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 my-8">
+                                    <h3 className="text-xl font-bold text-white mb-4">RESUMEN DE PUNTOS CLAVE</h3>
+                                    <ul className="space-y-4 text-sm">
+                                        <li><strong>¿Qué información personal procesamos?</strong> Información proporcionada al registrarse o comprar.</li>
+                                        <li><strong>¿Procesamos información confidencial?</strong> No.</li>
+                                        <li><strong>¿Recopilamos información de terceros?</strong> No.</li>
+                                        <li><strong>¿Cómo procesamos su información?</strong> Para gestionar pedidos, seguridad y mejora del servicio.</li>
+                                        <li><strong>¿Compartimos información?</strong> Solo en situaciones específicas como transferencias comerciales o requisitos legales.</li>
+                                    </ul>
+                                </div>
+
+                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">1. ¿QUÉ INFORMACIÓN RECOPILAMOS?</h3>
+                                <p>Recopilamos información que usted nos proporciona voluntariamente: nombres, teléfonos, emails, direcciones, nombres de usuario y contraseñas.</p>
+                                <p>También recopilamos datos técnicos automáticamente (IP, tipo de navegador) para seguridad y análisis del sitio.</p>
+
+                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">2. ¿CÓMO PROCESAMOS TU INFORMACIÓN?</h3>
+                                <ul className="list-disc pl-5 space-y-2">
+                                    <li>Facilitar creación y administración de cuentas.</li>
+                                    <li>Gestionar pedidos, pagos y envíos.</li>
+                                    <li>Proteger nuestros servicios contra fraude.</li>
+                                    <li>Evaluar y mejorar la experiencia del usuario.</li>
+                                </ul>
+
+                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">3. ¿CUÁNTO TIEMPO CONSERVAMOS TU INFORMACIÓN?</h3>
+                                <p>Conservamos su información mientras tenga una cuenta activa con nosotros o según lo exija la ley para fines contables o legales.</p>
+
+                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">4. ¿CUÁLES SON SUS DERECHOS?</h3>
+                                <p>Puede revisar, cambiar o cancelar su cuenta en cualquier momento desde su perfil o contactándonos directamente.</p>
+
+                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">5. CONTACTO</h3>
+                                <p>Para preguntas sobre este aviso, puede escribirnos a:</p>
+                                <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 font-mono text-sm leading-relaxed">
+                                    <strong>{settings?.storeName || 'Sustore'}</strong><br />
+                                    Saavedra 7568<br />
+                                    Santa Fe, 3000<br />
+                                    Argentina<br />
+                                    <a href={`mailto:${settings?.sellerEmail}`} className="text-cyan-400 hover:underline">{settings?.sellerEmail || '[Email de contacto]'}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* 7. PANEL DE ADMINISTRACIÓN (COMPLETO Y DETALLADO) */}
                 {view === 'admin' && (
                     hasAccess(currentUser?.email) ? (
@@ -6805,7 +6864,7 @@ function App() {
                                 © 2026 {settings?.storeName || 'SUSTORE'}. All rights reserved.
                             </p>
                             <div className="flex gap-6">
-                                <span className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition">Privacy Policy</span>
+                                <span onClick={() => setView('privacy')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Privacy Policy</span>
                                 <span className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition">Terms of Service</span>
                             </div>
                         </div>
