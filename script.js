@@ -332,6 +332,8 @@ function App() {
     const [viewUserCart, setViewUserCart] = useState(null); // Usuario seleccionado para ver carrito
     const [userPassModal, setUserPassModal] = useState(null); // Usuario a cambiar contraseña
     const [newAdminPassword, setNewAdminPassword] = useState('');
+    const [userSearch, setUserSearch] = useState('');
+    const [userRoleFilter, setUserRoleFilter] = useState('all');
 
 
     const openManualSaleModal = (product) => {
@@ -2293,23 +2295,21 @@ function App() {
     };
 
 
-    // Modal de Carrito de Usuario (Admin)
-    const UserCartModal = () => {
+    // Unified Right Sidebar Drawer (Admin)
+    const AdminUserDrawer = () => {
         const [userCartItems, setUserCartItems] = useState([]);
         const [isLoadingCart, setIsLoadingCart] = useState(false);
+        const active = viewUserCart || userPassModal;
+        const type = viewUserCart ? 'cart' : (userPassModal ? 'password' : null);
+        const user = viewUserCart || userPassModal;
 
         useEffect(() => {
             if (viewUserCart) {
-                // Fetch carrito
                 const fetchCart = async () => {
                     setIsLoadingCart(true);
                     try {
                         const cartDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', viewUserCart.id));
-                        if (cartDoc.exists()) {
-                            setUserCartItems(cartDoc.data().items || []);
-                        } else {
-                            setUserCartItems([]);
-                        }
+                        setUserCartItems(cartDoc.exists() ? (cartDoc.data().items || []) : []);
                     } catch (e) { setUserCartItems([]); }
                     setIsLoadingCart(false);
                 };
@@ -2317,107 +2317,124 @@ function App() {
             }
         }, [viewUserCart]);
 
-        if (!viewUserCart) return null;
+        const closeDrawer = () => {
+            setViewUserCart(null);
+            setUserPassModal(null);
+            setNewAdminPassword('');
+        };
+
+        const handlePassSubmit = async (e) => {
+            e.preventDefault();
+            if (newAdminPassword.length < 6) return showToast("Mínimo 6 caracteres.", "warning");
+            try {
+                const res = await fetch('/api/admin/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: user.id, newPassword: newAdminPassword })
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error);
+                showToast("Contraseña actualizada.", "success");
+                closeDrawer();
+            } catch (err) { showToast(err.message, "error"); }
+        };
+
+        if (!active) return null;
 
         return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
-                <div className="bg-[#050505] rounded-[2rem] w-full max-w-2xl border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]">
-                    <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                        <h3 className="text-xl font-black text-white flex items-center gap-3">
-                            <ShoppingCart className="w-6 h-6 text-cyan-400" /> Carrito de {viewUserCart.name}
-                        </h3>
-                        <button onClick={() => setViewUserCart(null)} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition">
-                            <X className="w-5 h-5" />
+            <div className="fixed inset-0 z-[200] flex justify-end overflow-hidden">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={closeDrawer} />
+                <div className="relative w-full max-w-md bg-[#050505] border-l border-white/5 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col h-full animate-slide-left">
+                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30">
+                                {type === 'cart' ? <ShoppingCart className="w-6 h-6 text-cyan-400" /> : <Lock className="w-6 h-6 text-pink-400" />}
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-white">{type === 'cart' ? 'Detalles del Carrito' : 'Seguridad de Cuenta'}</h3>
+                                <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">{user?.name}</p>
+                            </div>
+                        </div>
+                        <button onClick={closeDrawer} className="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition">
+                            <X className="w-6 h-6" />
                         </button>
                     </div>
-                    <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
-                        {isLoadingCart ? (
-                            <div className="text-center py-10 text-slate-500">Cargando carrito...</div>
-                        ) : userCartItems.length === 0 ? (
-                            <div className="text-center py-10 text-slate-500 flex flex-col items-center">
-                                <ShoppingCart className="w-12 h-12 mb-4 opacity-20" />
-                                Carrito vacío o no sincronizado recientemente.
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {userCartItems.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center bg-slate-900/30 p-4 rounded-xl border border-slate-800">
-                                        <div>
-                                            <p className="font-bold text-white">{item.name}</p>
-                                            <p className="text-xs text-slate-500">Cant: {item.quantity}</p>
-                                        </div>
-                                        <p className="font-mono text-cyan-400">${(item.price * item.quantity).toLocaleString()}</p>
+
+                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                        {type === 'cart' && (
+                            <div className="space-y-6">
+                                {isLoadingCart ? (
+                                    <div className="py-20 flex flex-col items-center gap-4 opacity-50">
+                                        <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+                                        <p className="text-sm font-mono">SINCRONIZANDO DATOS...</p>
                                     </div>
-                                ))}
-                                <div className="pt-4 mt-4 border-t border-slate-800 flex justify-between items-center">
-                                    <span className="font-bold text-slate-400">Total Estimado</span>
-                                    <span className="text-xl font-black text-white">
-                                        ${userCartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}
-                                    </span>
+                                ) : userCartItems.length === 0 ? (
+                                    <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
+                                        <ShoppingCart className="w-16 h-16" />
+                                        <p className="text-sm font-bold uppercase tracking-tighter">Carrito Vacío</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {userCartItems.map((item, idx) => (
+                                            <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex gap-4 transition hover:border-cyan-500/30">
+                                                <div className="w-16 h-16 bg-black rounded-xl overflow-hidden shadow-inner border border-white/5">
+                                                    <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} className="w-full h-full object-cover" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-white text-sm leading-tight">{item.name}</p>
+                                                    <p className="text-xs text-slate-500 mt-1">Cant: <span className="text-white font-mono">{item.quantity}</span> x ${item.price.toLocaleString()}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-cyan-400 font-black text-sm">${(item.price * item.quantity).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div className="pt-8 mt-8 border-t border-white/5">
+                                            <div className="flex justify-between items-end mb-2 text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
+                                                <span>Subtotal</span>
+                                                <span className="text-white font-mono text-xs">${userCartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-lg font-black text-white uppercase tracking-tighter">Total Estimado</span>
+                                                <span className="text-2xl font-black text-cyan-400 shadow-cyan-500/20 drop-shadow-md">
+                                                    ${userCartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {type === 'password' && (
+                            <div className="space-y-8">
+                                <div className="bg-pink-900/10 border border-pink-500/20 p-6 rounded-[2rem]">
+                                    <h4 className="text-xs font-black text-pink-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <Shield className="w-4 h-4" /> Control de Acceso
+                                    </h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed mb-6">
+                                        Estás forzando un cambio de credenciales para <b>{user?.email}</b>. El usuario deberá usar la nueva clave inmediatamente.
+                                    </p>
+                                    <form onSubmit={handlePassSubmit} className="space-y-4">
+                                        <div className="relative">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600">
+                                                <Lock className="w-4 h-4" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                className="input-cyber w-full pl-12 pr-4 py-4"
+                                                value={newAdminPassword}
+                                                onChange={e => setNewAdminPassword(e.target.value)}
+                                                placeholder="NUEVA CONTRASEÑA"
+                                            />
+                                        </div>
+                                        <button className="w-full bg-gradient-to-r from-pink-600 to-purple-700 hover:from-pink-500 hover:to-purple-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-pink-900/20 transition-all flex items-center justify-center gap-3">
+                                            ACTUALIZAR CREDENCIALES
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         )}
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // Modal Cambio de Contraseña (Admin)
-    const ChangePasswordModal = () => {
-        if (!userPassModal) return null;
-
-        const handleSubmit = async (e) => {
-            e.preventDefault();
-            if (newAdminPassword.length < 6) return showToast("La contraseña debe tener 6+ caracteres.", "warning");
-
-            try {
-                // Usar Endpoint de Admin para actualizar Auth
-                const response = await fetch('/api/admin/change-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uid: userPassModal.id, newPassword: newAdminPassword })
-                });
-
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || 'Error al cambiar contraseña');
-
-                showToast(`Contraseña de ${userPassModal.name} actualizada.`, "success");
-                setNewAdminPassword('');
-                setUserPassModal(null);
-            } catch (err) {
-                console.error(err);
-                showToast(err.message, "error");
-            }
-        };
-
-        return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
-                <div className="bg-[#050505] rounded-[2rem] w-full max-w-md border border-slate-800 shadow-red-900/10 shadow-2xl relative overflow-hidden">
-                    <button onClick={() => setUserPassModal(null)} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white transition">
-                        <X className="w-5 h-5" />
-                    </button>
-                    <div className="p-8">
-                        <h3 className="text-xl font-black text-white mb-2 flex items-center gap-2">
-                            <Lock className="w-6 h-6 text-pink-500" /> Cambio de Contraseña
-                        </h3>
-                        <p className="text-slate-500 text-sm mb-6">Estás cambiando la contraseña para <b>{userPassModal.name}</b> (Usuario y Admin).</p>
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Nueva Contraseña</label>
-                                <input
-                                    type="text"
-                                    className="input-cyber w-full p-3"
-                                    value={newAdminPassword}
-                                    onChange={e => setNewAdminPassword(e.target.value)}
-                                    placeholder="Ingresa nueva clave..."
-                                />
-                            </div>
-                            <button type="submit" className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-900/20 transition">
-                                Guardar Cambios
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -4878,94 +4895,168 @@ function App() {
                                 )}
 
                                 {/* TAB: USERS (NUEVO) */}
-                                {adminTab === 'users' && (
-                                    <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                        <h1 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
-                                            <Users className="w-8 h-8 text-pink-400" /> Gestión de Usuarios
-                                        </h1>
 
-                                        <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2rem] overflow-hidden shadow-xl">
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-left border-collapse">
-                                                    <thead>
-                                                        <tr className="border-b border-slate-800 bg-slate-900/50">
-                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Usuario</th>
-                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Estadísticas</th>
-                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Rol</th>
-                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Acciones</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-slate-800">
-                                                        {users.map(u => (
-                                                            <tr key={u.id} className="hover:bg-slate-900/20 transition">
-                                                                <td className="p-6">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
-                                                                            {(u.name || '?').charAt(0).toUpperCase()}
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="font-bold text-white max-w-[150px] truncate">{u.name}</p>
-                                                                            <p className="text-xs text-slate-500">{u.email}</p>
-                                                                            <p className="text-[10px] text-slate-600 mt-1">Reg: {new Date(u.joinDate).toLocaleDateString()}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="p-6">
-                                                                    <div className="space-y-1">
-                                                                        <p className="text-xs text-slate-400 flex items-center gap-2">
-                                                                            <Heart className="w-3 h-3 text-red-500" /> Favoritos: <span className="text-white font-bold">{u.favorites ? u.favorites.length : 0}</span>
-                                                                        </p>
-                                                                        <button onClick={() => setViewUserCart(u)} className="text-xs flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition font-bold">
-                                                                            <ShoppingCart className="w-3 h-3" /> Ver Carrito
-                                                                        </button>
-                                                                        <p className="text-[10px] text-slate-600 mt-1">Pedidos: {u.ordersCount || 0}</p>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="p-6">
-                                                                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${u.role === 'admin' ? 'bg-purple-900/20 text-purple-400 border border-purple-500/30' : 'bg-slate-800 text-slate-400'}`}>
-                                                                        {u.role}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="p-6 flex justify-end gap-2">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setNewAdminPassword('');
-                                                                            setUserPassModal(u);
-                                                                        }}
-                                                                        className="p-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-                                                                        title="Cambiar Contraseña (Directo)"
-                                                                    >
-                                                                        <Lock className="w-4 h-4" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            if (u.id === currentUser.id) return showToast("No puedes quitarte tu propio rango de admin.", "warning");
+                                {adminTab === 'users' && (() => {
+                                    const filteredUsers = users.filter(u => {
+                                        const query = userSearch.toLowerCase();
+                                        const matchesSearch = (u.name || '').toLowerCase().includes(query) ||
+                                            (u.email || '').toLowerCase().includes(query) ||
+                                            (u.username || '').toLowerCase().includes(query);
+                                        const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
+                                        return matchesSearch && matchesRole;
+                                    });
 
-                                                                            openConfirm('Cambiar Rol', `¿Cambiar rol de ${u.name} a ${u.role === 'admin' ? 'Usuario' : 'Admin'}?`, async () => {
-                                                                                try {
-                                                                                    const newRole = u.role === 'admin' ? 'user' : 'admin';
-                                                                                    // Actualizar en DB
-                                                                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id), { role: newRole });
-                                                                                    // Actualizar UI localmente (Optimistic)
-                                                                                    setUsers(prev => prev.map(user => user.id === u.id ? { ...user, role: newRole } : user));
-                                                                                    showToast('Rol actualizado', 'success');
-                                                                                } catch (e) { showToast('Error actualizando rol', 'error'); }
-                                                                            });
-                                                                        }}
-                                                                        className={`p-2 rounded-lg transition ${u.id === currentUser.id ? 'opacity-20 cursor-not-allowed bg-slate-900 text-slate-600' : 'bg-slate-900 text-slate-400 hover:text-pink-400 hover:bg-slate-800'}`}
-                                                                        title="Cambiar Rol"
-                                                                    >
-                                                                        <Shield className="w-4 h-4" />
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
+                                    return (
+                                        <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                                                <div>
+                                                    <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
+                                                            <Users className="w-6 h-6 text-pink-400" />
+                                                        </div>
+                                                        Gestión de Usuarios
+                                                    </h1>
+                                                    <p className="text-slate-500 mt-2 font-medium">Control total sobre cuentas, roles y auditoría de carritos.</p>
+                                                </div>
+
+                                                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                                                    <div className="relative w-full sm:w-64 group">
+                                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-cyan-400 transition" />
+                                                        <input
+                                                            className="input-cyber w-full pl-11 pr-4 py-3 text-sm"
+                                                            placeholder="Buscar por nombre, email..."
+                                                            value={userSearch}
+                                                            onChange={e => setUserSearch(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5">
+                                                        {['all', 'admin', 'user'].map(role => (
+                                                            <button
+                                                                key={role}
+                                                                onClick={() => setUserRoleFilter(role)}
+                                                                className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${userRoleFilter === role ? 'bg-white/10 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                                                            >
+                                                                {role === 'all' ? 'Todos' : role}
+                                                            </button>
                                                         ))}
-                                                    </tbody>
-                                                </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-[#050505] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                                                <div className="overflow-x-auto overflow-y-visible">
+                                                    <table className="w-full text-left border-collapse">
+                                                        <thead>
+                                                            <tr className="bg-white/[0.02] border-b border-white/5">
+                                                                <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Identidad</th>
+                                                                <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Actividad & Stats</th>
+                                                                <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Rango</th>
+                                                                <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Acciones</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-white/5">
+                                                            {filteredUsers.length === 0 ? (
+                                                                <tr>
+                                                                    <td colSpan="4" className="p-20 text-center">
+                                                                        <div className="flex flex-col items-center gap-4 opacity-20">
+                                                                            <UserPlus className="w-16 h-16" />
+                                                                            <p className="font-black uppercase tracking-widest">No se encontraron usuarios</p>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ) : filteredUsers.map((u, idx) => (
+                                                                <tr key={u.id} style={{ animationDelay: `${idx * 0.03}s` }} className="group hover:bg-white/[0.01] transition-all animate-fade-up">
+                                                                    <td className="p-8">
+                                                                        <div className="flex items-center gap-5">
+                                                                            <div className="relative group/avatar">
+                                                                                <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl blur-lg opacity-20 group-hover/avatar:opacity-40 transition" />
+                                                                                <div className="relative w-14 h-14 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center text-xl font-black text-white overflow-hidden shadow-xl">
+                                                                                    {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : (u.name || '?').charAt(0).toUpperCase()}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <p className="font-bold text-white text-lg tracking-tight">{u.name}</p>
+                                                                                    {u.isVerified && <CheckCircle className="w-4 h-4 text-cyan-400" />}
+                                                                                </div>
+                                                                                <p className="text-xs text-slate-500 font-mono">{u.email}</p>
+                                                                                <div className="flex items-center gap-3 mt-2">
+                                                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md">ID: {u.id.slice(-6)}</span>
+                                                                                    <span className="text-[9px] font-bold text-slate-500 uppercase">INC. {new Date(u.joinDate).toLocaleDateString()}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="p-8">
+                                                                        <div className="flex flex-col items-center gap-3">
+                                                                            <div className="flex gap-2">
+                                                                                <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3" title="Favoritos">
+                                                                                    <Heart className={`w-4 h-4 ${u.favorites?.length > 0 ? 'text-pink-500 fill-pink-500' : 'text-slate-600'}`} />
+                                                                                    <span className="text-sm font-black text-white">{u.favorites ? u.favorites.length : 0}</span>
+                                                                                </div>
+                                                                                <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3" title="Pedidos Realizados">
+                                                                                    <ShoppingBag className="w-4 h-4 text-cyan-500" />
+                                                                                    <span className="text-sm font-black text-white">{u.ordersCount || 0}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setViewUserCart(u)}
+                                                                                className="w-full py-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                                                            >
+                                                                                <Maximize2 className="w-3 h-3" /> Ver Carrito en Vivo
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="p-8">
+                                                                        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] border shadow-inner ${u.role === 'admin'
+                                                                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                                                                            : 'bg-slate-900/50 text-slate-500 border-white/5'
+                                                                            }`}>
+                                                                            {u.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                                                                            {u.role}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="p-8">
+                                                                        <div className="flex justify-end gap-3 translate-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setNewAdminPassword('');
+                                                                                    setUserPassModal(u);
+                                                                                }}
+                                                                                className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 transition-all shadow-xl"
+                                                                                title="Seguridad: Cambiar Clave"
+                                                                            >
+                                                                                <Lock className="w-5 h-5" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    if (u.id === currentUser.id) return showToast("No puedes quitarte tu propio rango de admin.", "warning");
+                                                                                    openConfirm('Cambiar Rol', `¿Elevar/Degradar a ${u.name}?`, async () => {
+                                                                                        const newRole = u.role === 'admin' ? 'user' : 'admin';
+                                                                                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id), { role: newRole });
+                                                                                        showToast("Privilegios actualizados", "success");
+                                                                                    });
+                                                                                }}
+                                                                                className={`w-11 h-11 flex items-center justify-center rounded-2xl border transition-all shadow-xl ${u.id === currentUser.id
+                                                                                    ? 'bg-slate-900/50 border-white/5 text-slate-700 cursor-not-allowed'
+                                                                                    : 'bg-[#0a0a0a] border-white/5 text-slate-400 hover:border-pink-500/40 hover:text-pink-400 hover:bg-pink-500/5'
+                                                                                    }`}
+                                                                                title="Cambiar Privilegios"
+                                                                            >
+                                                                                <Shield className="w-5 h-5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    );
+                                })()}
+
 
                                 {/* TAB: PROMOS (NUEVO) */}
                                 {adminTab === 'promos' && (
@@ -6464,6 +6555,7 @@ function App() {
                     </div>
                 </div>
             )}
+            <AdminUserDrawer />
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
