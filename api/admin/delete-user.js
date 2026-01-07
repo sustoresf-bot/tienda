@@ -1,0 +1,47 @@
+
+import admin from 'firebase-admin';
+
+// Inicialización Lazy de Firebase Admin
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+            ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+            : {
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+            };
+
+        if (serviceAccount.projectId) {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+        } else {
+            admin.initializeApp();
+        }
+    } catch (error) {
+        console.error("Error inicializando Firebase Admin:", error.message);
+    }
+}
+
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const { uid } = req.body;
+
+    if (!uid) {
+        return res.status(400).json({ error: 'Faltan datos (uid)' });
+    }
+
+    try {
+        // Eliminar de Firebase Auth
+        await admin.auth().deleteUser(uid);
+
+        return res.status(200).json({ message: 'Usuario eliminado exitosamente de Auth.' });
+    } catch (error) {
+        console.error('Error al eliminar usuario:', error);
+        return res.status(500).json({ error: error.message || 'Error interno al eliminar usuario.' });
+    }
+}

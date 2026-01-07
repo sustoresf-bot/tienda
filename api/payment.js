@@ -158,6 +158,10 @@ export default async function handler(req, res) {
                                             </tr>
                                         ` : ''}
                                         <tr>
+                                            <td style="padding-bottom: 8px; text-align: right; color: #94a3b8; font-size: 14px;">Envío (${req.body.shippingMethod === 'Delivery' ? 'Domicilio' : 'Retiro'})</td>
+                                            <td style="padding-bottom: 8px; text-align: right; color: #cbd5e1; font-size: 14px; font-weight: 500;">+ ${formatMoney(req.body.shippingFee || 0)}</td>
+                                        </tr>
+                                        <tr>
                                             <td style="padding-top: 15px; text-align: right; color: #ffffff; font-size: 18px; font-weight: 900; border-top: 1px solid #1e293b;">Total Final</td>
                                             <td style="padding-top: 15px; text-align: right; color: #22d3ee; font-size: 32px; font-weight: 900; letter-spacing: -1px; border-top: 1px solid #1e293b;">${formatMoney(total)}</td>
                                         </tr>

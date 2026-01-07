@@ -7,7 +7,7 @@ import {
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
-    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2
+    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, sendPasswordResetEmail } from 'firebase/auth';
@@ -247,7 +247,8 @@ function App() {
         city: '',
         province: '',
         zipCode: '',
-        paymentChoice: ''
+        paymentChoice: '',
+        shippingMethod: 'Pickup' // Pickup or Delivery
     });
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [showCouponModal, setShowCouponModal] = useState(false);
@@ -328,9 +329,10 @@ function App() {
         notes: 'Venta presencial'
     });
 
-    // --- NUEVOS ESTADOS PARA GESTIÓN DE USUARIOS (CARRITO Y PASS) ---
+    // --- NUEVOS ESTADOS PARA GESTIÓN DE USUARIOS (CARRITO, PASS Y EDICIÓN) ---
     const [viewUserCart, setViewUserCart] = useState(null); // Usuario seleccionado para ver carrito
     const [userPassModal, setUserPassModal] = useState(null); // Usuario a cambiar contraseña
+    const [viewUserEdit, setViewUserEdit] = useState(null); // Usuario a editar perfil
     const [newAdminPassword, setNewAdminPassword] = useState('');
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('all');
@@ -631,6 +633,33 @@ function App() {
                 setPromos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             }),
 
+            // SEO & Global Effects
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    // Actualizar SEO
+                    if (data.seoTitle) document.title = data.seoTitle;
+
+                    // Actualizar Meta Description
+                    let metaDesc = document.querySelector('meta[name="description"]');
+                    if (!metaDesc) {
+                        metaDesc = document.createElement('meta');
+                        metaDesc.name = "description";
+                        document.head.appendChild(metaDesc);
+                    }
+                    metaDesc.content = data.seoDescription || '';
+
+                    // Actualizar Meta Keywords
+                    let metaKey = document.querySelector('meta[name="keywords"]');
+                    if (!metaKey) {
+                        metaKey = document.createElement('meta');
+                        metaKey.name = "keywords";
+                        document.head.appendChild(metaKey);
+                    }
+                    metaKey.content = data.seoKeywords || '';
+                }
+            }),
+
             // Configuración Global (con Auto-Migración)
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), async (snapshot) => {
                 // 1. Buscar si existe el documento 'config'
@@ -709,7 +738,7 @@ function App() {
                     // Nada existe, crear default en config
                     setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings);
                 }
-            }),
+            })
         ];
 
         // Limpiar suscripciones al desmontar
@@ -731,8 +760,8 @@ function App() {
                 if (!authData.username) throw new Error("Debes elegir un nombre de usuario.");
                 if (!authData.email || !authData.email.includes('@')) throw new Error("Email inválido.");
                 if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
-                if (!authData.dni) throw new Error("El DNI es obligatorio para la facturación.");
-                if (!authData.phone) throw new Error("El teléfono es obligatorio para el contacto.");
+                if (settings?.requireDNI && !authData.dni) throw new Error("El DNI es obligatorio.");
+                if (settings?.requirePhone && !authData.phone) throw new Error("El teléfono es obligatorio.");
 
                 // Verificar duplicados (Email)
                 const qEmail = query(usersRef, where("email", "==", authData.email));
@@ -928,7 +957,16 @@ function App() {
     };
 
     const discountAmount = appliedCoupon ? calculateDiscountAmount(cartSubtotal, appliedCoupon) : 0;
-    const finalTotal = Math.max(0, cartSubtotal - discountAmount);
+
+    const shippingFee = useMemo(() => {
+        if (checkoutData.shippingMethod !== 'Delivery') return 0;
+        const deliverySettings = settings?.shippingDelivery;
+        if (!deliverySettings?.enabled) return 0;
+        if (deliverySettings.freeAbove > 0 && cartSubtotal >= deliverySettings.freeAbove) return 0;
+        return Number(deliverySettings.fee) || 0;
+    }, [checkoutData.shippingMethod, cartSubtotal, settings?.shippingDelivery]);
+
+    const finalTotal = Math.max(0, cartSubtotal - discountAmount + shippingFee);
 
     // Selección de Cupón
     const selectCoupon = async (coupon) => {
@@ -1002,6 +1040,8 @@ function App() {
                     subtotal: orderData.subtotal,
                     discountDetails: discountDetails,
                     shipping: orderData.shippingAddress,
+                    shippingFee: orderData.shippingFee,
+                    shippingMethod: orderData.shippingMethod,
                     paymentMethod: orderData.paymentMethod,
                     date: orderData.date
                 }),
@@ -1023,7 +1063,7 @@ function App() {
             return showToast("Por favor inicia sesión para finalizar la compra.", "info");
         }
 
-        if (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode) {
+        if (checkoutData.shippingMethod === 'Delivery' && (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode)) {
             return showToast("Por favor completa TODOS los datos de envío.", "warning");
         }
 
@@ -1059,7 +1099,9 @@ function App() {
                 discountCode: appliedCoupon ? appliedCoupon.code : null,
                 status: 'Pendiente',
                 date: new Date().toISOString(),
-                shippingAddress: `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})`,
+                shippingMethod: checkoutData.shippingMethod,
+                shippingFee: shippingFee,
+                shippingAddress: checkoutData.shippingMethod === 'Delivery' ? `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})` : 'Retiro en Local',
                 paymentMethod: checkoutData.paymentChoice,
                 lastUpdate: new Date().toISOString()
             };
@@ -2299,141 +2341,301 @@ function App() {
     const AdminUserDrawer = () => {
         const [userCartItems, setUserCartItems] = useState([]);
         const [isLoadingCart, setIsLoadingCart] = useState(false);
-        const active = viewUserCart || userPassModal;
-        const type = viewUserCart ? 'cart' : (userPassModal ? 'password' : null);
-        const user = viewUserCart || userPassModal;
+        const [isSaving, setIsSaving] = useState(false);
+        const active = viewUserCart || userPassModal || viewUserEdit;
+        // Determinamos el tipo basado en qué activó el drawer, pero ahora 'edit' es el modo principal
+        const type = viewUserCart ? 'cart' : (userPassModal ? 'password' : 'edit');
+        const user = viewUserCart || userPassModal || viewUserEdit;
+
+        const [editForm, setEditForm] = useState({
+            name: '',
+            username: '',
+            email: '',
+            phone: '',
+            dni: '',
+            role: 'user',
+            newPassword: ''
+        });
 
         useEffect(() => {
-            if (viewUserCart) {
-                const fetchCart = async () => {
-                    setIsLoadingCart(true);
-                    try {
-                        const cartDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', viewUserCart.id));
-                        setUserCartItems(cartDoc.exists() ? (cartDoc.data().items || []) : []);
-                    } catch (e) { setUserCartItems([]); }
-                    setIsLoadingCart(false);
-                };
-                fetchCart();
+            if (active && user) {
+                if (type === 'cart') {
+                    const fetchCart = async () => {
+                        setIsLoadingCart(true);
+                        try {
+                            const cartDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', user.id));
+                            setUserCartItems(cartDoc.exists() ? (cartDoc.data().items || []) : []);
+                        } catch (e) { setUserCartItems([]); }
+                        setIsLoadingCart(false);
+                    };
+                    fetchCart();
+                }
+
+                // Siempre cargamos los datos básicos para el formulario si estamos en edit o password
+                setEditForm({
+                    name: user.name || '',
+                    username: user.username || '',
+                    email: user.email || '',
+                    phone: user.phone || '',
+                    dni: user.dni || '',
+                    role: user.role || 'user',
+                    newPassword: ''
+                });
             }
-        }, [viewUserCart]);
+        }, [active, user, type]);
 
         const closeDrawer = () => {
             setViewUserCart(null);
             setUserPassModal(null);
-            setNewAdminPassword('');
+            setViewUserEdit(null);
         };
 
-        const handlePassSubmit = async (e) => {
+        const handleEditSubmit = async (e) => {
             e.preventDefault();
-            if (newAdminPassword.length < 6) return showToast("Mínimo 6 caracteres.", "warning");
+            setIsSaving(true);
             try {
-                const res = await fetch('/api/admin/change-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uid: user.id, newPassword: newAdminPassword })
+                // 1. Actualización Crítica (Auth) vía API si cambió email o password
+                const authUpdate = {};
+                if (editForm.email !== user.email) authUpdate.email = editForm.email;
+                if (editForm.newPassword) authUpdate.password = editForm.newPassword;
+
+                if (Object.keys(authUpdate).length > 0) {
+                    const res = await fetch('/api/admin/update-user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ uid: user.id, ...authUpdate })
+                    });
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.error);
+                }
+
+                // 2. Actualización de Perfil (Firestore)
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), {
+                    name: editForm.name,
+                    username: editForm.username,
+                    email: editForm.email,
+                    phone: editForm.phone,
+                    dni: editForm.dni,
+                    role: editForm.role,
+                    lastModifiedBy: currentUser.email,
+                    updatedAt: new Date().toISOString()
                 });
-                const result = await res.json();
-                if (!res.ok) throw new Error(result.error);
-                showToast("Contraseña actualizada.", "success");
+
+                showToast("Perfil de usuario actualizado correctamente.", "success");
                 closeDrawer();
-            } catch (err) { showToast(err.message, "error"); }
+            } catch (e) {
+                console.error(e);
+                showToast(e.message || "Error al actualizar perfil.", "error");
+            }
+            setIsSaving(false);
+        };
+
+        const handleDeleteUser = async () => {
+            if (user.email === currentUser.email) {
+                return showToast("Autoprotección activa: No puedes eliminar tu propia cuenta.", "warning");
+            }
+
+            openConfirm("ELIMINAR USUARIO", `¿Estás seguro de eliminar a ${user.name}? Esta acción es irreversible y borrará su acceso y datos.`, async () => {
+                setIsSaving(true);
+                try {
+                    // 1. Borrar de Auth vía API
+                    const res = await fetch('/api/admin/delete-user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ uid: user.id })
+                    });
+                    if (!res.ok) throw new Error("Error eliminando acceso de Auth");
+
+                    // 2. Borrar de Firestore
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id));
+
+                    showToast("Usuario eliminado definitivamente.", "success");
+                    closeDrawer();
+                } catch (e) {
+                    console.error(e);
+                    showToast("Fallo al eliminar usuario.", "error");
+                }
+                setIsSaving(false);
+            });
         };
 
         if (!active) return null;
 
         return (
-            <div className="fixed inset-0 z-[200] flex justify-end overflow-hidden">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={closeDrawer} />
-                <div className="relative w-full max-w-md bg-[#050505] border-l border-white/5 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col h-full animate-slide-left">
+            <div className="fixed inset-0 z-[1000] flex justify-end animate-fade-in pointer-events-none">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={closeDrawer} />
+
+                <div className="w-full max-w-xl bg-[#0a0a0a] border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col h-full pointer-events-auto relative overflow-hidden animate-slide-left">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-600 via-cyan-500 to-pink-600"></div>
+
                     <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30">
-                                {type === 'cart' ? <ShoppingCart className="w-6 h-6 text-cyan-400" /> : <Lock className="w-6 h-6 text-pink-400" />}
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-white">{type === 'cart' ? 'Detalles del Carrito' : 'Seguridad de Cuenta'}</h3>
-                                <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">{user?.name}</p>
-                            </div>
+                        <div>
+                            <h2 className="text-xl font-black text-white tracking-widest uppercase">
+                                {type === 'cart' ? 'Auditoría de Carrito' : 'Configurar Cuenta'}
+                            </h2>
+                            <p className="text-[10px] font-bold text-slate-500 mt-1 tracking-widest flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                ID: {user.id.slice(-8).toUpperCase()} • {user.email}
+                            </p>
                         </div>
-                        <button onClick={closeDrawer} className="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition">
-                            <X className="w-6 h-6" />
+                        <button onClick={closeDrawer} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
+                            <X className="w-5 h-5 text-slate-400 group-hover:text-white" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8">
                         {type === 'cart' && (
                             <div className="space-y-6">
                                 {isLoadingCart ? (
                                     <div className="py-20 flex flex-col items-center gap-4 opacity-50">
                                         <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
-                                        <p className="text-sm font-mono">SINCRONIZANDO DATOS...</p>
+                                        <p className="text-xs font-black tracking-widest text-slate-500">SINCRONIZANDO DATOS...</p>
                                     </div>
                                 ) : userCartItems.length === 0 ? (
-                                    <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
-                                        <ShoppingCart className="w-16 h-16" />
-                                        <p className="text-sm font-bold uppercase tracking-tighter">Carrito Vacío</p>
+                                    <div className="py-20 text-center flex flex-col items-center gap-6">
+                                        <div className="p-6 rounded-full bg-white/5 border border-white/5">
+                                            <ShoppingCart className="w-12 h-12 text-slate-700" />
+                                        </div>
+                                        <p className="text-sm font-black uppercase tracking-widest text-slate-500 italic">No hay productos activos</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-4">
-                                        {userCartItems.map((item, idx) => (
-                                            <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex gap-4 transition hover:border-cyan-500/30">
-                                                <div className="w-16 h-16 bg-black rounded-xl overflow-hidden shadow-inner border border-white/5">
-                                                    <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} className="w-full h-full object-cover" />
+                                    <>
+                                        <div className="flex justify-between items-center px-2">
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contenido del Carrito</p>
+                                            <p className="text-xs font-bold text-cyan-400 bg-cyan-400/10 px-3 py-1 rounded-full">{userCartItems.length} ITEMS</p>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {userCartItems.map((item, idx) => (
+                                                <div key={idx} className="bg-white/[0.03] border border-white/10 p-4 rounded-2xl flex gap-4 transition hover:bg-white/[0.05] hover:border-cyan-500/20 group animate-fade-up" style={{ animationDelay: `${idx * 0.05}s` }}>
+                                                    <div className="w-16 h-16 bg-[#0a0a0a] rounded-xl overflow-hidden shadow-inner border border-white/5 flex-shrink-0">
+                                                        <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                                    </div>
+                                                    <div className="flex-1 flex flex-col justify-center">
+                                                        <p className="font-bold text-white text-sm leading-tight mb-1">{item.name}</p>
+                                                        <div className="flex justify-between items-center">
+                                                            <p className="text-xs text-slate-500">Cant: <span className="text-white font-mono font-bold">{item.quantity}</span></p>
+                                                            <p className="text-cyan-400 font-black font-mono text-xs">${item.price.toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="font-bold text-white text-sm leading-tight">{item.name}</p>
-                                                    <p className="text-xs text-slate-500 mt-1">Cant: <span className="text-white font-mono">{item.quantity}</span> x ${item.price.toLocaleString()}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-cyan-400 font-black text-sm">${(item.price * item.quantity).toLocaleString()}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <div className="pt-8 mt-8 border-t border-white/5">
-                                            <div className="flex justify-between items-end mb-2 text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
-                                                <span>Subtotal</span>
-                                                <span className="text-white font-mono text-xs">${userCartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-lg font-black text-white uppercase tracking-tighter">Total Estimado</span>
-                                                <span className="text-2xl font-black text-cyan-400 shadow-cyan-500/20 drop-shadow-md">
-                                                    ${userCartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}
-                                                </span>
+                                            ))}
+                                        </div>
+                                        <div className="pt-6 border-t border-white/5">
+                                            <div className="flex justify-between items-center bg-cyan-500/5 p-6 rounded-2xl border border-cyan-500/20">
+                                                <p className="text-slate-400 font-bold">Valor Total</p>
+                                                <p className="text-2xl font-black text-white font-mono">${userCartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}</p>
                                             </div>
                                         </div>
-                                    </div>
+                                    </>
                                 )}
                             </div>
                         )}
 
-                        {type === 'password' && (
-                            <div className="space-y-8">
-                                <div className="bg-pink-900/10 border border-pink-500/20 p-6 rounded-[2rem]">
-                                    <h4 className="text-xs font-black text-pink-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <Shield className="w-4 h-4" /> Control de Acceso
-                                    </h4>
-                                    <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                                        Estás forzando un cambio de credenciales para <b>{user?.email}</b>. El usuario deberá usar la nueva clave inmediatamente.
+                        {(type === 'edit' || type === 'password') && (
+                            <form onSubmit={handleEditSubmit} className="space-y-8 animate-fade-in">
+                                {/* Datos de Identidad */}
+                                <div className="space-y-6">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                        <User className="w-3 h-3" /> Datos Identidad
                                     </p>
-                                    <form onSubmit={handlePassSubmit} className="space-y-4">
-                                        <div className="relative">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600">
-                                                <Lock className="w-4 h-4" />
-                                            </div>
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
                                             <input
-                                                type="text"
-                                                className="input-cyber w-full pl-12 pr-4 py-4"
-                                                value={newAdminPassword}
-                                                onChange={e => setNewAdminPassword(e.target.value)}
-                                                placeholder="NUEVA CONTRASEÑA"
+                                                className="input-cyber w-full p-4 text-sm"
+                                                placeholder="Nombre Completo"
+                                                value={editForm.name}
+                                                onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                                required
                                             />
                                         </div>
-                                        <button className="w-full bg-gradient-to-r from-pink-600 to-purple-700 hover:from-pink-500 hover:to-purple-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-pink-900/20 transition-all flex items-center justify-center gap-3">
-                                            ACTUALIZAR CREDENCIALES
-                                        </button>
-                                    </form>
+                                        <div>
+                                            <input
+                                                className="input-cyber w-full p-4 text-sm font-mono"
+                                                placeholder="Username / Alias"
+                                                value={editForm.username}
+                                                onChange={e => setEditForm({ ...editForm, username: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                className="input-cyber w-full p-4 text-sm font-mono"
+                                                placeholder="Email de la cuenta (Principal)"
+                                                value={editForm.email}
+                                                onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input
+                                                className="input-cyber w-full p-4 text-sm font-mono"
+                                                placeholder="DNI"
+                                                value={editForm.dni}
+                                                onChange={e => setEditForm({ ...editForm, dni: e.target.value })}
+                                            />
+                                            <input
+                                                className="input-cyber w-full p-4 text-sm font-mono"
+                                                placeholder="Teléfono"
+                                                value={editForm.phone}
+                                                onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+
+                                {/* Seguridad y Rol */}
+                                <div className="space-y-6 pt-4">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                        <Lock className="w-3 h-3" /> Seguridad & Rol
+                                    </p>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <div className="relative group">
+                                                <input
+                                                    type="password"
+                                                    className="input-cyber w-full p-4 text-sm font-mono"
+                                                    placeholder="Nueva Contraseña (Dejar vacío para no cambiar)"
+                                                    value={editForm.newPassword}
+                                                    onChange={e => setEditForm({ ...editForm, newPassword: e.target.value })}
+                                                />
+                                            </div>
+                                            <p className="text-[9px] text-slate-600 mt-2 ml-1 italic">Mínimo 6 caracteres para actualizar.</p>
+                                        </div>
+
+                                        <div className="flex bg-slate-900/50 p-1.5 rounded-2xl border border-white/5">
+                                            {['user', 'editor', 'admin'].map(r => (
+                                                <button
+                                                    key={r}
+                                                    type="button"
+                                                    onClick={() => setEditForm({ ...editForm, role: r })}
+                                                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${editForm.role === r ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'
+                                                        }`}
+                                                >
+                                                    {r}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 pt-6">
+                                    <button
+                                        type="submit"
+                                        disabled={isSaving}
+                                        className="w-full py-5 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                                    >
+                                        {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                                        SINCRONIZAR CAMBIOS
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleDeleteUser}
+                                        className="w-full py-4 border border-red-500/30 bg-red-500/5 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/10 transition flex items-center justify-center gap-2"
+                                    >
+                                        <Trash2 className="w-4 h-4" /> Eliminar Cuenta Permanente
+                                    </button>
+                                </div>
+                            </form>
                         )}
                     </div>
                 </div>
@@ -2453,6 +2655,25 @@ function App() {
                 </div>
                 <h1 className="text-3xl font-black tracking-[0.5em] mt-8 animate-pulse neon-text">SUSTORE</h1>
                 <p className="text-slate-500 text-sm mt-4 font-mono uppercase tracking-widest">Cargando sistema...</p>
+            </div>
+        );
+    }
+
+    // Modo Mantenimiento
+    if (settings?.maintenanceMode && !isAdmin(currentUser?.email)) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white p-6 text-center">
+                <div className="w-24 h-24 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mb-8 border border-red-900/50 animate-pulse">
+                    <AlertTriangle className="w-12 h-12" />
+                </div>
+                <h1 className="text-4xl font-black mb-4 tracking-tight uppercase">Sistema en Mantenimiento</h1>
+                <p className="text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Estamos realizando mejoras en el sistema para brindarte una mejor experiencia.
+                    Por favor, vuelve a intentarlo en unos minutos.
+                </p>
+                <div className="mt-12 pt-12 border-t border-slate-900 w-full max-w-xs">
+                    <p className="text-xs text-slate-600 font-mono italic">Nexus OS v3.0 - Maintenance Mode Active</p>
+                </div>
             </div>
         );
     }
@@ -2487,7 +2708,7 @@ function App() {
 
         <div className="min-h-screen flex flex-col relative w-full bg-grid bg-[#050505] font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
             {/* DEBUGGER VISUAL (SOLO DESARROLLO) */}
-            {view === 'store' && (
+            {view === 'store' && currentUser?.role === 'admin' && (
                 <div className="fixed bottom-4 left-4 z-[9999] bg-black/80 text-green-400 font-mono text-xs p-2 rounded border border-green-900 pointer-events-none">
                     [DEBUG] Total: {products.length} | Filtro: {filteredProducts.length} | Cat: {selectedCategory || 'ALL'}
                 </div>
@@ -2498,6 +2719,17 @@ function App() {
                 <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-cyan-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
             </div>
+
+            {/* ANUNCIO SUPERIOR (Banner de Configuración) */}
+            {settings?.announcementMessage && view !== 'admin' && (
+                <div className="bg-gradient-to-r from-cyan-600 to-blue-600 py-2.5 px-4 text-center relative z-[60]">
+                    <p className="text-white text-xs font-black tracking-[0.2em] uppercase flex items-center justify-center gap-3">
+                        <Zap className="w-3.5 h-3.5 fill-current animate-pulse" />
+                        {settings.announcementMessage}
+                        <Zap className="w-3.5 h-3.5 fill-current animate-pulse" />
+                    </p>
+                </div>
+            )}
 
             {/* Contenedores Globales (Toasts y Modales) */}
             <div className="fixed top-24 right-4 z-[9999] space-y-3 pointer-events-none">
@@ -3001,8 +3233,8 @@ function App() {
                                                     <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">
                                                         {p.category}
                                                     </p>
-                                                    {/* Estado de Stock (Texto secundario solo si quedan pocos, Agotado ya está en imagen) */}
-                                                    {p.stock > 0 && p.stock <= 3 ? (
+                                                    {/* Estado de Stock */}
+                                                    {settings?.showStockCount !== false && p.stock > 0 && p.stock <= (settings?.lowStockThreshold || 5) ? (
                                                         <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
                                                             <AlertCircle className="w-3 h-3" /> Últimos {p.stock}
                                                         </span>
@@ -3145,8 +3377,11 @@ function App() {
                                             <span className="font-mono font-bold text-white">${cartSubtotal.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between text-slate-400 text-sm font-medium">
-                                            <span>Envío</span>
-                                            <span className="text-cyan-400 font-bold flex items-center gap-1"><Truck className="w-3 h-3" /> A coordinar con el vendedor</span>
+                                            <span>Envío {checkoutData.shippingMethod === 'Delivery' ? '(A domicilio)' : '(Retiro)'}</span>
+                                            <span className="text-cyan-400 font-bold flex items-center gap-1">
+                                                <Truck className="w-3 h-3" />
+                                                {shippingFee > 0 ? `$${shippingFee.toLocaleString()}` : (checkoutData.shippingMethod === 'Pickup' ? 'Gratis' : '¡Envío Gratis!')}
+                                            </span>
                                         </div>
                                         {appliedCoupon && (
                                             <div className="flex justify-between text-purple-400 font-bold text-sm animate-pulse bg-purple-900/10 p-2 rounded-lg">
@@ -3185,52 +3420,85 @@ function App() {
                             {/* Columna Izquierda: Formularios */}
                             <div className="md:col-span-3 space-y-8">
 
-                                {/* Datos de Envío */}
+                                {/* Opciones de Entrega */}
                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-900/10 rounded-bl-[100px] pointer-events-none"></div>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-900/10 rounded-bl-[100px] pointer-events-none"></div>
                                     <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                                        <MapPin className="text-cyan-400 w-6 h-6" /> Datos de Envío
+                                        <Truck className="text-orange-400 w-6 h-6" /> Método de Entrega
                                     </h2>
-                                    <div className="space-y-5 relative z-10">
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Dirección y Altura</label>
-                                            <input
-                                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition font-medium"
-                                                placeholder="Ej: Av. Santa Fe 1234"
-                                                value={checkoutData.address}
-                                                onChange={e => setCheckoutData({ ...checkoutData, address: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-5">
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Ciudad</label>
-                                                <input
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium"
-                                                    placeholder="Ej: Rosario"
-                                                    value={checkoutData.city}
-                                                    onChange={e => setCheckoutData({ ...checkoutData, city: e.target.value })}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Provincia</label>
-                                                <input
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium"
-                                                    placeholder="Ej: Santa Fe"
-                                                    value={checkoutData.province}
-                                                    onChange={e => setCheckoutData({ ...checkoutData, province: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Código Postal</label>
-                                            <input
-                                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium"
-                                                placeholder="Ej: 2000"
-                                                value={checkoutData.zipCode}
-                                                onChange={e => setCheckoutData({ ...checkoutData, zipCode: e.target.value })}
-                                            />
-                                        </div>
+                                    <div className="grid grid-cols-2 gap-4 relative z-10 mb-6">
+                                        {settings?.shippingPickup?.enabled && (
+                                            <button
+                                                onClick={() => setCheckoutData({ ...checkoutData, shippingMethod: 'Pickup' })}
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Pickup' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500'}`}
+                                            >
+                                                {checkoutData.shippingMethod === 'Pickup' && <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-cyan-500" />}
+                                                <MapPin className="w-8 h-8 group-hover:scale-110 transition" />
+                                                <span className="text-xs font-black uppercase">Retiro en Local</span>
+                                            </button>
+                                        )}
+                                        {settings?.shippingDelivery?.enabled && (
+                                            <button
+                                                onClick={() => setCheckoutData({ ...checkoutData, shippingMethod: 'Delivery' })}
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Delivery' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500'}`}
+                                            >
+                                                {checkoutData.shippingMethod === 'Delivery' && <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-cyan-500" />}
+                                                <Truck className="w-8 h-8 group-hover:scale-110 transition" />
+                                                <span className="text-xs font-black uppercase">Envío a Domicilio</span>
+                                            </button>
+                                        )}
                                     </div>
+
+                                    {checkoutData.shippingMethod === 'Pickup' && (
+                                        <div className="p-4 bg-cyan-900/10 border border-cyan-500/20 rounded-xl animate-fade-up flex gap-3">
+                                            <Info className="w-5 h-5 text-cyan-400 shrink-0" />
+                                            <p className="text-xs text-cyan-200">Retira tu pedido en: <span className="font-bold">{settings?.shippingPickup?.address || 'Dirección a coordinar'}</span></p>
+                                        </div>
+                                    )}
+
+                                    {checkoutData.shippingMethod === 'Delivery' && (
+                                        <div className="space-y-5 relative z-10 animate-fade-up mt-4">
+                                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest pl-2">Datos de Destino</h3>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Dirección y Altura</label>
+                                                <input
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition font-medium"
+                                                    placeholder="Ej: Av. Santa Fe 1234"
+                                                    value={checkoutData.address || ''}
+                                                    onChange={e => setCheckoutData({ ...checkoutData, address: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-5">
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Ciudad</label>
+                                                    <input
+                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium"
+                                                        placeholder="Ej: Rosario"
+                                                        value={checkoutData.city || ''}
+                                                        onChange={e => setCheckoutData({ ...checkoutData, city: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Provincia</label>
+                                                    <input
+                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium"
+                                                        placeholder="Ej: Santa Fe"
+                                                        value={checkoutData.province || ''}
+                                                        onChange={e => setCheckoutData({ ...checkoutData, province: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Código Postal</label>
+                                                <input
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-cyan-500 outline-none transition font-medium"
+                                                    placeholder="Ej: 2000"
+                                                    value={checkoutData.zipCode || ''}
+                                                    onChange={e => setCheckoutData({ ...checkoutData, zipCode: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Método de Pago */}
@@ -3240,21 +3508,36 @@ function App() {
                                         <CreditCard className="text-cyan-400 w-6 h-6" /> Método de Pago
                                     </h2>
                                     <div className="grid grid-cols-2 gap-4 relative z-10">
-                                        {['Mercado Pago', 'Transferencia'].map(method => (
+                                        {settings?.paymentMercadoPago?.enabled && (
                                             <button
-                                                key={method}
-                                                onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: method })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === method ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Mercado Pago' })}
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Mercado Pago' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
                                             >
-                                                {checkoutData.paymentChoice === method && (
-                                                    <div className="absolute top-2 right-2 text-cyan-500 animate-fade-in">
-                                                        <CheckCircle className="w-5 h-5" />
-                                                    </div>
-                                                )}
-                                                {method === 'Mercado Pago' ? <CreditCard className="w-8 h-8 group-hover:scale-110 transition" /> : <RefreshCw className="w-8 h-8 group-hover:scale-110 transition" />}
-                                                <span className="text-sm font-black tracking-wider uppercase">{method}</span>
+                                                {checkoutData.paymentChoice === 'Mercado Pago' && <CheckCircle className="absolute top-2 right-2 text-cyan-500" />}
+                                                <CreditCard className="w-8 h-8 group-hover:scale-110 transition" />
+                                                <span className="text-sm font-black tracking-wider uppercase">Mercado Pago</span>
                                             </button>
-                                        ))}
+                                        )}
+                                        {settings?.paymentTransfer?.enabled && (
+                                            <button
+                                                onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Transferencia' })}
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Transferencia' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                            >
+                                                {checkoutData.paymentChoice === 'Transferencia' && <CheckCircle className="absolute top-2 right-2 text-cyan-500" />}
+                                                <RefreshCw className="w-8 h-8 group-hover:scale-110 transition" />
+                                                <span className="text-sm font-black tracking-wider uppercase">Transferencia</span>
+                                            </button>
+                                        )}
+                                        {settings?.paymentCash && (
+                                            <button
+                                                onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Efectivo' })}
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Efectivo' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                            >
+                                                {checkoutData.paymentChoice === 'Efectivo' && <CheckCircle className="absolute top-2 right-2 text-cyan-500" />}
+                                                <Banknote className="w-8 h-8 group-hover:scale-110 transition" />
+                                                <span className="text-sm font-black tracking-wider uppercase">Efectivo</span>
+                                            </button>
+                                        )}
                                     </div>
                                     {checkoutData.paymentChoice === 'Transferencia' && (
                                         <div className="mt-6 p-4 bg-cyan-900/10 border border-cyan-500/20 rounded-xl animate-fade-up">
@@ -3585,8 +3868,12 @@ function App() {
                                         <input className="input-cyber w-full p-4" placeholder="Nombre Completo" value={authData.name} onChange={e => setAuthData({ ...authData, name: e.target.value })} />
                                         <input className="input-cyber w-full p-4" placeholder="Nombre de Usuario" value={authData.username} onChange={e => setAuthData({ ...authData, username: e.target.value })} />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <input className="input-cyber p-4" placeholder="DNI" value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} />
-                                            <input className="input-cyber p-4" placeholder="Teléfono" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} />
+                                            {(settings?.requireDNI !== false) && (
+                                                <input className="input-cyber p-4" placeholder="DNI" value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} />
+                                            )}
+                                            {(settings?.requirePhone !== false) && (
+                                                <input className="input-cyber p-4" placeholder="Teléfono" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} />
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -3747,8 +4034,7 @@ function App() {
                                         <ManualSaleModal />
                                         <MetricsDetailModal />
                                         {/* Modales Admin Users */}
-                                        <UserCartModal />
-                                        <ChangePasswordModal />
+
 
                                         <div className="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
                                             <div>
@@ -5019,31 +5305,21 @@ function App() {
                                                                     <td className="p-8">
                                                                         <div className="flex justify-end gap-3 translate-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
                                                                             <button
+                                                                                onClick={() => setViewUserEdit(u)}
+                                                                                className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-cyan-400 hover:border-cyan-500/40 hover:bg-cyan-500/5 transition-all shadow-xl group"
+                                                                                title="Gestionar Perfil"
+                                                                            >
+                                                                                <Edit className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                                                            </button>
+                                                                            <button
                                                                                 onClick={() => {
                                                                                     setNewAdminPassword('');
                                                                                     setUserPassModal(u);
                                                                                 }}
-                                                                                className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 transition-all shadow-xl"
-                                                                                title="Seguridad: Cambiar Clave"
+                                                                                className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-pink-400 hover:border-pink-500/40 hover:bg-pink-500/5 transition-all shadow-xl group"
+                                                                                title="Seguridad & Acceso"
                                                                             >
-                                                                                <Lock className="w-5 h-5" />
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    if (u.id === currentUser.id) return showToast("No puedes quitarte tu propio rango de admin.", "warning");
-                                                                                    openConfirm('Cambiar Rol', `¿Elevar/Degradar a ${u.name}?`, async () => {
-                                                                                        const newRole = u.role === 'admin' ? 'user' : 'admin';
-                                                                                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id), { role: newRole });
-                                                                                        showToast("Privilegios actualizados", "success");
-                                                                                    });
-                                                                                }}
-                                                                                className={`w-11 h-11 flex items-center justify-center rounded-2xl border transition-all shadow-xl ${u.id === currentUser.id
-                                                                                    ? 'bg-slate-900/50 border-white/5 text-slate-700 cursor-not-allowed'
-                                                                                    : 'bg-[#0a0a0a] border-white/5 text-slate-400 hover:border-pink-500/40 hover:text-pink-400 hover:bg-pink-500/5'
-                                                                                    }`}
-                                                                                title="Cambiar Privilegios"
-                                                                            >
-                                                                                <Shield className="w-5 h-5" />
+                                                                                <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                                                             </button>
                                                                         </div>
                                                                     </td>
@@ -5540,7 +5816,7 @@ function App() {
                                                                 {p.isFeatured && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">DESTACADO</span>}
                                                             </p>
                                                             <p className="text-xs text-slate-500 font-mono">
-                                                                Stock: <span className={(p.stock || 0) < 5 ? 'text-red-400 font-bold' : 'text-slate-400'}>{p.stock || 0}</span> |
+                                                                Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
                                                                 <span className="text-cyan-400 font-bold ml-2">${p.basePrice}</span> |
                                                                 <span className="text-green-400 ml-2">Ventas: {(dashboardMetrics?.salesCount?.[p.id] || 0)}</span>
                                                             </p>
