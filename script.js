@@ -165,7 +165,7 @@ function App() {
     // Usuarios y Autenticación
     const [currentUser, setCurrentUser] = useState(() => {
         try {
-            const saved = localStorage.getItem('nexus_user_data');
+            const saved = localStorage.getItem('sustore_user_data');
             return saved ? JSON.parse(saved) : null;
         } catch (e) { return null; }
     });
@@ -180,7 +180,7 @@ function App() {
     const [promos, setPromos] = useState([]); // Nuevo estado para Promos
     const [cart, setCart] = useState(() => {
         try {
-            const saved = JSON.parse(localStorage.getItem('nexus_cart'));
+            const saved = JSON.parse(localStorage.getItem('sustore_cart'));
             return Array.isArray(saved) ? saved : [];
         } catch (e) { return []; }
     });
@@ -223,8 +223,8 @@ function App() {
     // Estado para Modal de Crear Categoría
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-    // Estado para Previsualización de Imágenes
-    const [previewImage, setPreviewImage] = useState(null);
+    // Estado para Detalle de Producto / Promo (Zoom)
+    const [selectedProduct, setSelectedProduct] = useState(null);
 
     // --- HELPERS ---
 
@@ -457,7 +457,7 @@ function App() {
 
     // 1. Sincronizar Carrito Local y Remoto (Live Cart)
     useEffect(() => {
-        localStorage.setItem('nexus_cart', JSON.stringify(cart));
+        localStorage.setItem('sustore_cart', JSON.stringify(cart));
 
         // Si hay usuario, subir carrito a DB para monitor de admin
         if (currentUser && currentUser.id) {
@@ -502,7 +502,7 @@ function App() {
     // 2. Persistencia Detallada y Session
     useEffect(() => {
         if (currentUser) {
-            localStorage.setItem('nexus_user_data', JSON.stringify(currentUser));
+            localStorage.setItem('sustore_user_data', JSON.stringify(currentUser));
             // Pre-llenar checkout si hay datos
             setCheckoutData(prev => ({
                 ...prev,
@@ -512,7 +512,7 @@ function App() {
                 zipCode: currentUser.zipCode || prev.zipCode
             }));
         } else {
-            localStorage.removeItem('nexus_user_data');
+            localStorage.removeItem('sustore_user_data');
         }
     }, [currentUser]);
 
@@ -2031,28 +2031,127 @@ function App() {
             </div>
         );
     };
-    // Modal de Previsualización de Imagen (Lightbox)
-    const ImagePreviewModal = () => {
-        if (!previewImage) return null;
+    // Modal de Detalle de Producto / Promo (Versión Premium)
+    const ProductDetailModal = () => {
+        if (!selectedProduct) return null;
+
+        const isPromo = selectedProduct.isPromo || !!selectedProduct.items;
+        const hasStock = isPromo ? (selectedProduct.stock > 0) : (Number(selectedProduct.stock) > 0);
+        const displayPrice = isPromo ? Number(selectedProduct.price || selectedProduct.basePrice) : calculateItemPrice(selectedProduct.basePrice, selectedProduct.discount);
 
         return (
-            <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in" onClick={() => setPreviewImage(null)}>
-                <div className="relative max-w-[90vw] max-h-[90vh] group">
-                    <img
-                        src={previewImage}
-                        className="w-full h-full object-contain rounded-lg shadow-2xl transition-transform duration-300 transform scale-100"
-                        onClick={(e) => e.stopPropagation()} // Evitar cierre al clickear imagen
-                    />
-                    <button
-                        onClick={() => setPreviewImage(null)}
-                        className="absolute -top-12 right-0 md:-right-12 p-2 text-white/70 hover:text-white transition"
-                    >
-                        <X className="w-8 h-8" />
-                    </button>
-                    {/* Hint para cerrar */}
-                    <p className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 text-white/50 text-xs uppercase tracking-widest font-bold">
-                        Click fuera para cerrar
-                    </p>
+            <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-4" onClick={() => setSelectedProduct(null)}>
+                <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative" onClick={e => e.stopPropagation()}>
+
+                    {/* Imagen con Zoom y Efectos */}
+                    <div className="md:w-1/2 h-72 md:h-[550px] bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 md:p-12 flex items-center justify-center relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
+                        <img
+                            src={selectedProduct.image}
+                            className="w-full h-full object-contain drop-shadow-[0_0_50px_rgba(255,255,255,0.15)] z-10 transition-transform duration-700 hover:scale-110"
+                        />
+                        {/* Badges de Estado */}
+                        {!hasStock && (
+                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                                <div className="border-4 border-red-500 p-4 -rotate-12 bg-black shadow-2xl">
+                                    <span className="text-red-500 font-black text-2xl tracking-widest uppercase">AGOTADO</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Panel de Información y Acción */}
+                    <div className="md:w-1/2 p-8 md:p-12 flex flex-col bg-[#080808]">
+                        <div className="mb-8">
+                            <span className="inline-block px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-4 border border-cyan-500/20">
+                                {isPromo ? 'COMBOS & PROMOCIONES' : selectedProduct.category}
+                            </span>
+                            <h2 className="text-3xl md:text-4xl font-black text-white leading-[1.1] mb-6 neon-text-small">{selectedProduct.name}</h2>
+                            <p className="text-slate-400 text-sm md:text-base leading-relaxed line-clamp-4">
+                                {selectedProduct.description || 'Este producto tecnológico ha sido seleccionado por su alta calidad y rendimiento superior, garantizando la mejor experiencia para el usuario.'}
+                            </p>
+                        </div>
+
+                        {/* Lista de productos para Promos */}
+                        {isPromo && selectedProduct.items && (
+                            <div className="mb-8 space-y-3 bg-purple-500/5 p-6 rounded-2xl border border-purple-500/20 shadow-inner">
+                                <p className="text-[10px] uppercase font-black text-purple-400 tracking-[0.2em] flex items-center gap-2">
+                                    <Sparkles className="w-3 h-3" /> Este pack incluye:
+                                </p>
+                                <div className="space-y-2">
+                                    {selectedProduct.items.map((item, idx) => {
+                                        const p = products.find(prod => prod.id === item.productId);
+                                        return (
+                                            <div key={idx} className="flex items-center gap-3 text-sm text-slate-300 group/item">
+                                                <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-[10px] font-black text-purple-400 group-hover/item:bg-purple-500 group-hover/item:text-white transition">
+                                                    {item.quantity}x
+                                                </div>
+                                                <span className="font-bold group-hover/item:text-white transition">{p?.name || 'Producto del Packs'}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Footer con Precio y Carrito */}
+                        <div className="mt-auto pt-8 border-t border-white/5 flex flex-col gap-6">
+                            <div className="flex items-end justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Inversión Total</span>
+                                    <div className="flex items-center gap-3">
+                                        {selectedProduct.discount > 0 && !isPromo && (
+                                            <span className="text-sm text-slate-600 line-through font-bold">${selectedProduct.basePrice.toLocaleString()}</span>
+                                        )}
+                                        <span className="text-4xl font-black text-white tracking-tighter">
+                                            ${displayPrice.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                                {selectedProduct.discount > 0 && !isPromo && (
+                                    <div className="px-3 py-1 bg-red-500 text-white rounded-lg text-[10px] font-black animate-pulse">
+                                        -{selectedProduct.discount}% OFF
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    if (!hasStock) return;
+                                    if (isPromo) {
+                                        manageCart({
+                                            id: selectedProduct.id,
+                                            name: selectedProduct.name,
+                                            basePrice: selectedProduct.price || selectedProduct.basePrice,
+                                            image: selectedProduct.image,
+                                            isPromo: true,
+                                            items: selectedProduct.items,
+                                            stock: selectedProduct.stock
+                                        }, 1);
+                                    } else {
+                                        manageCart(selectedProduct, 1);
+                                    }
+                                    setSelectedProduct(null);
+                                }}
+                                disabled={!hasStock}
+                                className={`w-full py-5 rounded-2xl font-black transition flex items-center justify-center gap-3 shadow-2xl ${hasStock ? 'bg-white text-black hover:bg-cyan-400 hover:text-white hover:scale-[1.02] active:scale-[0.98]' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}`}
+                            >
+                                {hasStock ? (
+                                    <><ShoppingCart className="w-6 h-6" /> AGREGAR AL CARRITO</>
+                                ) : (
+                                    <><AlertCircle className="w-6 h-6" /> PRODUCTO AGOTADO</>
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Botón Cerrar */}
+                        <button
+                            onClick={() => setSelectedProduct(null)}
+                            className="absolute top-6 right-6 p-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-full transition-all border border-white/5 hover:border-white/10"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -2668,11 +2767,11 @@ function App() {
                 </div>
                 <h1 className="text-4xl font-black mb-4 tracking-tight uppercase">Sistema en Mantenimiento</h1>
                 <p className="text-slate-400 max-w-md mx-auto leading-relaxed">
-                    Estamos realizando mejoras en el sistema para brindarte una mejor experiencia.
-                    Por favor, vuelve a intentarlo en unos minutos.
+                    Estamos realizando mejoras para brindarte una experiencia premium.
+                    ¡Te mandamos un saludo y esperamos que vuelvas prontamente!
                 </p>
                 <div className="mt-12 pt-12 border-t border-slate-900 w-full max-w-xs">
-                    <p className="text-xs text-slate-600 font-mono italic">Nexus OS v3.0 - Maintenance Mode Active</p>
+                    <p className="text-xs text-slate-600 font-mono italic">{settings?.storeName || 'SUSTORE'} - Modo Mantenimiento Activo</p>
                 </div>
             </div>
         );
@@ -2720,16 +2819,6 @@ function App() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-cyan-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
             </div>
 
-            {/* ANUNCIO SUPERIOR (Banner de Configuración) */}
-            {settings?.announcementMessage && view !== 'admin' && (
-                <div className="bg-gradient-to-r from-cyan-600 to-blue-600 py-2.5 px-4 text-center relative z-[60]">
-                    <p className="text-white text-xs font-black tracking-[0.2em] uppercase flex items-center justify-center gap-3">
-                        <Zap className="w-3.5 h-3.5 fill-current animate-pulse" />
-                        {settings.announcementMessage}
-                        <Zap className="w-3.5 h-3.5 fill-current animate-pulse" />
-                    </p>
-                </div>
-            )}
 
             {/* Contenedores Globales (Toasts y Modales) */}
             <div className="fixed top-24 right-4 z-[9999] space-y-3 pointer-events-none">
@@ -2745,7 +2834,7 @@ function App() {
 
             <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
             <CouponSelectorModal />
-            <ImagePreviewModal />
+            <ProductDetailModal />
 
             {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
             {view !== 'admin' && (
@@ -3026,8 +3115,11 @@ function App() {
 
                                                 return (
                                                     <div key={promo.id} className="bg-gradient-to-br from-purple-900/10 to-blue-900/10 rounded-[2.5rem] border border-purple-500/30 overflow-hidden group shadow-[0_0_30px_rgba(168,85,247,0.1)] hover:shadow-[0_0_50px_rgba(168,85,247,0.2)] transition duration-500 relative flex flex-col">
-                                                        <div className="aspect-[21/9] relative overflow-hidden">
-                                                            <img src={promo.image} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
+                                                        <div
+                                                            className="aspect-square bg-slate-900/50 flex items-center justify-center relative overflow-hidden cursor-zoom-in"
+                                                            onClick={() => setSelectedProduct({ ...promo, isPromo: true, stock: maxPurchasable })}
+                                                        >
+                                                            <img src={promo.image} className="w-full h-full object-contain transition duration-700 group-hover:scale-110" />
                                                             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
                                                             <div className="absolute top-4 right-4 bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                                                                 Oferta Limitada
@@ -3146,7 +3238,7 @@ function App() {
                                         <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
 
                                             {/* Imagen y Badges */}
-                                            <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => p.image && setPreviewImage(p.image)}>
+                                            <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => setSelectedProduct(p)}>
                                                 {/* Efecto Glow Fondo */}
                                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
@@ -3162,7 +3254,7 @@ function App() {
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        p.image && setPreviewImage(p.image);
+                                                        setSelectedProduct(p);
                                                     }}
                                                     className="absolute bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md p-3 rounded-full text-white border border-white/20 md:hidden"
                                                 >
@@ -3637,7 +3729,7 @@ function App() {
                                         <Shield className="w-5 h-5" /> Panel Admin
                                     </button>
                                 )}
-                                <button onClick={() => { localStorage.removeItem('nexus_user_data'); setCurrentUser(null); setView('store') }} className="px-6 py-4 bg-red-900/10 border border-red-500/20 text-red-500 hover:bg-red-900/20 rounded-2xl font-bold transition flex items-center justify-center gap-2 hover:border-red-500/40">
+                                <button onClick={() => { localStorage.removeItem('sustore_user_data'); setCurrentUser(null); setView('store') }} className="px-6 py-4 bg-red-900/10 border border-red-500/20 text-red-500 hover:bg-red-900/20 rounded-2xl font-bold transition flex items-center justify-center gap-2 hover:border-red-500/40">
                                     <LogOut className="w-5 h-5" /> Cerrar Sesión
                                 </button>
                             </div>
