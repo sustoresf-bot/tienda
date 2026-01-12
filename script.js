@@ -2041,7 +2041,7 @@ function App() {
 
         return (
             <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-4" onClick={() => setSelectedProduct(null)}>
-                <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative" onClick={e => e.stopPropagation()}>
+                <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative h-full md:h-auto overflow-y-auto md:overflow-hidden" onClick={e => e.stopPropagation()}>
 
                     {/* Imagen con Zoom y Efectos */}
                     <div className="md:w-1/2 h-72 md:h-[550px] bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 md:p-12 flex items-center justify-center relative overflow-hidden group">
@@ -2144,12 +2144,14 @@ function App() {
                             </button>
                         </div>
 
+
                         {/* Botón Cerrar */}
                         <button
                             onClick={() => setSelectedProduct(null)}
-                            className="absolute top-6 right-6 p-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-full transition-all border border-white/5 hover:border-white/10"
+                            className="absolute top-4 right-4 md:top-6 md:right-6 p-4 bg-black/60 md:bg-white/5 hover:bg-white/10 text-white md:text-slate-400 hover:text-white rounded-full transition-all border border-white/20 md:border-white/5 z-[30] shadow-2xl backdrop-blur-md"
+                            title="Cerrar detalle"
                         >
-                            <X className="w-6 h-6" />
+                            <X className="w-6 h-6 md:w-5 md:h-5" />
                         </button>
                     </div>
                 </div>
@@ -4987,7 +4989,7 @@ function App() {
 
                                                                             return (
                                                                                 <tr key={idx} className="hover:bg-slate-900/20 transition">
-                                                                                    <td className="p-6">
+                                                                                    <td className="p-5">
                                                                                         <div className="flex items-center gap-3">
                                                                                             <div className={`w-3 h-3 rounded-full ${colors[idx % colors.length].replace('text-', 'bg-')}`}></div>
                                                                                             <div>
@@ -5231,10 +5233,10 @@ function App() {
                                                     <table className="w-full text-left border-collapse">
                                                         <thead>
                                                             <tr className="bg-white/[0.02] border-b border-white/5">
-                                                                <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Identidad</th>
-                                                                <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Actividad & Stats</th>
-                                                                <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Rango</th>
-                                                                <th className="p-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Acciones</th>
+                                                                <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Identidad</th>
+                                                                <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Actividad & Stats</th>
+                                                                <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Rango</th>
+                                                                <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Acciones</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-white/5">
@@ -5249,7 +5251,7 @@ function App() {
                                                                 </tr>
                                                             ) : filteredUsers.map((u, idx) => (
                                                                 <tr key={u.id} style={{ animationDelay: `${idx * 0.03}s` }} className="group hover:bg-white/[0.01] transition-all animate-fade-up">
-                                                                    <td className="p-8">
+                                                                    <td className="p-5">
                                                                         <div className="flex items-center gap-5">
                                                                             <div className="relative group/avatar">
                                                                                 <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl blur-lg opacity-20 group-hover/avatar:opacity-40 transition" />
