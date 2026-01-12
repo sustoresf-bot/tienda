@@ -2838,7 +2838,7 @@ function App() {
 
             {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
             {view !== 'admin' && (
-                <nav className="fixed top-0 w-full h-24 glass z-50 px-6 md:px-12 flex items-center justify-between border-b border-slate-800/50 backdrop-blur-xl transition-all duration-300">
+                <nav className="fixed top-0 w-full h-20 glass z-50 px-6 md:px-12 flex items-center justify-between border-b border-slate-800/50 backdrop-blur-xl transition-all duration-300">
                     {/* Logo y Menú */}
                     <div className="flex items-center gap-6">
                         <button onClick={() => setIsMenuOpen(true)} className="p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition border border-slate-700/50 group">
@@ -2964,7 +2964,7 @@ function App() {
             )}
 
             {/* Espaciador para el Navbar Fixed */}
-            {view !== 'admin' && <div className="h-32"></div>}
+            {view !== 'admin' && <div className="h-24"></div>}
 
             {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
             <main className={`flex-grow relative z-10 ${view === 'admin' ? 'h-screen flex overflow-hidden' : 'p-4 md:p-8'}`}>
@@ -3000,7 +3000,7 @@ function App() {
                         </div>
 
                         {/* Banner Hero */}
-                        <div className="relative w-full h-[50vh] md:h-[550px] 2xl:h-[700px] rounded-[3rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group relative bg-[#080808] container-tv">
+                        <div className="relative w-full h-[40vh] md:h-[450px] 2xl:h-[550px] rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group relative bg-[#080808] container-tv">
                             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
                             {/* Imagen de fondo */}
                             {settings?.heroUrl ? (
@@ -3013,13 +3013,13 @@ function App() {
                             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10 p-12">
                                 <div className="max-w-2xl animate-fade-up">
                                     <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 inline-block">Nueva Colección 2026</span>
-                                    <h1 className="text-5xl md:text-8xl lg:text-9xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-6 neon-text">
+                                    <h1 className="text-4xl md:text-6xl lg:text-7xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-6 neon-text">
                                         TECNOLOGÍA <br />
                                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-pulse-slow">
                                             DEL FUTURO
                                         </span>
                                     </h1>
-                                    <p className="text-slate-400 text-lg md:text-xl lg:text-2xl mb-8 max-w-lg font-medium">
+                                    <p className="text-slate-400 text-base md:text-lg lg:text-xl mb-8 max-w-lg font-medium">
                                         Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado.
                                     </p>
                                     <div className="flex flex-col sm:flex-row gap-4">
@@ -3060,13 +3060,13 @@ function App() {
                         </div>
 
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className="sticky top-24 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-4 overflow-x-auto no-scrollbar">
+                        <div id="catalog" className="sticky top-20 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-2 overflow-x-auto no-scrollbar">
                             <Filter className="w-5 h-5 text-slate-500 flex-shrink-0" />
 
                             {/* BOTÓN PROMOS (SPECIAL) */}
                             <button
                                 onClick={() => setSelectedCategory('Promos')}
-                                className={`px-6 py-2.5 rounded-xl font-black text-sm transition border whitespace-nowrap flex items-center gap-2 group relative overflow-hidden ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50'}`}
+                                className={`px-5 py-2 rounded-xl font-black text-xs transition border whitespace-nowrap flex items-center gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50'}`}
                             >
                                 {selectedCategory === 'Promos' && <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 animate-gradient-xy"></div>}
                                 <span className="relative z-10 flex items-center gap-2"><Sparkles className="w-4 h-4" /> PROMOS</span>
@@ -3075,16 +3075,16 @@ function App() {
                             {/* BOTÓN OFERTAS (SPECIAL) */}
                             <button
                                 onClick={() => setSelectedCategory('Ofertas')}
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap flex items-center gap-2 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-400 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50'}`}
+                                className={`px-5 py-2 rounded-xl font-bold text-xs transition border whitespace-nowrap flex items-center gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-400 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50'}`}
                             >
                                 <Percent className="w-4 h-4" /> OFERTAS
                             </button>
 
-                            <button onClick={() => setSelectedCategory('')} className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory === '' ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
+                            <button onClick={() => setSelectedCategory('')} className={`px-5 py-2 rounded-xl font-bold text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === '' ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
                                 Todos
                             </button>
                             {settings?.categories?.map(c => (
-                                <button key={c} onClick={() => setSelectedCategory(c)} className={`px-6 py-2.5 rounded-xl font-bold text-sm transition border whitespace-nowrap ${selectedCategory === c ? 'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
+                                <button key={c} onClick={() => setSelectedCategory(c)} className={`px-5 py-2 rounded-xl font-bold text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === c ? 'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
                                     {c}
                                 </button>
                             ))}
