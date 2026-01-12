@@ -3236,7 +3236,7 @@ function App() {
                                         <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
 
                                             {/* Imagen y Badges */}
-                                            <div className="h-48 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-4 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => setSelectedProduct(p)}>
+                                            <div className="h-60 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-6 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => setSelectedProduct(p)}>
                                                 {/* Efecto Glow Fondo */}
                                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
@@ -3318,7 +3318,7 @@ function App() {
                                             </div>
 
                                             {/* Información */}
-                                            <div className="p-3 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
+                                            <div className="p-4 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
                                                 <div className="flex justify-between items-start mb-3">
                                                     <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">
                                                         {p.category}
@@ -3331,7 +3331,7 @@ function App() {
                                                     ) : null}
                                                 </div>
 
-                                                <h3 className="text-white font-bold text-sm leading-tight mb-3 group-hover:text-cyan-200 transition line-clamp-2 min-h-[2rem]">
+                                                <h3 className="text-white font-bold text-base leading-tight mb-4 group-hover:text-cyan-200 transition line-clamp-2 min-h-[2.5rem]">
                                                     {p.name}
                                                 </h3>
 
