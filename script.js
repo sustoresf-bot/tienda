@@ -2984,7 +2984,7 @@ function App() {
                         )}
 
                         {/* Brand Ticker (Futuristic) */}
-                        <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-4">
+                        <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-2">
                             <div className="ticker-wrap">
                                 <div className="ticker-content font-mono text-cyan-500/50 text-sm tracking-[0.5em] uppercase flex items-center gap-12">
                                     <span>Sustore Tech</span><span>•</span>
@@ -3000,7 +3000,7 @@ function App() {
                         </div>
 
                         {/* Banner Hero */}
-                        <div className="relative w-full h-[40vh] md:h-[450px] 2xl:h-[550px] rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-slate-800 group relative bg-[#080808] container-tv">
+                        <div className="relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border border-slate-800 group relative bg-[#080808] container-tv">
                             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
                             {/* Imagen de fondo */}
                             {settings?.heroUrl ? (
@@ -3013,21 +3013,19 @@ function App() {
                             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10 p-12">
                                 <div className="max-w-2xl animate-fade-up">
                                     <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 inline-block">Nueva Colección 2026</span>
-                                    <h1 className="text-4xl md:text-6xl lg:text-7xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-6 neon-text">
+                                    <h1 className="text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-4 neon-text">
                                         TECNOLOGÍA <br />
-                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-pulse-slow">
-                                            DEL FUTURO
-                                        </span>
+                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">DEL FUTURO</span>
                                     </h1>
-                                    <p className="text-slate-400 text-base md:text-lg lg:text-xl mb-8 max-w-lg font-medium">
+                                    <p className="text-slate-400 text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium">
                                         Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado.
                                     </p>
-                                    <div className="flex flex-col sm:flex-row gap-4">
+                                    <div className="flex items-center gap-4">
                                         <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn">
                                             VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
                                         </button>
-                                        <button onClick={() => setView('guide')} className="px-8 py-4 glass text-white font-bold rounded-xl hover:bg-white/10 transition border border-white/10 flex items-center justify-center gap-2">
-                                            <Info className="w-5 h-5" /> Ayuda
+                                        <button onClick={() => setView('guide')} className="px-6 py-2.5 bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 transition font-bold text-xs group">
+                                            <Info className="w-4 h-4 text-cyan-400" /> Ayuda
                                         </button>
                                     </div>
                                 </div>
@@ -3035,27 +3033,27 @@ function App() {
                         </div>
 
                         {/* Why Choose Us Section */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 container-tv">
-                            <div className="p-8 rounded-[2rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                <div className="w-16 h-16 rounded-full bg-cyan-900/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                                    <Zap className="w-8 h-8 text-cyan-400" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 container-tv">
+                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                <div className="w-10 h-10 rounded-full bg-cyan-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                    <Zap className="w-5 h-5 text-cyan-400" />
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Envío Ultra Rápido</h3>
-                                <p className="text-slate-400 text-sm">Recibí tus productos tecnológicos en tiempo récord con nuestro sistema logístico optimizado.</p>
+                                <h3 className="text-base font-bold text-white mb-1">Envío Ultra Rápido</h3>
+                                <p className="text-slate-400 text-[11px]">Recibí tus productos tecnológicos en tiempo récord con nuestro sistema logístico optimizado.</p>
                             </div>
-                            <div className="p-8 rounded-[2rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                <div className="w-16 h-16 rounded-full bg-purple-900/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                                    <Shield className="w-8 h-8 text-purple-400" />
+                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                <div className="w-10 h-10 rounded-full bg-purple-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                    <Shield className="w-5 h-5 text-purple-400" />
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Garantía Extendida</h3>
-                                <p className="text-slate-400 text-sm">Todos nuestros productos cuentan con garantía oficial y soporte técnico especializado.</p>
+                                <h3 className="text-base font-bold text-white mb-1">Garantía Extendida</h3>
+                                <p className="text-slate-400 text-[11px]">Todos nuestros productos cuentan con garantía oficial y soporte técnico especializado.</p>
                             </div>
-                            <div className="p-8 rounded-[2rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                <div className="w-16 h-16 rounded-full bg-green-900/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                                    <Headphones className="w-8 h-8 text-green-400" />
+                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                <div className="w-10 h-10 rounded-full bg-green-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                    <Headphones className="w-5 h-5 text-green-400" />
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Soporte 24/7</h3>
-                                <p className="text-slate-400 text-sm">¿Dudas? Nuestro equipo de expertos está disponible para ayudarte en todo momento.</p>
+                                <h3 className="text-base font-bold text-white mb-1">Soporte 24/7</h3>
+                                <p className="text-slate-400 text-[11px]">¿Dudas? Nuestro equipo de expertos está disponible para ayudarte en todo momento.</p>
                             </div>
                         </div>
 
@@ -3238,7 +3236,7 @@ function App() {
                                         <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
 
                                             {/* Imagen y Badges */}
-                                            <div className="h-72 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => setSelectedProduct(p)}>
+                                            <div className="h-48 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-4 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => setSelectedProduct(p)}>
                                                 {/* Efecto Glow Fondo */}
                                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
@@ -3320,7 +3318,7 @@ function App() {
                                             </div>
 
                                             {/* Información */}
-                                            <div className="p-6 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
+                                            <div className="p-3 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
                                                 <div className="flex justify-between items-start mb-3">
                                                     <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest border border-cyan-900/30 bg-cyan-900/10 px-2 py-1 rounded">
                                                         {p.category}
@@ -3333,7 +3331,7 @@ function App() {
                                                     ) : null}
                                                 </div>
 
-                                                <h3 className="text-white font-bold text-lg leading-tight mb-4 group-hover:text-cyan-200 transition line-clamp-2 min-h-[3rem]">
+                                                <h3 className="text-white font-bold text-sm leading-tight mb-3 group-hover:text-cyan-200 transition line-clamp-2 min-h-[2rem]">
                                                     {p.name}
                                                 </h3>
 
@@ -3811,45 +3809,47 @@ function App() {
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-2xl font-black text-white flex items-center gap-3">
-                                        <Package className="text-cyan-400 w-6 h-6" /> Mis Pedidos
+                                        <ShoppingBag className="text-cyan-400 w-6 h-6" /> Tus Compras
                                     </h3>
-                                    <span className="text-xs font-bold text-slate-500 bg-slate-900 px-3 py-1 rounded-full">
-                                        {orders.filter(o => o.userId === currentUser.id).length} Total
-                                    </span>
                                 </div>
 
-                                {orders.filter(o => o.userId === currentUser.id).length === 0 ? (
-                                    <div className="p-12 border-2 border-dashed border-slate-800 rounded-[2rem] text-center text-slate-500 bg-slate-900/20">
-                                        <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                        <p className="font-bold">Aún no has realizado compras.</p>
-                                        <button onClick={() => setView('store')} className="mt-4 text-cyan-400 hover:underline text-sm font-bold">Ir a la tienda</button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
-                                        {orders.filter(o => o.userId === currentUser.id).map(o => (
-                                            <div key={o.id} onClick={() => setSelectedOrder(o)} className="bg-[#0a0a0a] border border-slate-800 hover:border-cyan-500/50 p-6 rounded-2xl flex justify-between items-center cursor-pointer transition duration-300 group relative overflow-hidden">
-                                                {/* Hover Effect */}
-                                                <div className="absolute inset-0 bg-cyan-900/5 opacity-0 group-hover:opacity-100 transition"></div>
+                                {(() => {
+                                    const completedOrders = orders.filter(o => o.userId === currentUser.id && o.status === 'Realizado');
+                                    // Flatten all items from completed orders
+                                    const purchasedItems = completedOrders.flatMap(o => o.items.map(item => ({ ...item, date: o.date })));
 
-                                                <div className="relative z-10">
-                                                    <p className="font-bold text-white text-lg group-hover:text-cyan-400 transition mb-1 flex items-center gap-2">
-                                                        <span className="text-slate-500">#</span> {o.orderId}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500 flex items-center gap-2 font-mono">
-                                                        <Calendar className="w-3 h-3" /> {new Date(o.date).toLocaleDateString()}
-                                                    </p>
-                                                </div>
-
-                                                <div className="text-right relative z-10">
-                                                    <p className="font-black text-white text-xl mb-2">${o.total.toLocaleString()}</p>
-                                                    <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider border ${o.status === 'Realizado' ? 'bg-green-900/20 text-green-400 border-green-500/30' : 'bg-yellow-900/20 text-yellow-400 border-yellow-500/30'}`}>
-                                                        {o.status}
-                                                    </span>
-                                                </div>
+                                    if (purchasedItems.length === 0) {
+                                        return (
+                                            <div className="p-12 border-2 border-dashed border-slate-800 rounded-[2rem] text-center text-slate-500 bg-slate-900/20">
+                                                <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                                <p className="font-bold">Aún no tienes compras finalizadas.</p>
+                                                <button onClick={() => setView('store')} className="mt-4 text-cyan-400 hover:underline text-sm font-bold">Ir a la tienda</button>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
+                                        );
+                                    }
+
+                                    return (
+                                        <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                                            {purchasedItems.sort((a, b) => new Date(b.date) - new Date(a.date)).map((item, idx) => (
+                                                <div key={idx} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-2xl flex items-center gap-4 group hover:border-cyan-500/50 transition duration-300">
+                                                    <div className="w-16 h-16 bg-white rounded-xl p-1 flex-shrink-0">
+                                                        <img src={item.image} className="w-full h-full object-contain" alt={item.title} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-white font-bold text-sm truncate group-hover:text-cyan-400 transition">{item.title}</h4>
+                                                        <p className="text-xs text-slate-500 font-mono mt-1">{new Date(item.date).toLocaleDateString()}</p>
+                                                    </div>
+                                                    <div className="text-right flex flex-col items-end gap-1">
+                                                        <p className="text-white font-black">${item.unit_price.toLocaleString()}</p>
+                                                        {item.quantity > 1 && (
+                                                            <span className="text-[10px] text-slate-500 font-bold">x{item.quantity} und.</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             {/* Columna Derecha: Favoritos */}
