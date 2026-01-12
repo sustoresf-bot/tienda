@@ -28,6 +28,32 @@
 <body>
     <div id="root"></div>
     <script type="text/babel" data-type="module" src="script.js"></script>
+    <script>
+    (function() {
+      const CONTROLLER_URL = 'https://controlador-de-paginas.vercel.app'; 
+
+      function checkStatus() {
+        const domain = window.location.hostname; 
+        
+        fetch(`${CONTROLLER_URL}/api/check-status?domain=${domain}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.active === false) {
+               document.body.innerHTML = `
+                 <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:black;color:white;display:flex;justify-content:center;align-items:center;z-index:999999;flex-direction:column;font-family:sans-serif;">
+                   <h1 style="color:red;">SERVICIO SUSPENDIDO</h1>
+                   <p>Por favor contacte al administrador.</p>
+                 </div>
+               `;
+            }
+          })
+          .catch(err => console.error('Error:', err));
+      }
+
+      checkStatus();
+      setInterval(checkStatus, 60000); // Revisa cada 1 minuto
+    })();
+    </script>
 </body>
 
 </html>
