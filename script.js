@@ -3631,16 +3631,6 @@ function App() {
                                             </button>
                                         )}
                                     </div>
-                                    {checkoutData.paymentChoice === 'Transferencia' && (
-                                        <div className="mt-6 p-4 bg-cyan-900/10 border border-cyan-500/20 rounded-xl animate-fade-up">
-                                            <div className="flex items-start gap-3">
-                                                <Info className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" />
-                                                <p className="text-cyan-200 text-sm leading-relaxed">
-                                                    Al confirmar el pedido, recibirás un correo electrónico con los datos bancarios (CBU/Alias) para realizar la transferencia. Tu pedido se procesará una vez enviado el comprobante.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
@@ -6160,12 +6150,12 @@ function App() {
                                                     <div className="space-y-6">
                                                         {/* Transfer */}
                                                         <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                            <div className="flex items-center justify-between mb-4">
+                                                            <div className="flex items-center justify-between">
                                                                 <div className="flex items-center gap-3">
                                                                     <Building className="w-6 h-6 text-blue-400" />
                                                                     <div>
                                                                         <p className="font-bold text-white">Transferencia Bancaria</p>
-                                                                        <p className="text-xs text-slate-500">Pago por CBU/CVU</p>
+                                                                        <p className="text-xs text-slate-500">Activado / Desactivado</p>
                                                                     </div>
                                                                 </div>
                                                                 <button
@@ -6175,14 +6165,6 @@ function App() {
                                                                     <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentTransfer?.enabled ? 'left-7' : 'left-1'}`}></div>
                                                                 </button>
                                                             </div>
-                                                            {settings?.paymentTransfer?.enabled && (
-                                                                <textarea
-                                                                    className="input-cyber w-full p-4 h-20 resize-none"
-                                                                    value={settings?.paymentTransfer?.details || ''}
-                                                                    onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, details: e.target.value } })}
-                                                                    placeholder="CBU: 0000003100012345678901&#10;Alias: TIENDA.DEMO.MP&#10;Titular: Juan Pérez"
-                                                                />
-                                                            )}
                                                         </div>
 
                                                         {/* Cash */}
@@ -6206,12 +6188,12 @@ function App() {
 
                                                         {/* MercadoPago */}
                                                         <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                            <div className="flex items-center justify-between mb-4">
+                                                            <div className="flex items-center justify-between">
                                                                 <div className="flex items-center gap-3">
                                                                     <Smartphone className="w-6 h-6 text-sky-400" />
                                                                     <div>
                                                                         <p className="font-bold text-white">MercadoPago</p>
-                                                                        <p className="text-xs text-slate-500">Link de pago</p>
+                                                                        <p className="text-xs text-slate-500">Activado / Desactivado</p>
                                                                     </div>
                                                                 </div>
                                                                 <button
@@ -6221,15 +6203,9 @@ function App() {
                                                                     <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentMercadoPago?.enabled ? 'left-7' : 'left-1'}`}></div>
                                                                 </button>
                                                             </div>
-                                                            {settings?.paymentMercadoPago?.enabled && (
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.paymentMercadoPago?.link || ''}
-                                                                    onChange={e => setSettings({ ...settings, paymentMercadoPago: { ...settings?.paymentMercadoPago, link: e.target.value } })}
-                                                                    placeholder="https://www.mercadopago.com.ar/checkout/v1/redirect?..."
-                                                                />
-                                                            )}
                                                         </div>
+
+
                                                     </div>
                                                 </div>
                                             </div>
