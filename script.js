@@ -3846,31 +3846,7 @@ function App() {
 
                             {/* Columna Derecha: Favoritos */}
                             <div className="space-y-6">
-                                {/* SEGURIDAD */}
-                                <div className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl relative overflow-hidden group hover:border-blue-500/30 transition">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-xl font-black text-white flex items-center gap-2">
-                                            <Lock className="text-blue-400 w-5 h-5" /> Seguridad
-                                        </h3>
-                                    </div>
-                                    <p className="text-slate-500 text-sm mb-4">
-                                        Si necesitas cambiar tu contraseña, te enviaremos un enlace seguro a tu correo electrónico.
-                                    </p>
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                await sendPasswordResetEmail(auth, currentUser.email);
-                                                showToast(`Enlace enviado a ${currentUser.email}`, 'success');
-                                            } catch (e) {
-                                                console.error(e);
-                                                showToast("Error al enviar enlace", 'error');
-                                            }
-                                        }}
-                                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl border border-slate-700 hover:border-blue-500/50 transition flex items-center justify-center gap-2 group-hover:bg-blue-900/10"
-                                    >
-                                        <Mail className="w-4 h-4" /> Enviar enlace de cambio de contraseña
-                                    </button>
-                                </div>
+
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-2xl font-black text-white flex items-center gap-3">
                                         <Heart className="text-red-500 w-6 h-6 fill-current" /> Mis Favoritos
