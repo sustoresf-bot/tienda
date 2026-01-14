@@ -177,15 +177,16 @@ const AccessDenied = ({ onBack }) => (
 );
 
 // --- KILL SWITCH ---
-const KillSwitch = ({ controllerUrl, contactEmail = 'tu-email@correo.com' }) => {
+const KillSwitch = ({ controllerUrl, contactEmail = 'Sustoresf@gmail.com', whatsapp }) => {
     useEffect(() => {
         if (window.KillSwitch) {
             window.KillSwitch.init({
                 controllerUrl,
-                contactEmail
+                contactEmail,
+                whatsapp
             });
         }
-    }, [controllerUrl, contactEmail]);
+    }, [controllerUrl, contactEmail, whatsapp]);
 
     return null; // El script maneja la UI
 };
