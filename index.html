@@ -29,12 +29,14 @@
     <div id="root"></div>
     <script type="text/babel" data-type="module" src="script.js"></script>
     <!-- KILL SWITCH - Pegar al final del body -->
-    <script src="https://tu-panel.vercel.app/kill-switch.js"></script>
+    <script src="https://controlador-de-paginas.vercel.app/kill-switch.js"></script>
     <script>
-        KillSwitch.init({
-            controllerUrl: 'https://tu-panel.vercel.app', // Reemplaza por la URL de tu panel
-            contactEmail: 'tu-email@correo.com'
-        });
+        if (window.KillSwitch) {
+            KillSwitch.init({
+                controllerUrl: 'https://controlador-de-paginas.vercel.app', // Reemplaza por la URL de tu panel
+                contactEmail: 'tu-email@correo.com'
+            });
+        }
     </script>
 </body>
 
