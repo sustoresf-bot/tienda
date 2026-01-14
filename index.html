@@ -28,35 +28,13 @@
 <body>
     <div id="root"></div>
     <script type="text/babel" data-type="module" src="script.js"></script>
+    <!-- KILL SWITCH - Pegar al final del body -->
+    <script src="https://tu-panel.vercel.app/kill-switch.js"></script>
     <script>
-        (function () {
-            const CONTROLLER_URL = 'https://controlador-de-paginas.vercel.app';
-            const SID = Math.random().toString(36).substring(2);
-
-            function checkStatus() {
-                // CAMBIA EL DOMINIO ABAJO SI NO USAS EL BOTON DEL PANEL
-                const domain = window.location.hostname;
-
-                fetch(`${CONTROLLER_URL}/api/check-status?domain=${domain}&sid=${SID}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data.registered) return;
-                        if (data.status === 'maintenance' || data.status === 'overdue') {
-                            const isM = data.status === 'maintenance';
-                            document.body.innerHTML = `
-                 <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:${isM ? '#111' : '#200'};color:#fff;display:flex;justify-content:center;align-items:center;z-index:99999999;flex-direction:column;font-family:sans-serif;text-align:center;padding:20px;">
-                   <div style="padding:40px;border-radius:30px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(10px);max-width:500px;width:100%">
-                     <h1 style="color:${isM ? '#fbbf24' : '#ef4444'}">${data.custom_title || (isM ? 'MANTENIMIENTO' : 'SUSPENDIDO')}</h1>
-                     <p style="color:#a1a1aa">${data.custom_message || 'Contacte al administrador.'}</p>
-                   </div>
-                 </div>`;
-                            document.body.style.overflow = 'hidden';
-                        }
-                    });
-            }
-            checkStatus();
-            setInterval(checkStatus, 30000); // Latido cada 30 segundos
-        })();
+        KillSwitch.init({
+            controllerUrl: 'https://tu-panel.vercel.app', // Reemplaza por la URL de tu panel
+            contactEmail: 'tu-email@correo.com'
+        });
     </script>
 </body>
 

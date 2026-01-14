@@ -176,6 +176,20 @@ const AccessDenied = ({ onBack }) => (
     </div>
 );
 
+// --- KILL SWITCH ---
+const KillSwitch = ({ controllerUrl, contactEmail = 'tu-email@correo.com' }) => {
+    useEffect(() => {
+        if (window.KillSwitch) {
+            window.KillSwitch.init({
+                controllerUrl,
+                contactEmail
+            });
+        }
+    }, [controllerUrl, contactEmail]);
+
+    return null; // El script maneja la UI
+};
+
 // --- EXPONER EN WINDOW ---
 window.SustoreComponents = {
     Toast,
@@ -183,7 +197,8 @@ window.SustoreComponents = {
     ErrorBoundary,
     LoadingSpinner,
     InfiniteScrollTrigger,
-    AccessDenied
+    AccessDenied,
+    KillSwitch
 };
 
 console.log('[Components] ✅ Módulo cargado correctamente');
