@@ -1375,8 +1375,9 @@ function App() {
                                 isInitializingBrick.current = false;
 
                                 setIsPaymentProcessing(false);
-                                setPaymentError(`El pago fue rechazado: ${detailedError}. Podés intentar con otra tarjeta.`);
-                                showToast('Pago rechazado. Intentá de nuevo.', 'error');
+                                // Mensaje de máxima tranquilidad para el cliente
+                                setPaymentError(`El pago fue RECHAZADO: ${detailedError}. NO se ha realizado ningún cargo en tu tarjeta. Podés intentar con otra tarjeta o medio de pago.`);
+                                showToast('Pago rechazado. No se realizó ningún cobro.', 'error');
                             }
                         } catch (error) {
                             // ERROR DE CONEXIÓN
@@ -1438,7 +1439,7 @@ function App() {
                 shippingAddress: checkoutData.shippingMethod === 'Delivery'
                     ? `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})`
                     : 'Retiro en Local',
-                paymentMethod: 'Mercado Pago - Tarjeta',
+                paymentMethod: 'Tarjeta',
                 mpPaymentId, // ID del pago en Mercado Pago
                 lastUpdate: new Date().toISOString(),
             };
@@ -1523,7 +1524,7 @@ function App() {
     // Effect para inicializar el Brick cuando se selecciona MP
     useEffect(() => {
         const isCheckoutView = view === 'checkout';
-        const isMP = checkoutData.paymentChoice === 'Mercado Pago';
+        const isMP = checkoutData.paymentChoice === 'Tarjeta';
 
         if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
             // Pequeño delay para asegurar que el DOM está listo
@@ -1536,7 +1537,7 @@ function App() {
             return () => clearTimeout(timer);
         } else if (mpBrickController && (!isCheckoutView || !isMP)) {
             // Limpiar brick si se cambia de método de pago O de vista
-            console.log('🧹 Mercado Pago: Limpiando Brick por cambio de vista o método.');
+            console.log('Sweep: Limpiando Brick por cambio de vista o método.');
             try {
                 mpBrickController.unmount();
             } catch (e) { }
@@ -3962,12 +3963,12 @@ function App() {
                                     <div className="grid grid-cols-2 gap-4 relative z-10">
                                         {settings?.paymentMercadoPago?.enabled && (
                                             <button
-                                                onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Mercado Pago' })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Mercado Pago' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Tarjeta' })}
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Tarjeta' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
                                             >
-                                                {checkoutData.paymentChoice === 'Mercado Pago' && <CheckCircle className="absolute top-2 right-2 text-cyan-500" />}
+                                                {checkoutData.paymentChoice === 'Tarjeta' && <CheckCircle className="absolute top-2 right-2 text-cyan-500" />}
                                                 <CreditCard className="w-8 h-8 group-hover:scale-110 transition" />
-                                                <span className="text-sm font-black tracking-wider uppercase">Mercado Pago</span>
+                                                <span className="text-sm font-black tracking-wider uppercase">Tarjeta</span>
                                             </button>
                                         )}
                                         {settings?.paymentTransfer?.enabled && (
@@ -3992,8 +3993,8 @@ function App() {
                                         )}
                                     </div>
 
-                                    {/* Card Payment Brick Container - Solo para Mercado Pago */}
-                                    {checkoutData.paymentChoice === 'Mercado Pago' && (
+                                    {/* Card Payment Brick Container - Solo para Tarjeta */}
+                                    {checkoutData.paymentChoice === 'Tarjeta' && (
                                         <div className="mt-8 animate-fade-up">
                                             <div className="bg-slate-900/50 p-6 rounded-2xl border border-cyan-500/30">
                                                 <h3 className="text-white font-bold mb-4 flex items-center gap-2">
@@ -6583,13 +6584,13 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* MercadoPago */}
+                                                        {/* MercadoPago (Tarjeta) */}
                                                         <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
                                                             <div className="flex items-center justify-between">
                                                                 <div className="flex items-center gap-3">
-                                                                    <Smartphone className="w-6 h-6 text-sky-400" />
+                                                                    <CreditCard className="w-6 h-6 text-sky-400" />
                                                                     <div>
-                                                                        <p className="font-bold text-white">MercadoPago</p>
+                                                                        <p className="font-bold text-white">Tarjeta (Mercado Pago)</p>
                                                                         <p className="text-xs text-slate-500">Activado / Desactivado</p>
                                                                     </div>
                                                                 </div>
