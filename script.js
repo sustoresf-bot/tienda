@@ -72,8 +72,8 @@ const Toast = ({ message, type, onClose }) => {
         iconContainerClass += " bg-yellow-500/20";
         IconComponent = AlertTriangle;
     } else {
-        containerClass += " border-cyan-500 text-cyan-400 bg-black/90 shadow-[0_0_20px_rgba(6,182,212,0.3)]";
-        iconContainerClass += " bg-cyan-500/20";
+        containerClass += " border-orange-500 text-orange-400 bg-black/90 shadow-[0_0_20px_rgba(249,115,22,0.3)]";
+        iconContainerClass += " bg-orange-500/20";
         IconComponent = Info;
     }
 
@@ -103,14 +103,14 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
             <div className={`glass p-8 rounded-[2rem] max-w-sm w-full border ${isDangerous ? 'border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]' : 'border-slate-700 shadow-2xl'}`}>
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${isDangerous ? 'bg-red-900/20 text-red-500' : 'bg-cyan-900/20 text-cyan-500'}`}>
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${isDangerous ? 'bg-red-900/20 text-red-500' : 'bg-orange-900/20 text-orange-500'}`}>
                     {isDangerous ? <AlertTriangle className="w-8 h-8" /> : <Info className="w-8 h-8" />}
                 </div>
                 <h3 className="text-xl font-black text-center mb-2 text-white">{title}</h3>
                 <p className="text-slate-400 text-center mb-8 text-sm leading-relaxed">{message}</p>
                 <div className="flex gap-3">
                     <button onClick={onCancel} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">{cancelText}</button>
-                    <button onClick={onConfirm} className={`flex-1 py-3 text-white rounded-xl font-bold transition shadow-lg ${isDangerous ? 'bg-red-600 hover:bg-red-500 shadow-red-600/30' : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/30'}`}>{confirmText}</button>
+                    <button onClick={onConfirm} className={`flex-1 py-3 text-white rounded-xl font-bold transition shadow-lg ${isDangerous ? 'bg-red-600 hover:bg-red-500 shadow-red-600/30' : 'bg-orange-600 hover:bg-orange-500 shadow-orange-600/30'}`}>{confirmText}</button>
                 </div>
             </div>
         </div>
@@ -3457,10 +3457,10 @@ function App() {
                         </button>
 
                         {/* Botón Carrito */}
-                        <button onClick={() => setView('cart')} className="relative p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group hover:border-cyan-500/30">
+                        <button onClick={() => setView('cart')} className="relative p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group hover:border-orange-500/30">
                             <ShoppingBag className="w-6 h-6 group-hover:scale-110 transition" />
                             {cart.length > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-cyan-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-[#050505] animate-bounce-short">
+                                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-[#050505] animate-bounce-short">
                                     {cart.length}
                                 </span>
                             )}
@@ -3495,7 +3495,7 @@ function App() {
                     {/* Panel Lateral */}
                     <div className="relative w-80 bg-[#0a0a0a] h-full p-8 border-r border-slate-800 animate-fade-in-right flex flex-col shadow-2xl z-[10001]">
                         <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
-                            <h2 className="text-3xl font-black text-white neon-text tracking-tight">MENÚ</h2>
+                            <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">MENÚ</h2>
                             <button onClick={() => setIsMenuOpen(false)} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 border border-slate-800">
                                 <X className="w-6 h-6" />
                             </button>
@@ -3531,7 +3531,7 @@ function App() {
 
                             {/* Panel Admin (Solo si tiene permisos) */}
                             {hasAccess(currentUser?.email) && (
-                                <button onClick={() => { setView('admin'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-cyan-400 mt-6 pt-6 border-t border-slate-800 flex items-center gap-4 p-4 bg-cyan-900/10 rounded-xl hover:bg-cyan-900/20 transition border border-cyan-500/20">
+                                <button onClick={() => { setView('admin'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-orange-400 mt-6 pt-6 border-t border-slate-800 flex items-center gap-4 p-4 bg-orange-900/10 rounded-xl hover:bg-orange-900/20 transition border border-orange-500/20">
                                     <Shield className="w-6 h-6" /> Admin Panel
                                 </button>
                             )}
@@ -3556,9 +3556,9 @@ function App() {
 
                         {/* Anuncio Global (Marquesina) */}
                         {settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
-                            <div className="w-full bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border border-cyan-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
+                            <div className="w-full bg-gradient-to-r from-orange-900/20 to-red-900/20 border border-orange-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-white/5 skew-x-12 -translate-x-full group-hover:translate-x-full transition duration-1000"></div>
-                                <p className="text-cyan-300 font-black text-xs md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3">
+                                <p className="text-orange-400 font-black text-xs md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3">
                                     <Flame className="w-4 h-4 text-orange-500" /> {settings.announcementMessage} <Flame className="w-4 h-4 text-orange-500" />
                                 </p>
                             </div>
@@ -6199,11 +6199,11 @@ function App() {
                                             {promos.map(promo => {
                                                 const totalCost = (promo.items || []).reduce((acc, item) => {
                                                     const p = products.find(prod => prod.id === item.productId);
-                                                    return acc + ((Number(p?.basePrice) || 0) * item.quantity);
+                                                    return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
                                                 }, 0);
                                                 const price = Number(promo.price) || 0;
                                                 const profit = price - totalCost;
-                                                const margin = totalCost > 0 ? ((profit / totalCost) * 100).toFixed(1) : 0;
+                                                const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : 0;
                                                 const isProfitable = profit > 0;
 
                                                 return (
@@ -6496,7 +6496,13 @@ function App() {
                                                             </p>
                                                             <p className="text-xs text-slate-500 font-mono">
                                                                 Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
-                                                                <span className="text-cyan-400 font-bold ml-2">${p.basePrice}</span> |
+                                                                <span className="text-cyan-400 font-bold ml-2" title="Precio Venta">${Number(p.basePrice).toLocaleString()}</span> |
+                                                                <span className="text-slate-500 ml-2 font-mono" title="Costo Adquisición">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
+                                                                {Number(p.basePrice) > 0 && (
+                                                                    <span className={`ml-2 text-[10px] font-black px-1.5 py-0.5 rounded border ${((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) < 0.3 ? 'bg-red-900/20 text-red-400 border-red-500/20' : 'bg-green-900/20 text-green-400 border-green-500/20'}`}>
+                                                                        {(((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) * 100).toFixed(0)}%
+                                                                    </span>
+                                                                )} |
                                                                 <span className="text-green-400 ml-2">Ventas: {(dashboardMetrics?.salesCount?.[p.id] || 0)}</span>
                                                             </p>
                                                         </div>
@@ -8181,7 +8187,7 @@ function App() {
                                 <div className="text-2xl font-black text-cyan-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
                                 <ul className="space-y-2 text-sm text-slate-300">
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 35 productos</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> URL de Vercel</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> 1 Promo Activa</li>
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Integración Mercado Pago</li>
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Soporte vía Gmail (24hs)</li>
                                 </ul>
@@ -8202,9 +8208,9 @@ function App() {
                                 <p className="text-xs text-purple-400 mb-3 font-bold">Todo lo del Emprendedor +</p>
                                 <ul className="space-y-2 text-sm text-slate-300">
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón de WhatsApp</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> SEO Básico</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 5 Promos</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Cupones de Descuento</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Ver Actividad Usuarios</li>
                                 </ul>
                             </div>
 
@@ -8222,10 +8228,10 @@ function App() {
                                 <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
                                 <p className="text-xs text-yellow-400 mb-3 font-bold">Todo lo del Negocio +</p>
                                 <ul className="space-y-2 text-sm text-slate-300">
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Promos ILIMITADAS</li>
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Chatbot SustIA</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga de 10 productos</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento mensual</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Reporte de ventas</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga de Productos</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
                                 </ul>
                             </div>
                         </div>
