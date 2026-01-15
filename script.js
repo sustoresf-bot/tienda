@@ -462,13 +462,17 @@ function App() {
         const member = team.find(m => m.email && m.email.trim().toLowerCase() === cleanEmail);
         if (member) return member.role;
 
-        // Buscar en la lista de usuarios (rol asignado desde panel admin)
-        const userDoc = users.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
-        if (userDoc && userDoc.role) return userDoc.role;
-
-        // Si el usuario actual coincide, usar su rol guardado
+        // IMPORTANTE: Verificar currentUser.role PRIMERO (para evitar dependencia circular)
+        // El usuario logueado tiene su rol guardado en su documento
         if (currentUser && currentUser.email && currentUser.email.trim().toLowerCase() === cleanEmail && currentUser.role) {
             return currentUser.role;
+        }
+
+        // Buscar en la lista de usuarios (rol asignado desde panel admin)
+        // Nota: Esta lista solo está disponible para admins
+        if (users && users.length > 0) {
+            const userDoc = users.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
+            if (userDoc && userDoc.role) return userDoc.role;
         }
 
         return 'user';
