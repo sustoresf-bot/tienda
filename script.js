@@ -5467,17 +5467,19 @@ function App() {
 
                                         {/* Overlay for Entrepreneur Plan */}
                                         {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
-                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md rounded-[2.5rem]">
+                                            <button
+                                                onClick={() => setShowPlansModal(true)}
+                                                className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md rounded-[2.5rem] cursor-pointer hover:bg-black/70 transition group"
+                                            >
                                                 <div className="text-center p-8 max-w-md">
-                                                    <div className="w-20 h-20 mx-auto mb-6 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
+                                                    <div className="w-20 h-20 mx-auto mb-6 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30 group-hover:scale-110 transition">
                                                         <Lock className="w-10 h-10 text-purple-400" />
                                                     </div>
                                                     <h3 className="text-2xl font-black text-white mb-4">Cupones Bloqueados</h3>
                                                     <p className="text-slate-400 mb-6">Los cupones de descuento están disponibles a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>.</p>
-                                                    <p className="text-sm text-slate-500">Contacta al desarrollador para actualizar tu plan:</p>
-                                                    <p className="text-cyan-400 font-bold mt-2">lautarocorazza63@gmail.com</p>
+                                                    <p className="text-sm text-white/60 group-hover:text-white transition">Clic para ver planes disponibles</p>
                                                 </div>
-                                            </div>
+                                            </button>
                                         )}
 
                                         <h1 className="text-3xl font-black text-white mb-8">Gestión de Cupones</h1>
@@ -6665,19 +6667,49 @@ function App() {
                                                                 <label className="text-sm font-bold text-white flex items-center gap-2">
                                                                     <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
                                                                 </label>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showWhatsapp: settings?.showWhatsapp === false ? true : false })}
-                                                                    className={`w-12 h-6 rounded-full transition relative ${settings?.showWhatsapp !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showWhatsapp !== false ? 'left-6' : 'left-0.5'}`}></div>
-                                                                </button>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[10px] text-slate-500 font-mono uppercase">Footer</span>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showWhatsapp: settings?.showWhatsapp === false ? true : false })}
+                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showWhatsapp !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${settings?.showWhatsapp !== false ? 'left-5.5' : 'left-0.5'}`} style={{ left: settings?.showWhatsapp !== false ? '22px' : '2px' }}></div>
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                             <input
-                                                                className="input-cyber w-full p-3 text-sm"
+                                                                className="input-cyber w-full p-3 text-sm mb-3"
                                                                 value={settings?.whatsappLink || ''}
                                                                 onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
                                                                 placeholder="https://wa.me/5491112345678"
                                                             />
+
+                                                            {/* Floating Button Toggle */}
+                                                            <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
+                                                                <div>
+                                                                    <p className="text-xs text-slate-400 font-bold flex items-center gap-2">
+                                                                        Botón Flotante
+                                                                        {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
+                                                                            <Lock className="w-3 h-3 text-yellow-500" />
+                                                                        )}
+                                                                    </p>
+                                                                    {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
+                                                                        <p className="text-[9px] text-yellow-500/80 mt-0.5">Requiere Plan Negocio</p>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (['business', 'premium'].includes(settings?.subscriptionPlan)) {
+                                                                            setSettings({ ...settings, showFloatingWhatsapp: !settings?.showFloatingWhatsapp });
+                                                                        } else {
+                                                                            setShowPlansModal(true);
+                                                                        }
+                                                                    }}
+                                                                    className={`w-10 h-5 rounded-full transition relative ${settings?.showFloatingWhatsapp ? 'bg-green-500' : 'bg-slate-700'} ${(!['business', 'premium'].includes(settings?.subscriptionPlan)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                >
+                                                                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showFloatingWhatsapp ? '22px' : '2px' }}></div>
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                         {/* Instagram */}
                                                         <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
@@ -7656,6 +7688,17 @@ function App() {
                     </div>
                 )
             }
+            {/* BOTÓN FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
+            {settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
+                <button
+                    onClick={() => window.open(settings.whatsappLink, '_blank')}
+                    className="fixed bottom-6 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
+                    title="Chatea con nosotros"
+                >
+                    <MessageCircle className="w-8 h-8 text-white fill-white" />
+                </button>
+            )}
+
             <AdminUserDrawer />
             {/* MODAL: VER PLANES DE SUSCRIPCIÓN */}
             {showPlansModal && (
@@ -7682,13 +7725,13 @@ function App() {
                                     <Store className="w-6 h-6 text-cyan-400" />
                                 </div>
                                 <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
-                                <p className="text-sm text-slate-400 mb-4 h-10">Para quienes empiezan su negocio.</p>
-                                <div className="text-2xl font-black text-cyan-400 mb-6">$8.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                <p className="text-sm text-slate-400 mb-4">El esencial para arrancar.</p>
+                                <div className="text-2xl font-black text-cyan-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
                                 <ul className="space-y-2 text-sm text-slate-300">
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 35 productos</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Panel básico</li>
-                                    <li className="flex items-center gap-2"><X className="w-4 h-4 text-slate-600" /> Sin cupones</li>
-                                    <li className="flex items-center gap-2"><X className="w-4 h-4 text-slate-600" /> Sin estadísticas</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> URL de Vercel</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Integración Mercado Pago</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Soporte vía Gmail (24hs)</li>
                                 </ul>
                             </div>
 
@@ -7697,17 +7740,19 @@ function App() {
                                 {settings?.subscriptionPlan === 'business' && (
                                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
                                 )}
+                                <div className="absolute top-4 right-4 bg-purple-500/20 text-purple-400 text-[10px] font-bold px-2 py-0.5 rounded">MÁS PEDIDO</div>
                                 <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
                                     <Briefcase className="w-6 h-6 text-purple-400" />
                                 </div>
                                 <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
-                                <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
+                                <p className="text-sm text-slate-400 mb-4">Para marcas con identidad.</p>
                                 <div className="text-2xl font-black text-purple-400 mb-6">$14.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                <p className="text-xs text-purple-400 mb-3 font-bold">Todo lo del Emprendedor +</p>
                                 <ul className="space-y-2 text-sm text-slate-300">
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Cupones de Descuento</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Estadísticas de Usuarios</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón de WhatsApp</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> SEO Básico</li>
                                 </ul>
                             </div>
 
@@ -7716,17 +7761,19 @@ function App() {
                                 {settings?.subscriptionPlan === 'premium' && (
                                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
                                 )}
+                                <div className="absolute top-4 right-4 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded">SERVICIO FULL</div>
                                 <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
                                     <Sparkles className="w-6 h-6 text-yellow-400" />
                                 </div>
                                 <h4 className="text-xl font-black text-white mb-1">Premium</h4>
-                                <p className="text-sm text-slate-400 mb-4 h-10">Todo ilimitado, sin restricciones.</p>
+                                <p className="text-sm text-slate-400 mb-4">No tocás nada, todo listo.</p>
                                 <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                <p className="text-xs text-yellow-400 mb-3 font-bold">Todo lo del Negocio +</p>
                                 <ul className="space-y-2 text-sm text-slate-300">
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Productos Ilimitados</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Todo de Negocio</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Soporte Prioritario</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Dominio Personalizado</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Chatbot SustIA</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga de 10 productos</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento mensual</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Reporte de ventas</li>
                                 </ul>
                             </div>
                         </div>
