@@ -1227,7 +1227,7 @@ function App() {
 
         // USANDO LA PUBLIC KEY DE PRODUCCIÓN CORRECTA
         // USANDO LA PUBLIC KEY DE PRUEBA (SANDBOX)
-        const publicKey = 'APP_USR-2335d49f-5356-4555-a5bc-b60c20253d10';
+        const publicKey = 'TEST-a700c0fb-8bac-40cb-8e99-2605b391efa3';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
         });
@@ -1263,6 +1263,7 @@ function App() {
                     },
                     onSubmit: async (cardFormData) => {
                         console.log('🚀 Mercado Pago: Procesando pago...');
+                        console.log('🔑 Token generado por el Brick:', cardFormData.token);
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
 
