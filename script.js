@@ -163,181 +163,171 @@ const SustIABot = ({ settings, products, addToCart }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
-    // --- CEREBRO LOCAL AVANZADO V2 (Sin API Externa) ---
+    // --- CEREBRO LOCAL AVANZADO V3 (Universal & Visual) ---
     const callLocalBrain = async (userText) => {
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simula pensamiento
-        const text = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Normalizar acentos
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const text = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        // 0. Funciones Auxiliares
+        // Utiles
         const getPriceLimit = (t) => {
             const match = t.match(/(?:menos|bajo|maximo|hasta|no mas de)\s*(?:de)?\s*\$?(\d+)/);
             return match ? parseInt(match[1]) : null;
         };
-
         const availableCategories = [...new Set(products.map(p => p.category.toLowerCase()))];
         const detectCategory = (t) => availableCategories.find(c => t.includes(c) || c.includes(t));
 
-        // 1. Detección de Intenciones y Filtros
+        // Filtros
         const maxPrice = getPriceLimit(text);
         const targetCategory = detectCategory(text);
         const isBuying = text.match(/(?:agrega|comprar|quiero|dame|carrito|llevo)/);
 
-        // 2. Búsqueda de Productos (Matching avanzado)
-        // Palabras clave ignorando conectores
-        const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale'];
+        // Keywords
+        const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale', 'quiero', 'necesito', 'hay', 'donde'];
         const keywords = text.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w) && isNaN(w));
 
         let candidates = products.filter(p => p.stock > 0);
 
-        // Filtro por Categoría
-        if (targetCategory) {
-            candidates = candidates.filter(p => p.category.toLowerCase().includes(targetCategory));
-        }
+        if (targetCategory) candidates = candidates.filter(p => p.category.toLowerCase().includes(targetCategory));
+        if (maxPrice) candidates = candidates.filter(p => p.basePrice <= maxPrice);
 
-        // Filtro por Precio
-        if (maxPrice) {
-            candidates = candidates.filter(p => p.basePrice <= maxPrice);
-        }
-
-        // Filtro por Palabras Clave (si no es solo categoría/precio)
+        // Score por relevancia
         if (keywords.length > 0) {
-            const scoreProduct = (p) => {
+            candidates = candidates.map(p => {
                 let score = 0;
-                const pName = p.name.toLowerCase();
-                const pDesc = (p.description || "").toLowerCase();
+                const str = (p.name + " " + p.category + " " + (p.description || "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 keywords.forEach(k => {
-                    if (pName.includes(k)) score += 3;
-                    else if (pDesc.includes(k)) score += 1;
+                    if (str.includes(k)) score += 1;
+                    if (p.name.toLowerCase().includes(k)) score += 2;
                 });
-                return score;
-            };
-
-            // Si detectamos categoría, somos más laxos con keywords, si no, somos estrictos
-            const minScore = targetCategory ? 0 : 1;
-            candidates = candidates.map(p => ({ ...p, score: scoreProduct(p) }))
-                .filter(p => p.score > 0)
-                .sort((a, b) => b.score - a.score); // Mejores coincidencias primero
+                return { ...p, score };
+            }).filter(p => p.score > 0).sort((a, b) => b.score - a.score);
         } else if (!targetCategory && !maxPrice && !isBuying) {
-            // Si no hay keywords ni filtros claros, y no quiere comprar, es saludo o charla
-            if (text.match(/^(hola|buen|hey|alo)/)) return "¡Hola! 👋 Soy SustIA. Dime qué buscas o tu presupuesto y te ayudaré.";
-            if (text.includes('ayuda')) return "Prueba decir: 'Busco auriculares por menos de 20000' o 'Agrega el cargador Samsung'.";
-            return "¡Hola! Estoy aquí para ayudarte a encontrar productos. ¿Buscas algo en especial? (Celulares, Auriculares, etc)";
+            // Charla genérica
+            if (text.match(/^(hola|buen|hey|alo)/)) return { text: "¡Hola! 👋 ¿Buscas algún producto en particular? Dime y lo busco en nuestro inventario." };
+            return { text: "Estoy explorando el catálogo. 🧐 Intenta decirme qué tipo de artículo necesitas o tu presupuesto." };
         }
 
-        // 3. Generación de Respuesta
         if (candidates.length === 0) {
-            if (maxPrice) return `Mmm, no encontré nada ${targetCategory ? 'de ' + targetCategory : ''} por menos de $${maxPrice}. 📉`;
-            return "No encontré productos con esa descripción exacta. 🧐 Intenta ser más general o busca por categoría.";
+            return { text: `Lo siento, no encontré productos que coincidan con eso${maxPrice ? ' por ese precio' : ''}. 📉 Intenta ser más general.` };
         }
 
-        const bestMatch = candidates[0];
+        const topMatches = candidates.slice(0, 5); // Mostramos hasta 5 productos en carrusel
 
-        // LOGICA DE COMPRA
-        if (isBuying) {
-            // Si hay un candidato muy claro (score alto o único resultado filtrado)
-            if (candidates.length === 1 || (candidates[0].score && candidates[0].score >= 3)) {
-                return `¡Excelente! Agregado ${bestMatch.name} al carrito ($${bestMatch.basePrice}). 🛒 [CMD:ADD|ID:${bestMatch.id}]`;
-            }
-            // Si hay varios
-            return `Encontré varios. ¿Cuál prefieres? Tengo: ${candidates.slice(0, 3).map(p => p.name).join(', ')}.`;
+        // Respuesta Directa (Compra)
+        if (isBuying && topMatches.length > 0) {
+            const best = topMatches[0];
+            addToCart(best);
+            return {
+                text: `¡Entendido! He agregado **${best.name}** a tu carrito. 🛒 ¿Deseas ver algo más?`,
+                products: [best]
+            };
         }
 
-        // LOGICA DE RECOMENDACIÓN
-        if (candidates.length === 1) {
-            return `¡Tengo justo esto! **${bestMatch.name}** a $${bestMatch.basePrice}. \nEs de la categoría ${bestMatch.category}. ¿Te lo agrego?`;
-        }
-
-        // Mostrar top 3 opciones
-        const top3 = candidates.slice(0, 3);
-        const responseText = top3.map(p => `• ${p.name} ($${p.basePrice})`).join('\n');
-
-        return `Encontré estas opciones ${maxPrice ? 'en tu presupuesto' : ''}:\n${responseText}\n\n¿Te interesa alguno? (Dime "agrega el primero", o el nombre)`;
+        // Respuesta de Búsqueda (Galería)
+        return {
+            text: `Encontré estas opciones para ti${maxPrice ? ' dentro de tu presupuesto' : ''}:`,
+            products: topMatches
+        };
     };
-
 
     const handleSend = async () => {
         if (!inputValue.trim()) return;
         const text = inputValue;
         setInputValue('');
 
-        const newMessages = [...messages, { role: 'client', text }];
-        setMessages(newMessages);
+        setMessages(prev => [...prev, { role: 'client', text }]);
         setIsTyping(true);
 
-        const aiResponseRaw = await callLocalBrain(text);
-
-        let cleanResponse = aiResponseRaw;
-        const cmdRegex = /\[CMD:ADD\|ID:(.*?)\]/;
-        const match = aiResponseRaw.match(cmdRegex);
-
-        if (match) {
-            const productId = match[1].trim();
-            const product = products.find(p => p.id === productId);
-            if (product) {
-                // Ejecutar función del frontend (addToCart recibe (prod, qty))
-                addToCart(product);
-                cleanResponse = aiResponseRaw.replace(cmdRegex, '');
-                // showToast(`SustIA agregó ${product.name} a tu carrito 🛒`, 'success'); // Opcional
-            }
-        }
+        const response = await callLocalBrain(text);
 
         setIsTyping(false);
-        setMessages(prev => [...prev, { role: 'model', text: cleanResponse }]);
+        // Ahora guardamos text Y products en el estado del mensaje
+        setMessages(prev => [...prev, {
+            role: 'model',
+            text: response.text,
+            products: response.products
+        }]);
     };
+
+
 
     return (
         <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end pointer-events-none">
             {isOpen && (
-                <div className="pointer-events-auto bg-[#0a0a0a] border border-yellow-500/30 rounded-2xl w-80 md:w-96 h-[500px] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden">
-                    <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <Bot className="w-6 h-6 text-white" />
+                <div className="pointer-events-auto bg-[#0a0a0a] border border-yellow-500/30 rounded-2xl w-80 md:w-96 h-[550px] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden font-sans">
+                    <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center shadow-md">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white/10 rounded-full backdrop-blur-sm">
+                                <Bot className="w-5 h-5 text-white" />
+                            </div>
                             <div>
-                                <h3 className="font-bold text-white text-sm">SustIA Premium</h3>
-                                <div className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                                    <span className="text-[10px] text-white/80">En línea</span>
-                                </div>
+                                <h3 className="font-bold text-white text-sm">SustIA</h3>
+                                <p className="text-[10px] text-white/80 flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                                    Asistente Virtual
+                                </p>
                             </div>
                         </div>
-                        <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white">
+                        <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-lg transition">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-900/50 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-[#111] custom-scrollbar">
                         {messages.map((m, i) => (
-                            <div key={i} className={`flex ${m.role === 'client' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${m.role === 'client'
-                                    ? 'bg-yellow-600 text-white rounded-br-none'
-                                    : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'
+                            <div key={i} className={`flex flex-col ${m.role === 'client' ? 'items-end' : 'items-start'}`}>
+                                <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${m.role === 'client'
+                                    ? 'bg-yellow-600 text-white rounded-br-sm'
+                                    : 'bg-[#1a1a1a] text-slate-200 rounded-bl-sm border border-white/5'
                                     }`}>
                                     <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
                                 </div>
+
+                                {m.products && m.products.length > 0 && (
+                                    <div className="mt-3 flex gap-3 overflow-x-auto pb-2 w-full custom-scrollbar pl-1 snap-x">
+                                        {m.products.map(product => (
+                                            <div key={product.id} className="min-w-[140px] w-[140px] bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-lg snap-start flex-shrink-0 group">
+                                                <div className="h-28 bg-white relative overflow-hidden">
+                                                    <img src={product.image} alt={product.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition duration-300" />
+                                                </div>
+                                                <div className="p-2">
+                                                    <h4 className="text-white text-xs font-bold truncate">{product.name}</h4>
+                                                    <p className="text-yellow-500 text-xs font-black mt-1">${parseInt(product.basePrice).toLocaleString()}</p>
+                                                    <button
+                                                        onClick={() => { addToCart(product); setMessages(prev => [...prev, { role: 'model', text: `Agregado ${product.name} al carrito! 🛒` }]) }}
+                                                        className="w-full mt-2 bg-white/10 hover:bg-yellow-600 text-white text-[10px] py-1.5 rounded-lg transition font-medium flex items-center justify-center gap-1"
+                                                    >
+                                                        Agregar <span className="text-xs">+</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ))}
                         {isTyping && (
                             <div className="flex justify-start">
-                                <div className="bg-slate-800 p-3 rounded-2xl rounded-bl-none border border-slate-700 flex gap-1">
-                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"></span>
-                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
-                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                <div className="bg-[#1a1a1a] p-3 rounded-2xl rounded-bl-none border border-white/5 flex gap-1">
+                                    <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></span>
+                                    <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
+                                    <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
                                 </div>
                             </div>
                         )}
                         <div ref={messagesEndRef} />
                     </div>
 
-                    <div className="p-4 bg-[#050505] border-t border-slate-800">
-                        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
+                    <div className="p-3 bg-[#0a0a0a] border-t border-white/10">
+                        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
                             <input
-                                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:border-yellow-500 outline-none transition"
-                                placeholder="Escribe a SustIA..."
+                                className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-full px-4 py-2.5 text-sm text-white focus:border-yellow-500/50 outline-none transition placeholder:text-slate-600"
+                                placeholder="Escribe aquí..."
                                 value={inputValue}
                                 onChange={e => setInputValue(e.target.value)}
                             />
-                            <button type="submit" className="p-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-xl transition disabled:opacity-50" disabled={isTyping || !inputValue.trim()}>
-                                <Send className="w-5 h-5" />
+                            <button type="submit" className="p-2.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-full transition shadow-lg shadow-yellow-600/20 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isTyping || !inputValue.trim()}>
+                                <Send className="w-4 h-4" />
                             </button>
                         </form>
                     </div>
@@ -346,7 +336,7 @@ const SustIABot = ({ settings, products, addToCart }) => {
 
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="pointer-events-auto w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform group relative"
+                className="pointer-events-auto w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform group relative z-50"
             >
                 {isOpen ? <X className="w-6 h-6 text-white" /> : <Bot className="w-7 h-7 text-white" />}
                 {!isOpen && (
