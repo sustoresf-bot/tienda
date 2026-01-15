@@ -3868,14 +3868,12 @@ function App() {
                             <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-2">
                                 <div className="ticker-wrap">
                                     <div className="ticker-content font-mono text-cyan-500/50 text-sm tracking-[0.5em] uppercase flex items-center gap-12">
-                                        <span>{settings?.storeName || 'SUSTORE'} Tech</span><span>•</span>
-                                        <span>Future Ready</span><span>•</span>
-                                        <span>Premium Quality</span><span>•</span>
-                                        <span>Next Gen Audio</span><span>•</span>
-                                        <span>{settings?.storeName || 'SUSTORE'} Tech</span><span>•</span>
-                                        <span>Future Ready</span><span>•</span>
-                                        <span>Premium Quality</span><span>•</span>
-                                        <span>Next Gen Audio</span>
+                                        {[1, 2, 3, 4].map((i) => (
+                                            <React.Fragment key={i}>
+                                                <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || 'SUSTORE'} Tech • Future Ready • Premium Quality • Next Gen Audio`}</span>
+                                                <span>•</span>
+                                            </React.Fragment>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -7192,6 +7190,37 @@ function App() {
                                                                     className="input-cyber flex-1 p-3 font-mono"
                                                                 />
                                                             </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Brand Ticker Configuration */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <Sparkles className="w-5 h-5 text-cyan-400" /> Ticker de Marca
+                                                    </h3>
+                                                    <div className="space-y-6">
+                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div>
+                                                                <p className="font-bold text-white">Mostrar Ticker</p>
+                                                                <p className="text-xs text-slate-500">Activar/desactivar la cinta de texto animada.</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-cyan-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Ticker</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.tickerText || ''}
+                                                                onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
+                                                                placeholder="FUTURE READY • PREMIUM QUALITY • NEXT GEN AUDIO"
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-2">Este texto se repetirá en bucle.</p>
                                                         </div>
                                                     </div>
                                                 </div>
