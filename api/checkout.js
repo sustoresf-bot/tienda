@@ -23,7 +23,10 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Payment service not configured' });
     }
 
-    // Configuración del cliente MP con Access Token de variable de entorno
+    // LOG DE SEGURIDAD PARA DEBUG (Solo mostramos el inicio del token)
+    console.log('Token prefix:', process.env.MP_ACCESS_TOKEN.substring(0, 15) + '...');
+
+    // Configuración del cliente MP
     const client = new MercadoPagoConfig({
         accessToken: process.env.MP_ACCESS_TOKEN,
     });
@@ -32,7 +35,6 @@ export default async function handler(req, res) {
 
     try {
         if (action === 'process_payment') {
-            // Procesar pago directo con Card Payment Brick
             const payment = new Payment(client);
 
             const paymentBody = {
@@ -46,12 +48,10 @@ export default async function handler(req, res) {
                 },
             };
 
-            // Agregar issuer_id solo si está presente (algunas tarjetas no lo requieren)
             if (paymentData.issuer_id) {
                 paymentBody.issuer_id = paymentData.issuer_id;
             }
 
-            // Agregar identificación del pagador si está disponible
             if (payer.identificationType && payer.identificationNumber) {
                 paymentBody.payer.identification = {
                     type: payer.identificationType,
@@ -59,11 +59,9 @@ export default async function handler(req, res) {
                 };
             }
 
-            console.log('Processing payment:', JSON.stringify(paymentBody, null, 2));
-
+            console.log('Enviando pago a MP...');
             const paymentResponse = await payment.create({ body: paymentBody });
-
-            console.log('Payment response:', JSON.stringify(paymentResponse, null, 2));
+            console.log('Respuesta de MP con éxito:', paymentResponse.status);
 
             return res.status(200).json({
                 status: paymentResponse.status,
@@ -75,10 +73,13 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid action' });
 
     } catch (error) {
-        console.error('Mercado Pago Error:', error);
+        // Log detallado en la consola de Vercel (Esto lo podés ver vos en Vercel logs)
+        console.error('--- ERROR DETALLADO DE MERCADO PAGO ---');
+        console.error('Status:', error.status);
+        console.error('Message:', error.message);
+        console.error('Cause:', JSON.stringify(error.cause, null, 2));
 
-        // Intentar extraer mensaje de error más específico
-        let errorMessage = 'Payment processing failed';
+        let errorMessage = 'Error al procesar el pago';
         if (error.cause && Array.isArray(error.cause)) {
             errorMessage = error.cause.map(c => c.description || c.message).join(', ');
         } else if (error.message) {
@@ -88,6 +89,7 @@ export default async function handler(req, res) {
         return res.status(500).json({
             error: errorMessage,
             details: error.cause || error.message,
+            mp_status: error.status
         });
     }
 }
