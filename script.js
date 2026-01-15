@@ -457,19 +457,18 @@ function App() {
         // Super Admin Hardcodeado (Prioridad Máxima)
         if (cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) return 'admin';
 
-        // Buscar en el equipo (settings.team - método original)
+        // 1. Verificar currentUser.role (Prioridad sobre equipo estático)
+        // Esto permite promover usuarios desde el panel sin depender de settings.team
+        if (currentUser && currentUser.email && currentUser.email.trim().toLowerCase() === cleanEmail && currentUser.role && currentUser.role !== 'user') {
+            return currentUser.role;
+        }
+
+        // 2. Buscar en el equipo (settings.team - Fallback/Hardcoded)
         const team = settings.team || [];
         const member = team.find(m => m.email && m.email.trim().toLowerCase() === cleanEmail);
         if (member) return member.role;
 
-        // IMPORTANTE: Verificar currentUser.role PRIMERO (para evitar dependencia circular)
-        // El usuario logueado tiene su rol guardado en su documento
-        if (currentUser && currentUser.email && currentUser.email.trim().toLowerCase() === cleanEmail && currentUser.role) {
-            return currentUser.role;
-        }
-
-        // Buscar en la lista de usuarios (rol asignado desde panel admin)
-        // Nota: Esta lista solo está disponible para admins
+        // 3. Buscar en la lista de usuarios (solo admins)
         if (users && users.length > 0) {
             const userDoc = users.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
             if (userDoc && userDoc.role) return userDoc.role;
