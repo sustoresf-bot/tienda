@@ -163,65 +163,97 @@ const SustIABot = ({ settings, products, addToCart }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
-    // Función "Mini AI" Local (Sin API Keys)
+    // --- CEREBRO LOCAL AVANZADO V2 (Sin API Externa) ---
     const callLocalBrain = async (userText) => {
-        // Simular un pequeño retardo para que parezca que "piensa"
-        await new Promise(resolve => setTimeout(resolve, 600));
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simula pensamiento
+        const text = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Normalizar acentos
 
-        const lowerText = userText.toLowerCase();
+        // 0. Funciones Auxiliares
+        const getPriceLimit = (t) => {
+            const match = t.match(/(?:menos|bajo|maximo|hasta|no mas de)\s*(?:de)?\s*\$?(\d+)/);
+            return match ? parseInt(match[1]) : null;
+        };
 
-        // 1. Saludos
-        if (lowerText.match(/^(hola|buen|hey|alo|hi)/)) {
-            return "¡Hola! 👋 Soy SustIA. Puedo buscar productos por ti y verificar el stock al instante. ¿Qué estás buscando hoy?";
+        const availableCategories = [...new Set(products.map(p => p.category.toLowerCase()))];
+        const detectCategory = (t) => availableCategories.find(c => t.includes(c) || c.includes(t));
+
+        // 1. Detección de Intenciones y Filtros
+        const maxPrice = getPriceLimit(text);
+        const targetCategory = detectCategory(text);
+        const isBuying = text.match(/(?:agrega|comprar|quiero|dame|carrito|llevo)/);
+
+        // 2. Búsqueda de Productos (Matching avanzado)
+        // Palabras clave ignorando conectores
+        const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale'];
+        const keywords = text.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w) && isNaN(w));
+
+        let candidates = products.filter(p => p.stock > 0);
+
+        // Filtro por Categoría
+        if (targetCategory) {
+            candidates = candidates.filter(p => p.category.toLowerCase().includes(targetCategory));
         }
 
-        // 2. Comandos de Ayuda/Info
-        if (lowerText.includes('ayuda') || lowerText.includes('puedes hacer')) {
-            return "Puedo buscar productos (ej: 'tienes iphone'), decirte precios, y si me dices 'agregar [producto]', ¡lo pongo en tu carrito!";
+        // Filtro por Precio
+        if (maxPrice) {
+            candidates = candidates.filter(p => p.basePrice <= maxPrice);
         }
 
-        // 3. Intención de Agregar al Carrito
-        if (lowerText.match(/agrega|comprar|quiero|dame|carrito/)) {
-            // Buscar mención de producto exacto o muy cercano
-            const targetProduct = products.find(p => lowerText.includes(p.name.toLowerCase()));
-
-            if (targetProduct) {
-                if (targetProduct.stock > 0) {
-                    return `¡Excelente elección! He agregado ${targetProduct.name} a tu carrito. 🛒 [CMD:ADD|ID:${targetProduct.id}]`;
-                } else {
-                    return `Uy, el ${targetProduct.name} está agotado actualmente. 😔 ¿Te muestro otras opciones?`;
-                }
-            }
-        }
-
-        // 4. Búsqueda Inteligente en Catálogo
-        // Filtrar palabras comunes para dejar solo keywords
-        const stopWords = ['tienes', 'hay', 'busco', 'precio', 'del', 'los', 'las', 'una', 'uno', 'para', 'que', 'son'];
-        const keywords = lowerText.split(' ').filter(w => w.length > 3 && !stopWords.includes(w));
-
+        // Filtro por Palabras Clave (si no es solo categoría/precio)
         if (keywords.length > 0) {
-            const matches = products.filter(p =>
-                keywords.some(k =>
-                    p.name.toLowerCase().includes(k) ||
-                    p.category.toLowerCase().includes(k) ||
-                    p.description?.toLowerCase().includes(k)
-                )
-            );
+            const scoreProduct = (p) => {
+                let score = 0;
+                const pName = p.name.toLowerCase();
+                const pDesc = (p.description || "").toLowerCase();
+                keywords.forEach(k => {
+                    if (pName.includes(k)) score += 3;
+                    else if (pDesc.includes(k)) score += 1;
+                });
+                return score;
+            };
 
-            if (matches.length > 0) {
-                // Mostrar el mejor resultado
-                const best = matches[0];
-                const msg = matches.length === 1
-                    ? `¡Sí! Tenemos el **${best.name}** a $${best.basePrice}. Solo quedan ${best.stock} unidades.`
-                    : `Encontré varias opciones. Te recomiendo el **${best.name}** ($${best.basePrice}). ¿Te interesa?`;
-
-                return msg + " (Si lo quieres, solo di 'agregar " + best.name + "')";
-            }
+            // Si detectamos categoría, somos más laxos con keywords, si no, somos estrictos
+            const minScore = targetCategory ? 0 : 1;
+            candidates = candidates.map(p => ({ ...p, score: scoreProduct(p) }))
+                .filter(p => p.score > 0)
+                .sort((a, b) => b.score - a.score); // Mejores coincidencias primero
+        } else if (!targetCategory && !maxPrice && !isBuying) {
+            // Si no hay keywords ni filtros claros, y no quiere comprar, es saludo o charla
+            if (text.match(/^(hola|buen|hey|alo)/)) return "¡Hola! 👋 Soy SustIA. Dime qué buscas o tu presupuesto y te ayudaré.";
+            if (text.includes('ayuda')) return "Prueba decir: 'Busco auriculares por menos de 20000' o 'Agrega el cargador Samsung'.";
+            return "¡Hola! Estoy aquí para ayudarte a encontrar productos. ¿Buscas algo en especial? (Celulares, Auriculares, etc)";
         }
 
-        // 5. Fallback (No entendió)
-        return "Mmm, no encontré nada parecido en nuestro inventario. 🧐 Intenta buscar por categoría como 'celulares' o 'audio'.";
+        // 3. Generación de Respuesta
+        if (candidates.length === 0) {
+            if (maxPrice) return `Mmm, no encontré nada ${targetCategory ? 'de ' + targetCategory : ''} por menos de $${maxPrice}. 📉`;
+            return "No encontré productos con esa descripción exacta. 🧐 Intenta ser más general o busca por categoría.";
+        }
+
+        const bestMatch = candidates[0];
+
+        // LOGICA DE COMPRA
+        if (isBuying) {
+            // Si hay un candidato muy claro (score alto o único resultado filtrado)
+            if (candidates.length === 1 || (candidates[0].score && candidates[0].score >= 3)) {
+                return `¡Excelente! Agregado ${bestMatch.name} al carrito ($${bestMatch.basePrice}). 🛒 [CMD:ADD|ID:${bestMatch.id}]`;
+            }
+            // Si hay varios
+            return `Encontré varios. ¿Cuál prefieres? Tengo: ${candidates.slice(0, 3).map(p => p.name).join(', ')}.`;
+        }
+
+        // LOGICA DE RECOMENDACIÓN
+        if (candidates.length === 1) {
+            return `¡Tengo justo esto! **${bestMatch.name}** a $${bestMatch.basePrice}. \nEs de la categoría ${bestMatch.category}. ¿Te lo agrego?`;
+        }
+
+        // Mostrar top 3 opciones
+        const top3 = candidates.slice(0, 3);
+        const responseText = top3.map(p => `• ${p.name} ($${p.basePrice})`).join('\n');
+
+        return `Encontré estas opciones ${maxPrice ? 'en tu presupuesto' : ''}:\n${responseText}\n\n¿Te interesa alguno? (Dime "agrega el primero", o el nombre)`;
     };
+
 
     const handleSend = async () => {
         if (!inputValue.trim()) return;
