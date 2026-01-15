@@ -951,28 +951,37 @@ function App() {
                 if (settings?.requireDNI && !authData.dni) throw new Error("El DNI es obligatorio.");
                 if (settings?.requirePhone && !authData.phone) throw new Error("El teléfono es obligatorio.");
 
-                // Verificar duplicados (Email)
-                const qEmail = query(usersRef, where("email", "==", authData.email));
-                const emailSnap = await getDocs(qEmail);
-                if (!emailSnap.empty) throw new Error("Este correo electrónico ya está registrado.");
+                // Normalizar email a minúsculas para evitar duplicados
+                const normalizedEmail = authData.email.trim().toLowerCase();
+
+                // Verificar duplicados (Email) - Buscar por emailLower para case-insensitive
+                const allUsersSnap = await getDocs(usersRef);
+                const existingEmailUser = allUsersSnap.docs.find(doc => {
+                    const userData = doc.data();
+                    const existingEmail = (userData.emailLower || userData.email || '').toLowerCase();
+                    return existingEmail === normalizedEmail;
+                });
+                if (existingEmailUser) throw new Error("Este correo electrónico ya está registrado.");
 
                 // Verificar duplicados (Usuario) - Case Insensitive Check
-                const qUser = query(usersRef, where("usernameLower", "==", authData.username.toLowerCase()));
-                const userSnap = await getDocs(qUser);
-                if (!userSnap.empty) throw new Error("El nombre de usuario ya está en uso.");
-
-                // Check adicional (si existiera usernameLower en el futuro, usaríamos eso)
-                // Por ahora, confiamos en el chequeo exacto + la recomendación al usuario.
+                const normalizedUsername = authData.username.trim().toLowerCase();
+                const existingUsernameUser = allUsersSnap.docs.find(doc => {
+                    const userData = doc.data();
+                    const existingUsername = (userData.usernameLower || userData.username || '').toLowerCase();
+                    return existingUsername === normalizedUsername;
+                });
+                if (existingUsernameUser) throw new Error("El nombre de usuario ya está en uso.");
 
                 // Creación del usuario
                 const newUser = {
                     ...authData,
+                    email: normalizedEmail, // Guardar email normalizado
+                    emailLower: normalizedEmail, // Campo adicional para búsquedas
                     username: authData.username,
-                    // Guardamos versión lowercase para futuros checks estrictos
-                    usernameLower: authData.username.toLowerCase(),
+                    usernameLower: normalizedUsername,
                     role: 'user',
                     joinDate: new Date().toISOString(),
-                    favorites: [], // Inicializar favoritos vacío
+                    favorites: [],
                     ordersCount: 0
                 };
 
