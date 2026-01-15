@@ -1552,6 +1552,26 @@ function App() {
     const saveProductFn = async () => {
         // Validaciones básicas
         if (!newProduct.name) return showToast("El nombre del producto es obligatorio.", "warning");
+
+        // --- PRODUCT LIMIT CHECK (SUBSCRIPTION) ---
+        const MAX_PRODUCTS_ENTREPRENEUR = 35;
+        const MAX_PRODUCTS_BUSINESS = 50;
+
+        // Check limits only when creating new product
+        if (!editingId) {
+            const currentPlan = settings?.subscriptionPlan || 'entrepreneur';
+            const isEntrepreneur = currentPlan === 'entrepreneur';
+            const isBusiness = currentPlan === 'business';
+
+            if (isEntrepreneur && products.length >= MAX_PRODUCTS_ENTREPRENEUR) {
+                return showToast(`Has alcanzado el límite de ${MAX_PRODUCTS_ENTREPRENEUR} productos del Plan Emprendedor. ¡Mejora tu plan para seguir creciendo!`, "error");
+            }
+
+            if (isBusiness && products.length >= MAX_PRODUCTS_BUSINESS) {
+                return showToast(`Has alcanzado el límite de ${MAX_PRODUCTS_BUSINESS} productos del Plan Negocio. ¡Pásate a Premium para productos ilimitados!`, "error");
+            }
+        }
+
         if (!newProduct.basePrice || Number(newProduct.basePrice) <= 0) return showToast("El precio debe ser mayor a 0.", "warning");
         if (!newProduct.category) return showToast("Selecciona una categoría.", "warning");
 
@@ -6263,7 +6283,11 @@ function App() {
                                                 { id: 'shipping', label: 'Envíos', icon: Truck },
                                                 { id: 'seo', label: 'SEO', icon: Globe },
                                                 { id: 'advanced', label: 'Avanzado', icon: Cog },
-                                                { id: 'team', label: 'Equipo', icon: Users }
+                                                { id: 'seo', label: 'SEO', icon: Globe },
+                                                { id: 'advanced', label: 'Avanzado', icon: Cog },
+                                                { id: 'team', label: 'Equipo', icon: Users },
+                                                // Only show Subscription tab to Super Admin
+                                                ...(currentUser?.email === SUPER_ADMIN_EMAIL ? [{ id: 'subscription', label: 'Suscripciones', icon: Zap }] : [])
                                             ].map(tab => (
                                                 <button
                                                     key={tab.id}
@@ -6275,7 +6299,94 @@ function App() {
                                             ))}
                                         </div>
 
-                                        {/* === STORE INFO === */}
+                                        {/* === SUBSCRIPTION MANAGEMENT (SUPER ADMIN ONLY) === */}
+                                        {settingsTab === 'subscription' && currentUser?.email === SUPER_ADMIN_EMAIL && (
+                                            <div className="space-y-6 animate-fade-up">
+                                                <div className="bg-[#0a0a0a] border border-cyan-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(6,182,212,0.1)]">
+                                                    <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                                                        <Zap className="w-6 h-6 text-yellow-500 fill-current" />
+                                                        Modelos de Suscripción
+                                                    </h3>
+
+                                                    <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center gap-4">
+                                                        <AlertTriangle className="w-8 h-8 text-yellow-500" />
+                                                        <div>
+                                                            <p className="font-bold text-yellow-500">Zona de Peligro: Super Admin</p>
+                                                            <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los límites y funcionalidades de la tienda.</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                        {/* Plan Emprendedor */}
+                                                        <button
+                                                            onClick={() => setSettings({ ...settings, subscriptionPlan: 'entrepreneur' })}
+                                                            className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan ? 'bg-slate-900 border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                        >
+                                                            <div className="flex justify-between items-start mb-4">
+                                                                <div className="p-3 bg-slate-800 rounded-xl">
+                                                                    <Store className="w-6 h-6 text-cyan-400" />
+                                                                </div>
+                                                                {(settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan) && <div className="bg-cyan-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                            </div>
+                                                            <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
+                                                            <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sólido pero económico.</p>
+                                                            <div className="text-2xl font-black text-cyan-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                            <ul className="space-y-2 text-sm text-slate-300">
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 35 productos</li>
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Dominio Vercel</li>
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Mercado Pago Directo</li>
+                                                            </ul>
+                                                        </button>
+
+                                                        {/* Plan Negocio */}
+                                                        <button
+                                                            onClick={() => setSettings({ ...settings, subscriptionPlan: 'business' })}
+                                                            className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                        >
+                                                            <div className="flex justify-between items-start mb-4">
+                                                                <div className="p-3 bg-slate-800 rounded-xl">
+                                                                    <Briefcase className="w-6 h-6 text-purple-400" />
+                                                                </div>
+                                                                {settings.subscriptionPlan === 'business' && <div className="bg-purple-500 text-white text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                            </div>
+                                                            <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
+                                                            <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
+                                                            <div className="text-2xl font-black text-purple-400 mb-6">$14.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                            <ul className="space-y-2 text-sm text-slate-300">
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp</li>
+                                                            </ul>
+                                                        </button>
+
+                                                        {/* Plan Premium */}
+                                                        <button
+                                                            onClick={() => setSettings({ ...settings, subscriptionPlan: 'premium' })}
+                                                            className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                        >
+                                                            <div className="flex justify-between items-start mb-4">
+                                                                <div className="p-3 bg-slate-800 rounded-xl">
+                                                                    <Sparkles className="w-6 h-6 text-yellow-400" />
+                                                                </div>
+                                                                {settings.subscriptionPlan === 'premium' && <div className="bg-yellow-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                            </div>
+                                                            <h4 className="text-xl font-black text-white mb-1">Premium</h4>
+                                                            <p className="text-sm text-slate-400 mb-4 h-10">Servicio Full con IA.</p>
+                                                            <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                            <ul className="space-y-2 text-sm text-slate-300">
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Ilimitado / Full IA</li>
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga Inicial (10)</li>
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
+                                                            </ul>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {settingsTab === 'store' && (
                                             <div className="space-y-6 animate-fade-up">
                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
