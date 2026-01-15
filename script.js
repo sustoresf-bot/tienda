@@ -7,7 +7,7 @@ import {
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
-    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2
+    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, sendPasswordResetEmail } from 'firebase/auth';
@@ -161,6 +161,12 @@ function App() {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null }); // dashboard, products, coupons, users, suppliers, settings, finance
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+    const [darkMode, setDarkMode] = useState(() => {
+        try {
+            const saved = localStorage.getItem('sustore_dark_mode');
+            return saved !== null ? JSON.parse(saved) : true; // Default to dark mode
+        } catch (e) { return true; }
+    });
 
     // Usuarios y Autenticación
     const [currentUser, setCurrentUser] = useState(() => {
@@ -664,6 +670,65 @@ function App() {
             `;
         }
     }, [settings?.primaryColor, settings?.secondaryColor, settings?.accentColor]);
+
+    // Dark/Light Mode Effect
+    useEffect(() => {
+        localStorage.setItem('sustore_dark_mode', JSON.stringify(darkMode));
+
+        let lightModeStyle = document.getElementById('light-mode-styles');
+        if (!lightModeStyle) {
+            lightModeStyle = document.createElement('style');
+            lightModeStyle.id = 'light-mode-styles';
+            document.head.appendChild(lightModeStyle);
+        }
+
+        if (!darkMode) {
+            // Light mode styles
+            lightModeStyle.textContent = `
+                /* Light Mode Overrides */
+                body, .bg-\\[\\#050505\\], .bg-\\[\\#0a0a0a\\], .bg-black {
+                    background-color: #f8fafc !important;
+                }
+                .bg-grid {
+                    background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+                                      linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) !important;
+                }
+                .text-white { color: #0f172a !important; }
+                .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600 { color: #64748b !important; }
+                .bg-slate-900, .bg-slate-900\\/50, .bg-slate-800 { background-color: #ffffff !important; }
+                .bg-slate-900\\/30 { background-color: rgba(255,255,255,0.8) !important; }
+                .border-slate-700, .border-slate-700\\/50, .border-slate-800, .border-slate-800\\/50, .border-slate-900 { 
+                    border-color: #e2e8f0 !important; 
+                }
+                .glass {
+                    background: rgba(255, 255, 255, 0.95) !important;
+                    border-color: #e2e8f0 !important;
+                }
+                .input-cyber {
+                    background-color: #f1f5f9 !important;
+                    border-color: #e2e8f0 !important;
+                    color: #0f172a !important;
+                }
+                .input-cyber::placeholder { color: #94a3b8 !important; }
+                .input-cyber:focus { border-color: var(--color-primary, #06b6d4) !important; }
+                
+                /* Cards and containers */
+                .rounded-\\[2rem\\], .rounded-\\[2\\.5rem\\], .rounded-\\[1\\.5rem\\] {
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important;
+                }
+                
+                /* Footer */
+                footer { background-color: #0f172a !important; }
+                footer .text-white { color: #ffffff !important; }
+                footer .text-slate-500, footer .text-slate-400, footer .text-slate-600 { color: #94a3b8 !important; }
+                
+                /* Admin panel stays dark */
+                [class*="admin"] .bg-\\[\\#050505\\] { background-color: #050505 !important; }
+            `;
+        } else {
+            lightModeStyle.textContent = '';
+        }
+    }, [darkMode]);
 
     // 4. Suscripciones a Colecciones (Snapshot Listeners)
     useEffect(() => {
@@ -3322,13 +3387,31 @@ function App() {
                     <div className="flex items-center gap-4">
                         {/* Botones de Contacto */}
                         <div className="hidden md:flex items-center gap-2">
-                            <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                                <MessageCircle className="w-5 h-5" /> WhatsApp
-                            </button>
-                            <button onClick={() => window.open(settings?.instagramLink || 'https://www.instagram.com/sustore_sf/', '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.3)]">
-                                <Instagram className="w-5 h-5" /> Instagram
-                            </button>
+                            {settings?.showWhatsapp !== false && settings?.whatsappLink && (
+                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                                    <MessageCircle className="w-5 h-5" /> WhatsApp
+                                </button>
+                            )}
+                            {settings?.showInstagram !== false && settings?.instagramLink && (
+                                <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+                                    <Instagram className="w-5 h-5" /> Instagram
+                                </button>
+                            )}
                         </div>
+
+                        {/* Botón Modo Claro/Oscuro */}
+                        <button
+                            onClick={() => setDarkMode(!darkMode)}
+                            className="relative p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group overflow-hidden"
+                            title={darkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
+                        >
+                            <div className={`transform transition-all duration-500 ${darkMode ? 'rotate-0 scale-100' : 'rotate-180 scale-0 absolute'}`}>
+                                <Moon className="w-5 h-5 text-yellow-400 group-hover:scale-110 transition" />
+                            </div>
+                            <div className={`transform transition-all duration-500 ${!darkMode ? 'rotate-0 scale-100' : '-rotate-180 scale-0 absolute'}`}>
+                                <Sun className="w-5 h-5 text-yellow-500 group-hover:scale-110 transition" />
+                            </div>
+                        </button>
 
                         {/* Botón Carrito */}
                         <button onClick={() => setView('cart')} className="relative p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group hover:border-cyan-500/30">
