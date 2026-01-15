@@ -145,6 +145,179 @@ class ErrorBoundary extends React.Component {
     }
 }
 
+// --- COMPONENTE SUSTIA (AI ASSISTANT) ---
+const SustIABot = ({ settings, products, addToCart }) => {
+    // 1. Verificación de Plan Premium
+    if (settings?.subscriptionPlan !== 'premium') return null;
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [messages, setMessages] = useState([
+        { role: 'model', text: '¡Hola! Soy SustIA 🤖, tu asistente personal. ¿Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' }
+    ]);
+    const [inputValue, setInputValue] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const messagesEndRef = useRef(null);
+
+    // Auto-scroll al último mensaje
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, isOpen]);
+
+    // Función para comunicarse con la IA (Gemini)
+    const callGeminiAPI = async (userText) => {
+        const API_KEY = "AIzaSyCgMzTtvFvLGxLkXHRLovkt3f0tgO1RSUk"; // API Key configurada
+
+        if (!API_KEY) {
+            return "⚠️ Error de Configuración: Necesito una API KEY de Google Gemini para funcionar. Por favor agrégala en el código (script.js -> SustIABot).";
+        }
+
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+        // Contexto del Catálogo (RAG Simplificado)
+        const productContext = products.slice(0, 100).map(p =>
+            `- ID: ${p.id}, Nombre: ${p.name}, Precio: $${p.basePrice}, Stock: ${p.stock}`
+        ).join('\n');
+
+        const systemPrompt = `
+        Actúa como SustIA, un vendedor experto y amable de la tienda "Sustore".
+        
+        INVENTARIO ACTUAL:
+        ${productContext}
+        
+        REGLAS:
+        1. Solo recomienda productos con Stock > 0.
+        2. Sé breve, persuasivo y usa emojis.
+        3. Si el usuario quiere comprar algo especifico (ej: "agrega el iphone", "lo quiero"), DEBES incluir al final: [CMD:ADD|ID:id_del_producto].
+        4. Si no hay stock, sugiere una alternativa.
+        `;
+
+        const payload = {
+            contents: [
+                { role: "user", parts: [{ text: systemPrompt }] },
+                ...messages.map(m => ({ role: m.role === 'client' ? 'user' : 'model', parts: [{ text: m.text }] })),
+                { role: "user", parts: [{ text: userText }] }
+            ]
+        };
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            return data?.candidates?.[0]?.content?.parts?.[0]?.text || "Lo siento, tuve un problema neuronal momentáneo. ¿Podrías repetir?";
+        } catch (error) {
+            console.error("Error SustIA:", error);
+            return "Error de conexión con el cerebro de SustIA.";
+        }
+    };
+
+    const handleSend = async () => {
+        if (!inputValue.trim()) return;
+        const text = inputValue;
+        setInputValue('');
+
+        const newMessages = [...messages, { role: 'client', text }];
+        setMessages(newMessages);
+        setIsTyping(true);
+
+        const aiResponseRaw = await callGeminiAPI(text);
+
+        let cleanResponse = aiResponseRaw;
+        const cmdRegex = /\[CMD:ADD\|ID:(.*?)\]/;
+        const match = aiResponseRaw.match(cmdRegex);
+
+        if (match) {
+            const productId = match[1].trim();
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                // Ejecutar función del frontend (addToCart recibe (prod, qty))
+                addToCart(product);
+                cleanResponse = aiResponseRaw.replace(cmdRegex, '');
+                // showToast(`SustIA agregó ${product.name} a tu carrito 🛒`, 'success'); // Opcional
+            }
+        }
+
+        setIsTyping(false);
+        setMessages(prev => [...prev, { role: 'model', text: cleanResponse }]);
+    };
+
+    return (
+        <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end pointer-events-none">
+            {isOpen && (
+                <div className="pointer-events-auto bg-[#0a0a0a] border border-yellow-500/30 rounded-2xl w-80 md:w-96 h-[500px] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden">
+                    <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <Bot className="w-6 h-6 text-white" />
+                            <div>
+                                <h3 className="font-bold text-white text-sm">SustIA Premium</h3>
+                                <div className="flex items-center gap-1">
+                                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                    <span className="text-[10px] text-white/80">En línea</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-900/50 custom-scrollbar">
+                        {messages.map((m, i) => (
+                            <div key={i} className={`flex ${m.role === 'client' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${m.role === 'client'
+                                    ? 'bg-yellow-600 text-white rounded-br-none'
+                                    : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'
+                                    }`}>
+                                    <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
+                                </div>
+                            </div>
+                        ))}
+                        {isTyping && (
+                            <div className="flex justify-start">
+                                <div className="bg-slate-800 p-3 rounded-2xl rounded-bl-none border border-slate-700 flex gap-1">
+                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"></span>
+                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
+                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    <div className="p-4 bg-[#050505] border-t border-slate-800">
+                        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
+                            <input
+                                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:border-yellow-500 outline-none transition"
+                                placeholder="Escribe a SustIA..."
+                                value={inputValue}
+                                onChange={e => setInputValue(e.target.value)}
+                            />
+                            <button type="submit" className="p-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-xl transition disabled:opacity-50" disabled={isTyping || !inputValue.trim()}>
+                                <Send className="w-5 h-5" />
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="pointer-events-auto w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform group relative"
+            >
+                {isOpen ? <X className="w-6 h-6 text-white" /> : <Bot className="w-7 h-7 text-white" />}
+                {!isOpen && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-yellow-500 border border-black"></span>
+                    </span>
+                )}
+            </button>
+        </div>
+    );
+};
+
 // --- APLICACIÓN PRINCIPAL ---
 function App() {
     // Versión del Sistema para Auto-Updates
@@ -3312,7 +3485,7 @@ function App() {
                     </div>
                 </div>
                 <h1 className="text-3xl font-black tracking-[0.5em] mt-8 animate-pulse" style={{ color: loadingPrimaryColor, textShadow: `0 0 20px ${loadingPrimaryColor}40` }}>
-                    {settings?.storeName || 'SUSTORE'}
+                    {settings?.loadingTitle || settings?.storeName || 'SUSTORE'}
                 </h1>
                 <p className="text-slate-500 text-sm mt-4 font-mono uppercase tracking-widest">
                     {settings?.loadingText || 'Cargando sistema...'}
@@ -6762,6 +6935,34 @@ function App() {
                                                         <p className="text-xs text-slate-500 mt-2">Dejar vacío para ocultar el banner.</p>
                                                     </div>
                                                 </div>
+
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <Zap className="w-5 h-5 text-yellow-500" /> Pantalla de Carga
+                                                    </h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de Carga</label>
+                                                            <input
+                                                                className="input-cyber w-full p-4"
+                                                                value={settings?.loadingTitle || ''}
+                                                                onChange={e => setSettings({ ...settings, loadingTitle: e.target.value })}
+                                                                placeholder={settings?.storeName || "SUSTORE"}
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-2">Aparece en grande (ej. SUSTORE).</p>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Carga</label>
+                                                            <input
+                                                                className="input-cyber w-full p-4"
+                                                                value={settings?.loadingText || ''}
+                                                                onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
+                                                                placeholder="Cargando sistema..."
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-2">Texto pequeño debajo del título.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
@@ -8260,6 +8461,12 @@ function App() {
                 onConfirm={confirmModal.onConfirm}
                 onCancel={confirmModal.onCancel || (() => setConfirmModal(prev => ({ ...prev, isOpen: false })))}
                 isDangerous={true}
+            />
+            {/* --- SUSTIA CHATBOT (AI) --- */}
+            <SustIABot
+                settings={settings}
+                products={products}
+                addToCart={(p) => manageCart(p, 1)}
             />
         </div >
     );
