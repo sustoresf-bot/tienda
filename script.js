@@ -490,6 +490,39 @@ function App() {
         }
     }, [cart, currentUser]);
 
+    // 1.1 Sincronizar precios y datos del carrito con productos actualizados
+    useEffect(() => {
+        if (products.length > 0 && cart.length > 0) {
+            setCart(prevCart => {
+                let hasChanges = false;
+                const newCart = prevCart.map(item => {
+                    // Buscar el producto actual en la lista maestra
+                    const currentProduct = products.find(p => p.id === item.product.id);
+
+                    if (currentProduct) {
+                        // Si el precio, nombre o imagen cambiaron, actualizamos el item del carrito
+                        if (currentProduct.basePrice !== item.product.basePrice ||
+                            currentProduct.name !== item.product.name ||
+                            currentProduct.image !== item.product.image) {
+                            hasChanges = true;
+                            return {
+                                ...item,
+                                product: {
+                                    ...currentProduct,
+                                    // Aseguramos que mantenemos la consistencia de tipos
+                                    basePrice: Number(currentProduct.basePrice) || 0
+                                }
+                            };
+                        }
+                    }
+                    return item;
+                });
+                return hasChanges ? newCart : prevCart;
+            });
+        }
+    }, [products]);
+
+
 
     // 3. Sistema de Auto-Update
     useEffect(() => {
@@ -1198,6 +1231,10 @@ function App() {
     const initializeCardPaymentBrick = async () => {
         if (isInitializingBrick) return;
 
+        // Resetear estados al iniciar por si quedaron de una compra anterior
+        setIsPaymentProcessing(false);
+        setPaymentError(null);
+
         console.log('💎 Mercado Pago: Iniciando Brick. Total a cobrar:', finalTotal);
 
         if (!window.MercadoPago) {
@@ -1295,7 +1332,14 @@ function App() {
                             if (result.status === 'approved' || result.status === 'in_process' || result.status === 'pending') {
                                 await confirmOrderAfterPayment(result.id);
                                 showToast('¡Compra realizada!', 'success');
-                                // Aquí no reseteamos el cargando porque vamos a redirigir o mostrar éxito final
+                                setIsPaymentProcessing(false);
+                                // Limpiar controlador de MP para que la próxima compra reinicie de cero
+                                if (mpBrickController) {
+                                    try {
+                                        await mpBrickController.unmount();
+                                        mpBrickController = null;
+                                    } catch (e) { console.log(e); }
+                                }
                             } else {
                                 // ERROR DE NEGOCIO (Pago rechazado, tarjeta inválida, etc)
                                 const detailedError = result.status_detail || result.error || 'Pago rechazado';
