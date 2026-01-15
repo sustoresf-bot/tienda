@@ -6907,6 +6907,67 @@ function App() {
                                                         </div>
                                                     </div>
                                                 </div>
+
+                                                {/* Footer Brand Configuration */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <Store className="w-5 h-5 text-cyan-400" /> Marca en Footer
+                                                    </h3>
+                                                    <div className="space-y-6">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Sufijo del Nombre</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.footerSuffix || ''}
+                                                                onChange={e => setSettings({ ...settings, footerSuffix: e.target.value })}
+                                                                placeholder=".SF"
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-1">Aparece junto al nombre de la tienda (ej: SUSTORE.SF)</p>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                            <textarea
+                                                                className="input-cyber w-full p-3 h-24 resize-none"
+                                                                value={settings?.footerDescription || ''}
+                                                                onChange={e => setSettings({ ...settings, footerDescription: e.target.value })}
+                                                                placeholder="Tu destino premium para tecnología de vanguardia..."
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Legal Links Configuration */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <FileText className="w-5 h-5 text-slate-400" /> Links Legales
+                                                    </h3>
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div>
+                                                                <p className="font-bold text-white">Privacy Policy</p>
+                                                                <p className="text-xs text-slate-500">Mostrar link en el footer</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, showPrivacyPolicy: settings?.showPrivacyPolicy === false ? true : false })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.showPrivacyPolicy !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showPrivacyPolicy !== false ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div>
+                                                                <p className="font-bold text-white">Terms of Service</p>
+                                                                <p className="text-xs text-slate-500">Mostrar link en el footer</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, showTermsOfService: settings?.showTermsOfService === false ? true : false })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.showTermsOfService !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showTermsOfService !== false ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
@@ -7790,10 +7851,10 @@ function App() {
                             <div className="md:col-span-2 space-y-6">
                                 <h2 className="text-3xl font-black text-white tracking-tighter italic">
                                     {settings?.storeName || 'SUSTORE'}
-                                    <span className="text-cyan-500">.SF</span>
+                                    <span className="text-cyan-500">{settings?.footerSuffix || '.SF'}</span>
                                 </h2>
                                 <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
-                                    Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.
+                                    {settings?.footerDescription || 'Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.'}
                                 </p>
                                 <div className="flex gap-3 pt-2 flex-wrap">
                                     {settings?.showInstagram !== false && settings?.instagramLink && (
@@ -7886,8 +7947,12 @@ function App() {
                                     © 2026 {settings?.storeName || 'SUSTORE'}. All rights reserved.
                                 </p>
                                 <div className="flex gap-6">
-                                    <span onClick={() => setView('privacy')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Privacy Policy</span>
-                                    <span onClick={() => setView('terms')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Terms of Service</span>
+                                    {settings?.showPrivacyPolicy !== false && (
+                                        <span onClick={() => setView('privacy')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Privacy Policy</span>
+                                    )}
+                                    {settings?.showTermsOfService !== false && (
+                                        <span onClick={() => setView('terms')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Terms of Service</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
