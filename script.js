@@ -206,10 +206,11 @@ const SustIABot = ({ settings, products, addToCart }) => {
                 body: JSON.stringify(payload)
             });
             const data = await response.json();
-            return data?.candidates?.[0]?.content?.parts?.[0]?.text || "Lo siento, tuve un problema neuronal momentáneo. ¿Podrías repetir?";
+            if (data.error) return `⚠️ Error API: ${data.error.message}`;
+            return data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ Sin respuesta. (Intento bloqueado o vacío)";
         } catch (error) {
             console.error("Error SustIA:", error);
-            return "Error de conexión con el cerebro de SustIA.";
+            return `⚠️ Error de Red: ${error.message}`;
         }
     };
 
