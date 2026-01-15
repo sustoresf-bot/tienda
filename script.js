@@ -1226,7 +1226,8 @@ function App() {
         setPaymentError(null);
 
         // USANDO LA PUBLIC KEY DE PRODUCCIÓN CORRECTA
-        const publicKey = 'APP_USR-1fed61e0-7d4a-4280-8c57-a4103b3c32b6';
+        // USANDO LA PUBLIC KEY DE PRUEBA (SANDBOX)
+        const publicKey = 'APP_USR-2335d49f-5356-4555-a5bc-b60c20253d10';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
         });
