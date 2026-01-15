@@ -3706,11 +3706,18 @@ function App() {
                         <button onClick={() => setIsMenuOpen(true)} className="p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition border border-slate-700/50 group">
                             <Menu className="w-6 h-6 group-hover:scale-110 transition" />
                         </button>
-                        <div className="cursor-pointer group flex flex-col" onClick={() => setView('store')}>
-                            <span className="text-3xl font-black text-white tracking-tighter italic group-hover:neon-text transition-all duration-300">
-                                {settings?.storeName || 'SUSTORE'}
-                            </span>
-                            <div className="h-1 w-1/2 bg-cyan-500 rounded-full group-hover:w-full transition-all duration-500"></div>
+                        <div className="cursor-pointer group flex items-center gap-3" onClick={() => setView('store')}>
+                            {settings?.logoUrl && (
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-slate-800 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-cyan-500 transition-colors duration-300">
+                                    <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
+                                </div>
+                            )}
+                            <div className="flex flex-col">
+                                <span className="text-2xl md:text-3xl font-black text-white tracking-tighter italic group-hover:neon-text transition-all duration-300 leading-none">
+                                    {settings?.storeName || 'SUSTORE'}
+                                </span>
+                                <div className="h-1 w-1/2 bg-cyan-500 rounded-full group-hover:w-full transition-all duration-500 mt-1"></div>
+                            </div>
                         </div>
                     </div>
 
