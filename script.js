@@ -5443,7 +5443,23 @@ function App() {
 
                                 {/* TAB: CUPONES (GESTIÓN AVANZADA) */}
                                 {adminTab === 'coupons' && (
-                                    <div className="max-w-5xl mx-auto animate-fade-up pb-20">
+                                    <div className="max-w-5xl mx-auto animate-fade-up pb-20 relative">
+
+                                        {/* Overlay for Entrepreneur Plan */}
+                                        {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
+                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md rounded-[2.5rem]">
+                                                <div className="text-center p-8 max-w-md">
+                                                    <div className="w-20 h-20 mx-auto mb-6 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
+                                                        <Lock className="w-10 h-10 text-purple-400" />
+                                                    </div>
+                                                    <h3 className="text-2xl font-black text-white mb-4">Cupones Bloqueados</h3>
+                                                    <p className="text-slate-400 mb-6">Los cupones de descuento están disponibles a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>.</p>
+                                                    <p className="text-sm text-slate-500">Contacta al desarrollador para actualizar tu plan:</p>
+                                                    <p className="text-cyan-400 font-bold mt-2">lautarocorazza63@gmail.com</p>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <h1 className="text-3xl font-black text-white mb-8">Gestión de Cupones</h1>
 
                                         {/* Formulario de Creación */}
@@ -5680,8 +5696,18 @@ function App() {
                                                                             </div>
                                                                         </div>
                                                                     </td>
-                                                                    <td className="p-8">
-                                                                        <div className="flex flex-col items-center gap-3">
+                                                                    <td className="p-8 relative">
+                                                                        {/* Blur Overlay for Entrepreneur Plan */}
+                                                                        {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
+                                                                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl">
+                                                                                <div className="text-center">
+                                                                                    <Lock className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
+                                                                                    <p className="text-xs font-black text-yellow-400 uppercase tracking-wider">Plan Negocio</p>
+                                                                                    <p className="text-[10px] text-slate-400">Mejora para ver estadísticas</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        <div className={`flex flex-col items-center gap-3 ${(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) ? 'filter blur-sm pointer-events-none' : ''}`}>
                                                                             <div className="flex gap-2">
                                                                                 <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3" title="Favoritos">
                                                                                     <Heart className={`w-4 h-4 ${u.favorites?.length > 0 ? 'text-pink-500 fill-pink-500' : 'text-slate-600'}`} />
@@ -6120,7 +6146,21 @@ function App() {
                                 {adminTab === 'products' && (
                                     <div className="max-w-7xl mx-auto animate-fade-in pb-20">
                                         <div className="flex justify-between items-center mb-8">
-                                            <h1 className="text-3xl font-black text-white">Inventario</h1>
+                                            <div>
+                                                <h1 className="text-3xl font-black text-white">Inventario</h1>
+                                                {(() => {
+                                                    const plan = settings?.subscriptionPlan || 'entrepreneur';
+                                                    const limit = plan === 'premium' ? '∞' : plan === 'business' ? 50 : 35;
+                                                    const current = products.length;
+                                                    const isNearLimit = plan !== 'premium' && current >= limit * 0.8;
+                                                    return (
+                                                        <p className={`text-sm font-bold mt-1 ${isNearLimit ? 'text-yellow-400' : 'text-slate-500'}`}>
+                                                            {current} / {limit} productos
+                                                            {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">⚠ Cerca del límite</span>}
+                                                        </p>
+                                                    );
+                                                })()}
+                                            </div>
                                             <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-cyan-500 transition transform hover:scale-105 active:scale-95">
                                                 <Plus className="w-5 h-5" /> Agregar Producto
                                             </button>
@@ -6268,7 +6308,26 @@ function App() {
 
                                 {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
                                 {adminTab === 'settings' && (
-                                    <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                    <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
+
+                                        {/* Developer-Only Access Block */}
+                                        {currentUser?.email !== SUPER_ADMIN_EMAIL && (
+                                            <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-[2.5rem]">
+                                                <div className="text-center p-8 max-w-lg">
+                                                    <div className="w-24 h-24 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
+                                                        <Shield className="w-12 h-12 text-red-400" />
+                                                    </div>
+                                                    <h3 className="text-3xl font-black text-white mb-4">Acceso Restringido</h3>
+                                                    <p className="text-slate-400 mb-6">Esta sección está reservada únicamente para el <span className="text-cyan-400 font-bold">desarrollador</span> de la plataforma.</p>
+                                                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mb-6">
+                                                        <p className="text-sm text-slate-500 mb-2">Para solicitar cambios en la configuración, contacta a:</p>
+                                                        <p className="text-cyan-400 font-bold text-lg">lautarocorazza63@gmail.com</p>
+                                                    </div>
+                                                    <p className="text-xs text-slate-600">Si necesitas modificar tu tienda, envía un email detallando los cambios que deseas realizar.</p>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <h1 className="text-4xl font-black text-white neon-text mb-8 flex items-center gap-3">
                                             <Settings className="w-8 h-8 text-cyan-500 animate-spin-slow" /> Configuración General
                                         </h1>
@@ -6281,8 +6340,6 @@ function App() {
                                                 { id: 'social', label: 'Redes', icon: Share2 },
                                                 { id: 'payments', label: 'Pagos', icon: CreditCard },
                                                 { id: 'shipping', label: 'Envíos', icon: Truck },
-                                                { id: 'seo', label: 'SEO', icon: Globe },
-                                                { id: 'advanced', label: 'Avanzado', icon: Cog },
                                                 { id: 'seo', label: 'SEO', icon: Globe },
                                                 { id: 'advanced', label: 'Avanzado', icon: Cog },
                                                 { id: 'team', label: 'Equipo', icon: Users },
