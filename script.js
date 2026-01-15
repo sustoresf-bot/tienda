@@ -1225,8 +1225,7 @@ function App() {
         // Limpiar errores previos
         setPaymentError(null);
 
-        // USANDO LA PUBLIC KEY DE PRODUCCIÓN CORRECTA
-        // USANDO LA PUBLIC KEY DE PRODUCCIÓN (REAL)
+        // CREDENCIALES DE PRODUCCIÓN (REAL)
         const publicKey = 'APP_USR-6c7ba3ec-c928-42a9-a137-5f355dfc5366';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
@@ -1263,7 +1262,8 @@ function App() {
                     },
                     onSubmit: async (cardFormData) => {
                         console.log('🚀 Mercado Pago: Procesando pago...');
-                        console.log('🔑 Token generado por el Brick:', cardFormData.token);
+
+                        // Bloquear clics dobles pero permitir reintentos si falla
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
 
@@ -1295,18 +1295,23 @@ function App() {
                             if (result.status === 'approved' || result.status === 'in_process' || result.status === 'pending') {
                                 await confirmOrderAfterPayment(result.id);
                                 showToast('¡Compra realizada!', 'success');
+                                // Aquí no reseteamos el cargando porque vamos a redirigir o mostrar éxito final
                             } else {
-                                // Mostrar el motivo específico del rechazo (ej: cc_rejected_insufficient_amount)
+                                // ERROR DE NEGOCIO (Pago rechazado, tarjeta inválida, etc)
                                 const detailedError = result.status_detail || result.error || 'Pago rechazado';
                                 console.error('❌ Motivo del rechazo:', detailedError);
-                                setPaymentError(`El pago fue rechazado: ${detailedError}`);
-                                showToast('El pago no pudo procesarse.', 'error');
+
+                                // IMPORTANTE: Liberamos el botón para que pueda intentar de nuevo
+                                setIsPaymentProcessing(false);
+                                setPaymentError(`El pago fue rechazado: ${detailedError}. Podés intentar con otra tarjeta.`);
+                                showToast('Pago rechazado. Intentá de nuevo.', 'error');
                             }
                         } catch (error) {
+                            // ERROR DE CONEXIÓN
                             console.error('❌ Error de conexión:', error);
-                            setPaymentError('Error de conexión.');
-                        } finally {
                             setIsPaymentProcessing(false);
+                            setPaymentError('Error de conexión con el servidor. Revisá tu internet e intentá de nuevo.');
+                            showToast('Error de conexión.', 'error');
                         }
                     },
                     onError: (error) => {
