@@ -1772,7 +1772,7 @@ function App() {
 
     // 6.4. Image Upload Handler (Base64 for Vercel)
     // 6.4. Image Upload Handler (Optimized with Canvas Resize)
-    const handleImageUpload = (e, setTargetState, imageField = 'image') => {
+    const handleImageUpload = (e, setTargetState, imageField = 'image', maxWidth = 800) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -1785,8 +1785,8 @@ function App() {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 800;
-                const MAX_HEIGHT = 800;
+                const MAX_WIDTH = maxWidth;
+                const MAX_HEIGHT = maxWidth;
                 let width = img.width;
                 let height = img.height;
 
@@ -6882,14 +6882,19 @@ function App() {
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL de Imagen de Fondo</label>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen de Fondo</label>
                                                             <input
-                                                                className="input-cyber w-full p-3"
-                                                                value={settings?.heroUrl || ''}
-                                                                onChange={e => setSettings({ ...settings, heroUrl: e.target.value })}
-                                                                placeholder="https://images.unsplash.com/..."
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl', 1920)}
+                                                                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
                                                             />
-                                                            <p className="text-xs text-slate-500 mt-1">Recomendado: 1920x800 px mínimo</p>
+                                                            {settings?.heroUrl && (
+                                                                <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
+                                                                    <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
+                                                                </div>
+                                                            )}
+                                                            <p className="text-xs text-slate-500 mt-2">Recomendado: 1920x800 px mínimo</p>
                                                         </div>
                                                     </div>
                                                 </div>
