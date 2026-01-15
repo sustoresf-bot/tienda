@@ -1345,7 +1345,14 @@ function App() {
                                 const detailedError = result.status_detail || result.error || 'Pago rechazado';
                                 console.error('❌ Motivo del rechazo:', detailedError);
 
-                                // IMPORTANTE: Liberamos el botón para que pueda intentar de nuevo
+                                // IMPORTANTE: Si el pago falla, destruimos el brick para que al reintentar se cree uno nuevo y limpio
+                                if (mpBrickController) {
+                                    try {
+                                        await mpBrickController.unmount();
+                                    } catch (e) { console.log("Error al desmontar brick tras falla:", e); }
+                                    setMpBrickController(null);
+                                }
+
                                 setIsPaymentProcessing(false);
                                 setPaymentError(`El pago fue rechazado: ${detailedError}. Podés intentar con otra tarjeta.`);
                                 showToast('Pago rechazado. Intentá de nuevo.', 'error');
@@ -3974,9 +3981,21 @@ function App() {
 
                                                 {/* Mensaje de error si hay */}
                                                 {paymentError && (
-                                                    <div className="mt-4 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm flex items-center gap-3">
-                                                        <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-                                                        {paymentError}
+                                                    <div className="mt-4 space-y-3">
+                                                        <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm flex items-center gap-3">
+                                                            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                                                            {paymentError}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                setPaymentError(null);
+                                                                initializeCardPaymentBrick();
+                                                            }}
+                                                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            <RefreshCcw className="w-4 h-4" />
+                                                            Reintentar Pago
+                                                        </button>
                                                     </div>
                                                 )}
 
