@@ -163,55 +163,64 @@ const SustIABot = ({ settings, products, addToCart }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
-    // Función para comunicarse con la IA (Gemini)
-    const callGeminiAPI = async (userText) => {
-        const API_KEY = "AIzaSyCgMzTtvfvLGxLkXHRLovkt3f0tgO1RSUk"; // API Key corregida (f minúscula)
+    // Función "Mini AI" Local (Sin API Keys)
+    const callLocalBrain = async (userText) => {
+        // Simular un pequeño retardo para que parezca que "piensa"
+        await new Promise(resolve => setTimeout(resolve, 600));
 
-        if (!API_KEY) {
-            return "⚠️ Error de Configuración: Necesito una API KEY de Google Gemini para funcionar. Por favor agrégala en el código (script.js -> SustIABot).";
+        const lowerText = userText.toLowerCase();
+
+        // 1. Saludos
+        if (lowerText.match(/^(hola|buen|hey|alo|hi)/)) {
+            return "¡Hola! 👋 Soy SustIA. Puedo buscar productos por ti y verificar el stock al instante. ¿Qué estás buscando hoy?";
         }
 
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
-
-        // Contexto del Catálogo (RAG Simplificado)
-        const productContext = products.slice(0, 100).map(p =>
-            `- ID: ${p.id}, Nombre: ${p.name}, Precio: $${p.basePrice}, Stock: ${p.stock}`
-        ).join('\n');
-
-        const systemPrompt = `
-        Actúa como SustIA, un vendedor experto y amable de la tienda "Sustore".
-        
-        INVENTARIO ACTUAL:
-        ${productContext}
-        
-        REGLAS:
-        1. Solo recomienda productos con Stock > 0.
-        2. Sé breve, persuasivo y usa emojis.
-        3. Si el usuario quiere comprar algo especifico (ej: "agrega el iphone", "lo quiero"), DEBES incluir al final: [CMD:ADD|ID:id_del_producto].
-        4. Si no hay stock, sugiere una alternativa.
-        `;
-
-        const payload = {
-            contents: [
-                { role: "user", parts: [{ text: systemPrompt }] },
-                ...messages.map(m => ({ role: m.role === 'client' ? 'user' : 'model', parts: [{ text: m.text }] })),
-                { role: "user", parts: [{ text: userText }] }
-            ]
-        };
-
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await response.json();
-            if (data.error) return `⚠️ Error API: ${data.error.message}`;
-            return data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ Sin respuesta. (Intento bloqueado o vacío)";
-        } catch (error) {
-            console.error("Error SustIA:", error);
-            return `⚠️ Error de Red: ${error.message}`;
+        // 2. Comandos de Ayuda/Info
+        if (lowerText.includes('ayuda') || lowerText.includes('puedes hacer')) {
+            return "Puedo buscar productos (ej: 'tienes iphone'), decirte precios, y si me dices 'agregar [producto]', ¡lo pongo en tu carrito!";
         }
+
+        // 3. Intención de Agregar al Carrito
+        if (lowerText.match(/agrega|comprar|quiero|dame|carrito/)) {
+            // Buscar mención de producto exacto o muy cercano
+            const targetProduct = products.find(p => lowerText.includes(p.name.toLowerCase()));
+
+            if (targetProduct) {
+                if (targetProduct.stock > 0) {
+                    return `¡Excelente elección! He agregado ${targetProduct.name} a tu carrito. 🛒 [CMD:ADD|ID:${targetProduct.id}]`;
+                } else {
+                    return `Uy, el ${targetProduct.name} está agotado actualmente. 😔 ¿Te muestro otras opciones?`;
+                }
+            }
+        }
+
+        // 4. Búsqueda Inteligente en Catálogo
+        // Filtrar palabras comunes para dejar solo keywords
+        const stopWords = ['tienes', 'hay', 'busco', 'precio', 'del', 'los', 'las', 'una', 'uno', 'para', 'que', 'son'];
+        const keywords = lowerText.split(' ').filter(w => w.length > 3 && !stopWords.includes(w));
+
+        if (keywords.length > 0) {
+            const matches = products.filter(p =>
+                keywords.some(k =>
+                    p.name.toLowerCase().includes(k) ||
+                    p.category.toLowerCase().includes(k) ||
+                    p.description?.toLowerCase().includes(k)
+                )
+            );
+
+            if (matches.length > 0) {
+                // Mostrar el mejor resultado
+                const best = matches[0];
+                const msg = matches.length === 1
+                    ? `¡Sí! Tenemos el **${best.name}** a $${best.basePrice}. Solo quedan ${best.stock} unidades.`
+                    : `Encontré varias opciones. Te recomiendo el **${best.name}** ($${best.basePrice}). ¿Te interesa?`;
+
+                return msg + " (Si lo quieres, solo di 'agregar " + best.name + "')";
+            }
+        }
+
+        // 5. Fallback (No entendió)
+        return "Mmm, no encontré nada parecido en nuestro inventario. 🧐 Intenta buscar por categoría como 'celulares' o 'audio'.";
     };
 
     const handleSend = async () => {
@@ -223,7 +232,7 @@ const SustIABot = ({ settings, products, addToCart }) => {
         setMessages(newMessages);
         setIsTyping(true);
 
-        const aiResponseRaw = await callGeminiAPI(text);
+        const aiResponseRaw = await callLocalBrain(text);
 
         let cleanResponse = aiResponseRaw;
         const cmdRegex = /\[CMD:ADD\|ID:(.*?)\]/;
