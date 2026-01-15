@@ -3867,10 +3867,10 @@ function App() {
                         {settings?.showBrandTicker !== false && (
                             <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-2">
                                 <div className="ticker-wrap">
-                                    <div className="ticker-content font-mono text-cyan-500/50 text-sm tracking-[0.5em] uppercase flex items-center gap-12">
+                                    <div className="ticker-content font-mono text-cyan-500/50 text-xs md:text-sm tracking-[0.2em] md:tracking-[0.5em] uppercase flex items-center gap-6 md:gap-12">
                                         {[1, 2, 3, 4].map((i) => (
                                             <React.Fragment key={i}>
-                                                <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || 'SUSTORE'} Tech • Future Ready • Premium Quality • Next Gen Audio`}</span>
+                                                <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || 'SUSTORE'} Tech • Futuro • Calidad Premium • Innovación`}</span>
                                                 <span>•</span>
                                             </React.Fragment>
                                         ))}
@@ -3918,7 +3918,7 @@ function App() {
 
                         {/* Why Choose Us Section */}
                         {/* Why Choose Us Section (Editable) */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 container-tv">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-12 container-tv">
                             <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
                                 <div className="w-10 h-10 rounded-full bg-cyan-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
                                     <Zap className="w-5 h-5 text-cyan-400" />
@@ -4116,7 +4116,7 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-32">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 pb-32">
                                     {filteredProducts.map(p => (
                                         <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition duration-500 relative flex flex-col h-full">
 
@@ -5032,7 +5032,7 @@ function App() {
                                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-2 mt-2">Principal</p>
 
                                     <button onClick={() => setAdminTab('dashboard')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'dashboard' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
-                                        <LayoutDashboard className="w-5 h-5" /> Dashboard
+                                        <LayoutDashboard className="w-5 h-5" /> Inicio
                                     </button>
 
                                     <button onClick={() => setAdminTab('orders')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'orders' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
@@ -5089,7 +5089,7 @@ function App() {
                             </div>
 
                             {/* 7.2 Contenido Principal Admin */}
-                            <div className="flex-1 bg-[#050505] overflow-y-auto relative w-full p-6 md:p-10 custom-scrollbar">
+                            <div className="flex-1 bg-[#050505] overflow-y-auto relative w-full p-4 md:p-10 custom-scrollbar">
                                 <button onClick={() => setIsAdminMenuOpen(true)} className="md:hidden mb-6 p-2 bg-slate-900 rounded-lg text-white border border-slate-800">
                                     <Menu className="w-6 h-6" />
                                 </button>
@@ -7050,7 +7050,7 @@ function App() {
                                                     </div>
                                                 </div>
 
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <Bell className="w-5 h-5 text-yellow-400" /> Anuncios
                                                     </h3>
@@ -7066,7 +7066,7 @@ function App() {
                                                     </div>
                                                 </div>
 
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <Zap className="w-5 h-5 text-yellow-500" /> Pantalla de Carga
                                                     </h3>
@@ -7099,7 +7099,7 @@ function App() {
                                         {/* === APPEARANCE === */}
                                         {settingsTab === 'appearance' && (
                                             <div className="space-y-6 animate-fade-up">
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <ImageIcon className="w-5 h-5 text-purple-400" /> Imágenes
                                                     </h3>
@@ -7135,7 +7135,7 @@ function App() {
                                                     </div>
                                                 </div>
 
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <Palette className="w-5 h-5 text-pink-400" /> Colores del Tema
                                                     </h3>
@@ -7195,7 +7195,7 @@ function App() {
                                                 </div>
 
                                                 {/* Brand Ticker Configuration */}
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <Sparkles className="w-5 h-5 text-cyan-400" /> Ticker de Marca
                                                     </h3>
@@ -7218,7 +7218,7 @@ function App() {
                                                                 className="input-cyber w-full p-3"
                                                                 value={settings?.tickerText || ''}
                                                                 onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
-                                                                placeholder="FUTURE READY • PREMIUM QUALITY • NEXT GEN AUDIO"
+                                                                placeholder="TECNOLOGÍA • INNOVACIÓN • CALIDAD PREMIUM • FUTURO"
                                                             />
                                                             <p className="text-xs text-slate-500 mt-2">Este texto se repetirá en bucle.</p>
                                                         </div>
@@ -7226,7 +7226,7 @@ function App() {
                                                 </div>
 
                                                 {/* Hero Banner Configuration */}
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <ImageIcon className="w-5 h-5 text-purple-400" /> Banner Principal (Hero)
                                                     </h3>
@@ -7288,7 +7288,7 @@ function App() {
                                                 </div>
 
                                                 {/* Features Section Configuration */}
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <Star className="w-5 h-5 text-yellow-400" /> Beneficios Destacados
                                                     </h3>
@@ -7360,7 +7360,7 @@ function App() {
                                                 </div>
 
                                                 {/* Footer Contact Configuration */}
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <MessageCircle className="w-5 h-5 text-green-400" /> Sección Contacto (Footer)
                                                     </h3>
@@ -7457,7 +7457,7 @@ function App() {
                                                 </div>
 
                                                 {/* Footer Brand Configuration */}
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <Store className="w-5 h-5 text-cyan-400" /> Marca en Footer
                                                     </h3>
@@ -7485,14 +7485,14 @@ function App() {
                                                 </div>
 
                                                 {/* Legal Links Configuration */}
-                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <FileText className="w-5 h-5 text-slate-400" /> Links Legales
                                                     </h3>
                                                     <div className="space-y-4">
                                                         <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                             <div>
-                                                                <p className="font-bold text-white">Privacy Policy</p>
+                                                                <p className="font-bold text-white">Política de Privacidad</p>
                                                                 <p className="text-xs text-slate-500">Mostrar link en el footer</p>
                                                             </div>
                                                             <button

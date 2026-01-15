@@ -452,3 +452,10 @@ body {
         transform: translate3d(-50%, 0, 0);
     }
 }
+
+/* Mobile Ticker Speed Adjustment */
+@media (max-width: 768px) {
+    .ticker-content {
+        animation-duration: 15s;
+    }
+}
