@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-    ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag, Plus,
-    Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home,
+    ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
+    Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home,
     Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet,
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
@@ -1249,14 +1249,32 @@ function App() {
 
         isInitializingBrick.current = true;
 
+        // Timeout de seguridad: si en 10 segundos no cargó, permitir reintentar
+        const safetyTimeout = setTimeout(() => {
+            if (isInitializingBrick.current) {
+                console.warn('⚠️ Mercado Pago: La inicialización está tardando demasiado. Liberando bloqueo...');
+                isInitializingBrick.current = false;
+            }
+        }, 10000);
+
         // Limpiar brick anterior si existe
         if (mpBrickController) {
             try {
                 await mpBrickController.unmount();
-                setMpBrickController(null);
             } catch (e) {
                 console.warn('Error unmounting:', e);
             }
+            setMpBrickController(null);
+        }
+
+        // Limpiar el contenedor físicamente por si quedaron restos
+        const containerElem = document.getElementById('cardPaymentBrick_container');
+        if (containerElem) {
+            containerElem.innerHTML = '';
+            // Forzar un reflow/render
+            containerElem.style.display = 'none';
+            containerElem.offsetHeight;
+            containerElem.style.display = 'block';
         }
 
         // Limpiar errores previos
@@ -1296,6 +1314,7 @@ function App() {
                     onReady: () => {
                         console.log('✅ Mercado Pago: Card Payment Brick cargado.');
                         isInitializingBrick.current = false;
+                        clearTimeout(safetyTimeout);
                     },
                     onSubmit: async (cardFormData) => {
                         console.log('🚀 Mercado Pago: Procesando pago...');
@@ -1333,6 +1352,7 @@ function App() {
                                 await confirmOrderAfterPayment(result.id);
                                 showToast('¡Compra realizada!', 'success');
                                 setIsPaymentProcessing(false);
+                                isInitializingBrick.current = false;
                                 // Limpiar controlador de MP para que la próxima compra reinicie de cero
                                 if (mpBrickController) {
                                     try {
@@ -1352,6 +1372,7 @@ function App() {
                                     } catch (e) { console.log("Error al desmontar brick tras falla:", e); }
                                     setMpBrickController(null);
                                 }
+                                isInitializingBrick.current = false;
 
                                 setIsPaymentProcessing(false);
                                 setPaymentError(`El pago fue rechazado: ${detailedError}. Podés intentar con otra tarjeta.`);
@@ -1368,6 +1389,7 @@ function App() {
                     onError: (error) => {
                         console.error('❌ Mercado Pago Error:', error);
                         isInitializingBrick.current = false;
+                        clearTimeout(safetyTimeout);
                         // No mostrar error si es solo por AdBlock
                         if (error && error.message && error.message.includes('melidata')) return;
                         setPaymentError('Error en el formulario. Verificá tus claves de producción.');
@@ -1379,6 +1401,7 @@ function App() {
         } catch (error) {
             console.error('Error creating brick:', error);
             isInitializingBrick.current = false;
+            clearTimeout(safetyTimeout);
             showToast('Error al cargar el formulario de pago.', 'error');
         }
     };
@@ -1499,7 +1522,10 @@ function App() {
 
     // Effect para inicializar el Brick cuando se selecciona MP
     useEffect(() => {
-        if (checkoutData.paymentChoice === 'Mercado Pago' && finalTotal > 0 && currentUser && cart.length > 0 && view === 'checkout') {
+        const isCheckoutView = view === 'checkout';
+        const isMP = checkoutData.paymentChoice === 'Mercado Pago';
+
+        if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
             // Pequeño delay para asegurar que el DOM está listo
             const timer = setTimeout(() => {
                 const container = document.getElementById('cardPaymentBrick_container');
@@ -1508,12 +1534,14 @@ function App() {
                 }
             }, 300);
             return () => clearTimeout(timer);
-        } else if (mpBrickController && checkoutData.paymentChoice !== 'Mercado Pago') {
-            // Limpiar brick si se cambia de método de pago
+        } else if (mpBrickController && (!isCheckoutView || !isMP)) {
+            // Limpiar brick si se cambia de método de pago O de vista
+            console.log('🧹 Mercado Pago: Limpiando Brick por cambio de vista o método.');
             try {
                 mpBrickController.unmount();
             } catch (e) { }
             setMpBrickController(null);
+            isInitializingBrick.current = false;
         }
     }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
@@ -3340,13 +3368,13 @@ function App() {
                             {settings?.heroUrl ? (
                                 <img src={settings.heroUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" />
                             ) : (
-                                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" />
+                                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-110" />
                             )}
 
                             {/* Overlay de Texto */}
                             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10 p-12">
                                 <div className="max-w-2xl animate-fade-up">
-                                    <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 inline-block">Nueva Colección 2026</span>
+                                    <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">Nueva Colección 2026</span>
                                     <h1 className="text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-4 neon-text">
                                         TECNOLOGÍA <br />
                                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">DEL FUTURO</span>
@@ -3993,7 +4021,7 @@ function App() {
                                                             }}
                                                             className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
                                                         >
-                                                            <RefreshCcw className="w-4 h-4" />
+                                                            <RefreshCw className="w-4 h-4" />
                                                             Reintentar Pago
                                                         </button>
                                                     </div>
