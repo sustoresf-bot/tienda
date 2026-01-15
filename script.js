@@ -337,6 +337,12 @@ function App() {
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('all');
 
+    // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
+    const [mpBrickController, setMpBrickController] = useState(null);
+    const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+    const [paymentError, setPaymentError] = useState(null);
+    const cardPaymentBrickRef = useRef(null);
+
 
     const openManualSaleModal = (product) => {
         setSaleData({
@@ -1184,6 +1190,275 @@ function App() {
             setIsProcessingOrder(false);
         }
     };
+
+    // --- FUNCIONES DE MERCADO PAGO CARD PAYMENT BRICK ---
+
+    // Inicializar el Card Payment Brick cuando se selecciona Mercado Pago
+    const initializeCardPaymentBrick = async () => {
+        if (!window.MercadoPago) {
+            console.error('MercadoPago SDK not loaded');
+            showToast('Error: SDK de pagos no cargado. Recarga la página.', 'error');
+            return;
+        }
+
+        // Limpiar brick anterior si existe
+        if (mpBrickController) {
+            try {
+                mpBrickController.unmount();
+            } catch (e) {
+                console.warn('Error unmounting previous brick:', e);
+            }
+        }
+
+        // Limpiar errores previos
+        setPaymentError(null);
+
+        const mp = new window.MercadoPago('APP_USR-2335d49f-5356-4555-a5bc-b60c20253d10', {
+            locale: 'es-AR',
+        });
+
+        const bricksBuilder = mp.bricks();
+
+        try {
+            const controller = await bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', {
+                initialization: {
+                    amount: finalTotal, // Total incluyendo envío
+                },
+                customization: {
+                    visual: {
+                        style: {
+                            theme: 'dark',
+                            customVariables: {
+                                formBackgroundColor: '#0a0a0a',
+                                baseColor: '#06b6d4',
+                                borderRadiusMedium: '12px',
+                                borderRadiusLarge: '16px',
+                                inputBackgroundColor: '#1e293b',
+                                inputFontSize: '14px',
+                            },
+                        },
+                    },
+                    paymentMethods: {
+                        maxInstallments: 12,
+                        // Tarjetas más comunes en Argentina
+                        types: {
+                            included: ['credit_card', 'debit_card'],
+                        },
+                    },
+                },
+                callbacks: {
+                    onReady: () => {
+                        console.log('Card Payment Brick ready');
+                    },
+                    onSubmit: async (cardFormData) => {
+                        setIsPaymentProcessing(true);
+                        setPaymentError(null);
+
+                        try {
+                            // Procesar pago en backend
+                            const response = await fetch('/api/checkout', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'process_payment',
+                                    paymentData: {
+                                        token: cardFormData.token,
+                                        transaction_amount: finalTotal,
+                                        description: `Compra en ${settings?.storeName || 'Sustore'} - ${cart.length} producto(s)`,
+                                        installments: cardFormData.installments,
+                                        payment_method_id: cardFormData.payment_method_id,
+                                        issuer_id: cardFormData.issuer_id,
+                                    },
+                                    payer: {
+                                        email: currentUser.email,
+                                        identificationType: cardFormData.payer?.identification?.type,
+                                        identificationNumber: cardFormData.payer?.identification?.number,
+                                    },
+                                }),
+                            });
+
+                            const result = await response.json();
+
+                            if (result.status === 'approved') {
+                                // ¡Pago exitoso! - Crear orden directamente como REALIZADO
+                                await confirmOrderAfterPayment(result.id);
+                                showToast('¡Pago aprobado! Tu compra ha sido confirmada.', 'success');
+                            } else if (result.status === 'in_process' || result.status === 'pending') {
+                                // Para pagos pendientes, también crear la orden como Realizado (según pedido del usuario)
+                                await confirmOrderAfterPayment(result.id);
+                                showToast('¡Compra realizada! El pago está siendo verificado.', 'success');
+                            } else {
+                                // Pago rechazado
+                                let errorMsg = 'El pago fue rechazado.';
+                                if (result.status_detail === 'cc_rejected_insufficient_amount') {
+                                    errorMsg = 'Fondos insuficientes en la tarjeta.';
+                                } else if (result.status_detail === 'cc_rejected_bad_filled_card_number') {
+                                    errorMsg = 'Número de tarjeta incorrecto.';
+                                } else if (result.status_detail === 'cc_rejected_bad_filled_security_code') {
+                                    errorMsg = 'Código de seguridad incorrecto.';
+                                } else if (result.status_detail === 'cc_rejected_bad_filled_date') {
+                                    errorMsg = 'Fecha de vencimiento incorrecta.';
+                                } else if (result.status_detail) {
+                                    errorMsg = `Pago rechazado: ${result.status_detail}`;
+                                }
+                                setPaymentError(errorMsg);
+                                showToast(errorMsg + ' Intenta con otra tarjeta.', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Payment error:', error);
+                            setPaymentError('Error al procesar el pago. Intenta nuevamente.');
+                            showToast('Error al procesar el pago. Verifica tus datos.', 'error');
+                        } finally {
+                            setIsPaymentProcessing(false);
+                        }
+                    },
+                    onError: (error) => {
+                        console.error('Brick error:', error);
+                        setPaymentError('Error en el formulario de pago. Verifica tus datos.');
+                    },
+                },
+            });
+
+            setMpBrickController(controller);
+        } catch (error) {
+            console.error('Error creating brick:', error);
+            showToast('Error al cargar el formulario de pago.', 'error');
+        }
+    };
+
+    // Confirmar orden después de pago exitoso con MP
+    const confirmOrderAfterPayment = async (mpPaymentId) => {
+        try {
+            const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+
+            const newOrder = {
+                orderId,
+                userId: currentUser.id,
+                customer: {
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    phone: currentUser.phone,
+                    dni: currentUser.dni,
+                },
+                items: cart.map(i => ({
+                    productId: i.product.id,
+                    title: i.product.name,
+                    quantity: i.quantity,
+                    unit_price: calculateItemPrice(i.product.basePrice, i.product.discount),
+                    image: i.product.image,
+                })),
+                subtotal: cartSubtotal,
+                discount: discountAmount,
+                total: finalTotal,
+                discountCode: appliedCoupon?.code || null,
+                status: 'Realizado', // Directamente como REALIZADO (pago confirmado)
+                date: new Date().toISOString(),
+                shippingMethod: checkoutData.shippingMethod,
+                shippingFee,
+                shippingAddress: checkoutData.shippingMethod === 'Delivery'
+                    ? `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})`
+                    : 'Retiro en Local',
+                paymentMethod: 'Mercado Pago - Tarjeta',
+                mpPaymentId, // ID del pago en Mercado Pago
+                lastUpdate: new Date().toISOString(),
+            };
+
+            // 1. Guardar Pedido
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
+
+            // 2. Actualizar Datos de Usuario
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
+                address: checkoutData.address,
+                city: checkoutData.city,
+                province: checkoutData.province,
+                zipCode: checkoutData.zipCode,
+                ordersCount: increment(1),
+            });
+
+            // 3. Limpiar Carrito en DB
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
+                userId: currentUser.id,
+                items: [],
+            });
+
+            // 4. Actualizar Stock (Batch)
+            const batch = writeBatch(db);
+
+            cart.forEach(item => {
+                if (item.product.isPromo && item.product.items) {
+                    item.product.items.forEach(promoItem => {
+                        const totalDecrement = promoItem.quantity * item.quantity;
+                        const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', promoItem.productId);
+                        batch.update(productRef, {
+                            stock: increment(-totalDecrement),
+                            salesCount: increment(totalDecrement),
+                        });
+                    });
+                } else {
+                    const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.product.id);
+                    batch.update(productRef, {
+                        stock: increment(-item.quantity),
+                        salesCount: increment(item.quantity),
+                    });
+                }
+            });
+
+            // Registrar uso de cupón si se usó
+            if (appliedCoupon) {
+                const couponRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
+                const couponDoc = await getDoc(couponRef);
+                if (couponDoc.exists()) {
+                    const currentUses = couponDoc.data().usedBy || [];
+                    batch.update(couponRef, { usedBy: [...currentUses, currentUser.id] });
+                }
+            }
+
+            await batch.commit();
+
+            // 5. Enviar email de confirmación
+            const discountInfo = appliedCoupon ? {
+                percentage: appliedCoupon.value,
+                amount: discountAmount,
+            } : null;
+
+            sendOrderConfirmationEmail(newOrder, discountInfo);
+
+            // 6. Limpiar estado local
+            setCart([]);
+            setAppliedCoupon(null);
+            if (mpBrickController) {
+                try {
+                    mpBrickController.unmount();
+                } catch (e) { }
+            }
+            setMpBrickController(null);
+            setView('profile');
+
+        } catch (error) {
+            console.error('Error creating order after payment:', error);
+            showToast('El pago fue exitoso pero hubo un error guardando el pedido. Contacta soporte.', 'warning');
+        }
+    };
+
+    // Effect para inicializar el Brick cuando se selecciona MP
+    useEffect(() => {
+        if (checkoutData.paymentChoice === 'Mercado Pago' && finalTotal > 0 && currentUser && cart.length > 0) {
+            // Pequeño delay para asegurar que el DOM está listo
+            const timer = setTimeout(() => {
+                const container = document.getElementById('cardPaymentBrick_container');
+                if (container) {
+                    initializeCardPaymentBrick();
+                }
+            }, 300);
+            return () => clearTimeout(timer);
+        } else if (mpBrickController && checkoutData.paymentChoice !== 'Mercado Pago') {
+            // Limpiar brick si se cambia de método de pago
+            try {
+                mpBrickController.unmount();
+            } catch (e) { }
+            setMpBrickController(null);
+        }
+    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length]);
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
@@ -3631,6 +3906,40 @@ function App() {
                                             </button>
                                         )}
                                     </div>
+
+                                    {/* Card Payment Brick Container - Solo para Mercado Pago */}
+                                    {checkoutData.paymentChoice === 'Mercado Pago' && (
+                                        <div className="mt-8 animate-fade-up">
+                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-cyan-500/30">
+                                                <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                                                    <CreditCard className="w-5 h-5 text-cyan-400" />
+                                                    Ingresá los datos de tu tarjeta
+                                                </h3>
+                                                <p className="text-slate-400 text-sm mb-4">
+                                                    Pagá de forma segura con Visa, MasterCard, AMEX y más.
+                                                </p>
+
+                                                {/* Contenedor del Card Payment Brick de Mercado Pago */}
+                                                <div id="cardPaymentBrick_container" ref={cardPaymentBrickRef} className="min-h-[400px]"></div>
+
+                                                {/* Mensaje de error si hay */}
+                                                {paymentError && (
+                                                    <div className="mt-4 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm flex items-center gap-3">
+                                                        <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                                                        {paymentError}
+                                                    </div>
+                                                )}
+
+                                                {/* Indicador de procesamiento */}
+                                                {isPaymentProcessing && (
+                                                    <div className="mt-4 p-4 bg-cyan-900/20 border border-cyan-500/30 rounded-xl text-cyan-400 text-sm flex items-center gap-3">
+                                                        <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
+                                                        Procesando tu pago, por favor esperá...
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -3660,18 +3969,33 @@ function App() {
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={confirmOrder}
-                                        disabled={isProcessingOrder}
-                                        className={`w-full py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 transition-all ${isProcessingOrder ? 'bg-slate-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 shadow-green-900/20 hover:scale-[1.02]'}`}
-                                    >
-                                        {isProcessingOrder ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle className="w-6 h-6" />}
-                                        {isProcessingOrder ? 'Procesando...' : 'Confirmar Pedido'}
-                                    </button>
+                                    {/* Botón Confirmar - Solo para métodos que NO son Mercado Pago */}
+                                    {checkoutData.paymentChoice !== 'Mercado Pago' ? (
+                                        <>
+                                            <button
+                                                onClick={confirmOrder}
+                                                disabled={isProcessingOrder}
+                                                className={`w-full py-5 text-white font-bold text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 transition-all ${isProcessingOrder ? 'bg-slate-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 shadow-green-900/20 hover:scale-[1.02]'}`}
+                                            >
+                                                {isProcessingOrder ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle className="w-6 h-6" />}
+                                                {isProcessingOrder ? 'Procesando...' : 'Confirmar Pedido'}
+                                            </button>
 
-                                    <p className="text-center text-slate-600 text-xs mt-6 leading-relaxed px-4">
-                                        Al confirmar, aceptas nuestros términos de servicio y política de privacidad.
-                                    </p>
+                                            <p className="text-center text-slate-600 text-xs mt-6 leading-relaxed px-4">
+                                                Al confirmar, aceptas nuestros términos de servicio y política de privacidad.
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <div className="bg-cyan-900/10 border border-cyan-500/20 p-4 rounded-2xl text-center">
+                                            <p className="text-cyan-400 text-sm font-medium flex items-center justify-center gap-2">
+                                                <CreditCard className="w-4 h-4" />
+                                                Completá los datos de tu tarjeta arriba para pagar
+                                            </p>
+                                            <p className="text-slate-500 text-xs mt-2">
+                                                Tu compra quedará confirmada automáticamente al procesar el pago.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
