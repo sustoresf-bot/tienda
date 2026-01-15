@@ -1194,33 +1194,31 @@ function App() {
     // --- FUNCIONES DE MERCADO PAGO CARD PAYMENT BRICK ---
 
     // Inicializar el Card Payment Brick cuando se selecciona Mercado Pago
+    let isInitializingBrick = false;
     const initializeCardPaymentBrick = async () => {
+        if (isInitializingBrick) return;
+
         console.log('💎 Mercado Pago: Iniciando Brick. Total a cobrar:', finalTotal);
 
         if (!window.MercadoPago) {
-            console.error('❌ Mercado Pago: SDK no cargado en window.');
-            showToast('Error: SDK de pagos no cargado. Recarga la página.', 'error');
+            console.error('❌ Mercado Pago: SDK no cargado.');
             return;
         }
 
-        if (finalTotal <= 0) {
-            console.warn('⚠️ Mercado Pago: El monto es 0 o negativo, no se puede inicializar.');
-            return;
-        }
+        if (finalTotal <= 0) return;
 
         const container = document.getElementById('cardPaymentBrick_container');
-        if (!container) {
-            console.error('❌ Mercado Pago: No se encontró el contenedor cardPaymentBrick_container.');
-            return;
-        }
+        if (!container) return;
+
+        isInitializingBrick = true;
 
         // Limpiar brick anterior si existe
         if (mpBrickController) {
             try {
-                console.log('🧹 Mercado Pago: Desmontando brick anterior...');
-                mpBrickController.unmount();
+                await mpBrickController.unmount();
+                mpBrickController = null;
             } catch (e) {
-                console.warn('Error unmounting previous brick:', e);
+                console.warn('Error unmounting:', e);
             }
         }
 
@@ -1229,8 +1227,6 @@ function App() {
 
         // USANDO LA PUBLIC KEY DE PRODUCCIÓN CORRECTA
         const publicKey = 'APP_USR-1fed61e0-7d4a-4280-8c57-a4103b3c32b6';
-        console.log('🔑 Mercado Pago: Utilizando Public Key:', publicKey);
-
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
         });
@@ -1261,10 +1257,11 @@ function App() {
                 },
                 callbacks: {
                     onReady: () => {
-                        console.log('✅ Mercado Pago: Card Payment Brick cargado correctamente.');
+                        console.log('✅ Mercado Pago: Card Payment Brick cargado.');
+                        isInitializingBrick = false;
                     },
                     onSubmit: async (cardFormData) => {
-                        console.log('🚀 Mercado Pago: Iniciando procesamiento de pago...');
+                        console.log('🚀 Mercado Pago: Procesando pago...');
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
 
@@ -1277,7 +1274,7 @@ function App() {
                                     paymentData: {
                                         token: cardFormData.token,
                                         transaction_amount: finalTotal,
-                                        description: `Compra en ${settings?.storeName || 'Sustore'} - ${cart.length} producto(s)`,
+                                        description: `Compra en ${settings?.storeName || 'Sustore'}`,
                                         installments: cardFormData.installments,
                                         payment_method_id: cardFormData.payment_method_id,
                                         issuer_id: cardFormData.issuer_id,
@@ -1291,38 +1288,29 @@ function App() {
                             });
 
                             const result = await response.json();
-                            console.log('📦 Mercado Pago: Respuesta del servidor:', result);
+                            console.log('📦 Respuesta:', result);
 
-                            if (result.status === 'approved') {
+                            if (result.status === 'approved' || result.status === 'in_process' || result.status === 'pending') {
                                 await confirmOrderAfterPayment(result.id);
-                                showToast('¡Pago aprobado! Tu compra ha sido confirmada.', 'success');
-                            } else if (result.status === 'in_process' || result.status === 'pending') {
-                                await confirmOrderAfterPayment(result.id);
-                                showToast('¡Compra realizada! El pago está siendo verificado.', 'success');
+                                showToast('¡Compra realizada!', 'success');
                             } else {
                                 const detailedError = result.status_detail || result.error || 'Pago rechazado';
-                                console.error('❌ Mercado Pago: Error en pago:', detailedError);
-                                setPaymentError(`Error: ${detailedError}. Verificá los datos o usá otra tarjeta.`);
+                                setPaymentError(`Error: ${detailedError}`);
                                 showToast('El pago no pudo procesarse.', 'error');
                             }
                         } catch (error) {
-                            console.error('❌ Mercado Pago: Error de conexión:', error);
-                            setPaymentError('Error de conexión con el servidor. Intentá de nuevo o contactanos.');
-                            showToast('Error de conexión.', 'error');
+                            console.error('❌ Error de conexión:', error);
+                            setPaymentError('Error de conexión.');
                         } finally {
                             setIsPaymentProcessing(false);
                         }
                     },
                     onError: (error) => {
-                        console.error('❌ Mercado Pago: Brick Error:', error);
-                        // Intentar sacar mensaje más amigable del error interno de MP
-                        let errorMsg = 'Error en el formulario de pago.';
-                        if (error && error.stack && error.stack.includes('credential-not-found')) {
-                            errorMsg = 'Error: Credenciales de Mercado Pago incorrectas o no coinciden.';
-                        } else if (error && error.message) {
-                            errorMsg = `Error MP: ${error.message}`;
-                        }
-                        setPaymentError(errorMsg);
+                        console.error('❌ Mercado Pago Error:', error);
+                        isInitializingBrick = false;
+                        // No mostrar error si es solo por AdBlock
+                        if (error && error.message && error.message.includes('melidata')) return;
+                        setPaymentError('Error en el formulario. Verificá tus claves de producción.');
                     },
                 },
             });
@@ -1330,6 +1318,7 @@ function App() {
             setMpBrickController(controller);
         } catch (error) {
             console.error('Error creating brick:', error);
+            isInitializingBrick = false;
             showToast('Error al cargar el formulario de pago.', 'error');
         }
     };
