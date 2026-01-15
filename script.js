@@ -3049,16 +3049,24 @@ function App() {
                 }
 
                 // 2. Actualización de Perfil (Firestore)
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), {
+                const firestoreUpdate = {
                     name: editForm.name,
                     username: editForm.username,
                     email: editForm.email,
+                    emailLower: editForm.email.toLowerCase(), // Mantener sincronizado
                     phone: editForm.phone,
                     dni: editForm.dni,
                     role: editForm.role,
                     lastModifiedBy: currentUser.email,
                     updatedAt: new Date().toISOString()
-                });
+                };
+
+                // Si cambió la contraseña, también actualizarla en Firestore
+                if (editForm.newPassword && editForm.newPassword.length >= 6) {
+                    firestoreUpdate.password = editForm.newPassword;
+                }
+
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), firestoreUpdate);
 
                 showToast("Perfil de usuario actualizado correctamente.", "success");
                 closeDrawer();
