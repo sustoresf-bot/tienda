@@ -171,7 +171,7 @@ const SustIABot = ({ settings, products, addToCart }) => {
             return "⚠️ Error de Configuración: Necesito una API KEY de Google Gemini para funcionar. Por favor agrégala en el código (script.js -> SustIABot).";
         }
 
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
 
         // Contexto del Catálogo (RAG Simplificado)
         const productContext = products.slice(0, 100).map(p =>
