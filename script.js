@@ -165,7 +165,7 @@ const SustIABot = ({ settings, products, addToCart }) => {
 
     // Función para comunicarse con la IA (Gemini)
     const callGeminiAPI = async (userText) => {
-        const API_KEY = "AIzaSyCgMzTtvFvLGxLkXHRLovkt3f0tgO1RSUk"; // API Key configurada
+        const API_KEY = "AIzaSyCgMzTtvfvLGxLkXHRLovkt3f0tgO1RSUk"; // API Key corregida (f minúscula)
 
         if (!API_KEY) {
             return "⚠️ Error de Configuración: Necesito una API KEY de Google Gemini para funcionar. Por favor agrégala en el código (script.js -> SustIABot).";
