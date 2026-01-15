@@ -163,12 +163,23 @@ const SustIABot = ({ settings, products, addToCart }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
-    // --- CEREBRO LOCAL AVANZADO V3 (Universal & Visual) ---
-    const callLocalBrain = async (userText) => {
+    // --- CEREBRO LOCAL AVANZADO V4 (Contextual & Comparativo) ---
+    const callLocalBrain = async (userText, currentMessages) => {
         await new Promise(resolve => setTimeout(resolve, 800));
         const text = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        // Utiles
+        // 0. Detectar Intenciones
+        const isCheaper = text.match(/(?:mas|muy|super)\s*(?:barato|economico|bajo)|oferta|menos/);
+        const isExpensive = text.match(/(?:mas|muy|super)\s*(?:caro|mejor|calidad|top|premium)|costoso|lujo/);
+        const isBestValue = text.match(/calidad\s*precio|conviene|rendidor|equilibrado|mejor opcion/);
+
+        // 1. Recuperar Contexto (Historial)
+        const lastBotMsg = [...currentMessages].reverse().find(m => m.role === 'model' && m.products?.length > 0);
+        const contextProducts = lastBotMsg ? lastBotMsg.products : [];
+        const contextCategory = contextProducts.length > 0 ? contextProducts[0].category : null;
+        const contextPrice = contextProducts.length > 0 ? parseInt(contextProducts[0].basePrice) : null;
+
+        // 2. Extracción de Filtros
         const getPriceLimit = (t) => {
             const match = t.match(/(?:menos|bajo|maximo|hasta|no mas de)\s*(?:de)?\s*\$?(\d+)/);
             return match ? parseInt(match[1]) : null;
@@ -176,13 +187,17 @@ const SustIABot = ({ settings, products, addToCart }) => {
         const availableCategories = [...new Set(products.map(p => p.category.toLowerCase()))];
         const detectCategory = (t) => availableCategories.find(c => t.includes(c) || c.includes(t));
 
-        // Filtros
         const maxPrice = getPriceLimit(text);
-        const targetCategory = detectCategory(text);
+        let targetCategory = detectCategory(text);
         const isBuying = text.match(/(?:agrega|comprar|quiero|dame|carrito|llevo)/);
 
-        // Keywords
-        const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale', 'quiero', 'necesito', 'hay', 'donde'];
+        // Inferencia Contextual
+        if (!targetCategory && (isCheaper || isExpensive || isBestValue) && contextCategory) {
+            targetCategory = contextCategory.toLowerCase();
+        }
+
+        // 3. Selección de Candidatos
+        const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale', 'quiero', 'necesito', 'hay', 'donde', 'mas', 'menos'];
         const keywords = text.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w) && isNaN(w));
 
         let candidates = products.filter(p => p.stock > 0);
@@ -190,7 +205,14 @@ const SustIABot = ({ settings, products, addToCart }) => {
         if (targetCategory) candidates = candidates.filter(p => p.category.toLowerCase().includes(targetCategory));
         if (maxPrice) candidates = candidates.filter(p => p.basePrice <= maxPrice);
 
-        // Score por relevancia
+        // Filtro Contextual (Precio relativo)
+        if (isCheaper && contextPrice && !maxPrice) {
+            candidates = candidates.filter(p => p.basePrice < contextPrice);
+        } else if (isExpensive && contextPrice && !maxPrice) {
+            candidates = candidates.filter(p => p.basePrice > contextPrice);
+        }
+
+        // Keywords Score
         if (keywords.length > 0) {
             candidates = candidates.map(p => {
                 let score = 0;
@@ -200,32 +222,45 @@ const SustIABot = ({ settings, products, addToCart }) => {
                     if (p.name.toLowerCase().includes(k)) score += 2;
                 });
                 return { ...p, score };
-            }).filter(p => p.score > 0).sort((a, b) => b.score - a.score);
-        } else if (!targetCategory && !maxPrice && !isBuying) {
-            // Charla genérica
-            if (text.match(/^(hola|buen|hey|alo)/)) return { text: "¡Hola! 👋 ¿Buscas algún producto en particular? Dime y lo busco en nuestro inventario." };
-            return { text: "Estoy explorando el catálogo. 🧐 Intenta decirme qué tipo de artículo necesitas o tu presupuesto." };
+            }).filter(p => p.score > 0);
         }
 
+        // 4. Ordenamiento Inteligente
+        if (isCheaper) {
+            candidates.sort((a, b) => a.basePrice - b.basePrice); // Menor a mayor
+        } else if (isExpensive) {
+            candidates.sort((a, b) => b.basePrice - a.basePrice); // Mayor a menor
+        } else if (isBestValue) {
+            const avg = candidates.reduce((sum, p) => sum + parseInt(p.basePrice), 0) / (candidates.length || 1);
+            candidates.sort((a, b) => Math.abs(a.basePrice - avg) - Math.abs(b.basePrice - avg)); // Cercanos al promedio
+        } else if (keywords.length > 0) {
+            candidates.sort((a, b) => b.score - a.score); // Relevancia
+        }
+
+        // 5. Respuesta
         if (candidates.length === 0) {
-            return { text: `Lo siento, no encontré productos que coincidan con eso${maxPrice ? ' por ese precio' : ''}. 📉 Intenta ser más general.` };
+            const suggestion = targetCategory ? ` en ${targetCategory}` : '';
+            return { text: `Mmm, no encontré opciones ${isCheaper ? 'más económicas' : ''}${suggestion} con esos criterios. 📉 Intenta ser más general o ver todo el catálogo.` };
         }
 
-        const topMatches = candidates.slice(0, 5); // Mostramos hasta 5 productos en carrusel
+        const topMatches = candidates.slice(0, 5);
 
-        // Respuesta Directa (Compra)
         if (isBuying && topMatches.length > 0) {
             const best = topMatches[0];
             addToCart(best);
             return {
-                text: `¡Entendido! He agregado **${best.name}** a tu carrito. 🛒 ¿Deseas ver algo más?`,
+                text: `¡Listo! Agregué **${best.name}** a tu carrito. 🛒 ¿Algo más?`,
                 products: [best]
             };
         }
 
-        // Respuesta de Búsqueda (Galería)
+        let msg = "Aquí tienes algunas opciones:";
+        if (isCheaper) msg = "Encontré estas alternativas más accesibles: 📉";
+        else if (isExpensive) msg = "Mira estas opciones Premium: 💎";
+        else if (isBestValue) msg = "Lo mejor en Calidad/Precio: ⚖️";
+
         return {
-            text: `Encontré estas opciones para ti${maxPrice ? ' dentro de tu presupuesto' : ''}:`,
+            text: msg,
             products: topMatches
         };
     };
@@ -235,13 +270,15 @@ const SustIABot = ({ settings, products, addToCart }) => {
         const text = inputValue;
         setInputValue('');
 
-        setMessages(prev => [...prev, { role: 'client', text }]);
+        const newMsgUser = { role: 'client', text };
+        const updatedHistory = [...messages, newMsgUser];
+
+        setMessages(updatedHistory);
         setIsTyping(true);
 
-        const response = await callLocalBrain(text);
+        const response = await callLocalBrain(text, updatedHistory);
 
         setIsTyping(false);
-        // Ahora guardamos text Y products en el estado del mensaje
         setMessages(prev => [...prev, {
             role: 'model',
             text: response.text,
@@ -346,6 +383,63 @@ const SustIABot = ({ settings, products, addToCart }) => {
                     </span>
                 )}
             </button>
+        </div>
+    );
+};
+
+const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
+    const [catName, setCatName] = React.useState('');
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (catName.trim()) {
+            onAdd(catName.trim());
+            setCatName('');
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-4">
+            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] max-w-md w-full relative">
+                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white transition">
+                    <X className="w-6 h-6" />
+                </button>
+                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                    <FolderPlus className="w-6 h-6 text-cyan-400" /> Gestionar Categorías
+                </h3>
+
+                <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
+                    <input
+                        className="input-cyber flex-1 p-3"
+                        placeholder="Nueva categoría..."
+                        value={catName}
+                        onChange={(e) => setCatName(e.target.value)}
+                        autoFocus
+                    />
+                    <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-xl font-bold transition">
+                        <Plus className="w-5 h-5" />
+                    </button>
+                </form>
+
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {categories.map((cat, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800 group hover:border-slate-700 transition">
+                            <span className="text-slate-300 font-medium">{cat}</span>
+                            <button
+                                onClick={() => onRemove(cat)}
+                                className="text-slate-600 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
+                    {categories.length === 0 && (
+                        <p className="text-center text-slate-600 italic py-4">No hay categorías definidas</p>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
@@ -3825,27 +3919,28 @@ function App() {
                         </div>
 
                         {/* Why Choose Us Section */}
+                        {/* Why Choose Us Section (Editable) */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 container-tv">
                             <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
                                 <div className="w-10 h-10 rounded-full bg-cyan-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
                                     <Zap className="w-5 h-5 text-cyan-400" />
                                 </div>
-                                <h3 className="text-base font-bold text-white mb-1">Envío Ultra Rápido</h3>
-                                <p className="text-slate-400 text-[11px]">Recibí tus productos tecnológicos en tiempo récord con nuestro sistema logístico optimizado.</p>
+                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature1Title || 'Envío Ultra Rápido'}</h3>
+                                <p className="text-slate-400 text-[11px]">{settings?.feature1Desc || 'Recibí tus productos tecnológicos en tiempo récord con nuestro sistema logístico optimizado.'}</p>
                             </div>
                             <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
                                 <div className="w-10 h-10 rounded-full bg-purple-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
                                     <Shield className="w-5 h-5 text-purple-400" />
                                 </div>
-                                <h3 className="text-base font-bold text-white mb-1">Garantía Extendida</h3>
-                                <p className="text-slate-400 text-[11px]">Todos nuestros productos cuentan con garantía oficial y soporte técnico especializado.</p>
+                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature2Title || 'Garantía Extendida'}</h3>
+                                <p className="text-slate-400 text-[11px]">{settings?.feature2Desc || 'Todos nuestros productos cuentan con garantía oficial y soporte técnico especializado.'}</p>
                             </div>
                             <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
                                 <div className="w-10 h-10 rounded-full bg-green-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
                                     <Headphones className="w-5 h-5 text-green-400" />
                                 </div>
-                                <h3 className="text-base font-bold text-white mb-1">Soporte 24/7</h3>
-                                <p className="text-slate-400 text-[11px]">¿Dudas? Nuestro equipo de expertos está disponible para ayudarte en todo momento.</p>
+                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature3Title || 'Soporte 24/7'}</h3>
+                                <p className="text-slate-400 text-[11px]">{settings?.feature3Desc || '¿Dudas? Nuestro equipo de expertos está disponible para ayudarte en todo momento.'}</p>
                             </div>
                         </div>
 
@@ -6598,9 +6693,14 @@ function App() {
                                                     );
                                                 })()}
                                             </div>
-                                            <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-cyan-500 transition transform hover:scale-105 active:scale-95">
-                                                <Plus className="w-5 h-5" /> Agregar Producto
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setShowCategoryModal(true)} className="bg-slate-800 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 border border-slate-700">
+                                                    <FolderPlus className="w-5 h-5" /> Categorías
+                                                </button>
+                                                <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-cyan-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-cyan-500 transition transform hover:scale-105 active:scale-95">
+                                                    <Plus className="w-5 h-5" /> Agregar Producto
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {/* Formulario Productos (Expandido) */}
@@ -7158,6 +7258,78 @@ function App() {
                                                     </div>
                                                 </div>
 
+                                                {/* Features Section Configuration */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <Star className="w-5 h-5 text-yellow-400" /> Beneficios Destacados
+                                                    </h3>
+                                                    <div className="space-y-6">
+                                                        {/* Feature 1 */}
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <Zap className="w-4 h-4 text-cyan-400" />
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 1 (Rayo)</label>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.feature1Title || ''}
+                                                                    onChange={e => setSettings({ ...settings, feature1Title: e.target.value })}
+                                                                    placeholder="Envío Ultra Rápido"
+                                                                />
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.feature1Desc || ''}
+                                                                    onChange={e => setSettings({ ...settings, feature1Desc: e.target.value })}
+                                                                    placeholder="Subtítulo corto..."
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        {/* Feature 2 */}
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <Shield className="w-4 h-4 text-purple-400" />
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 2 (Escudo)</label>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.feature2Title || ''}
+                                                                    onChange={e => setSettings({ ...settings, feature2Title: e.target.value })}
+                                                                    placeholder="Garantía Extendida"
+                                                                />
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.feature2Desc || ''}
+                                                                    onChange={e => setSettings({ ...settings, feature2Desc: e.target.value })}
+                                                                    placeholder="Subtítulo corto..."
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        {/* Feature 3 */}
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <Headphones className="w-4 h-4 text-green-400" />
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 3 (Soporte)</label>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.feature3Title || ''}
+                                                                    onChange={e => setSettings({ ...settings, feature3Title: e.target.value })}
+                                                                    placeholder="Soporte 24/7"
+                                                                />
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.feature3Desc || ''}
+                                                                    onChange={e => setSettings({ ...settings, feature3Desc: e.target.value })}
+                                                                    placeholder="Subtítulo corto..."
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 {/* Footer Contact Configuration */}
                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
@@ -7214,6 +7386,43 @@ function App() {
                                                                 <option value="instagram">Instagram</option>
                                                                 <option value="email">Email</option>
                                                             </select>
+
+                                                            {/* Conditional Input based on Type */}
+                                                            {(!settings?.footerContactType || settings?.footerContactType === 'whatsapp') && (
+                                                                <div className="mt-3 animate-fade-in">
+                                                                    <label className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1 block">Enlace de WhatsApp</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm border-green-500/30 focus:border-green-500"
+                                                                        value={settings?.whatsappLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
+                                                                        placeholder="https://wa.me/54911..."
+                                                                    />
+                                                                </div>
+                                                            )}
+
+                                                            {settings?.footerContactType === 'instagram' && (
+                                                                <div className="mt-3 animate-fade-in">
+                                                                    <label className="text-[10px] font-bold text-pink-500 uppercase tracking-wider mb-1 block">Perfil de Instagram</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm border-pink-500/30 focus:border-pink-500"
+                                                                        value={settings?.instagramLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
+                                                                        placeholder="https://instagram.com/usuario"
+                                                                    />
+                                                                </div>
+                                                            )}
+
+                                                            {settings?.footerContactType === 'email' && (
+                                                                <div className="mt-3 animate-fade-in">
+                                                                    <label className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1 block">Email de Soporte</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm border-blue-500/30 focus:border-blue-500"
+                                                                        value={settings?.storeEmail || ''}
+                                                                        onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
+                                                                        placeholder="soporte@tienda.com"
+                                                                    />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -7967,7 +8176,8 @@ function App() {
                         </div >
                     ) : (
                         <AccessDenied onBack={() => setView('store')} />
-                    ))}
+                    ))
+                }
 
                 {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
                 {
@@ -8000,7 +8210,7 @@ function App() {
                                     </p>
                                     <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
                                     <p className="text-slate-500 leadind-relaxed mb-12">
-                                        Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-cyan-400">{settings?.contactEmail || 'soporte@sustore.sf'}</span>.
+                                        Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-cyan-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
                                     </p>
                                     <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
                                         <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
@@ -8134,7 +8344,7 @@ function App() {
                                             Para resolver una queja con respecto a los Servicios o para recibir más información sobre el uso de los Servicios, contáctenos en:
                                         </p>
                                         <p className="text-2xl font-black text-cyan-400">
-                                            {settings?.contactEmail || 'soporte@sustore.sf'}
+                                            {settings?.storeEmail || 'soporte@tuempresa.com'}
                                         </p>
                                     </section>
 
@@ -8238,8 +8448,8 @@ function App() {
                                                 window.open(settings.whatsappLink, '_blank');
                                             } else if (type === 'instagram' && settings?.instagramLink) {
                                                 window.open(settings.instagramLink, '_blank');
-                                            } else if (type === 'email' && settings?.contactEmail) {
-                                                window.open(`mailto:${settings.contactEmail}`, '_blank');
+                                            } else if (type === 'email' && settings?.storeEmail) {
+                                                window.open(`mailto:${settings.storeEmail}`, '_blank');
                                             }
                                         }}
                                         className="px-6 py-3 bg-cyan-900/10 text-cyan-400 rounded-xl text-sm font-bold border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition w-full md:w-auto"
@@ -8380,111 +8590,115 @@ function App() {
                 )
             }
             {/* BOTÓN FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
-            {settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
-                <button
-                    onClick={() => window.open(settings.whatsappLink, '_blank')}
-                    className="fixed bottom-6 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
-                    title="Chatea con nosotros"
-                >
-                    <MessageCircle className="w-8 h-8 text-white fill-white" />
-                </button>
-            )}
+            {
+                settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
+                    <button
+                        onClick={() => window.open(settings.whatsappLink, '_blank')}
+                        className="fixed bottom-6 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
+                        title="Chatea con nosotros"
+                    >
+                        <MessageCircle className="w-8 h-8 text-white fill-white" />
+                    </button>
+                )
+            }
 
             <AdminUserDrawer />
             {/* MODAL: VER PLANES DE SUSCRIPCIÓN */}
-            {showPlansModal && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-lg animate-fade-in-scale p-4">
-                    <div className="bg-[#0a0a0a] p-8 rounded-[2rem] max-w-4xl w-full border border-cyan-900/50 shadow-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                                <Zap className="w-8 h-8 text-yellow-500 fill-current" /> Planes Disponibles
-                            </h2>
-                            <button onClick={() => setShowPlansModal(false)} className="p-2 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <p className="text-slate-500 mb-8">Tu plan actual: <span className="text-cyan-400 font-bold uppercase">{settings?.subscriptionPlan === 'business' ? 'Negocio' : settings?.subscriptionPlan === 'premium' ? 'Premium' : 'Emprendedor'}</span></p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Plan Emprendedor */}
-                            <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan ? 'bg-slate-900 border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
-                                {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
-                                )}
-                                <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
-                                    <Store className="w-6 h-6 text-cyan-400" />
-                                </div>
-                                <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
-                                <p className="text-sm text-slate-400 mb-4">El esencial para arrancar.</p>
-                                <div className="text-2xl font-black text-cyan-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-                                <ul className="space-y-2 text-sm text-slate-300">
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 35 productos</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> 1 Promo Activa</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Integración Mercado Pago</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Soporte vía Gmail (24hs)</li>
-                                </ul>
+            {
+                showPlansModal && (
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-lg animate-fade-in-scale p-4">
+                        <div className="bg-[#0a0a0a] p-8 rounded-[2rem] max-w-4xl w-full border border-cyan-900/50 shadow-2xl max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-3xl font-black text-white flex items-center gap-3">
+                                    <Zap className="w-8 h-8 text-yellow-500 fill-current" /> Planes Disponibles
+                                </h2>
+                                <button onClick={() => setShowPlansModal(false)} className="p-2 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                                    <X className="w-6 h-6" />
+                                </button>
                             </div>
 
-                            {/* Plan Negocio */}
-                            <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
-                                {settings?.subscriptionPlan === 'business' && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
-                                )}
-                                <div className="absolute top-4 right-4 bg-purple-500/20 text-purple-400 text-[10px] font-bold px-2 py-0.5 rounded">MÁS PEDIDO</div>
-                                <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
-                                    <Briefcase className="w-6 h-6 text-purple-400" />
+                            <p className="text-slate-500 mb-8">Tu plan actual: <span className="text-cyan-400 font-bold uppercase">{settings?.subscriptionPlan === 'business' ? 'Negocio' : settings?.subscriptionPlan === 'premium' ? 'Premium' : 'Emprendedor'}</span></p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Plan Emprendedor */}
+                                <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan ? 'bg-slate-900 border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
+                                    {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
+                                    )}
+                                    <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
+                                        <Store className="w-6 h-6 text-cyan-400" />
+                                    </div>
+                                    <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
+                                    <p className="text-sm text-slate-400 mb-4">El esencial para arrancar.</p>
+                                    <div className="text-2xl font-black text-cyan-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                    <ul className="space-y-2 text-sm text-slate-300">
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 35 productos</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> 1 Promo Activa</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Integración Mercado Pago</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Soporte vía Gmail (24hs)</li>
+                                    </ul>
                                 </div>
-                                <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
-                                <p className="text-sm text-slate-400 mb-4">Para marcas con identidad.</p>
-                                <div className="text-2xl font-black text-purple-400 mb-6">$13.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-                                <p className="text-xs text-purple-400 mb-3 font-bold">Todo lo del Emprendedor +</p>
-                                <ul className="space-y-2 text-sm text-slate-300">
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 5 Promos</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Cupones de Descuento</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Ver Actividad Usuarios</li>
-                                </ul>
+
+                                {/* Plan Negocio */}
+                                <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
+                                    {settings?.subscriptionPlan === 'business' && (
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
+                                    )}
+                                    <div className="absolute top-4 right-4 bg-purple-500/20 text-purple-400 text-[10px] font-bold px-2 py-0.5 rounded">MÁS PEDIDO</div>
+                                    <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
+                                        <Briefcase className="w-6 h-6 text-purple-400" />
+                                    </div>
+                                    <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
+                                    <p className="text-sm text-slate-400 mb-4">Para marcas con identidad.</p>
+                                    <div className="text-2xl font-black text-purple-400 mb-6">$13.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                    <p className="text-xs text-purple-400 mb-3 font-bold">Todo lo del Emprendedor +</p>
+                                    <ul className="space-y-2 text-sm text-slate-300">
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 5 Promos</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Cupones de Descuento</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Ver Actividad Usuarios</li>
+                                    </ul>
+                                </div>
+
+                                {/* Plan Premium */}
+                                <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
+                                    {settings?.subscriptionPlan === 'premium' && (
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
+                                    )}
+                                    <div className="absolute top-4 right-4 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded">SERVICIO FULL</div>
+                                    <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
+                                        <Sparkles className="w-6 h-6 text-yellow-400" />
+                                    </div>
+                                    <h4 className="text-xl font-black text-white mb-1">Premium</h4>
+                                    <p className="text-sm text-slate-400 mb-4">No tocás nada, todo listo.</p>
+                                    <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                    <p className="text-xs text-yellow-400 mb-3 font-bold">Todo lo del Negocio +</p>
+                                    <ul className="space-y-2 text-sm text-slate-300">
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Promos ILIMITADAS</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Chatbot SustIA</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga de Productos</li>
+                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
+                                    </ul>
+                                </div>
                             </div>
 
-                            {/* Plan Premium */}
-                            <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
-                                {settings?.subscriptionPlan === 'premium' && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
-                                )}
-                                <div className="absolute top-4 right-4 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded">SERVICIO FULL</div>
-                                <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
-                                    <Sparkles className="w-6 h-6 text-yellow-400" />
+                            <div className="mt-8 p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-slate-700 text-center relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-cyan-500/5 blur-xl group-hover:bg-cyan-500/10 transition duration-500"></div>
+                                <div className="relative z-10 flex flex-col items-center justify-center gap-2">
+                                    <div className="bg-slate-900 p-3 rounded-full border border-slate-700 mb-2 shadow-lg">
+                                        <Zap className="w-6 h-6 text-cyan-400" />
+                                    </div>
+                                    <p className="text-slate-300 font-medium">¿Listo para escalar tu negocio?</p>
+                                    <p className="text-sm text-slate-500">Para actualizar tu plan inmediatamente, contáctanos:</p>
+                                    <a href="mailto:lautarocorazza63@gmail.com" className="text-cyan-400 font-black text-lg hover:text-cyan-300 transition mt-1 flex items-center gap-2 hover:scale-105 transform duration-200">
+                                        lautarocorazza63@gmail.com
+                                    </a>
                                 </div>
-                                <h4 className="text-xl font-black text-white mb-1">Premium</h4>
-                                <p className="text-sm text-slate-400 mb-4">No tocás nada, todo listo.</p>
-                                <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-                                <p className="text-xs text-yellow-400 mb-3 font-bold">Todo lo del Negocio +</p>
-                                <ul className="space-y-2 text-sm text-slate-300">
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Promos ILIMITADAS</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Chatbot SustIA</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga de Productos</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div className="mt-8 p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-slate-700 text-center relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-cyan-500/5 blur-xl group-hover:bg-cyan-500/10 transition duration-500"></div>
-                            <div className="relative z-10 flex flex-col items-center justify-center gap-2">
-                                <div className="bg-slate-900 p-3 rounded-full border border-slate-700 mb-2 shadow-lg">
-                                    <Zap className="w-6 h-6 text-cyan-400" />
-                                </div>
-                                <p className="text-slate-300 font-medium">¿Listo para escalar tu negocio?</p>
-                                <p className="text-sm text-slate-500">Para actualizar tu plan inmediatamente, contáctanos:</p>
-                                <a href="mailto:lautarocorazza63@gmail.com" className="text-cyan-400 font-black text-lg hover:text-cyan-300 transition mt-1 flex items-center gap-2 hover:scale-105 transform duration-200">
-                                    lautarocorazza63@gmail.com
-                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
@@ -8495,6 +8709,13 @@ function App() {
                 isDangerous={true}
             />
             {/* --- SUSTIA CHATBOT (AI) --- */}
+            <CategoryModal
+                isOpen={showCategoryModal}
+                onClose={() => setShowCategoryModal(false)}
+                categories={settings?.categories || []}
+                onAdd={(newCat) => setSettings({ ...settings, categories: [...(settings?.categories || []), newCat] })}
+                onRemove={(cat) => setSettings({ ...settings, categories: (settings?.categories || []).filter(c => c !== cat) })}
+            />
             <SustIABot
                 settings={settings}
                 products={products}
