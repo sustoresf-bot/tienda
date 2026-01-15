@@ -3512,7 +3512,7 @@ function App() {
                     <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block">
 
                         {/* Anuncio Global (Marquesina) */}
-                        {settings?.announcementMessage && (
+                        {settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
                             <div className="w-full bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border border-cyan-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-white/5 skew-x-12 -translate-x-full group-hover:translate-x-full transition duration-1000"></div>
                                 <p className="text-cyan-300 font-black text-xs md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3">
@@ -3522,20 +3522,22 @@ function App() {
                         )}
 
                         {/* Brand Ticker (Futuristic) */}
-                        <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-2">
-                            <div className="ticker-wrap">
-                                <div className="ticker-content font-mono text-cyan-500/50 text-sm tracking-[0.5em] uppercase flex items-center gap-12">
-                                    <span>Sustore Tech</span><span>•</span>
-                                    <span>Future Ready</span><span>•</span>
-                                    <span>Premium Quality</span><span>•</span>
-                                    <span>Next Gen Audio</span><span>•</span>
-                                    <span>Sustore Tech</span><span>•</span>
-                                    <span>Future Ready</span><span>•</span>
-                                    <span>Premium Quality</span><span>•</span>
-                                    <span>Next Gen Audio</span>
+                        {settings?.showBrandTicker !== false && (
+                            <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-2">
+                                <div className="ticker-wrap">
+                                    <div className="ticker-content font-mono text-cyan-500/50 text-sm tracking-[0.5em] uppercase flex items-center gap-12">
+                                        <span>{settings?.storeName || 'SUSTORE'} Tech</span><span>•</span>
+                                        <span>Future Ready</span><span>•</span>
+                                        <span>Premium Quality</span><span>•</span>
+                                        <span>Next Gen Audio</span><span>•</span>
+                                        <span>{settings?.storeName || 'SUSTORE'} Tech</span><span>•</span>
+                                        <span>Future Ready</span><span>•</span>
+                                        <span>Premium Quality</span><span>•</span>
+                                        <span>Next Gen Audio</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Banner Hero */}
                         <div className="relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border border-slate-800 group relative bg-[#080808] container-tv">
@@ -3550,13 +3552,17 @@ function App() {
                             {/* Overlay de Texto */}
                             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10 p-12">
                                 <div className="max-w-2xl animate-fade-up">
-                                    <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">Nueva Colección 2026</span>
+                                    <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
+                                        {settings?.heroBadge || 'Nueva Colección 2026'}
+                                    </span>
                                     <h1 className="text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-4 neon-text">
-                                        TECNOLOGÍA <br />
-                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">DEL FUTURO</span>
+                                        {settings?.heroTitle1 || 'TECNOLOGÍA'} <br />
+                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+                                            {settings?.heroTitle2 || 'DEL FUTURO'}
+                                        </span>
                                     </h1>
                                     <p className="text-slate-400 text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium">
-                                        Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado.
+                                        {settings?.heroSubtitle || 'Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado.'}
                                     </p>
                                     <div className="flex items-center gap-4">
                                         <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn">
@@ -6784,6 +6790,123 @@ function App() {
                                                         </div>
                                                     </div>
                                                 </div>
+
+                                                {/* Hero Banner Configuration */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <ImageIcon className="w-5 h-5 text-purple-400" /> Banner Principal (Hero)
+                                                    </h3>
+                                                    <div className="space-y-6">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Badge/Etiqueta</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.heroBadge || ''}
+                                                                onChange={e => setSettings({ ...settings, heroBadge: e.target.value })}
+                                                                placeholder="Nueva Colección 2026"
+                                                            />
+                                                        </div>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 1</label>
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.heroTitle1 || ''}
+                                                                    onChange={e => setSettings({ ...settings, heroTitle1: e.target.value })}
+                                                                    placeholder="TECNOLOGÍA"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 2</label>
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.heroTitle2 || ''}
+                                                                    onChange={e => setSettings({ ...settings, heroTitle2: e.target.value })}
+                                                                    placeholder="DEL FUTURO"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Subtítulo</label>
+                                                            <textarea
+                                                                className="input-cyber w-full p-3 h-20 resize-none"
+                                                                value={settings?.heroSubtitle || ''}
+                                                                onChange={e => setSettings({ ...settings, heroSubtitle: e.target.value })}
+                                                                placeholder="Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado."
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL de Imagen de Fondo</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.heroUrl || ''}
+                                                                onChange={e => setSettings({ ...settings, heroUrl: e.target.value })}
+                                                                placeholder="https://images.unsplash.com/..."
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-1">Recomendado: 1920x800 px mínimo</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Footer Contact Configuration */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <MessageCircle className="w-5 h-5 text-green-400" /> Sección Contacto (Footer)
+                                                    </h3>
+                                                    <div className="space-y-6">
+                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div>
+                                                                <p className="font-bold text-white">Mostrar Sección</p>
+                                                                <p className="text-xs text-slate-500">Activa/desactiva la sección de contacto en el footer</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, showFooterContact: settings?.showFooterContact === false ? true : false })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.showFooterContact !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showFooterContact !== false ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.footerContactTitle || ''}
+                                                                onChange={e => setSettings({ ...settings, footerContactTitle: e.target.value })}
+                                                                placeholder="Contacto"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.footerContactDescription || ''}
+                                                                onChange={e => setSettings({ ...settings, footerContactDescription: e.target.value })}
+                                                                placeholder="¿Tienes alguna duda? Estamos aquí para ayudarte."
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Botón</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.footerContactButtonText || ''}
+                                                                onChange={e => setSettings({ ...settings, footerContactButtonText: e.target.value })}
+                                                                placeholder="Contactar Soporte"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo de Contacto</label>
+                                                            <select
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.footerContactType || 'whatsapp'}
+                                                                onChange={e => setSettings({ ...settings, footerContactType: e.target.value })}
+                                                            >
+                                                                <option value="whatsapp">WhatsApp</option>
+                                                                <option value="instagram">Instagram</option>
+                                                                <option value="email">Email</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
@@ -7180,6 +7303,34 @@ function App() {
                                                                 onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
                                                                 placeholder="Cargando sistema..."
                                                             />
+                                                        </div>
+
+                                                        {/* Show Announcement Banner */}
+                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div>
+                                                                <p className="font-bold text-white">Banner de Anuncio</p>
+                                                                <p className="text-xs text-slate-500">Barra superior con mensaje promocional</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, showAnnouncementBanner: settings?.showAnnouncementBanner === false ? true : false })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.showAnnouncementBanner !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showAnnouncementBanner !== false ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Show Brand Ticker */}
+                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div>
+                                                                <p className="font-bold text-white">Ticker de Marca</p>
+                                                                <p className="text-xs text-slate-500">Texto en movimiento debajo del anuncio</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
+                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
+                                                            </button>
                                                         </div>
 
                                                         {/* Show Stock */}
@@ -7701,15 +7852,31 @@ function App() {
                             </div>
 
                             {/* Columna 3: Soporte */}
-                            <div className="space-y-6">
-                                <h3 className="text-white font-bold uppercase tracking-widest text-xs">Contacto</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed mb-4">
-                                    ¿Tienes alguna duda? Estamos aquí para ayudarte.
-                                </p>
-                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="px-6 py-3 bg-cyan-900/10 text-cyan-400 rounded-xl text-sm font-bold border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition w-full md:w-auto">
-                                    Contactar Soporte
-                                </button>
-                            </div>
+                            {settings?.showFooterContact !== false && (
+                                <div className="space-y-6">
+                                    <h3 className="text-white font-bold uppercase tracking-widest text-xs">
+                                        {settings?.footerContactTitle || 'Contacto'}
+                                    </h3>
+                                    <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                        {settings?.footerContactDescription || '¿Tienes alguna duda? Estamos aquí para ayudarte.'}
+                                    </p>
+                                    <button
+                                        onClick={() => {
+                                            const type = settings?.footerContactType || 'whatsapp';
+                                            if (type === 'whatsapp' && settings?.whatsappLink) {
+                                                window.open(settings.whatsappLink, '_blank');
+                                            } else if (type === 'instagram' && settings?.instagramLink) {
+                                                window.open(settings.instagramLink, '_blank');
+                                            } else if (type === 'email' && settings?.contactEmail) {
+                                                window.open(`mailto:${settings.contactEmail}`, '_blank');
+                                            }
+                                        }}
+                                        className="px-6 py-3 bg-cyan-900/10 text-cyan-400 rounded-xl text-sm font-bold border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition w-full md:w-auto"
+                                    >
+                                        {settings?.footerContactButtonText || 'Contactar Soporte'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Copyright Bar */}
