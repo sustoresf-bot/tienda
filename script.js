@@ -341,6 +341,7 @@ function App() {
     const [mpBrickController, setMpBrickController] = useState(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
     const [paymentError, setPaymentError] = useState(null);
+    const isInitializingBrick = useRef(false);
     const cardPaymentBrickRef = useRef(null);
 
 
@@ -1227,9 +1228,8 @@ function App() {
     // --- FUNCIONES DE MERCADO PAGO CARD PAYMENT BRICK ---
 
     // Inicializar el Card Payment Brick cuando se selecciona Mercado Pago
-    let isInitializingBrick = false;
     const initializeCardPaymentBrick = async () => {
-        if (isInitializingBrick) return;
+        if (isInitializingBrick.current) return;
 
         // Resetear estados al iniciar por si quedaron de una compra anterior
         setIsPaymentProcessing(false);
@@ -1247,13 +1247,13 @@ function App() {
         const container = document.getElementById('cardPaymentBrick_container');
         if (!container) return;
 
-        isInitializingBrick = true;
+        isInitializingBrick.current = true;
 
         // Limpiar brick anterior si existe
         if (mpBrickController) {
             try {
                 await mpBrickController.unmount();
-                mpBrickController = null;
+                setMpBrickController(null);
             } catch (e) {
                 console.warn('Error unmounting:', e);
             }
@@ -1295,7 +1295,7 @@ function App() {
                 callbacks: {
                     onReady: () => {
                         console.log('✅ Mercado Pago: Card Payment Brick cargado.');
-                        isInitializingBrick = false;
+                        isInitializingBrick.current = false;
                     },
                     onSubmit: async (cardFormData) => {
                         console.log('🚀 Mercado Pago: Procesando pago...');
@@ -1337,8 +1337,8 @@ function App() {
                                 if (mpBrickController) {
                                     try {
                                         await mpBrickController.unmount();
-                                        mpBrickController = null;
                                     } catch (e) { console.log(e); }
+                                    setMpBrickController(null);
                                 }
                             } else {
                                 // ERROR DE NEGOCIO (Pago rechazado, tarjeta inválida, etc)
@@ -1367,7 +1367,7 @@ function App() {
                     },
                     onError: (error) => {
                         console.error('❌ Mercado Pago Error:', error);
-                        isInitializingBrick = false;
+                        isInitializingBrick.current = false;
                         // No mostrar error si es solo por AdBlock
                         if (error && error.message && error.message.includes('melidata')) return;
                         setPaymentError('Error en el formulario. Verificá tus claves de producción.');
@@ -1378,7 +1378,7 @@ function App() {
             setMpBrickController(controller);
         } catch (error) {
             console.error('Error creating brick:', error);
-            isInitializingBrick = false;
+            isInitializingBrick.current = false;
             showToast('Error al cargar el formulario de pago.', 'error');
         }
     };
@@ -1499,7 +1499,7 @@ function App() {
 
     // Effect para inicializar el Brick cuando se selecciona MP
     useEffect(() => {
-        if (checkoutData.paymentChoice === 'Mercado Pago' && finalTotal > 0 && currentUser && cart.length > 0) {
+        if (checkoutData.paymentChoice === 'Mercado Pago' && finalTotal > 0 && currentUser && cart.length > 0 && view === 'checkout') {
             // Pequeño delay para asegurar que el DOM está listo
             const timer = setTimeout(() => {
                 const container = document.getElementById('cardPaymentBrick_container');
@@ -1515,7 +1515,7 @@ function App() {
             } catch (e) { }
             setMpBrickController(null);
         }
-    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length]);
+    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
