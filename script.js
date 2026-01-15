@@ -5987,191 +5987,211 @@ function App() {
                                         </h1>
 
                                         {/* Formulario Nueva Promo */}
-                                        <div className="bg-[#0a0a0a] border border-purple-500/30 p-8 rounded-[2rem] mb-10 shadow-2xl">
-                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                {isEditingPromo ? <Edit className="w-5 h-5 text-purple-400" /> : <Plus className="w-5 h-5 text-green-400" />}
-                                                {isEditingPromo ? 'Editar Promo' : 'Crear Nueva Promo'}
-                                            </h3>
+                                        {/* Formulario Nueva Promo o Banner Upgrade */}
+                                        {(!((settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && promos.length >= 1) || isEditingPromo) ? (
+                                            <div className="bg-[#0a0a0a] border border-purple-500/30 p-8 rounded-[2rem] mb-10 shadow-2xl">
+                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                    {isEditingPromo ? <Edit className="w-5 h-5 text-purple-400" /> : <Plus className="w-5 h-5 text-green-400" />}
+                                                    {isEditingPromo ? 'Editar Promo' : 'Crear Nueva Promo'}
+                                                </h3>
 
-                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                                {/* Datos Básicos */}
-                                                <div className="space-y-4">
-                                                    <input
-                                                        type="text"
-                                                        className="input-cyber w-full p-4"
-                                                        placeholder="Nombre de la Promo"
-                                                        value={newPromo.name}
-                                                        onChange={e => setNewPromo({ ...newPromo, name: e.target.value })}
-                                                    />
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div className="relative">
-                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                                            <input
-                                                                type="number"
-                                                                className="input-cyber w-full p-4 pl-8"
-                                                                placeholder="Precio"
-                                                                value={newPromo.price}
-                                                                onChange={e => setNewPromo({ ...newPromo, price: e.target.value })}
-                                                            />
-                                                        </div>
-                                                        <div className="p-4 bg-slate-900 rounded-xl border border-slate-700 text-slate-400 font-mono text-sm flex items-center">
-                                                            Costo: ${newPromo.items.reduce((acc, item) => {
-                                                                const p = products.find(prod => prod.id === item.productId);
-                                                                return acc + ((Number(p?.basePrice) || 0) * item.quantity);
-                                                            }, 0).toLocaleString()}
-                                                        </div>
-                                                    </div>
-                                                    <div className="mb-4">
-                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen de la Promo</label>
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                    {/* Datos Básicos */}
+                                                    <div className="space-y-4">
                                                         <input
-                                                            type="file"
-                                                            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
-                                                            accept="image/*"
-                                                            onChange={e => handleImageUpload(e, setNewPromo)}
+                                                            type="text"
+                                                            className="input-cyber w-full p-4"
+                                                            placeholder="Nombre de la Promo"
+                                                            value={newPromo.name}
+                                                            onChange={e => setNewPromo({ ...newPromo, name: e.target.value })}
                                                         />
-                                                        {newPromo.image && (
-                                                            <div className="mt-2 relative group w-32 aspect-video overflow-hidden rounded-xl border border-slate-700">
-                                                                <img src={newPromo.image} className="w-full h-full object-cover" />
-                                                                <button onClick={() => setNewPromo({ ...newPromo, image: '' })} className="absolute top-1 right-1 bg-black/50 p-1 rounded-full text-white hover:bg-red-500 transition opacity-0 group-hover:opacity-100">
-                                                                    <X className="w-3 h-3" />
-                                                                </button>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="relative">
+                                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                                                                <input
+                                                                    type="number"
+                                                                    className="input-cyber w-full p-4 pl-8"
+                                                                    placeholder="Precio"
+                                                                    value={newPromo.price}
+                                                                    onChange={e => setNewPromo({ ...newPromo, price: e.target.value })}
+                                                                />
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                    <textarea
-                                                        className="input-cyber w-full p-4 h-20 resize-none"
-                                                        placeholder="Descripción breve..."
-                                                        value={newPromo.description}
-                                                        onChange={e => setNewPromo({ ...newPromo, description: e.target.value })}
-                                                    />
-                                                </div>
-
-                                                {/* Constructor de Bundle */}
-                                                <div className="bg-slate-900/40 p-6 rounded-2xl border border-slate-800">
-                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                                        <Package className="w-4 h-4" /> Productos Incluidos
-                                                    </p>
-
-                                                    <div className="flex gap-2 mb-4">
-                                                        <select
-                                                            className="input-cyber flex-1 p-3 text-sm"
-                                                            value={selectedPromoProduct}
-                                                            onChange={e => setSelectedPromoProduct(e.target.value)}
-                                                        >
-                                                            <option value="">Agregar producto...</option>
-                                                            {products.map(p => (
-                                                                <option key={p.id} value={p.id}>{p.name} (${Number(p.basePrice)})</option>
-                                                            ))}
-                                                        </select>
-                                                        <input
-                                                            type="number"
-                                                            className="input-cyber w-20 p-3 text-sm text-center"
-                                                            value={promoProductQty}
-                                                            min="1"
-                                                            onChange={e => setPromoProductQty(Math.max(1, parseInt(e.target.value) || 1))}
-                                                        />
-                                                        <button
-                                                            onClick={() => {
-                                                                if (!selectedPromoProduct) return;
-                                                                const exists = newPromo.items.find(i => i.productId === selectedPromoProduct);
-                                                                if (exists) {
-                                                                    setNewPromo({
-                                                                        ...newPromo,
-                                                                        items: newPromo.items.map(i => i.productId === selectedPromoProduct ? { ...i, quantity: i.quantity + promoProductQty } : i)
-                                                                    });
-                                                                } else {
-                                                                    setNewPromo({
-                                                                        ...newPromo,
-                                                                        items: [...newPromo.items, { productId: selectedPromoProduct, quantity: promoProductQty }]
-                                                                    });
-                                                                }
-                                                                setSelectedPromoProduct('');
-                                                                setPromoProductQty(1);
-                                                            }}
-                                                            className="p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition"
-                                                        >
-                                                            <Plus className="w-5 h-5" />
-                                                        </button>
-                                                    </div>
-
-                                                    <div className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar">
-                                                        {newPromo.items.map((item, idx) => {
-                                                            const p = products.find(prod => prod.id === item.productId);
-                                                            if (!p) return null;
-                                                            return (
-                                                                <div key={idx} className="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <img src={p.image} className="w-8 h-8 rounded bg-white object-contain p-0.5" />
-                                                                        <div>
-                                                                            <p className="text-sm font-bold text-white truncate max-w-[120px]">{p.name}</p>
-                                                                            <p className="text-xs text-slate-500">{item.quantity} un. x ${p.basePrice}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setNewPromo({ ...newPromo, items: newPromo.items.filter((_, i) => i !== idx) })}
-                                                                        className="text-red-500 hover:text-red-400 p-1"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4" />
+                                                            <div className="p-4 bg-slate-900 rounded-xl border border-slate-700 text-slate-400 font-mono text-sm flex items-center">
+                                                                Costo: ${newPromo.items.reduce((acc, item) => {
+                                                                    const p = products.find(prod => prod.id === item.productId);
+                                                                    return acc + ((Number(p?.basePrice) || 0) * item.quantity);
+                                                                }, 0).toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                        <div className="mb-4">
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen de la Promo</label>
+                                                            <input
+                                                                type="file"
+                                                                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
+                                                                accept="image/*"
+                                                                onChange={e => handleImageUpload(e, setNewPromo)}
+                                                            />
+                                                            {newPromo.image && (
+                                                                <div className="mt-2 relative group w-32 aspect-video overflow-hidden rounded-xl border border-slate-700">
+                                                                    <img src={newPromo.image} className="w-full h-full object-cover" />
+                                                                    <button onClick={() => setNewPromo({ ...newPromo, image: '' })} className="absolute top-1 right-1 bg-black/50 p-1 rounded-full text-white hover:bg-red-500 transition opacity-0 group-hover:opacity-100">
+                                                                        <X className="w-3 h-3" />
                                                                     </button>
                                                                 </div>
-                                                            );
-                                                        })}
-                                                        {newPromo.items.length === 0 && (
-                                                            <div className="text-center py-6 text-slate-600 italic text-sm border border-dashed border-slate-800 rounded-lg">
-                                                                Agrega productos para armar el combo
-                                                            </div>
-                                                        )}
+                                                            )}
+                                                        </div>
+                                                        <textarea
+                                                            className="input-cyber w-full p-4 h-20 resize-none"
+                                                            placeholder="Descripción breve..."
+                                                            value={newPromo.description}
+                                                            onChange={e => setNewPromo({ ...newPromo, description: e.target.value })}
+                                                        />
+                                                    </div>
+
+                                                    {/* Constructor de Bundle */}
+                                                    <div className="bg-slate-900/40 p-6 rounded-2xl border border-slate-800">
+                                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                                            <Package className="w-4 h-4" /> Productos Incluidos
+                                                        </p>
+
+                                                        <div className="flex gap-2 mb-4">
+                                                            <select
+                                                                className="input-cyber flex-1 p-3 text-sm"
+                                                                value={selectedPromoProduct}
+                                                                onChange={e => setSelectedPromoProduct(e.target.value)}
+                                                            >
+                                                                <option value="">Agregar producto...</option>
+                                                                {products.map(p => (
+                                                                    <option key={p.id} value={p.id}>{p.name} (${Number(p.basePrice)})</option>
+                                                                ))}
+                                                            </select>
+                                                            <input
+                                                                type="number"
+                                                                className="input-cyber w-20 p-3 text-sm text-center"
+                                                                value={promoProductQty}
+                                                                min="1"
+                                                                onChange={e => setPromoProductQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                            />
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (!selectedPromoProduct) return;
+                                                                    const exists = newPromo.items.find(i => i.productId === selectedPromoProduct);
+                                                                    if (exists) {
+                                                                        setNewPromo({
+                                                                            ...newPromo,
+                                                                            items: newPromo.items.map(i => i.productId === selectedPromoProduct ? { ...i, quantity: i.quantity + promoProductQty } : i)
+                                                                        });
+                                                                    } else {
+                                                                        setNewPromo({
+                                                                            ...newPromo,
+                                                                            items: [...newPromo.items, { productId: selectedPromoProduct, quantity: promoProductQty }]
+                                                                        });
+                                                                    }
+                                                                    setSelectedPromoProduct('');
+                                                                    setPromoProductQty(1);
+                                                                }}
+                                                                className="p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition"
+                                                            >
+                                                                <Plus className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar">
+                                                            {newPromo.items.map((item, idx) => {
+                                                                const p = products.find(prod => prod.id === item.productId);
+                                                                if (!p) return null;
+                                                                return (
+                                                                    <div key={idx} className="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <img src={p.image} className="w-8 h-8 rounded bg-white object-contain p-0.5" />
+                                                                            <div>
+                                                                                <p className="text-sm font-bold text-white truncate max-w-[120px]">{p.name}</p>
+                                                                                <p className="text-xs text-slate-500">{item.quantity} un. x ${p.basePrice}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setNewPromo({ ...newPromo, items: newPromo.items.filter((_, i) => i !== idx) })}
+                                                                            className="text-red-500 hover:text-red-400 p-1"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                            {newPromo.items.length === 0 && (
+                                                                <div className="text-center py-6 text-slate-600 italic text-sm border border-dashed border-slate-800 rounded-lg">
+                                                                    Agrega productos para armar el combo
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            <div className="flex gap-4 justify-end mt-6">
-                                                {isEditingPromo && (
+                                                <div className="flex gap-4 justify-end mt-6">
+                                                    {isEditingPromo && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setIsEditingPromo(false);
+                                                                setEditingPromoId(null);
+                                                                setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
+                                                            }}
+                                                            className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    )}
                                                     <button
-                                                        onClick={() => {
-                                                            setIsEditingPromo(false);
-                                                            setEditingPromoId(null);
-                                                            setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
-                                                        }}
-                                                        className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
-                                                    >
-                                                        Cancelar
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={async () => {
-                                                        if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
-                                                            return showToast("Completa nombre, precio y agrega productos.", "warning");
-                                                        }
-
-                                                        setIsLoading(true);
-                                                        try {
-                                                            if (isEditingPromo && editingPromoId) {
-                                                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
-                                                                showToast("Promo actualizada", "success");
-                                                            } else {
-                                                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
-                                                                    ...newPromo,
-                                                                    createdAt: new Date().toISOString()
-                                                                });
-                                                                showToast("Promo creada exitosamente", "success");
+                                                        onClick={async () => {
+                                                            if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
+                                                                return showToast("Completa nombre, precio y agrega productos.", "warning");
                                                             }
-                                                            setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
-                                                            setIsEditingPromo(false);
-                                                            setEditingPromoId(null);
-                                                        } catch (e) {
-                                                            console.error(e);
-                                                            showToast("Error al guardar promo", "error");
-                                                        } finally {
-                                                            setIsLoading(false);
-                                                        }
-                                                    }}
-                                                    className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
+
+                                                            setIsLoading(true);
+                                                            try {
+                                                                if (isEditingPromo && editingPromoId) {
+                                                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
+                                                                    showToast("Promo actualizada", "success");
+                                                                } else {
+                                                                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
+                                                                        ...newPromo,
+                                                                        createdAt: new Date().toISOString()
+                                                                    });
+                                                                    showToast("Promo creada exitosamente", "success");
+                                                                }
+                                                                setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
+                                                                setIsEditingPromo(false);
+                                                                setEditingPromoId(null);
+                                                            } catch (e) {
+                                                                console.error(e);
+                                                                showToast("Error al guardar promo", "error");
+                                                            } finally {
+                                                                setIsLoading(false);
+                                                            }
+                                                        }}
+                                                        className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
+                                                    >
+                                                        {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] mb-10 shadow-xl flex flex-col items-center justify-center text-center animate-fade-up">
+                                                <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30">
+                                                    <Lock className="w-10 h-10 text-purple-400" />
+                                                </div>
+                                                <h3 className="text-2xl font-black text-white mb-2">Límite de Promos Alcanzado</h3>
+                                                <p className="text-slate-400 max-w-md mb-8">
+                                                    Tu plan actual te permite tener hasta <strong className="text-white">1 promo activa</strong>.
+                                                    Para crear más promociones ilimitadas, actualiza tu plan.
+                                                </p>
+                                                <button
+                                                    onClick={() => setShowPlansModal(true)}
+                                                    className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
                                                 >
-                                                    {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
+                                                    <Zap className="w-5 h-5" /> Mejorar mi Plan
                                                 </button>
                                             </div>
-                                        </div>
+                                        )}
 
                                         {/* Lista de Promos */}
                                         {/* Lista de Promos */}
@@ -8178,7 +8198,7 @@ function App() {
                                 </div>
                                 <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
                                 <p className="text-sm text-slate-400 mb-4">Para marcas con identidad.</p>
-                                <div className="text-2xl font-black text-purple-400 mb-6">$14.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                <div className="text-2xl font-black text-purple-400 mb-6">$13.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
                                 <p className="text-xs text-purple-400 mb-3 font-bold">Todo lo del Emprendedor +</p>
                                 <ul className="space-y-2 text-sm text-slate-300">
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
@@ -8210,9 +8230,18 @@ function App() {
                             </div>
                         </div>
 
-                        <div className="mt-8 p-4 bg-slate-900/50 rounded-xl border border-slate-800 text-center">
-                            <p className="text-slate-400 text-sm">Para actualizar tu plan, contacta al desarrollador:</p>
-                            <p className="text-cyan-400 font-bold mt-1">lautarocorazza63@gmail.com</p>
+                        <div className="mt-8 p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-slate-700 text-center relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-cyan-500/5 blur-xl group-hover:bg-cyan-500/10 transition duration-500"></div>
+                            <div className="relative z-10 flex flex-col items-center justify-center gap-2">
+                                <div className="bg-slate-900 p-3 rounded-full border border-slate-700 mb-2 shadow-lg">
+                                    <Zap className="w-6 h-6 text-cyan-400" />
+                                </div>
+                                <p className="text-slate-300 font-medium">¿Listo para escalar tu negocio?</p>
+                                <p className="text-sm text-slate-500">Para actualizar tu plan inmediatamente, contáctanos:</p>
+                                <a href="mailto:lautarocorazza63@gmail.com" className="text-cyan-400 font-black text-lg hover:text-cyan-300 transition mt-1 flex items-center gap-2 hover:scale-105 transform duration-200">
+                                    lautarocorazza63@gmail.com
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
