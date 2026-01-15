@@ -1296,8 +1296,10 @@ function App() {
                                 await confirmOrderAfterPayment(result.id);
                                 showToast('¡Compra realizada!', 'success');
                             } else {
+                                // Mostrar el motivo específico del rechazo (ej: cc_rejected_insufficient_amount)
                                 const detailedError = result.status_detail || result.error || 'Pago rechazado';
-                                setPaymentError(`Error: ${detailedError}`);
+                                console.error('❌ Motivo del rechazo:', detailedError);
+                                setPaymentError(`El pago fue rechazado: ${detailedError}`);
                                 showToast('El pago no pudo procesarse.', 'error');
                             }
                         } catch (error) {
