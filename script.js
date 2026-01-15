@@ -1252,16 +1252,11 @@ function App() {
                                 borderRadiusMedium: '12px',
                                 borderRadiusLarge: '16px',
                                 inputBackgroundColor: '#1e293b',
-                                inputFontSize: '14px',
                             },
                         },
                     },
                     paymentMethods: {
                         maxInstallments: 12,
-                        // Tarjetas más comunes en Argentina
-                        types: {
-                            included: ['credit_card', 'debit_card'],
-                        },
                     },
                 },
                 callbacks: {
