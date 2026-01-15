@@ -3073,6 +3073,11 @@ function App() {
 
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), firestoreUpdate);
 
+                // Si estamos editando nuestro propio usuario, actualizar el estado global inmediatamente
+                if (currentUser && currentUser.id === user.id) {
+                    setCurrentUser(prev => ({ ...prev, ...firestoreUpdate }));
+                }
+
                 showToast("Perfil de usuario actualizado correctamente.", "success");
                 closeDrawer();
             } catch (e) {
