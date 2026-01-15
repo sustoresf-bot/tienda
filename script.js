@@ -337,6 +337,9 @@ function App() {
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('all');
 
+    // Estado para Modal de Planes (cuando hacen clic en el overlay de restricción)
+    const [showPlansModal, setShowPlansModal] = useState(false);
+
     // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
     const [mpBrickController, setMpBrickController] = useState(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
@@ -597,6 +600,23 @@ function App() {
             setTimeout(() => setIsLoading(false), 1000);
         });
     }, []);
+
+    // CSS Variable Injection for Dynamic Theme Colors
+    useEffect(() => {
+        if (settings) {
+            const root = document.documentElement;
+            const primaryColor = settings.primaryColor || '#06b6d4';
+            const secondaryColor = settings.secondaryColor || '#8b5cf6';
+            const accentColor = settings.accentColor || '#22c55e';
+
+            root.style.setProperty('--color-primary', primaryColor);
+            root.style.setProperty('--color-secondary', secondaryColor);
+            root.style.setProperty('--color-accent', accentColor);
+
+            // Also apply to common elements dynamically
+            // This ensures changes take effect immediately without page reload
+        }
+    }, [settings?.primaryColor, settings?.secondaryColor, settings?.accentColor]);
 
     // 4. Suscripciones a Colecciones (Snapshot Listeners)
     useEffect(() => {
@@ -5699,13 +5719,16 @@ function App() {
                                                                     <td className="p-8 relative">
                                                                         {/* Blur Overlay for Entrepreneur Plan */}
                                                                         {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
-                                                                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl">
+                                                                            <button
+                                                                                onClick={() => setShowPlansModal(true)}
+                                                                                className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-black/70 transition group"
+                                                                            >
                                                                                 <div className="text-center">
-                                                                                    <Lock className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
+                                                                                    <Lock className="w-6 h-6 text-yellow-500 mx-auto mb-2 group-hover:scale-110 transition" />
                                                                                     <p className="text-xs font-black text-yellow-400 uppercase tracking-wider">Plan Negocio</p>
-                                                                                    <p className="text-[10px] text-slate-400">Mejora para ver estadísticas</p>
+                                                                                    <p className="text-[10px] text-slate-400 group-hover:text-white transition">Clic para ver planes</p>
                                                                                 </div>
-                                                                            </div>
+                                                                            </button>
                                                                         )}
                                                                         <div className={`flex flex-col items-center gap-3 ${(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) ? 'filter blur-sm pointer-events-none' : ''}`}>
                                                                             <div className="flex gap-2">
@@ -6634,71 +6657,126 @@ function App() {
                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                         <Share2 className="w-5 h-5 text-blue-400" /> Redes Sociales
                                                     </h3>
+                                                    <p className="text-sm text-slate-500 mb-6">Configura los enlaces y activa/desactiva la visibilidad de cada red social en el footer.</p>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
-                                                                <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
-                                                            </label>
+                                                        {/* WhatsApp */}
+                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                    <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
+                                                                </label>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showWhatsapp: settings?.showWhatsapp === false ? true : false })}
+                                                                    className={`w-12 h-6 rounded-full transition relative ${settings?.showWhatsapp !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showWhatsapp !== false ? 'left-6' : 'left-0.5'}`}></div>
+                                                                </button>
+                                                            </div>
                                                             <input
-                                                                className="input-cyber w-full p-4"
+                                                                className="input-cyber w-full p-3 text-sm"
                                                                 value={settings?.whatsappLink || ''}
                                                                 onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
                                                                 placeholder="https://wa.me/5491112345678"
                                                             />
                                                         </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
-                                                                <Instagram className="w-4 h-4 text-pink-400" /> Instagram
-                                                            </label>
+                                                        {/* Instagram */}
+                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                    <Instagram className="w-4 h-4 text-pink-400" /> Instagram
+                                                                </label>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showInstagram: settings?.showInstagram === false ? true : false })}
+                                                                    className={`w-12 h-6 rounded-full transition relative ${settings?.showInstagram !== false ? 'bg-pink-500' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showInstagram !== false ? 'left-6' : 'left-0.5'}`}></div>
+                                                                </button>
+                                                            </div>
                                                             <input
-                                                                className="input-cyber w-full p-4"
+                                                                className="input-cyber w-full p-3 text-sm"
                                                                 value={settings?.instagramLink || ''}
                                                                 onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
                                                                 placeholder="https://instagram.com/mitienda"
                                                             />
                                                         </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
-                                                                <Facebook className="w-4 h-4 text-blue-500" /> Facebook
-                                                            </label>
+                                                        {/* Facebook */}
+                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                    <Facebook className="w-4 h-4 text-blue-500" /> Facebook
+                                                                </label>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showFacebook: !settings?.showFacebook })}
+                                                                    className={`w-12 h-6 rounded-full transition relative ${settings?.showFacebook ? 'bg-blue-500' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showFacebook ? 'left-6' : 'left-0.5'}`}></div>
+                                                                </button>
+                                                            </div>
                                                             <input
-                                                                className="input-cyber w-full p-4"
+                                                                className="input-cyber w-full p-3 text-sm"
                                                                 value={settings?.facebookLink || ''}
                                                                 onChange={e => setSettings({ ...settings, facebookLink: e.target.value })}
                                                                 placeholder="https://facebook.com/mitienda"
                                                             />
                                                         </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
-                                                                <Twitter className="w-4 h-4 text-sky-400" /> Twitter/X
-                                                            </label>
+                                                        {/* Twitter */}
+                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                    <Twitter className="w-4 h-4 text-sky-400" /> Twitter/X
+                                                                </label>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showTwitter: !settings?.showTwitter })}
+                                                                    className={`w-12 h-6 rounded-full transition relative ${settings?.showTwitter ? 'bg-sky-500' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTwitter ? 'left-6' : 'left-0.5'}`}></div>
+                                                                </button>
+                                                            </div>
                                                             <input
-                                                                className="input-cyber w-full p-4"
+                                                                className="input-cyber w-full p-3 text-sm"
                                                                 value={settings?.twitterLink || ''}
                                                                 onChange={e => setSettings({ ...settings, twitterLink: e.target.value })}
                                                                 placeholder="https://twitter.com/mitienda"
                                                             />
                                                         </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
-                                                                <Music className="w-4 h-4 text-rose-400" /> TikTok
-                                                            </label>
+                                                        {/* TikTok */}
+                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                    <Music className="w-4 h-4 text-rose-400" /> TikTok
+                                                                </label>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showTiktok: !settings?.showTiktok })}
+                                                                    className={`w-12 h-6 rounded-full transition relative ${settings?.showTiktok ? 'bg-rose-500' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTiktok ? 'left-6' : 'left-0.5'}`}></div>
+                                                                </button>
+                                                            </div>
                                                             <input
-                                                                className="input-cyber w-full p-4"
+                                                                className="input-cyber w-full p-3 text-sm"
                                                                 value={settings?.tiktokLink || ''}
                                                                 onChange={e => setSettings({ ...settings, tiktokLink: e.target.value })}
                                                                 placeholder="https://tiktok.com/@mitienda"
                                                             />
                                                         </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
-                                                                <Youtube className="w-4 h-4 text-red-500" /> YouTube
-                                                            </label>
+                                                        {/* YouTube */}
+                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                    <Youtube className="w-4 h-4 text-red-500" /> YouTube
+                                                                </label>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showYoutube: !settings?.showYoutube })}
+                                                                    className={`w-12 h-6 rounded-full transition relative ${settings?.showYoutube ? 'bg-red-500' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showYoutube ? 'left-6' : 'left-0.5'}`}></div>
+                                                                </button>
+                                                            </div>
                                                             <input
-                                                                className="input-cyber w-full p-4"
+                                                                className="input-cyber w-full p-3 text-sm"
                                                                 value={settings?.youtubeLink || ''}
                                                                 onChange={e => setSettings({ ...settings, youtubeLink: e.target.value })}
-                                                                placeholder="https://youtube.com/@mitienda"
+                                                                placeholder="https://youtube.com/c/mitienda"
                                                             />
                                                         </div>
                                                     </div>
@@ -7118,430 +7196,549 @@ function App() {
                                             </button>
                                         </div>
                                     </div>
-                                )}
+                                )
+                                }
 
                                 {/* 7.3 Modal Proveedores (Selector Visual) */}
-                                {showSupplierModal && (
-                                    <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in-scale">
-                                        <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-                                            <div className="overflow-y-auto custom-scrollbar pr-2 pb-20">
-                                                <h3 className="text-2xl font-black text-white mb-6 sticky top-0 bg-[#0a0a0a] py-2 z-10">
-                                                    {editingSupplierId ? 'Editar' : 'Nuevo'} Proveedor
-                                                </h3>
+                                {
+                                    showSupplierModal && (
+                                        <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in-scale">
+                                            <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+                                                <div className="overflow-y-auto custom-scrollbar pr-2 pb-20">
+                                                    <h3 className="text-2xl font-black text-white mb-6 sticky top-0 bg-[#0a0a0a] py-2 z-10">
+                                                        {editingSupplierId ? 'Editar' : 'Nuevo'} Proveedor
+                                                    </h3>
 
-                                                <div className="space-y-4 mb-6">
-                                                    <input className="input-cyber w-full p-4" placeholder="Nombre de la Empresa" value={newSupplier.name} onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })} />
-                                                    <input className="input-cyber w-full p-4" placeholder="Nombre del Contacto" value={newSupplier.contact} onChange={e => setNewSupplier({ ...newSupplier, contact: e.target.value })} />
+                                                    <div className="space-y-4 mb-6">
+                                                        <input className="input-cyber w-full p-4" placeholder="Nombre de la Empresa" value={newSupplier.name} onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })} />
+                                                        <input className="input-cyber w-full p-4" placeholder="Nombre del Contacto" value={newSupplier.contact} onChange={e => setNewSupplier({ ...newSupplier, contact: e.target.value })} />
 
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <input className="input-cyber w-full p-4" placeholder="Teléfono" value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} />
-                                                        <input className="input-cyber w-full p-4" placeholder="Instagram (sin @)" value={newSupplier.ig} onChange={e => setNewSupplier({ ...newSupplier, ig: e.target.value })} />
-                                                    </div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <input className="input-cyber w-full p-4" placeholder="Teléfono" value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} />
+                                                            <input className="input-cyber w-full p-4" placeholder="Instagram (sin @)" value={newSupplier.ig} onChange={e => setNewSupplier({ ...newSupplier, ig: e.target.value })} />
+                                                        </div>
 
-                                                    {/* Selector Visual de Productos */}
-                                                    <div className="border-t border-slate-800 pt-6 mt-6">
-                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">
-                                                            Asignar Productos Suministrados
-                                                        </label>
-                                                        <div className="h-48 overflow-y-auto bg-slate-900/50 rounded-xl p-2 border border-slate-800 custom-scrollbar">
-                                                            {products.length === 0 ? (
-                                                                <p className="text-center text-slate-600 text-xs py-4">Carga productos primero.</p>
-                                                            ) : products.map(p => (
-                                                                <div
-                                                                    key={p.id}
-                                                                    onClick={() => {
-                                                                        const prev = newSupplier.associatedProducts || [];
-                                                                        const exists = prev.includes(p.id);
-                                                                        setNewSupplier({
-                                                                            ...newSupplier,
-                                                                            associatedProducts: exists ? prev.filter(x => x !== p.id) : [...prev, p.id]
-                                                                        });
-                                                                    }}
-                                                                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer mb-1 transition ${newSupplier.associatedProducts?.includes(p.id) ? 'bg-cyan-900/30 border border-cyan-500/30' : 'hover:bg-slate-800 border border-transparent'}`}
-                                                                >
-                                                                    <div className="w-8 h-8 bg-white rounded p-0.5 flex-shrink-0">
-                                                                        <img src={p.image} className="w-full h-full object-contain" />
+                                                        {/* Selector Visual de Productos */}
+                                                        <div className="border-t border-slate-800 pt-6 mt-6">
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">
+                                                                Asignar Productos Suministrados
+                                                            </label>
+                                                            <div className="h-48 overflow-y-auto bg-slate-900/50 rounded-xl p-2 border border-slate-800 custom-scrollbar">
+                                                                {products.length === 0 ? (
+                                                                    <p className="text-center text-slate-600 text-xs py-4">Carga productos primero.</p>
+                                                                ) : products.map(p => (
+                                                                    <div
+                                                                        key={p.id}
+                                                                        onClick={() => {
+                                                                            const prev = newSupplier.associatedProducts || [];
+                                                                            const exists = prev.includes(p.id);
+                                                                            setNewSupplier({
+                                                                                ...newSupplier,
+                                                                                associatedProducts: exists ? prev.filter(x => x !== p.id) : [...prev, p.id]
+                                                                            });
+                                                                        }}
+                                                                        className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer mb-1 transition ${newSupplier.associatedProducts?.includes(p.id) ? 'bg-cyan-900/30 border border-cyan-500/30' : 'hover:bg-slate-800 border border-transparent'}`}
+                                                                    >
+                                                                        <div className="w-8 h-8 bg-white rounded p-0.5 flex-shrink-0">
+                                                                            <img src={p.image} className="w-full h-full object-contain" />
+                                                                        </div>
+                                                                        <span className="text-xs text-white truncate flex-1 font-medium">{p.name}</span>
+                                                                        {newSupplier.associatedProducts?.includes(p.id) && <CheckCircle className="w-4 h-4 text-cyan-400" />}
                                                                     </div>
-                                                                    <span className="text-xs text-white truncate flex-1 font-medium">{p.name}</span>
-                                                                    {newSupplier.associatedProducts?.includes(p.id) && <CheckCircle className="w-4 h-4 text-cyan-400" />}
-                                                                </div>
-                                                            ))}
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {/* Footer Botones Fixed */}
-                                            <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent flex gap-4">
-                                                <button onClick={() => setShowSupplierModal(false)} className="flex-1 py-4 text-slate-400 font-bold hover:text-white transition bg-slate-900 rounded-xl">Cancelar</button>
-                                                <button onClick={saveSupplierFn} className="flex-1 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold shadow-lg transition">Guardar</button>
+                                                {/* Footer Botones Fixed */}
+                                                <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent flex gap-4">
+                                                    <button onClick={() => setShowSupplierModal(false)} className="flex-1 py-4 text-slate-400 font-bold hover:text-white transition bg-slate-900 rounded-xl">Cancelar</button>
+                                                    <button onClick={saveSupplierFn} className="flex-1 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold shadow-lg transition">Guardar</button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                                    )
+                                }
+                            </div >
+                        </div >
                     ) : (
                         <AccessDenied onBack={() => setView('store')} />
                     ))}
 
                 {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
-                {view === 'privacy' && (
-                    <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
-                        <div className="glass p-12 rounded-[3rem] border border-slate-800">
-                            <div className="prose prose-invert max-w-none">
-                                <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                    Política de <span className="text-cyan-500 text-6xl">Privacidad</span>
-                                </h1>
-                                <p className="text-slate-400 text-lg leading-relaxed">
-                                    En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cómo recolectamos, usamos y resguardamos tu información.
-                                </p>
-                                <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
-                                <p className="text-slate-500 leadind-relaxed">
-                                    Recolectamos datos básicos como nombre, correo electrónico y número de teléfono únicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
-                                </p>
-                                <h2 className="text-2xl font-bold text-white mt-12 mb-6">2. Uso de los Datos</h2>
-                                <p className="text-slate-500 leadind-relaxed">
-                                    Tu información se utiliza exclusivamente para:
-                                </p>
-                                <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                    <li>Gestionar tus pedidos y entregas.</li>
-                                    <li>Enviar actualizaciones sobre el estado de tu compra.</li>
-                                    <li>Mejorar nuestros servicios y experiencia de usuario.</li>
-                                </ul>
-                                <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
-                                <p className="text-slate-500 leadind-relaxed">
-                                    Implementamos medidas de seguridad robustas y encriptación de datos para asegurar que tu información esté protegida contra accesos no autorizados.
-                                </p>
-                                <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
-                                <p className="text-slate-500 leadind-relaxed mb-12">
-                                    Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-cyan-400">{settings?.contactEmail || 'soporte@sustore.sf'}</span>.
-                                </p>
-                                <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
-                                    <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
-                {view === 'terms' && (
-                    <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
-                        <div className="glass p-12 rounded-[3rem] border border-slate-800">
-                            <div className="prose prose-invert max-w-none">
-                                <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                    Condiciones de <span className="text-cyan-500 text-6xl">Uso</span>
-                                </h1>
-                                <p className="text-slate-400 font-bold mb-8">Última actualización: 07 de enero de 2026</p>
-
-                                <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÉRMINOS LEGALES</h3>
-                                <p className="text-slate-500 leading-relaxed mb-4">
-                                    Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
-                                </p>
-                                <p className="text-slate-500 leading-relaxed mb-4">
-                                    Operamos el sitio web <a href="https://sustore.vercel.app" className="text-cyan-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
-                                </p>
-                                <p className="text-slate-500 leading-relaxed mb-4">
-                                    Puede contactarnos por correo electrónico a la dirección proporcionada al final de este documento.
-                                </p>
-                                <p className="text-slate-500 leading-relaxed mb-4">
-                                    Estos Términos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relación con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leído, comprendido y aceptado estar sujeto a todos estos Términos Legales. <strong className="text-red-400">SI NO ESTÁ DE ACUERDO CON TODOS ESTOS TÉRMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
-                                </p>
-
-                                <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 my-10">
-                                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">ÍNDICE</h3>
-                                    <ul className="space-y-2 text-sm text-cyan-400 font-medium">
-                                        <li><a href="#section1" className="hover:text-cyan-300 transition">1. NUESTROS SERVICIOS</a></li>
-                                        <li><a href="#section2" className="hover:text-cyan-300 transition">2. DERECHOS DE PROPIEDAD INTELECTUAL</a></li>
-                                        <li><a href="#section3" className="hover:text-cyan-300 transition">3. REPRESENTACIONES DE USUARIOS</a></li>
-                                        <li><a href="#section4" className="hover:text-cyan-300 transition">4. ACTIVIDADES PROHIBIDAS</a></li>
-                                        <li><a href="#section5" className="hover:text-cyan-300 transition">5. CONTRIBUCIONES GENERADAS POR EL USUARIO</a></li>
-                                        <li><a href="#section6" className="hover:text-cyan-300 transition">6. LICENCIA DE CONTRIBUCIÓN</a></li>
-                                        <li><a href="#section7" className="hover:text-cyan-300 transition">7. GESTIÓN DE SERVICIOS</a></li>
-                                        <li><a href="#section8" className="hover:text-cyan-300 transition">8. PLAZO Y TERMINACIÓN</a></li>
-                                        <li><a href="#section9" className="hover:text-cyan-300 transition">9. MODIFICACIONES E INTERRUPCIONES</a></li>
-                                        <li><a href="#section10" className="hover:text-cyan-300 transition">10. LEY APLICABLE</a></li>
-                                        <li><a href="#section11" className="hover:text-cyan-300 transition">11. RESOLUCIÓN DE DISPUTAS</a></li>
-                                        <li><a href="#section12" className="hover:text-cyan-300 transition">12. CORRECCIONES</a></li>
-                                        <li><a href="#section13" className="hover:text-cyan-300 transition">13. DESCARGO DE RESPONSABILIDAD</a></li>
-                                        <li><a href="#section14" className="hover:text-cyan-300 transition">14. LIMITACIONES DE RESPONSABILIDAD</a></li>
-                                        <li><a href="#section15" className="hover:text-cyan-300 transition">15. INDEMNIZACIÓN</a></li>
-                                        <li><a href="#section16" className="hover:text-cyan-300 transition">16. DATOS DEL USUARIO</a></li>
-                                        <li><a href="#section17" className="hover:text-cyan-300 transition">17. COMUNICACIONES ELECTRÓNICAS</a></li>
-                                        <li><a href="#section18" className="hover:text-cyan-300 transition">18. VARIOS</a></li>
-                                        <li><a href="#section19" className="hover:text-cyan-300 transition">19. CONTÁCTENOS</a></li>
-                                    </ul>
-                                </div>
-
-                                <section id="section1" className="mb-12">
-                                    <h2 className="text-2xl font-bold text-white mb-4">1. NUESTROS SERVICIOS</h2>
-                                    <p className="text-slate-500 leading-relaxed">
-                                        La información proporcionada al utilizar los Servicios no está destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicción o país donde dicha distribución o uso sería contrario a la ley o regulación o que nos sometería a cualquier requisito de registro dentro de dicha jurisdicción o país. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las únicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
+                {
+                    view === 'privacy' && (
+                        <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
+                            <div className="glass p-12 rounded-[3rem] border border-slate-800">
+                                <div className="prose prose-invert max-w-none">
+                                    <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
+                                        Política de <span className="text-cyan-500 text-6xl">Privacidad</span>
+                                    </h1>
+                                    <p className="text-slate-400 text-lg leading-relaxed">
+                                        En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cómo recolectamos, usamos y resguardamos tu información.
                                     </p>
-                                </section>
-
-                                <section id="section2" className="mb-12">
-                                    <h2 className="text-2xl font-bold text-white mb-4">2. DERECHOS DE PROPIEDAD INTELECTUAL</h2>
-                                    <h3 className="text-lg font-bold text-white mt-6 mb-2">Nuestra propiedad intelectual</h3>
-                                    <p className="text-slate-500 leading-relaxed mb-4">
-                                        Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el código fuente, bases de datos, funcionalidad, software, diseños de sitios web, audio, video, texto, fotografías y gráficos de los Servicios (colectivamente, el "Contenido"), así como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
+                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
+                                    <p className="text-slate-500 leadind-relaxed">
+                                        Recolectamos datos básicos como nombre, correo electrónico y número de teléfono únicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
                                     </p>
-                                    <p className="text-slate-500 leading-relaxed mb-4">
-                                        Nuestro Contenido y Marcas están protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
+                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">2. Uso de los Datos</h2>
+                                    <p className="text-slate-500 leadind-relaxed">
+                                        Tu información se utiliza exclusivamente para:
                                     </p>
-                                    <p className="text-slate-500 leading-relaxed">
-                                        El Contenido y las Marcas se proporcionan en o a través de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
-                                    </p>
-
-                                    <h3 className="text-lg font-bold text-white mt-6 mb-2">Su uso de nuestros Servicios</h3>
-                                    <p className="text-slate-500 leading-relaxed mb-4">
-                                        Sujeto a su cumplimiento de estos Términos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la sección siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
-                                    </p>
-                                    <ul className="list-disc pl-6 text-slate-500 space-y-2 mb-4">
-                                        <li>acceder a los Servicios; y</li>
-                                        <li>descargar o imprimir una copia de cualquier parte del Contenido al que haya obtenido acceso correctamente,</li>
-                                    </ul>
-                                    <p className="text-slate-500 leading-relaxed mb-4">únicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
-                                    <p className="text-slate-500 leading-relaxed mb-4">
-                                        Salvo lo establecido en esta sección o en otra parte de nuestros Términos Legales, ninguna parte de los Servicios ni ningún Contenido o Marca podrán copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado públicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
-                                    </p>
-                                    <p className="text-slate-500 leading-relaxed">
-                                        Si desea hacer algún uso de los Servicios, Contenido o Marcas que no sea el establecido en esta sección o en otra parte de nuestros Términos Legales, dirija su solicitud a nuestro correo de contacto.
-                                    </p>
-                                </section>
-
-                                <section id="section3" className="mb-12">
-                                    <h2 className="text-2xl font-bold text-white mb-4">3. REPRESENTACIONES DE USUARIOS</h2>
-                                    <p className="text-slate-500 leading-relaxed">
-                                        Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos Términos Legales; (2) no eres un menor de edad en la jurisdicción en la que usted reside; (3) no accederás a los Servicios a través de medios automatizados o no humanos, ya sea a través de un bot, script o de otro modo; (4) no utilizará los Servicios para ninguna actividad ilegal o no autorizado propósito; y (5) su uso de los Servicios no violará ninguna ley o regulación aplicable.
-                                    </p>
-                                </section>
-
-                                <section id="section4" className="mb-12">
-                                    <h2 className="text-2xl font-bold text-white mb-4">4. ACTIVIDADES PROHIBIDAS</h2>
-                                    <p className="text-slate-500 leading-relaxed mb-4">
-                                        No puede acceder ni utilizar los Servicios para ningún otro propósito que no sea aquel para el cual los ponemos a disposición. Los Servicios no podrán utilizarse en relación con ningún negocio comercial esfuerzo excepto aquellos que estén específicamente respaldados o aprobados por nosotros.
-                                    </p>
-                                    <p className="text-slate-500 leading-relaxed mb-4">Como usuario de los Servicios, usted acepta no:</p>
                                     <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                        <li>Recuperar sistemáticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colección, compilación, base de datos o directorio sin nuestro permiso por escrito.</li>
-                                        <li>Engañarnos, defraudarnos o engañarnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener información confidencial de la cuenta, como las contraseñas de los usuarios.</li>
-                                        <li>Eludir, deshabilitar o interferir de otro modo con las características relacionadas con la seguridad de los Servicios.</li>
-                                        <li>Menospreciar, empañar o dañar de otro modo, en nuestra opinión, a nosotros y/o a los Servicios.</li>
-                                        <li>Utilizar cualquier información obtenida de los Servicios para acosar, abusar o dañar a otra persona.</li>
-                                        <li>Hacer un uso indebido de nuestros servicios de soporte o presentar informes falsos de abuso o mala conducta.</li>
-                                        <li>Utilice los Servicios de una manera incompatible con las leyes o regulaciones aplicables.</li>
+                                        <li>Gestionar tus pedidos y entregas.</li>
+                                        <li>Enviar actualizaciones sobre el estado de tu compra.</li>
+                                        <li>Mejorar nuestros servicios y experiencia de usuario.</li>
                                     </ul>
-                                </section>
-
-                                <section id="section13" className="mb-12">
-                                    <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
-                                    <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
-                                        LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÉ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
+                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
+                                    <p className="text-slate-500 leadind-relaxed">
+                                        Implementamos medidas de seguridad robustas y encriptación de datos para asegurar que tu información esté protegida contra accesos no autorizados.
                                     </p>
-                                </section>
-
-                                <section id="section19" className="mb-12">
-                                    <h2 className="text-2xl font-bold text-white mb-4">19. CONTÁCTENOS</h2>
-                                    <p className="text-slate-500 leading-relaxed mb-4">
-                                        Para resolver una queja con respecto a los Servicios o para recibir más información sobre el uso de los Servicios, contáctenos en:
+                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
+                                    <p className="text-slate-500 leadind-relaxed mb-12">
+                                        Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-cyan-400">{settings?.contactEmail || 'soporte@sustore.sf'}</span>.
                                     </p>
-                                    <p className="text-2xl font-black text-cyan-400">
-                                        {settings?.contactEmail || 'soporte@sustore.sf'}
-                                    </p>
-                                </section>
-
-                                <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700 mt-12">
-                                    <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
-                                </button>
+                                    <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
+                                        <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </main>
+                    )
+                }
+                {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
+                {
+                    view === 'terms' && (
+                        <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
+                            <div className="glass p-12 rounded-[3rem] border border-slate-800">
+                                <div className="prose prose-invert max-w-none">
+                                    <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
+                                        Condiciones de <span className="text-cyan-500 text-6xl">Uso</span>
+                                    </h1>
+                                    <p className="text-slate-400 font-bold mb-8">Última actualización: 07 de enero de 2026</p>
+
+                                    <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÉRMINOS LEGALES</h3>
+                                    <p className="text-slate-500 leading-relaxed mb-4">
+                                        Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
+                                    </p>
+                                    <p className="text-slate-500 leading-relaxed mb-4">
+                                        Operamos el sitio web <a href="https://sustore.vercel.app" className="text-cyan-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
+                                    </p>
+                                    <p className="text-slate-500 leading-relaxed mb-4">
+                                        Puede contactarnos por correo electrónico a la dirección proporcionada al final de este documento.
+                                    </p>
+                                    <p className="text-slate-500 leading-relaxed mb-4">
+                                        Estos Términos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relación con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leído, comprendido y aceptado estar sujeto a todos estos Términos Legales. <strong className="text-red-400">SI NO ESTÁ DE ACUERDO CON TODOS ESTOS TÉRMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
+                                    </p>
+
+                                    <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 my-10">
+                                        <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">ÍNDICE</h3>
+                                        <ul className="space-y-2 text-sm text-cyan-400 font-medium">
+                                            <li><a href="#section1" className="hover:text-cyan-300 transition">1. NUESTROS SERVICIOS</a></li>
+                                            <li><a href="#section2" className="hover:text-cyan-300 transition">2. DERECHOS DE PROPIEDAD INTELECTUAL</a></li>
+                                            <li><a href="#section3" className="hover:text-cyan-300 transition">3. REPRESENTACIONES DE USUARIOS</a></li>
+                                            <li><a href="#section4" className="hover:text-cyan-300 transition">4. ACTIVIDADES PROHIBIDAS</a></li>
+                                            <li><a href="#section5" className="hover:text-cyan-300 transition">5. CONTRIBUCIONES GENERADAS POR EL USUARIO</a></li>
+                                            <li><a href="#section6" className="hover:text-cyan-300 transition">6. LICENCIA DE CONTRIBUCIÓN</a></li>
+                                            <li><a href="#section7" className="hover:text-cyan-300 transition">7. GESTIÓN DE SERVICIOS</a></li>
+                                            <li><a href="#section8" className="hover:text-cyan-300 transition">8. PLAZO Y TERMINACIÓN</a></li>
+                                            <li><a href="#section9" className="hover:text-cyan-300 transition">9. MODIFICACIONES E INTERRUPCIONES</a></li>
+                                            <li><a href="#section10" className="hover:text-cyan-300 transition">10. LEY APLICABLE</a></li>
+                                            <li><a href="#section11" className="hover:text-cyan-300 transition">11. RESOLUCIÓN DE DISPUTAS</a></li>
+                                            <li><a href="#section12" className="hover:text-cyan-300 transition">12. CORRECCIONES</a></li>
+                                            <li><a href="#section13" className="hover:text-cyan-300 transition">13. DESCARGO DE RESPONSABILIDAD</a></li>
+                                            <li><a href="#section14" className="hover:text-cyan-300 transition">14. LIMITACIONES DE RESPONSABILIDAD</a></li>
+                                            <li><a href="#section15" className="hover:text-cyan-300 transition">15. INDEMNIZACIÓN</a></li>
+                                            <li><a href="#section16" className="hover:text-cyan-300 transition">16. DATOS DEL USUARIO</a></li>
+                                            <li><a href="#section17" className="hover:text-cyan-300 transition">17. COMUNICACIONES ELECTRÓNICAS</a></li>
+                                            <li><a href="#section18" className="hover:text-cyan-300 transition">18. VARIOS</a></li>
+                                            <li><a href="#section19" className="hover:text-cyan-300 transition">19. CONTÁCTENOS</a></li>
+                                        </ul>
+                                    </div>
+
+                                    <section id="section1" className="mb-12">
+                                        <h2 className="text-2xl font-bold text-white mb-4">1. NUESTROS SERVICIOS</h2>
+                                        <p className="text-slate-500 leading-relaxed">
+                                            La información proporcionada al utilizar los Servicios no está destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicción o país donde dicha distribución o uso sería contrario a la ley o regulación o que nos sometería a cualquier requisito de registro dentro de dicha jurisdicción o país. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las únicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
+                                        </p>
+                                    </section>
+
+                                    <section id="section2" className="mb-12">
+                                        <h2 className="text-2xl font-bold text-white mb-4">2. DERECHOS DE PROPIEDAD INTELECTUAL</h2>
+                                        <h3 className="text-lg font-bold text-white mt-6 mb-2">Nuestra propiedad intelectual</h3>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el código fuente, bases de datos, funcionalidad, software, diseños de sitios web, audio, video, texto, fotografías y gráficos de los Servicios (colectivamente, el "Contenido"), así como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
+                                        </p>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Nuestro Contenido y Marcas están protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
+                                        </p>
+                                        <p className="text-slate-500 leading-relaxed">
+                                            El Contenido y las Marcas se proporcionan en o a través de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
+                                        </p>
+
+                                        <h3 className="text-lg font-bold text-white mt-6 mb-2">Su uso de nuestros Servicios</h3>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Sujeto a su cumplimiento de estos Términos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la sección siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
+                                        </p>
+                                        <ul className="list-disc pl-6 text-slate-500 space-y-2 mb-4">
+                                            <li>acceder a los Servicios; y</li>
+                                            <li>descargar o imprimir una copia de cualquier parte del Contenido al que haya obtenido acceso correctamente,</li>
+                                        </ul>
+                                        <p className="text-slate-500 leading-relaxed mb-4">únicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Salvo lo establecido en esta sección o en otra parte de nuestros Términos Legales, ninguna parte de los Servicios ni ningún Contenido o Marca podrán copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado públicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
+                                        </p>
+                                        <p className="text-slate-500 leading-relaxed">
+                                            Si desea hacer algún uso de los Servicios, Contenido o Marcas que no sea el establecido en esta sección o en otra parte de nuestros Términos Legales, dirija su solicitud a nuestro correo de contacto.
+                                        </p>
+                                    </section>
+
+                                    <section id="section3" className="mb-12">
+                                        <h2 className="text-2xl font-bold text-white mb-4">3. REPRESENTACIONES DE USUARIOS</h2>
+                                        <p className="text-slate-500 leading-relaxed">
+                                            Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos Términos Legales; (2) no eres un menor de edad en la jurisdicción en la que usted reside; (3) no accederás a los Servicios a través de medios automatizados o no humanos, ya sea a través de un bot, script o de otro modo; (4) no utilizará los Servicios para ninguna actividad ilegal o no autorizado propósito; y (5) su uso de los Servicios no violará ninguna ley o regulación aplicable.
+                                        </p>
+                                    </section>
+
+                                    <section id="section4" className="mb-12">
+                                        <h2 className="text-2xl font-bold text-white mb-4">4. ACTIVIDADES PROHIBIDAS</h2>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            No puede acceder ni utilizar los Servicios para ningún otro propósito que no sea aquel para el cual los ponemos a disposición. Los Servicios no podrán utilizarse en relación con ningún negocio comercial esfuerzo excepto aquellos que estén específicamente respaldados o aprobados por nosotros.
+                                        </p>
+                                        <p className="text-slate-500 leading-relaxed mb-4">Como usuario de los Servicios, usted acepta no:</p>
+                                        <ul className="list-disc pl-6 text-slate-500 space-y-2">
+                                            <li>Recuperar sistemáticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colección, compilación, base de datos o directorio sin nuestro permiso por escrito.</li>
+                                            <li>Engañarnos, defraudarnos o engañarnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener información confidencial de la cuenta, como las contraseñas de los usuarios.</li>
+                                            <li>Eludir, deshabilitar o interferir de otro modo con las características relacionadas con la seguridad de los Servicios.</li>
+                                            <li>Menospreciar, empañar o dañar de otro modo, en nuestra opinión, a nosotros y/o a los Servicios.</li>
+                                            <li>Utilizar cualquier información obtenida de los Servicios para acosar, abusar o dañar a otra persona.</li>
+                                            <li>Hacer un uso indebido de nuestros servicios de soporte o presentar informes falsos de abuso o mala conducta.</li>
+                                            <li>Utilice los Servicios de una manera incompatible con las leyes o regulaciones aplicables.</li>
+                                        </ul>
+                                    </section>
+
+                                    <section id="section13" className="mb-12">
+                                        <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
+                                        <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
+                                            LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÉ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
+                                        </p>
+                                    </section>
+
+                                    <section id="section19" className="mb-12">
+                                        <h2 className="text-2xl font-bold text-white mb-4">19. CONTÁCTENOS</h2>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Para resolver una queja con respecto a los Servicios o para recibir más información sobre el uso de los Servicios, contáctenos en:
+                                        </p>
+                                        <p className="text-2xl font-black text-cyan-400">
+                                            {settings?.contactEmail || 'soporte@sustore.sf'}
+                                        </p>
+                                    </section>
+
+                                    <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700 mt-12">
+                                        <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            </main >
 
             {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
-            {view !== 'admin' && view !== 'login' && view !== 'register' && (
-                <footer className="bg-[#050505] border-t border-slate-900 pt-16 pb-8 relative overflow-hidden">
-                    {/* Decoración de Fondo */}
-                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-900/50 to-transparent"></div>
-                    <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-900/5 rounded-full blur-[100px] pointer-events-none"></div>
+            {
+                view !== 'admin' && view !== 'login' && view !== 'register' && (
+                    <footer className="bg-[#050505] border-t border-slate-900 pt-16 pb-8 relative overflow-hidden">
+                        {/* Decoración de Fondo */}
+                        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-900/50 to-transparent"></div>
+                        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-900/5 rounded-full blur-[100px] pointer-events-none"></div>
 
-                    <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
-                        {/* Columna 1: Marca */}
-                        <div className="md:col-span-2 space-y-6">
-                            <h2 className="text-3xl font-black text-white tracking-tighter italic">
-                                {settings?.storeName || 'SUSTORE'}
-                                <span className="text-cyan-500">.SF</span>
-                            </h2>
-                            <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
-                                Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.
-                            </p>
-                            <div className="flex gap-4 pt-2">
-                                <button onClick={() => window.open(settings?.instagramLink || 'https://www.instagram.com/sustore_sf/', '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-pink-400 hover:bg-pink-900/10 transition border border-slate-800 hover:border-pink-500/30">
-                                    <Instagram className="w-5 h-5" />
-                                </button>
-                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-900/10 transition border border-slate-800 hover:border-green-500/30">
-                                    <MessageCircle className="w-5 h-5" />
+                        <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
+                            {/* Columna 1: Marca */}
+                            <div className="md:col-span-2 space-y-6">
+                                <h2 className="text-3xl font-black text-white tracking-tighter italic">
+                                    {settings?.storeName || 'SUSTORE'}
+                                    <span className="text-cyan-500">.SF</span>
+                                </h2>
+                                <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
+                                    Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.
+                                </p>
+                                <div className="flex gap-3 pt-2 flex-wrap">
+                                    {settings?.showInstagram !== false && settings?.instagramLink && (
+                                        <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-pink-400 hover:bg-pink-900/10 transition border border-slate-800 hover:border-pink-500/30">
+                                            <Instagram className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    {settings?.showWhatsapp !== false && settings?.whatsappLink && (
+                                        <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-900/10 transition border border-slate-800 hover:border-green-500/30">
+                                            <MessageCircle className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    {settings?.showFacebook && settings?.facebookLink && (
+                                        <button onClick={() => window.open(settings?.facebookLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-900/10 transition border border-slate-800 hover:border-blue-500/30">
+                                            <Facebook className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    {settings?.showTwitter && settings?.twitterLink && (
+                                        <button onClick={() => window.open(settings?.twitterLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-sky-900/10 transition border border-slate-800 hover:border-sky-500/30">
+                                            <Twitter className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    {settings?.showTiktok && settings?.tiktokLink && (
+                                        <button onClick={() => window.open(settings?.tiktokLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-900/10 transition border border-slate-800 hover:border-rose-500/30">
+                                            <Music className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    {settings?.showYoutube && settings?.youtubeLink && (
+                                        <button onClick={() => window.open(settings?.youtubeLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/10 transition border border-slate-800 hover:border-red-500/30">
+                                            <Youtube className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Columna 2: Quick Links */}
+                            <div className="space-y-6">
+                                <h3 className="text-white font-bold uppercase tracking-widest text-xs">Enlaces Rápidos</h3>
+                                <ul className="space-y-3 text-sm text-slate-500 font-medium">
+                                    <li>
+                                        <button onClick={() => setView('store')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
+                                            <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Inicio
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={() => setView('profile')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
+                                            <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Mi Cuenta
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={() => setView('guide')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
+                                            <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Ayuda & Soporte
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            {/* Columna 3: Soporte */}
+                            <div className="space-y-6">
+                                <h3 className="text-white font-bold uppercase tracking-widest text-xs">Contacto</h3>
+                                <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                    ¿Tienes alguna duda? Estamos aquí para ayudarte.
+                                </p>
+                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="px-6 py-3 bg-cyan-900/10 text-cyan-400 rounded-xl text-sm font-bold border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition w-full md:w-auto">
+                                    Contactar Soporte
                                 </button>
                             </div>
                         </div>
 
-                        {/* Columna 2: Quick Links */}
-                        <div className="space-y-6">
-                            <h3 className="text-white font-bold uppercase tracking-widest text-xs">Enlaces Rápidos</h3>
-                            <ul className="space-y-3 text-sm text-slate-500 font-medium">
-                                <li>
-                                    <button onClick={() => setView('store')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
-                                        <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Inicio
-                                    </button>
-                                </li>
-                                <li>
-                                    <button onClick={() => setView('profile')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
-                                        <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Mi Cuenta
-                                    </button>
-                                </li>
-                                <li>
-                                    <button onClick={() => setView('guide')} className="hover:text-cyan-400 transition flex items-center gap-2 group">
-                                        <span className="w-0 group-hover:w-2 h-px bg-cyan-400 transition-all duration-300"></span> Ayuda & Soporte
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-
-                        {/* Columna 3: Soporte */}
-                        <div className="space-y-6">
-                            <h3 className="text-white font-bold uppercase tracking-widest text-xs">Contacto</h3>
-                            <p className="text-slate-500 text-sm leading-relaxed mb-4">
-                                ¿Tienes alguna duda? Estamos aquí para ayudarte.
-                            </p>
-                            <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="px-6 py-3 bg-cyan-900/10 text-cyan-400 rounded-xl text-sm font-bold border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition w-full md:w-auto">
-                                Contactar Soporte
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Copyright Bar */}
-                    <div className="border-t border-slate-900 bg-[#020202]">
-                        <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                            <p className="text-slate-600 text-xs font-mono">
-                                © 2026 {settings?.storeName || 'SUSTORE'}. All rights reserved.
-                            </p>
-                            <div className="flex gap-6">
-                                <span onClick={() => setView('privacy')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Privacy Policy</span>
-                                <span onClick={() => setView('terms')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Terms of Service</span>
+                        {/* Copyright Bar */}
+                        <div className="border-t border-slate-900 bg-[#020202]">
+                            <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                                <p className="text-slate-600 text-xs font-mono">
+                                    © 2026 {settings?.storeName || 'SUSTORE'}. All rights reserved.
+                                </p>
+                                <div className="flex gap-6">
+                                    <span onClick={() => setView('privacy')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Privacy Policy</span>
+                                    <span onClick={() => setView('terms')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Terms of Service</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </footer>
-            )}
+                    </footer>
+                )
+            }
 
             {/* MODAL: CREAR CATEGORÍA */}
-            {showCategoryModal && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in-scale p-4">
-                    <div className="glass p-8 rounded-[2rem] max-w-md w-full border border-cyan-800 shadow-2xl">
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto bg-cyan-900/20 text-cyan-500">
-                            <FolderPlus className="w-8 h-8" />
-                        </div>
-                        <h3 className="text-2xl font-black text-center mb-6 text-white">Nueva Categoría</h3>
-                        <input
-                            type="text"
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                            className="input-cyber w-full p-4 mb-6"
-                            placeholder="Nombre de la categoría"
-                            autoFocus
-                        />
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => { setNewCategory(''); setShowCategoryModal(false); }}
-                                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={createCategoryFn}
-                                className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition shadow-lg shadow-cyan-600/30"
-                            >
-                                Crear
-                            </button>
+            {
+                showCategoryModal && (
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in-scale p-4">
+                        <div className="glass p-8 rounded-[2rem] max-w-md w-full border border-cyan-800 shadow-2xl">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto bg-cyan-900/20 text-cyan-500">
+                                <FolderPlus className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-2xl font-black text-center mb-6 text-white">Nueva Categoría</h3>
+                            <input
+                                type="text"
+                                value={newCategory}
+                                onChange={(e) => setNewCategory(e.target.value)}
+                                className="input-cyber w-full p-4 mb-6"
+                                placeholder="Nombre de la categoría"
+                                autoFocus
+                            />
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setNewCategory(''); setShowCategoryModal(false); }}
+                                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={createCategoryFn}
+                                    className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition shadow-lg shadow-cyan-600/30"
+                                >
+                                    Crear
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* MODAL: VENTA MANUAL */}
-            {showManualSaleModal && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in-scale p-4">
-                    <div className="glass p-8 rounded-[2rem] max-w-md w-full border border-green-900 shadow-2xl">
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto bg-green-900/20 text-green-500">
-                            <DollarSign className="w-8 h-8" />
-                        </div>
-                        <h3 className="text-2xl font-black text-center mb-2 text-white">Venta Manual</h3>
-                        <p className="text-center text-slate-400 mb-6">
-                            {products.find(p => p.id === saleData.productId)?.name}
-                        </p>
+            {
+                showManualSaleModal && (
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in-scale p-4">
+                        <div className="glass p-8 rounded-[2rem] max-w-md w-full border border-green-900 shadow-2xl">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto bg-green-900/20 text-green-500">
+                                <DollarSign className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-2xl font-black text-center mb-2 text-white">Venta Manual</h3>
+                            <p className="text-center text-slate-400 mb-6">
+                                {products.find(p => p.id === saleData.productId)?.name}
+                            </p>
 
-                        <div className="space-y-4 mb-8">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Cantidad</label>
-                                    <input
-                                        type="number"
-                                        className="input-cyber w-full p-3"
-                                        value={saleData.quantity}
-                                        onChange={(e) => setSaleData({ ...saleData, quantity: parseInt(e.target.value) || 1 })}
-                                        min="1"
-                                    />
+                            <div className="space-y-4 mb-8">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Cantidad</label>
+                                        <input
+                                            type="number"
+                                            className="input-cyber w-full p-3"
+                                            value={saleData.quantity}
+                                            onChange={(e) => setSaleData({ ...saleData, quantity: parseInt(e.target.value) || 1 })}
+                                            min="1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Precio Unit.</label>
+                                        <input
+                                            type="number"
+                                            className="input-cyber w-full p-3"
+                                            value={saleData.price}
+                                            onChange={(e) => setSaleData({ ...saleData, price: parseFloat(e.target.value) || 0 })}
+                                        />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Precio Unit.</label>
-                                    <input
-                                        type="number"
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Método de Pago</label>
+                                    <select
                                         className="input-cyber w-full p-3"
-                                        value={saleData.price}
-                                        onChange={(e) => setSaleData({ ...saleData, price: parseFloat(e.target.value) || 0 })}
-                                    />
+                                        value={saleData.paymentMethod}
+                                        onChange={(e) => setSaleData({ ...saleData, paymentMethod: e.target.value })}
+                                    >
+                                        <option value="Efectivo">Efectivo</option>
+                                        <option value="Transferencia">Transferencia</option>
+                                        <option value="Tarjeta">Tarjeta</option>
+                                    </select>
+                                </div>
+                                <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-800">
+                                    <span className="text-slate-400 font-bold">Total:</span>
+                                    <span className="text-2xl font-black text-green-400">${(saleData.quantity * saleData.price).toLocaleString()}</span>
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Método de Pago</label>
-                                <select
-                                    className="input-cyber w-full p-3"
-                                    value={saleData.paymentMethod}
-                                    onChange={(e) => setSaleData({ ...saleData, paymentMethod: e.target.value })}
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowManualSaleModal(false)}
+                                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition"
                                 >
-                                    <option value="Efectivo">Efectivo</option>
-                                    <option value="Transferencia">Transferencia</option>
-                                    <option value="Tarjeta">Tarjeta</option>
-                                </select>
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={confirmManualSale}
+                                    disabled={isProcessingOrder}
+                                    className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
+                                >
+                                    {isProcessingOrder ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                                    Confirmar
+                                </button>
                             </div>
-                            <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-800">
-                                <span className="text-slate-400 font-bold">Total:</span>
-                                <span className="text-2xl font-black text-green-400">${(saleData.quantity * saleData.price).toLocaleString()}</span>
+                        </div>
+                    </div>
+                )
+            }
+            <AdminUserDrawer />
+            {/* MODAL: VER PLANES DE SUSCRIPCIÓN */}
+            {showPlansModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-lg animate-fade-in-scale p-4">
+                    <div className="bg-[#0a0a0a] p-8 rounded-[2rem] max-w-4xl w-full border border-cyan-900/50 shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-3xl font-black text-white flex items-center gap-3">
+                                <Zap className="w-8 h-8 text-yellow-500 fill-current" /> Planes Disponibles
+                            </h2>
+                            <button onClick={() => setShowPlansModal(false)} className="p-2 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <p className="text-slate-500 mb-8">Tu plan actual: <span className="text-cyan-400 font-bold uppercase">{settings?.subscriptionPlan === 'business' ? 'Negocio' : settings?.subscriptionPlan === 'premium' ? 'Premium' : 'Emprendedor'}</span></p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Plan Emprendedor */}
+                            <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan ? 'bg-slate-900 border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
+                                {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
+                                )}
+                                <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
+                                    <Store className="w-6 h-6 text-cyan-400" />
+                                </div>
+                                <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
+                                <p className="text-sm text-slate-400 mb-4 h-10">Para quienes empiezan su negocio.</p>
+                                <div className="text-2xl font-black text-cyan-400 mb-6">$8.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                <ul className="space-y-2 text-sm text-slate-300">
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 35 productos</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Panel básico</li>
+                                    <li className="flex items-center gap-2"><X className="w-4 h-4 text-slate-600" /> Sin cupones</li>
+                                    <li className="flex items-center gap-2"><X className="w-4 h-4 text-slate-600" /> Sin estadísticas</li>
+                                </ul>
+                            </div>
+
+                            {/* Plan Negocio */}
+                            <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
+                                {settings?.subscriptionPlan === 'business' && (
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
+                                )}
+                                <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
+                                    <Briefcase className="w-6 h-6 text-purple-400" />
+                                </div>
+                                <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
+                                <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
+                                <div className="text-2xl font-black text-purple-400 mb-6">$14.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                <ul className="space-y-2 text-sm text-slate-300">
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Cupones de Descuento</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Estadísticas de Usuarios</li>
+                                </ul>
+                            </div>
+
+                            {/* Plan Premium */}
+                            <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
+                                {settings?.subscriptionPlan === 'premium' && (
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
+                                )}
+                                <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
+                                    <Sparkles className="w-6 h-6 text-yellow-400" />
+                                </div>
+                                <h4 className="text-xl font-black text-white mb-1">Premium</h4>
+                                <p className="text-sm text-slate-400 mb-4 h-10">Todo ilimitado, sin restricciones.</p>
+                                <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                <ul className="space-y-2 text-sm text-slate-300">
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Productos Ilimitados</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Todo de Negocio</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Soporte Prioritario</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Dominio Personalizado</li>
+                                </ul>
                             </div>
                         </div>
 
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowManualSaleModal(false)}
-                                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={confirmManualSale}
-                                disabled={isProcessingOrder}
-                                className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
-                            >
-                                {isProcessingOrder ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-                                Confirmar
-                            </button>
+                        <div className="mt-8 p-4 bg-slate-900/50 rounded-xl border border-slate-800 text-center">
+                            <p className="text-slate-400 text-sm">Para actualizar tu plan, contacta al desarrollador:</p>
+                            <p className="text-cyan-400 font-bold mt-1">lautarocorazza63@gmail.com</p>
                         </div>
                     </div>
                 </div>
             )}
-            <AdminUserDrawer />
+
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
@@ -7550,7 +7747,7 @@ function App() {
                 onCancel={confirmModal.onCancel || (() => setConfirmModal(prev => ({ ...prev, isOpen: false })))}
                 isDangerous={true}
             />
-        </div>
+        </div >
     );
 }
 
