@@ -994,22 +994,28 @@ function App() {
                 if (!authData.email) throw new Error("Ingresa tu email o usuario.");
                 if (!authData.password) throw new Error("Ingresa tu contraseña.");
 
-                // Intentar login por Email
-                let q = query(usersRef, where("email", "==", authData.email), where("password", "==", authData.password));
-                let snapshot = await getDocs(q);
+                // Normalizar input a minúsculas para búsqueda case-insensitive
+                const normalizedInput = authData.email.trim().toLowerCase();
 
-                // Si falla, intentar login por Username
-                if (snapshot.empty) {
-                    q = query(usersRef, where("username", "==", authData.email), where("password", "==", authData.password));
-                    snapshot = await getDocs(q);
-                }
+                // Buscar todos los usuarios y hacer match case-insensitive
+                const allUsersSnap = await getDocs(usersRef);
 
-                if (snapshot.empty) {
+                // Buscar por email (case-insensitive) o username (case-insensitive)
+                const matchedUser = allUsersSnap.docs.find(doc => {
+                    const userData = doc.data();
+                    const userEmail = (userData.emailLower || userData.email || '').toLowerCase();
+                    const userUsername = (userData.usernameLower || userData.username || '').toLowerCase();
+                    const passwordMatch = userData.password === authData.password;
+
+                    return passwordMatch && (userEmail === normalizedInput || userUsername === normalizedInput);
+                });
+
+                if (!matchedUser) {
                     throw new Error("Credenciales incorrectas. Verifica tus datos.");
                 }
 
-                const userData = snapshot.docs[0].data();
-                const userId = snapshot.docs[0].id;
+                const userData = matchedUser.data();
+                const userId = matchedUser.id;
 
                 setCurrentUser({ ...userData, id: userId });
                 showToast(`¡Hola de nuevo, ${userData.name}!`, "success");
