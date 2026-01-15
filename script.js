@@ -1248,14 +1248,14 @@ function App() {
                 },
                 callbacks: {
                     onReady: () => {
-                        console.log('Card Payment Brick ready');
+                        console.log('✅ Mercado Pago: Card Payment Brick cargado correctamente.');
                     },
                     onSubmit: async (cardFormData) => {
+                        console.log('🚀 Mercado Pago: Iniciando procesamiento de pago...');
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
 
                         try {
-                            // Procesar pago en backend
                             const response = await fetch('/api/checkout', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -1278,43 +1278,33 @@ function App() {
                             });
 
                             const result = await response.json();
+                            console.log('📦 Mercado Pago: Respuesta del servidor:', result);
 
                             if (result.status === 'approved') {
-                                // ¡Pago exitoso! - Crear orden directamente como REALIZADO
                                 await confirmOrderAfterPayment(result.id);
-                                showToast('¡Pago aprobado! Tu compra ha sido confirmada.', 'success');
+                                showToast('¡Pago aprobado!', 'success');
                             } else if (result.status === 'in_process' || result.status === 'pending') {
-                                // Para pagos pendientes, también crear la orden como Realizado (según pedido del usuario)
                                 await confirmOrderAfterPayment(result.id);
-                                showToast('¡Compra realizada! El pago está siendo verificado.', 'success');
+                                showToast('Compra realizada (Pago pendiente)', 'success');
                             } else {
-                                // Pago rechazado
-                                let errorMsg = 'El pago fue rechazado.';
-                                if (result.status_detail === 'cc_rejected_insufficient_amount') {
-                                    errorMsg = 'Fondos insuficientes en la tarjeta.';
-                                } else if (result.status_detail === 'cc_rejected_bad_filled_card_number') {
-                                    errorMsg = 'Número de tarjeta incorrecto.';
-                                } else if (result.status_detail === 'cc_rejected_bad_filled_security_code') {
-                                    errorMsg = 'Código de seguridad incorrecto.';
-                                } else if (result.status_detail === 'cc_rejected_bad_filled_date') {
-                                    errorMsg = 'Fecha de vencimiento incorrecta.';
-                                } else if (result.status_detail) {
-                                    errorMsg = `Pago rechazado: ${result.status_detail}`;
-                                }
-                                setPaymentError(errorMsg);
-                                showToast(errorMsg + ' Intenta con otra tarjeta.', 'error');
+                                const detailedError = result.status_detail || result.error || 'Pago rechazado';
+                                console.error('❌ Mercado Pago: Error en pago:', detailedError);
+                                setPaymentError(`Error: ${detailedError}. Verificá los datos o usá otra tarjeta.`);
+                                showToast('El pago no pudo procesarse.', 'error');
                             }
                         } catch (error) {
-                            console.error('Payment error:', error);
-                            setPaymentError('Error al procesar el pago. Intenta nuevamente.');
-                            showToast('Error al procesar el pago. Verifica tus datos.', 'error');
+                            console.error('❌ Mercado Pago: Error de conexión:', error);
+                            setPaymentError('Error de conexión con el servidor. Intentá de nuevo o contactanos.');
+                            showToast('Error de conexión.', 'error');
                         } finally {
                             setIsPaymentProcessing(false);
                         }
                     },
                     onError: (error) => {
-                        console.error('Brick error:', error);
-                        setPaymentError('Error en el formulario de pago. Verifica tus datos.');
+                        console.error('❌ Mercado Pago: Brick Error:', error);
+                        // Mostrar el error real en la consola ayuda mucho
+                        const msg = error.message || 'Error en el formulario. Verificá si tus llaves de MP son correctas.';
+                        setPaymentError(msg);
                     },
                 },
             });
