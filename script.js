@@ -604,17 +604,64 @@ function App() {
     // CSS Variable Injection for Dynamic Theme Colors
     useEffect(() => {
         if (settings) {
-            const root = document.documentElement;
             const primaryColor = settings.primaryColor || '#06b6d4';
             const secondaryColor = settings.secondaryColor || '#8b5cf6';
             const accentColor = settings.accentColor || '#22c55e';
 
-            root.style.setProperty('--color-primary', primaryColor);
-            root.style.setProperty('--color-secondary', secondaryColor);
-            root.style.setProperty('--color-accent', accentColor);
+            // Create or update the dynamic theme style element
+            let styleEl = document.getElementById('dynamic-theme-styles');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamic-theme-styles';
+                document.head.appendChild(styleEl);
+            }
 
-            // Also apply to common elements dynamically
-            // This ensures changes take effect immediately without page reload
+            // Generate comprehensive CSS overrides for the theme
+            styleEl.textContent = `
+                :root {
+                    --color-primary: ${primaryColor};
+                    --color-secondary: ${secondaryColor};
+                    --color-accent: ${accentColor};
+                }
+                
+                /* Primary color overrides */
+                .text-cyan-400, .text-cyan-500 { color: ${primaryColor} !important; }
+                .bg-cyan-400, .bg-cyan-500 { background-color: ${primaryColor} !important; }
+                .bg-cyan-900\\/10, .bg-cyan-900\\/20 { background-color: ${primaryColor}1a !important; }
+                .border-cyan-500, .border-cyan-500\\/20, .border-cyan-500\\/30, .border-cyan-500\\/50 { border-color: ${primaryColor} !important; }
+                .hover\\:text-cyan-400:hover { color: ${primaryColor} !important; }
+                .hover\\:bg-cyan-400:hover, .hover\\:bg-cyan-500:hover { background-color: ${primaryColor} !important; }
+                .hover\\:border-cyan-500:hover, .hover\\:border-cyan-500\\/30:hover, .hover\\:border-cyan-500\\/50:hover { border-color: ${primaryColor} !important; }
+                .focus-within\\:border-cyan-500\\/50:focus-within { border-color: ${primaryColor}80 !important; }
+                .from-cyan-400 { --tw-gradient-from: ${primaryColor} !important; }
+                .to-cyan-500 { --tw-gradient-to: ${primaryColor} !important; }
+                .shadow-cyan-500\\/30, .shadow-cyan-600\\/30 { --tw-shadow-color: ${primaryColor}4d !important; }
+                .ring-cyan-500 { --tw-ring-color: ${primaryColor} !important; }
+                .selection\\:bg-cyan-500\\/30 ::selection { background-color: ${primaryColor}4d !important; }
+                .selection\\:text-cyan-200 ::selection { color: ${primaryColor} !important; }
+                
+                /* Secondary color overrides */
+                .text-purple-400, .text-purple-500 { color: ${secondaryColor} !important; }
+                .bg-purple-400, .bg-purple-500 { background-color: ${secondaryColor} !important; }
+                .bg-purple-900\\/10, .bg-purple-900\\/20 { background-color: ${secondaryColor}1a !important; }
+                .border-purple-500, .border-purple-500\\/20 { border-color: ${secondaryColor} !important; }
+                .hover\\:text-purple-400:hover { color: ${secondaryColor} !important; }
+                .from-purple-500, .from-purple-600 { --tw-gradient-from: ${secondaryColor} !important; }
+                
+                /* Accent color overrides */
+                .text-green-400, .text-green-500 { color: ${accentColor} !important; }
+                .bg-green-400, .bg-green-500, .bg-green-600 { background-color: ${accentColor} !important; }
+                .bg-green-900\\/10 { background-color: ${accentColor}1a !important; }
+                .border-green-500, .border-green-500\\/20, .border-green-500\\/30 { border-color: ${accentColor} !important; }
+                .hover\\:text-green-400:hover { color: ${accentColor} !important; }
+                .hover\\:bg-green-400:hover, .hover\\:bg-green-500:hover { background-color: ${accentColor} !important; }
+                .shadow-green-500\\/30, .shadow-green-600\\/30 { --tw-shadow-color: ${accentColor}4d !important; }
+                
+                /* Neon text effect with primary color */
+                .neon-text {
+                    text-shadow: 0 0 10px ${primaryColor}40, 0 0 20px ${primaryColor}20, 0 0 30px ${primaryColor}10 !important;
+                }
+            `;
         }
     }, [settings?.primaryColor, settings?.secondaryColor, settings?.accentColor]);
 
@@ -3147,16 +3194,21 @@ function App() {
 
     // Estado de Carga Inicial
     if (isLoading && view === 'store') {
+        const loadingPrimaryColor = settings?.primaryColor || '#06b6d4';
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white">
                 <div className="relative">
-                    <div className="w-24 h-24 rounded-full border-4 border-slate-800 border-t-cyan-500 animate-spin"></div>
+                    <div className="w-24 h-24 rounded-full border-4 border-slate-800 animate-spin" style={{ borderTopColor: loadingPrimaryColor }}></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Zap className="w-8 h-8 text-cyan-500 animate-pulse" />
+                        <Zap className="w-8 h-8 animate-pulse" style={{ color: loadingPrimaryColor }} />
                     </div>
                 </div>
-                <h1 className="text-3xl font-black tracking-[0.5em] mt-8 animate-pulse neon-text">SUSTORE</h1>
-                <p className="text-slate-500 text-sm mt-4 font-mono uppercase tracking-widest">Cargando sistema...</p>
+                <h1 className="text-3xl font-black tracking-[0.5em] mt-8 animate-pulse" style={{ color: loadingPrimaryColor, textShadow: `0 0 20px ${loadingPrimaryColor}40` }}>
+                    {settings?.storeName || 'SUSTORE'}
+                </h1>
+                <p className="text-slate-500 text-sm mt-4 font-mono uppercase tracking-widest">
+                    {settings?.loadingText || 'Cargando sistema...'}
+                </p>
             </div>
         );
     }
@@ -7031,6 +7083,20 @@ function App() {
                                                             >
                                                                 <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
                                                             </button>
+                                                        </div>
+
+                                                        {/* Loading Text */}
+                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div className="mb-3">
+                                                                <p className="font-bold text-white">Texto de Carga</p>
+                                                                <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la página</p>
+                                                            </div>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.loadingText || ''}
+                                                                onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
+                                                                placeholder="Cargando sistema..."
+                                                            />
                                                         </div>
 
                                                         {/* Show Stock */}
