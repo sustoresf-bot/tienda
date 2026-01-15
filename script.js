@@ -457,16 +457,28 @@ function App() {
         // Super Admin Hardcodeado (Prioridad Máxima)
         if (cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) return 'admin';
 
-        // Buscar en el equipo
+        // Buscar en el equipo (settings.team - método original)
         const team = settings.team || [];
         const member = team.find(m => m.email && m.email.trim().toLowerCase() === cleanEmail);
-        return member ? member.role : 'user';
+        if (member) return member.role;
+
+        // Buscar en la lista de usuarios (rol asignado desde panel admin)
+        const userDoc = users.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
+        if (userDoc && userDoc.role) return userDoc.role;
+
+        // Si el usuario actual coincide, usar su rol guardado
+        if (currentUser && currentUser.email && currentUser.email.trim().toLowerCase() === cleanEmail && currentUser.role) {
+            return currentUser.role;
+        }
+
+        return 'user';
     };
 
     const isAdmin = (email) => getRole(email) === 'admin';
+    const isEditor = (email) => getRole(email) === 'editor';
     const hasAccess = (email) => {
         const role = getRole(email);
-        return role === 'admin' || role === 'employee';
+        return role === 'admin' || role === 'editor' || role === 'employee';
     };
 
     // --- EFECTOS DE SINCRONIZACIÓN (FIREBASE) ---
@@ -4702,6 +4714,13 @@ function App() {
                                         <Package className="w-5 h-5" /> Productos
                                     </button>
 
+                                    {/* Promos - Available for editors and admins */}
+                                    {(isAdmin(currentUser?.email) || isEditor(currentUser?.email)) && (
+                                        <button onClick={() => setAdminTab('promos')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'promos' ? 'bg-purple-900/20 text-purple-400 border border-purple-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <Tag className="w-5 h-5" /> Promos
+                                        </button>
+                                    )}
+
                                     {isAdmin(currentUser?.email) && (
                                         <>
                                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-2 mt-6">Gestión</p>
@@ -4716,10 +4735,6 @@ function App() {
 
                                             <button onClick={() => setAdminTab('purchases')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'purchases' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <ShoppingCart className="w-5 h-5" /> Compras
-                                            </button>
-
-                                            <button onClick={() => setAdminTab('promos')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'promos' ? 'bg-purple-900/20 text-purple-400 border border-purple-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
-                                                <Tag className="w-5 h-5" /> Promos
                                             </button>
 
                                             <button onClick={() => setAdminTab('finance')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'finance' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
