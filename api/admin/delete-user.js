@@ -36,10 +36,20 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Eliminar de Firebase Auth
-        await admin.auth().deleteUser(uid);
+        // Intentar eliminar de Firebase Auth
+        try {
+            await admin.auth().deleteUser(uid);
+        } catch (authError) {
+            // Si el usuario no existe en Auth, no es un error crítico
+            // Solo logueamos y continuamos (el usuario puede existir solo en Firestore)
+            if (authError.code === 'auth/user-not-found') {
+                console.log(`Usuario ${uid} no encontrado en Auth, continuando con eliminación de Firestore...`);
+            } else {
+                throw authError; // Re-lanzar otros errores
+            }
+        }
 
-        return res.status(200).json({ message: 'Usuario eliminado exitosamente de Auth.' });
+        return res.status(200).json({ message: 'Usuario eliminado exitosamente.' });
     } catch (error) {
         console.error('Error al eliminar usuario:', error);
         return res.status(500).json({ error: error.message || 'Error interno al eliminar usuario.' });

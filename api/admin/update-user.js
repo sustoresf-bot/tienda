@@ -31,15 +31,27 @@ export default async function handler(req, res) {
         if (email) updateData.email = email;
         if (password) updateData.password = password;
 
-        // Si hay datos para Auth, actualizamos
+        // Si hay datos para Auth, intentamos actualizar
         if (Object.keys(updateData).length > 0) {
-            await admin.auth().updateUser(uid, updateData);
+            try {
+                await admin.auth().updateUser(uid, updateData);
+            } catch (authError) {
+                // Si el usuario no existe en Auth, informamos pero no es crítico para datos de Firestore
+                if (authError.code === 'auth/user-not-found') {
+                    return res.status(200).json({
+                        success: true,
+                        warning: 'Usuario no encontrado en Auth. Solo se actualizarán datos en Firestore.',
+                        authUpdated: false
+                    });
+                }
+                throw authError;
+            }
         }
 
         // Si hay cambio de rol, podemos manejarlo aquí o dejar que el cliente actualice Firestore.
         // Por seguridad, los cambios críticos se hacen vía Admin SDK.
 
-        return res.status(200).json({ success: true, message: 'Usuario actualizado correctamente en Auth' });
+        return res.status(200).json({ success: true, message: 'Usuario actualizado correctamente en Auth', authUpdated: true });
     } catch (error) {
         console.error('Error updating user:', error);
         return res.status(500).json({ error: error.message });
