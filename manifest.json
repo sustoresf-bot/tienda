@@ -1,0 +1,17 @@
+{
+    "name": "Wulfin Diseños",
+    "short_name": "Wulfin",
+    "description": "Tu tienda de tecnología y diseño.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#050505",
+    "theme_color": "#06b6d4",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}

@@ -1,10 +1,10 @@
 // ============================================
-// FIRESTORE SECURITY RULES - SUSTORE
+// FIRESTORE SECURITY RULES - WULFIN DISEÑOS
 // ============================================
 //
 // INSTRUCCIONES:
 // 1. Ve a la consola de Firebase: https://console.firebase.google.com
-// 2. Selecciona tu proyecto "sustore-63266"
+// 2. Selecciona tu proyecto "wulfin-disenios"
 // 3. Ve a Firestore Database → Rules
 // 4. Reemplaza TODO el contenido con las reglas de abajo
 // 5. Click en "Publish"
@@ -17,28 +17,77 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ========================================
-    // FUNCIÓN: Verificar si es Super Admin
+    // FUNCIONES DE SEGURIDAD
     // ========================================
+
+    // Verificar si es Super Admin
     function isSuperAdmin() {
       return request.auth != null &&
         request.auth.token.email == 'lautarocorazza63@gmail.com';
     }
 
-    // ========================================
-    // FUNCIÓN: Verificar si está en el equipo como admin
-    // ========================================
+    // Verificar si está en el equipo como admin
     function isTeamAdmin() {
-      let configData = get(/databases/$(database)/documents/artifacts/sustore-prod-v3/public/data/settings/config).data;
+      let configData = get(/databases/$(database)/documents/artifacts/wulfin-disenios-prod/public/data/settings/config).data;
       return request.auth != null &&
         configData.team != null &&
         configData.team.hasAny([{'email': request.auth.token.email, 'role': 'admin'}]);
     }
 
-    // ========================================
-    // FUNCIÓN: Verificar si es Admin (cualquier tipo)
-    // ========================================
+    // Verificar si es Admin (cualquier tipo)
     function isAdmin() {
       return isSuperAdmin() || isTeamAdmin();
+    }
+
+    // Verificar autenticación
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verificar que es el propietario del documento
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Validar tamaño de documento (prevenir abuse)
+    function isValidSize() {
+      return request.resource.size() < 1000000; // 1MB max
+    }
+
+    // Validar campos requeridos para usuario
+    function isValidUser() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['email', 'name']) &&
+             data.email is string &&
+             data.email.size() <= 254 &&
+             data.name is string &&
+             data.name.size() <= 100;
+    }
+
+    // Validar campos requeridos para producto
+    function isValidProduct() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['name', 'basePrice', 'category']) &&
+             data.name is string &&
+             data.name.size() <= 200 &&
+             data.basePrice is number &&
+             data.basePrice >= 0 &&
+             data.category is string;
+    }
+
+    // Validar campos requeridos para pedido
+    function isValidOrder() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['items', 'total', 'customer']) &&
+             data.items is list &&
+             data.total is number &&
+             data.total >= 0;
+    }
+
+    // Prevenir escalación de privilegios
+    function noPrivilegeEscalation() {
+      return !request.resource.data.keys().hasAny(['role', 'isAdmin', '_adminVerified']) ||
+             isAdmin();
     }
 
     // ========================================
@@ -47,24 +96,48 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/{collectionName}/{docId} {
 
       // ----------------------------------------
-      // LECTURA: Todos pueden leer (tienda pública)
+      // LECTURA: Datos públicos permitidos
       // ----------------------------------------
-      allow read: if true;
+      allow read: if collectionName in ['products', 'settings', 'promos', 'categories'];
+
+      // Lectura de usuarios: solo admin o el propio usuario
+      allow read: if collectionName == 'users' &&
+        (isAdmin() || isOwner(docId));
+
+      // Lectura de pedidos: solo admin o el cliente del pedido
+      allow read: if collectionName == 'orders' &&
+        (isAdmin() || (isAuthenticated() && resource.data.customerId == request.auth.uid));
+
+      // Lectura de carritos: solo el propietario
+      allow read: if collectionName == 'carts' && isOwner(docId);
+
+      // Lectura de cupones: público para validar, pero no mostrar códigos
+      allow read: if collectionName == 'coupons';
+
+      // Datos sensibles solo para admin
+      allow read: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments'] && isAdmin();
 
       // ----------------------------------------
       // PRODUCTOS: Solo admin puede crear/editar/eliminar
       // ----------------------------------------
-      allow write: if collectionName == 'products' && isAdmin();
+      allow write: if collectionName == 'products' &&
+        isAdmin() &&
+        isValidSize() &&
+        isValidProduct();
 
       // ----------------------------------------
       // SETTINGS: Solo admin puede modificar configuración
       // ----------------------------------------
-      allow write: if collectionName == 'settings' && isAdmin();
+      allow write: if collectionName == 'settings' &&
+        isAdmin() &&
+        isValidSize();
 
       // ----------------------------------------
       // CUPONES: Solo admin puede gestionar cupones
       // ----------------------------------------
-      allow write: if collectionName == 'coupons' && isAdmin();
+      allow write: if collectionName == 'coupons' &&
+        isAdmin() &&
+        isValidSize();
 
       // ----------------------------------------
       // PROMOS: Solo admin puede gestionar promos
@@ -72,43 +145,45 @@ service cloud.firestore {
       allow write: if collectionName == 'promos' && isAdmin();
 
       // ----------------------------------------
-      // PROVEEDORES: Solo admin puede gestionar proveedores
+      // PROVEEDORES/GASTOS/COMPRAS: Solo admin
       // ----------------------------------------
-      allow write: if collectionName == 'suppliers' && isAdmin();
-
-      // ----------------------------------------
-      // GASTOS: Solo admin puede registrar gastos
-      // ----------------------------------------
-      allow write: if collectionName == 'expenses' && isAdmin();
-
-      // ----------------------------------------
-      // COMPRAS (Mayoristas): Solo admin puede gestionar
-      // ----------------------------------------
-      allow write: if collectionName == 'purchases' && isAdmin();
+      allow write: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments'] && isAdmin();
 
       // ----------------------------------------
       // USUARIOS:
-      // - Cualquiera puede crear su cuenta (registro)
+      // - Cualquiera autenticado puede crear su cuenta
       // - Solo el propio usuario puede actualizar su perfil
+      // - No puede cambiar su propio rol
       // - Admin puede ver/editar todos
       // ----------------------------------------
-      allow create: if collectionName == 'users' && request.auth != null;
-      allow update, delete: if collectionName == 'users' &&
-        (request.auth.uid == docId || isAdmin());
+      allow create: if collectionName == 'users' &&
+        isAuthenticated() &&
+        isValidUser() &&
+        noPrivilegeEscalation();
+
+      allow update: if collectionName == 'users' &&
+        (isOwner(docId) || isAdmin()) &&
+        noPrivilegeEscalation();
+
+      allow delete: if collectionName == 'users' && isAdmin();
 
       // ----------------------------------------
       // CARRITOS:
       // - Usuario autenticado puede gestionar su propio carrito
       // ----------------------------------------
       allow write: if collectionName == 'carts' &&
-        request.auth != null && request.auth.uid == docId;
+        isAuthenticated() &&
+        isOwner(docId);
 
       // ----------------------------------------
       // PEDIDOS (Orders):
       // - Usuarios autenticados pueden CREAR pedidos
       // - Solo admin puede ACTUALIZAR o ELIMINAR pedidos
       // ----------------------------------------
-      allow create: if collectionName == 'orders' && request.auth != null;
+      allow create: if collectionName == 'orders' &&
+        isAuthenticated() &&
+        isValidOrder();
+
       allow update, delete: if collectionName == 'orders' && isAdmin();
     }
 
@@ -119,70 +194,41 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
-  }
-}
-*/
 
-// ============================================
-// REGLAS SIMPLIFICADAS (Si las anteriores fallan)
-// ============================================
-// Si tienes problemas con la función isTeamAdmin(),
-// usa estas reglas más simples que solo verifican
-// el email del super admin:
-
-/*
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    function isSuperAdmin() {
-      return request.auth != null &&
-        request.auth.token.email == 'lautarocorazza63@gmail.com';
-    }
-
-    match /artifacts/{appId}/public/data/{collectionName}/{docId} {
-      // Lectura pública
-      allow read: if true;
-
-      // Solo super admin puede escribir en colecciones críticas
-      allow write: if collectionName in ['products', 'settings', 'coupons', 'promos', 'suppliers', 'expenses', 'purchases']
-        && isSuperAdmin();
-
-      // Usuarios pueden crear cuentas y pedidos
-      allow create: if collectionName in ['users', 'orders', 'carts'] && request.auth != null;
-
-      // Usuarios solo pueden editar su propio perfil
-      allow update: if collectionName == 'users' && request.auth != null;
-    }
-
-    match /artifacts/{appId}/public/config {
-      allow read: if true;
-      allow write: if isSuperAdmin();
+    // ========================================
+    // BLOQUEAR TODO LO DEMÁS
+    // ========================================
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
 */
 
 // ============================================
-// NOTAS IMPORTANTES
+// NOTAS DE SEGURIDAD IMPORTANTES
 // ============================================
 //
-// 1. Estas reglas asumen que usas Firebase Anonymous Auth
-//    combinado con tu propio sistema de usuarios en Firestore.
+// 1. NUNCA confíes en datos del cliente
+//    - Siempre valida en el servidor (Firestore Rules)
+//    - El cliente puede ser manipulado
 //
-// 2. Para que 'request.auth.token.email' funcione,
-//    el usuario debe haber iniciado sesión con un método
-//    que incluya email (Google, Email/Password, etc.)
+// 2. Principio de mínimo privilegio
+//    - Solo dar acceso a lo que realmente se necesita
+//    - Separar datos públicos de privados
 //
-// 3. Si usas SOLO Anonymous Auth, necesitarás modificar
-//    la lógica para verificar el email desde tu colección
-//    de usuarios en lugar del token de auth.
+// 3. Validar TODOS los campos de entrada
+//    - Tipo de dato correcto
+//    - Longitud máxima
+//    - Valores permitidos
 //
-// 4. ALTERNATIVA SIMPLE: Si tienes problemas, puedes
-//    hardcodear los UIDs de los admins en las reglas:
+// 4. Prevenir escalación de privilegios
+//    - No permitir que usuarios cambien su propio rol
+//    - Solo admin puede modificar roles
 //
-//    function isAdmin() {
-//      return request.auth.uid in ['UID_ADMIN_1', 'UID_ADMIN_2'];
-//    }
+// 5. Rate limiting
+//    - Firebase tiene límites automáticos
+//    - Implementar límites adicionales en Cloud Functions
 //
 // ============================================
+

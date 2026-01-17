@@ -40,7 +40,7 @@ export default async function handler(req, res) {
             const paymentBody = {
                 transaction_amount: Number(paymentData.transaction_amount),
                 token: paymentData.token,
-                description: paymentData.description || 'Compra en Sustore',
+                description: paymentData.description || 'Compra en Tienda Online',
                 installments: Number(paymentData.installments) || 1,
                 payment_method_id: paymentData.payment_method_id,
                 payer: {

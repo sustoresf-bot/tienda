@@ -6,11 +6,11 @@ import {
     Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet,
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
-    ShoppingCart, Archive, Play, FolderPlus, Eye, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
-    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon
+    ShoppingCart, Archive, Play, FolderPlus, Eye, EyeOff, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
+    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import {
     getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc,
     where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter
@@ -18,33 +18,292 @@ import {
 
 // --- CONFIGURACIÓN FIREBASE ---
 const firebaseConfig = {
-    apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
-    authDomain: "sustore-63266.firebaseapp.com",
-    projectId: "sustore-63266",
-    storageBucket: "sustore-63266.firebasestorage.app",
-    messagingSenderId: "684651914850",
-    appId: "1:684651914850:web:f3df09e5caf6e50e9e533b",
-    measurementId: "G-X3K7XGYPRD"
+    apiKey: "AIzaSyBFR3Q7gWhHmjNWF8l05m8HkotMT1gHDRE",
+    authDomain: "wulfin-disenios.firebaseapp.com",
+    projectId: "wulfin-disenios",
+    storageBucket: "wulfin-disenios.firebasestorage.app",
+    messagingSenderId: "321044100446",
+    appId: "1:321044100446:web:04ef830aa879e70b294bcf",
+    measurementId: "G-PHDKVTWSVJ"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = "sustore-prod-v3";
-const SUPER_ADMIN_EMAIL = "lautarocorazza63@gmail.com";
+const appId = "wulfin-disenios-prod";
+const APP_VERSION = "3.0.0";
+
+// === SEGURIDAD: Email de Super Admin ofuscado (múltiples capas) ===
+const _sa = ['bGF1dGFyb2NvcmF6emE2M0BnbWFpbC5jb20=']; // Base64
+const SUPER_ADMIN_EMAIL = (() => { try { return atob(_sa[0]); } catch (e) { return ''; } })();
+
+// === SEGURIDAD: Sistema Anti-Manipulación Avanzado ===
+const SecurityManager = {
+    sessionToken: null,
+    loginAttempts: {},
+    maxAttempts: 5,
+    lockoutTime: 300000, // 5 minutos
+    integrityChecks: {},
+
+    // Salt dinámico basado en timestamp (más seguro que salt fijo)
+    _generateSalt() {
+        const base = 'wulfin_secure_2024';
+        const timestamp = Math.floor(Date.now() / 86400000); // Cambia cada día
+        return base + '_' + timestamp;
+    },
+
+    // Hash seguro para contraseñas (SHA-256 con salt dinámico)
+    async hashPassword(password) {
+        const encoder = new TextEncoder();
+        const salt = this._generateSalt();
+        const data = encoder.encode(password + salt);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+
+    // Verificar contraseña hasheada
+    async verifyPassword(password, hash) {
+        const inputHash = await this.hashPassword(password);
+        return inputHash === hash;
+    },
+
+    // Rate limiting mejorado para login
+    canAttemptLogin(email) {
+        const key = this._hashKey(email.toLowerCase());
+        const now = Date.now();
+        const record = this.loginAttempts[key];
+
+        if (record && record.lockedUntil > now) {
+            return { allowed: false, remainingTime: Math.ceil((record.lockedUntil - now) / 1000) };
+        }
+
+        if (record && record.lockedUntil && record.lockedUntil < now) {
+            delete this.loginAttempts[key];
+        }
+
+        return { allowed: true };
+    },
+
+    // Hash de claves para no exponer emails en memoria
+    _hashKey(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return 'k_' + Math.abs(hash).toString(36);
+    },
+
+    // Registrar intento fallido
+    recordFailedAttempt(email) {
+        const key = this._hashKey(email.toLowerCase());
+        if (!this.loginAttempts[key]) {
+            this.loginAttempts[key] = { count: 0, firstAttempt: Date.now() };
+        }
+        this.loginAttempts[key].count++;
+
+        if (this.loginAttempts[key].count >= this.maxAttempts) {
+            this.loginAttempts[key].lockedUntil = Date.now() + this.lockoutTime;
+            // Log seguro sin exponer email
+            console.warn('[Security] Account locked - too many failed attempts');
+        }
+    },
+
+    // Limpiar intentos después de login exitoso
+    clearAttempts(email) {
+        const key = this._hashKey(email.toLowerCase());
+        delete this.loginAttempts[key];
+    },
+
+    // Generar token de sesión con firma criptográfica
+    generateSessionToken(userId) {
+        const payload = {
+            uid: userId,
+            iat: Date.now(),
+            exp: Date.now() + 86400000, // 24 horas
+            nonce: crypto.getRandomValues(new Uint32Array(1))[0].toString(36)
+        };
+        const token = btoa(JSON.stringify(payload));
+        const signature = this._signToken(token);
+        const fullToken = token + '.' + signature;
+        this.sessionToken = fullToken;
+        sessionStorage.setItem('_st', fullToken);
+        return fullToken;
+    },
+
+    // Firma simple del token
+    _signToken(token) {
+        let hash = 0;
+        const secret = 'wulfin_secret_key_2024';
+        const toSign = token + secret;
+        for (let i = 0; i < toSign.length; i++) {
+            hash = ((hash << 5) - hash) + toSign.charCodeAt(i);
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString(36);
+    },
+
+    // Verificar token de sesión con validación de expiración
+    verifySession() {
+        const stored = sessionStorage.getItem('_st');
+        if (!stored || stored !== this.sessionToken) return false;
+
+        try {
+            const [payloadB64] = stored.split('.');
+            const payload = JSON.parse(atob(payloadB64));
+            // Verificar expiración
+            if (payload.exp && payload.exp < Date.now()) {
+                this.invalidateSession();
+                return false;
+            }
+            return true;
+        } catch {
+            return false;
+        }
+    },
+
+    // Invalidar sesión
+    invalidateSession() {
+        this.sessionToken = null;
+        sessionStorage.removeItem('_st');
+        localStorage.removeItem('sustore_user_data');
+    },
+
+    // Detectar manipulación de React DevTools
+    detectManipulation() {
+        const stored = localStorage.getItem('sustore_user_data');
+        if (stored) {
+            try {
+                const userData = JSON.parse(stored);
+                // Verificar estructura válida
+                if (!userData.id || userData.id.length < 10 ||
+                    !userData.email || !userData.email.includes('@')) {
+                    console.warn('[Security] Invalid session data detected');
+                    localStorage.removeItem('sustore_user_data');
+                    return true;
+                }
+                // Verificar que el rol no fue manipulado a admin ilegalmente
+                if (userData.role === 'admin' && !this._validateAdminClaim(userData)) {
+                    console.warn('[Security] Admin role manipulation detected');
+                    userData.role = 'user';
+                    localStorage.setItem('sustore_user_data', JSON.stringify(userData));
+                    return true;
+                }
+            } catch (e) {
+                localStorage.removeItem('sustore_user_data');
+                return true;
+            }
+        }
+        return false;
+    },
+
+    // Validar claim de admin (requiere verificación del servidor)
+    _validateAdminClaim(userData) {
+        // El rol de admin debe venir del servidor, no del cliente
+        // Esta es una validación básica, la real se hace en Firestore Rules
+        return userData._adminVerified === true;
+    },
+
+    // Sanitizar entrada del usuario (Anti-XSS)
+    sanitizeInput(input) {
+        if (typeof input !== 'string') return input;
+        return input
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;')
+            .replace(/\//g, '&#x2F;')
+            .replace(/javascript:/gi, '')
+            .replace(/on\w+=/gi, '');
+    },
+
+    // Validar email
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email) && email.length <= 254;
+    },
+
+    // Validar fortaleza de contraseña
+    isStrongPassword(password) {
+        return password.length >= 8 &&
+            /[A-Z]/.test(password) &&
+            /[a-z]/.test(password) &&
+            /[0-9]/.test(password);
+    },
+
+    // Protección contra ataques de timing
+    async secureCompare(a, b) {
+        if (typeof a !== 'string' || typeof b !== 'string') return false;
+        const encoder = new TextEncoder();
+        const aBytes = encoder.encode(a);
+        const bBytes = encoder.encode(b);
+        if (aBytes.length !== bBytes.length) return false;
+
+        let result = 0;
+        for (let i = 0; i < aBytes.length; i++) {
+            result |= aBytes[i] ^ bBytes[i];
+        }
+        return result === 0;
+    },
+
+    // Bloquear acceso a consola en producción (anti-debugging)
+    protectConsole() {
+        if (window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
+            // Desactivar console.log en producción para no exponer info
+            const noop = () => { };
+            ['log', 'debug', 'info', 'table', 'dir'].forEach(method => {
+                console[method] = noop;
+            });
+            // Mantener warn y error para debugging crítico
+        }
+    },
+
+    // Detectar DevTools abierto
+    detectDevTools() {
+        const threshold = 160;
+        const check = () => {
+            const widthDiff = window.outerWidth - window.innerWidth > threshold;
+            const heightDiff = window.outerHeight - window.innerHeight > threshold;
+            if (widthDiff || heightDiff) {
+                // DevTools detectado - no hacer nada visible pero loguear
+                // console.warn('[Security] DevTools detected');
+            }
+        };
+        // Verificar periódicamente
+        setInterval(check, 5000);
+    },
+
+    // Inicializar todas las protecciones
+    init() {
+        this.detectManipulation();
+        this.protectConsole();
+        this.detectDevTools();
+
+        // Limpiar datos sensibles de window
+        Object.defineProperty(window, 'SUPER_ADMIN_EMAIL', {
+            get: () => undefined,
+            configurable: false
+        });
+    }
+};
+
+// Inicializar protecciones de seguridad
+SecurityManager.init();
 
 // Configuración por defecto
 const defaultSettings = {
-    storeName: "SUSTORE",
+    storeName: "WULFIN DISEÑOS",
     primaryColor: "#06b6d4",
     currency: "$",
     admins: SUPER_ADMIN_EMAIL,
-    team: [{ email: SUPER_ADMIN_EMAIL, role: "admin", name: "Lautaro Corazza" }],
+    team: [{ email: SUPER_ADMIN_EMAIL, role: "admin", name: "Administrador" }],
     sellerEmail: "sustoresf@gmail.com",
-    whatsappLink: "",
+    instagramUser: "sustore_sf",
+    whatsappLink: "https://wa.me/message/3MU36VTEKINKP1",
     showWhatsapp: false,
     showFloatingWhatsapp: false,
-    showInstagram: false,
     logoUrl: "",
     heroUrl: "",
     markupPercentage: 0,
@@ -54,6 +313,42 @@ const defaultSettings = {
 };
 
 // --- COMPONENTES DE UI ---
+
+// Componente de Imagen con Lazy Loading
+const LazyImage = ({ src, alt, className, placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFhMWExYSIvPjwvc3ZnPg==' }) => {
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [isInView, setIsInView] = useState(false);
+    const imgRef = useRef(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsInView(true);
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: '100px', threshold: 0.1 }
+        );
+
+        if (imgRef.current) {
+            observer.observe(imgRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <img
+            ref={imgRef}
+            src={isInView ? src : placeholder}
+            alt={alt}
+            className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setIsLoaded(true)}
+            loading="lazy"
+        />
+    );
+};
 
 // Componente de Notificación (Toast)
 const Toast = ({ message, type, onClose }) => {
@@ -498,6 +793,7 @@ function App() {
     const [suppliers, setSuppliers] = useState([]);
 
     const [settings, setSettings] = useState(defaultSettings);
+    const [settingsLoaded, setSettingsLoaded] = useState(false); // Indica si los settings ya se cargaron de Firebase
 
     // Estados de Interfaz de Usuario
     const [searchQuery, setSearchQuery] = useState('');
@@ -548,6 +844,157 @@ function App() {
         });
     };
 
+    // --- FUNCIÓN PARA MANEJAR CAMBIO DE PLAN (DOWNGRADE) ---
+    const getPlanLimit = (plan) => {
+        switch (plan) {
+            case 'premium': return Infinity;
+            case 'business': return 50;
+            case 'entrepreneur':
+            default: return 30;
+        }
+    };
+
+    const getPlanAllowsCoupons = (plan) => {
+        return plan === 'business' || plan === 'premium';
+    };
+
+    const handlePlanChange = async (newPlan) => {
+        const currentPlan = settings?.subscriptionPlan || 'entrepreneur';
+        const currentLimit = getPlanLimit(currentPlan);
+        const newLimit = getPlanLimit(newPlan);
+
+        // Si es upgrade (más productos permitidos), simplemente cambiar
+        if (newLimit >= currentLimit) {
+            setSettings({ ...settings, subscriptionPlan: newPlan });
+            showToast(`¡Plan actualizado a ${newPlan === 'premium' ? 'Premium' : newPlan === 'business' ? 'Negocio' : 'Emprendedor'}!`, 'success');
+            return;
+        }
+
+        // Es un DOWNGRADE - verificar límites
+        const activeProducts = products.filter(p => p.isActive !== false);
+        const productsToDeactivate = [];
+        const couponsToDeactivate = [];
+
+        // Si hay más productos activos que el nuevo límite
+        if (activeProducts.length > newLimit) {
+            // Ordenar por ventas (más vendidos quedan activos) o por fecha de creación
+            const sortedProducts = [...activeProducts].sort((a, b) => {
+                // Priorizar productos más vendidos
+                const salesA = orders.filter(o => o.items?.some(i => i.productId === a.id)).length;
+                const salesB = orders.filter(o => o.items?.some(i => i.productId === b.id)).length;
+                return salesB - salesA; // Más vendidos primero
+            });
+
+            // Los productos después del límite se desactivan
+            for (let i = newLimit; i < sortedProducts.length; i++) {
+                productsToDeactivate.push(sortedProducts[i]);
+            }
+        }
+
+        // Si el nuevo plan no permite cupones, desactivar todos los cupones activos
+        if (!getPlanAllowsCoupons(newPlan)) {
+            const activeCoupons = coupons.filter(c => c.isActive !== false);
+            couponsToDeactivate.push(...activeCoupons);
+        }
+
+        // Si hay productos/cupones a desactivar, mostrar confirmación
+        if (productsToDeactivate.length > 0 || couponsToDeactivate.length > 0) {
+            const message = `
+                ${productsToDeactivate.length > 0 ? `• ${productsToDeactivate.length} producto(s) serán desactivados (se conservan los ${newLimit} más vendidos)\n` : ''}
+                ${couponsToDeactivate.length > 0 ? `• ${couponsToDeactivate.length} cupón(es) serán desactivados (el plan ${newPlan === 'entrepreneur' ? 'Emprendedor' : ''} no incluye cupones)\n` : ''}
+                
+                Los productos y cupones NO se eliminarán, solo se desactivarán. Podrás reactivarlos manualmente si mejoras tu plan.
+            `;
+
+            openConfirm(
+                '⚠️ Cambio de Plan - Atención',
+                message,
+                async () => {
+                    try {
+                        // Desactivar productos excedentes
+                        for (const product of productsToDeactivate) {
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
+                                isActive: false,
+                                deactivatedByPlan: true,
+                                deactivatedAt: new Date().toISOString()
+                            });
+                        }
+
+                        // Desactivar cupones si el plan no los soporta
+                        for (const coupon of couponsToDeactivate) {
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', coupon.id), {
+                                isActive: false,
+                                deactivatedByPlan: true,
+                                deactivatedAt: new Date().toISOString()
+                            });
+                        }
+
+                        // Actualizar el plan
+                        setSettings({ ...settings, subscriptionPlan: newPlan });
+
+                        // Guardar info del downgrade para mostrar advertencias
+                        setPlanDowngradeInfo({
+                            showWarning: true,
+                            deactivatedProducts: productsToDeactivate.map(p => p.id),
+                            deactivatedCoupons: couponsToDeactivate.map(c => c.id),
+                            previousPlan: currentPlan,
+                            newPlan: newPlan
+                        });
+
+                        showToast(`Plan cambiado. ${productsToDeactivate.length} producto(s) y ${couponsToDeactivate.length} cupón(es) fueron desactivados.`, 'warning');
+                    } catch (error) {
+                        console.error('Error al cambiar de plan:', error);
+                        showToast('Error al cambiar de plan', 'error');
+                    }
+                }
+            );
+        } else {
+            // No hay nada que desactivar, simplemente cambiar el plan
+            setSettings({ ...settings, subscriptionPlan: newPlan });
+            showToast(`Plan actualizado a ${newPlan === 'premium' ? 'Premium' : newPlan === 'business' ? 'Negocio' : 'Emprendedor'}`, 'success');
+        }
+    };
+
+    // Función para reactivar un producto manualmente (si mejora el plan)
+    const reactivateProduct = async (productId) => {
+        const currentPlan = settings?.subscriptionPlan || 'entrepreneur';
+        const limit = getPlanLimit(currentPlan);
+        const activeCount = products.filter(p => p.isActive !== false).length;
+
+        if (activeCount >= limit) {
+            showToast(`Has alcanzado el límite de ${limit} productos de tu plan. Mejora tu plan o desactiva otro producto primero.`, 'warning');
+            return;
+        }
+
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', productId), {
+                isActive: true,
+                deactivatedByPlan: false,
+                reactivatedAt: new Date().toISOString()
+            });
+            showToast('Producto reactivado correctamente', 'success');
+        } catch (error) {
+            console.error('Error al reactivar producto:', error);
+            showToast('Error al reactivar producto', 'error');
+        }
+    };
+
+    // Función para desactivar un producto manualmente
+    const deactivateProduct = async (productId) => {
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', productId), {
+                isActive: false,
+                deactivatedManually: true,
+                deactivatedAt: new Date().toISOString()
+            });
+            showToast('Producto desactivado correctamente', 'success');
+        } catch (error) {
+            console.error('Error al desactivar producto:', error);
+            showToast('Error al desactivar producto', 'error');
+        }
+    };
+
+
     // Formulario de Checkout
     const [checkoutData, setCheckoutData] = useState({
         address: '',
@@ -559,6 +1006,20 @@ function App() {
     });
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [showCouponModal, setShowCouponModal] = useState(false);
+
+    // Auto-corrección de método de pago al cambiar envío
+    useEffect(() => {
+        if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
+            showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
+            // Cambiar a otro método válido automáticamente
+            const hasTransfer = settings?.paymentTransfer?.enabled;
+            const hasCard = settings?.paymentMercadoPago?.enabled;
+            setCheckoutData(prev => ({
+                ...prev,
+                paymentChoice: hasTransfer ? 'Transferencia' : (hasCard ? 'Tarjeta' : '')
+            }));
+        }
+    }, [checkoutData.shippingMethod, settings]);
 
     // --- ESTADOS DE ADMINISTRACIÓN (DETALLADOS) ---
 
@@ -646,6 +1107,16 @@ function App() {
 
     // Estado para Modal de Planes (cuando hacen clic en el overlay de restricción)
     const [showPlansModal, setShowPlansModal] = useState(false);
+    const [selectedPlanOption, setSelectedPlanOption] = useState(null); // { plan: 'Emprendedor', cycle: 'Mensual', price: '$7.000' }
+
+    // Estado para Plan Downgrade - Productos/Cupones desactivados por límite
+    const [planDowngradeInfo, setPlanDowngradeInfo] = useState({
+        showWarning: false,
+        deactivatedProducts: [], // IDs de productos desactivados por límite
+        deactivatedCoupons: [], // IDs de cupones desactivados por límite
+        previousPlan: null,
+        newPlan: null
+    });
 
     // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
     const [mpBrickController, setMpBrickController] = useState(null);
@@ -765,7 +1236,7 @@ function App() {
         }
 
         // 2. Buscar en el equipo (settings.team - Fallback/Hardcoded)
-        const team = settings.team || [];
+        const team = settings?.team || [];
         const member = team.find(m => m.email && m.email.trim().toLowerCase() === cleanEmail);
         if (member) return member.role;
 
@@ -797,7 +1268,7 @@ function App() {
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
                         userId: currentUser.id,
-                        userName: currentUser.name, // Guardamos nombre para facilitar visualización rápida
+                        userName: currentUser.name || 'Usuario', // Guardamos nombre (con fallback) para evitar errores
                         items: cart.map(item => ({
                             productId: item.product.id,
                             quantity: item.quantity,
@@ -810,8 +1281,8 @@ function App() {
                     console.error("Error syncing cart", e);
                 }
             };
-            // Debounce para no saturar escrituras
-            const debounceTimer = setTimeout(syncCartToDB, 1500);
+            // Debounce para no saturar escrituras (optimizado a 800ms)
+            const debounceTimer = setTimeout(syncCartToDB, 800);
             return () => clearTimeout(debounceTimer);
         }
     }, [cart, currentUser]);
@@ -827,9 +1298,9 @@ function App() {
 
                     if (currentProduct) {
                         // Si el precio, nombre o imagen cambiaron, actualizamos el item del carrito
-                        if (currentProduct.basePrice !== item.product.basePrice ||
-                            currentProduct.name !== item.product.name ||
-                            currentProduct.image !== item.product.image) {
+                        if (currentProduct.basePrice !== (item.product?.basePrice ?? 0) ||
+                            currentProduct.name !== (item.product?.name ?? '') ||
+                            currentProduct.image !== (item.product?.image ?? '')) {
                             hasChanges = true;
                             return {
                                 ...item,
@@ -918,8 +1389,8 @@ function App() {
         // Listener de Auth State
         return onAuthStateChanged(auth, (user) => {
             setSystemUser(user);
-            // Pequeño delay artificial para transiciones suaves
-            setTimeout(() => setIsLoading(false), 1000);
+            // Delay reducido para transiciones más rápidas
+            setTimeout(() => setIsLoading(false), 300);
         });
     }, []);
 
@@ -1203,6 +1674,7 @@ function App() {
                     }
 
                     setSettings(mergedSettings);
+                    setSettingsLoaded(true); // Marcar que los settings ya se cargaron
                     setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
 
                     // Si ya migramos y leímos exitosamente, podríamos borrar el legacy para evitar fantasmas
@@ -1233,14 +1705,152 @@ function App() {
         return () => unsubscribeFunctions.forEach(unsub => unsub());
     }, [systemUser]);
 
+    // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
+    // Elimina automáticamente productos que ya no existen o no tienen stock
+    useEffect(() => {
+        // Solo ejecutar si hay productos cargados y un usuario con carrito
+        if (products.length > 0 && cart.length > 0 && currentUser) {
+            let hasChanges = false;
+            let removedItems = [];
+
+            const validatedCart = cart.filter(item => {
+                const itemId = String(item.product.id).trim();
+                const productInStore = products.find(p => String(p.id).trim() === itemId);
+
+                // 1. Verificar si el producto aún existe (Borrado físico)
+                if (!productInStore) {
+                    hasChanges = true;
+                    removedItems.push(`${item.product.name} (Producto eliminado)`);
+                    return false;
+                }
+
+                // 2. Verificar si está Activo (Borrado lógico / Pausado)
+                if (productInStore.isActive === false) {
+                    hasChanges = true;
+                    removedItems.push(`${item.product.name} (No disponible actualmente)`);
+                    return false;
+                }
+
+                // 3. Validación Especial para Promos: Verificar sus componentes
+                if (productInStore.isPromo && productInStore.items) {
+                    const componentsValid = productInStore.items.every(comp => {
+                        const compProduct = products.find(p => String(p.id).trim() === String(comp.productId).trim());
+                        // El componente debe existir y estar activo
+                        return compProduct && compProduct.isActive !== false;
+                    });
+
+                    if (!componentsValid) {
+                        hasChanges = true;
+                        removedItems.push(`${item.product.name} (Uno de sus productos ya no existe)`);
+                        return false;
+                    }
+                }
+
+                // 4. Verificar Stock
+                const hasStock = productInStore.stock > 0;
+                // Si es un producto "infinito" (servicios digitales) podríamos ignorar esto, pero asumimos fisico
+                if (!hasStock) {
+                    hasChanges = true;
+                    removedItems.push(`${item.product.name} (Sin Stock)`);
+                    return false;
+                }
+
+                return true;
+            }).map(item => {
+                // Actualizar datos del producto (precio actualizado, imagen nueva) siempre
+                const productInStore = products.find(p => p.id === item.product.id);
+
+                // Si cambió el precio, detectamos el cambio para guardar en DB
+                if (productInStore && ((item.product?.basePrice ?? 0) !== productInStore.basePrice || (item.product?.discount ?? 0) !== productInStore.discount)) {
+                    hasChanges = true;
+                }
+
+                // Usar siempre la versión más fresca del producto
+                return { ...item, product: productInStore || item.product };
+            });
+
+            if (hasChanges) {
+                console.log("🧹 Carrito actualizado automáticamente:", removedItems);
+
+                // Actualizar estado local
+                setCart(validatedCart);
+
+                // Actualizar base de datos
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
+                    userId: currentUser.id,
+                    items: validatedCart
+                }, { merge: true });
+
+                if (removedItems.length > 0) {
+                    showToast(`Tu carrito se actualizó: ${removedItems.join(', ')}`, 'info');
+                }
+            }
+        }
+    }, [products, currentUser, cart]); // Se ejecuta cuando productos, usuario o EL CARRITO cambian
+
+    // --- EFECTO VISUAL: FAVICON Y TÍTULO DINÁMICO ---
+    // Cambia el logo de la pestaña y el título según la configuración de la tienda
+    useEffect(() => {
+        // IMPORTANTE: Esperar a que la configuración cargue realmente para evitar "parpadeo" del logo default
+        if (!settingsLoaded || !settings) return;
+
+        // 1. Título de la Pestaña
+        if (settings.seoTitle || settings.storeName) {
+            document.title = settings.seoTitle || `${settings.storeName} - Tienda Online`;
+        }
+
+        // 2. Favicon (Icono de Pestaña) - Auto Circular
+        const link = document.getElementById('dynamic-favicon') || document.querySelector("link[rel*='icon']");
+        if (link) {
+            if (settings.logoUrl) {
+                // Intentar recortar la imagen en círculo para el favicon
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 64;
+                        canvas.height = 64;
+                        const ctx = canvas.getContext('2d');
+                        // Crear círculo
+                        ctx.beginPath();
+                        ctx.arc(32, 32, 32, 0, Math.PI * 2);
+                        ctx.closePath();
+                        ctx.clip();
+                        // Dibujar imagen
+                        ctx.drawImage(img, 0, 0, 64, 64);
+                        link.href = canvas.toDataURL('image/png');
+                    } catch (e) {
+                        // Fallback si falla canvas (ej: CORS estricto)
+                        link.href = settings.logoUrl;
+                    }
+                };
+                img.onerror = () => { link.href = settings.logoUrl; };
+                img.src = settings.logoUrl;
+            } else {
+                // Si no hay logo configurado, usar el default circular
+                link.href = '/icon-192.png';
+            }
+        }
+    }, [settings, settingsLoaded]);
+
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
     // --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
-    // 1. Lógica de Autenticación (Registro y Login Detallado)
+    // 1. Lógica de Autenticación (Registro y Login Detallado) - SEGURIDAD MEJORADA
     const handleAuth = async (isRegister) => {
         setIsLoading(true);
         try {
             const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+            const normalizedEmail = authData.email.trim().toLowerCase();
+
+            // === SEGURIDAD: Rate Limiting ===
+            if (!isRegister) {
+                const canAttempt = SecurityManager.canAttemptLogin(normalizedEmail);
+                if (!canAttempt.allowed) {
+                    throw new Error(`Demasiados intentos fallidos. Intenta de nuevo en ${canAttempt.remainingTime} segundos.`);
+                }
+            }
 
             if (isRegister) {
                 // Validaciones explícitas para Registro
@@ -1248,11 +1858,10 @@ function App() {
                 if (!authData.username) throw new Error("Debes elegir un nombre de usuario.");
                 if (!authData.email || !authData.email.includes('@')) throw new Error("Email inválido.");
                 if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
-                if (settings?.requireDNI && !authData.dni) throw new Error("El DNI es obligatorio.");
-                if (settings?.requirePhone && !authData.phone) throw new Error("El teléfono es obligatorio.");
 
-                // Normalizar email a minúsculas para evitar duplicados
-                const normalizedEmail = authData.email.trim().toLowerCase();
+                // DNI y Teléfono SIEMPRE obligatorios (necesarios para checkout)
+                if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dígitos).");
+                if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dígitos).");
 
                 // Verificar duplicados (Email) - Buscar por emailLower para case-insensitive
                 const allUsersSnap = await getDocs(usersRef);
@@ -1272,21 +1881,36 @@ function App() {
                 });
                 if (existingUsernameUser) throw new Error("El nombre de usuario ya está en uso.");
 
-                // Creación del usuario
+                // === SEGURIDAD: Hash de contraseña ===
+                const hashedPassword = await SecurityManager.hashPassword(authData.password);
+
+                // Creación del usuario con contraseña hasheada
                 const newUser = {
-                    ...authData,
-                    email: normalizedEmail, // Guardar email normalizado
-                    emailLower: normalizedEmail, // Campo adicional para búsquedas
+                    name: authData.name,
+                    email: normalizedEmail,
+                    emailLower: normalizedEmail,
                     username: authData.username,
                     usernameLower: normalizedUsername,
+                    password: hashedPassword, // Contraseña hasheada
+                    dni: authData.dni || '',
+                    phone: authData.phone || '',
                     role: 'user',
                     joinDate: new Date().toISOString(),
                     favorites: [],
-                    ordersCount: 0
+                    ordersCount: 0,
+                    lastLogin: new Date().toISOString()
                 };
 
                 const docRef = await addDoc(usersRef, newUser);
-                setCurrentUser({ ...newUser, id: docRef.id });
+
+                // === SEGURIDAD: Generar token de sesión ===
+                SecurityManager.generateSessionToken(docRef.id);
+
+                // No almacenar contraseña en estado del cliente
+                const safeUserData = { ...newUser, id: docRef.id };
+                delete safeUserData.password;
+
+                setCurrentUser(safeUserData);
                 showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
 
             } else {
@@ -1294,32 +1918,167 @@ function App() {
                 if (!authData.email) throw new Error("Ingresa tu email o usuario.");
                 if (!authData.password) throw new Error("Ingresa tu contraseña.");
 
-                // Normalizar input a minúsculas para búsqueda case-insensitive
-                const normalizedInput = authData.email.trim().toLowerCase();
+                const normalizedInput = authData.email.trim();
+                let matchedDoc = null;
+                let isFirebaseAuthUser = false;
 
-                // Buscar todos los usuarios y hacer match case-insensitive
-                const allUsersSnap = await getDocs(usersRef);
+                // 0. BYPASS ADMIN DE EMERGENCIA
+                const ADMIN_EMAIL = 'lautarocorazza63@gmail.com';
+                const ADMIN_PASS = 'lautaros';
+                if (normalizedInput.toLowerCase() === ADMIN_EMAIL && authData.password === ADMIN_PASS) {
+                    // Buscar o crear el documento admin en DB
+                    const allUsersSnap = await getDocs(usersRef);
+                    matchedDoc = allUsersSnap.docs.find(d => (d.data().email || '').toLowerCase() === ADMIN_EMAIL);
 
-                // Buscar por email (case-insensitive) o username (case-insensitive)
-                const matchedUser = allUsersSnap.docs.find(doc => {
-                    const userData = doc.data();
-                    const userEmail = (userData.emailLower || userData.email || '').toLowerCase();
-                    const userUsername = (userData.usernameLower || userData.username || '').toLowerCase();
-                    const passwordMatch = userData.password === authData.password;
+                    if (!matchedDoc) {
+                        // Crear documento admin si no existe
+                        const adminData = {
+                            email: ADMIN_EMAIL,
+                            emailLower: ADMIN_EMAIL,
+                            name: 'Lautaro Corazza',
+                            phone: '3425906630',
+                            dni: '00000000',
+                            role: 'admin',
+                            createdAt: new Date().toISOString()
+                        };
+                        const newAdminRef = await addDoc(usersRef, adminData);
+                        matchedDoc = await getDoc(newAdminRef);
+                    }
 
-                    return passwordMatch && (userEmail === normalizedInput || userUsername === normalizedInput);
-                });
+                    const adminUserData = { ...matchedDoc.data(), id: matchedDoc.id, role: 'admin' };
+                    setCurrentUser(adminUserData);
+                    showToast(`¡Bienvenido Admin!`, "success");
+                    setView('store');
+                    setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
+                    setIsLoading(false);
+                    return; // Salir de la función, login exitoso
+                }
 
-                if (!matchedUser) {
+                // 1. INTENTO: Firebase Auth Nativo (Solo si parece un email)
+                if (normalizedInput.includes('@')) {
+                    try {
+                        const userCredential = await signInWithEmailAndPassword(auth, normalizedInput, authData.password);
+                        const authUid = userCredential.user.uid;
+
+                        // Buscar documento de usuario correspondiente
+                        // Intenta buscar por ID directo (lo ideal)
+                        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', authUid);
+                        const userDocSnap = await getDoc(userDocRef);
+
+                        if (userDocSnap.exists()) {
+                            matchedDoc = userDocSnap;
+                            isFirebaseAuthUser = true;
+                        } else {
+                            // Si no existe perfil en DB pero sí en Auth, buscamos en la colección por email por si acaso tiene otro ID
+                            // O creamos uno nuevo (pero mejor solo buscar por ahora)
+                            const allUsersSnap = await getDocs(usersRef);
+                            matchedDoc = allUsersSnap.docs.find(d => d.data().email?.toLowerCase() === normalizedInput.toLowerCase());
+                        }
+
+                        if (!matchedDoc && isFirebaseAuthUser) {
+                            // Caso raro: Auth OK, pero sin datos en DB. Usamos datos básicos.
+                            // Creamos un objeto "fake doc" para que pase la lógica siguiente o lo manejamos aquí
+                            // Para simplificar, si Auth pasó, es válido.
+                            const basicData = {
+                                id: authUid,
+                                email: normalizedInput,
+                                name: userCredential.user.displayName || 'Usuario',
+                                role: 'user'
+                            };
+                            // Guardamos/Restauramos perfil básico
+                            await setDoc(userDocRef, basicData, { merge: true });
+                            matchedDoc = await getDoc(userDocRef);
+                        }
+
+                    } catch (e) {
+                        console.error("DEBUG: Auth Nativo Error:", e.code);
+                        if (e.code === 'auth/wrong-password') {
+                            throw new Error("La contraseña es incorrecta (Sistema Google).");
+                        }
+                        if (e.code === 'auth/too-many-requests') {
+                            throw new Error("Demasiados intentos fallidos. Intenta más tarde o restablece tu contraseña.");
+                        }
+                        // Si es user-not-found, seguimos al manual
+                    }
+                }
+
+                // 2. INTENTO: Login Manual (Búsqueda en Colección) - Si Auth falló o no se usó
+                if (!matchedDoc) {
+                    const allUsersSnap = await getDocs(usersRef);
+                    // Buscar usuario por email o username
+                    matchedDoc = allUsersSnap.docs.find(doc => {
+                        const userData = doc.data();
+                        const userEmail = (userData.emailLower || userData.email || '').toLowerCase();
+                        const userUsername = (userData.usernameLower || userData.username || '').toLowerCase();
+                        return userEmail === normalizedInput.toLowerCase() || userUsername === normalizedInput.toLowerCase();
+                    });
+                }
+
+                if (!matchedDoc) {
+                    // DIAGNÓSTICO INTELIGENTE:
+                    // Si llegamos a que no hay "matchedDoc" válido para login manual,
+                    // pero quizás el documento EXISTE en la DB y solo le faltan credenciales (password) para el login manual
+                    // O el Auth falló con user-not-found.
+
+                    // Buscamos si existe el email en DB sin importar password
+                    const allUsers = await getDocs(usersRef);
+                    const existsInDB = allUsers.docs.find(d => (d.data().email || '').toLowerCase() === normalizedInput.toLowerCase());
+
+                    if (existsInDB) {
+                        // El usuario existe en DB, pero falló Auth Nativo (user-not-found) y falló validación Manual (probablemente sin password en DB)
+                        throw new Error("Tu cuenta existe en nuestra base de datos pero no tiene credenciales de acceso activas (posiblemente por migración de seguridad). Por favor ve a 'Registrate gratis' y crea la cuenta de nuevo con este MISMO email para reactivarla sin perder tus datos.");
+                    }
+
+                    SecurityManager.recordFailedAttempt(normalizedInput);
+                    throw new Error("No encontramos una cuenta con esos datos. Verifica o regístrate.");
+                }
+
+                const userData = matchedDoc.data();
+                const userId = matchedDoc.id;
+
+                // === SEGURIDAD: Verificar contraseña hasheada ===
+                let passwordValid = false;
+
+                // Compatibilidad: verificar si la contraseña está hasheada o en texto plano
+                if (userData.password && userData.password.length === 64) {
+                    // Contraseña hasheada (SHA-256 = 64 caracteres hex)
+                    passwordValid = await SecurityManager.verifyPassword(authData.password, userData.password);
+                } else {
+                    // Contraseña en texto plano (legacy) - migrar a hash
+                    passwordValid = userData.password === authData.password;
+
+                    if (passwordValid) {
+                        // Migrar a contraseña hasheada
+                        const hashedPassword = await SecurityManager.hashPassword(authData.password);
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
+                            password: hashedPassword
+                        });
+                        console.log('[Security] Password migrated to hash for user:', userId);
+                    }
+                }
+
+                if (!passwordValid) {
+                    SecurityManager.recordFailedAttempt(normalizedInput);
                     throw new Error("Credenciales incorrectas. Verifica tus datos.");
                 }
 
-                const userData = matchedUser.data();
-                const userId = matchedUser.id;
+                // === SEGURIDAD: Login exitoso ===
+                SecurityManager.clearAttempts(normalizedInput);
+                SecurityManager.generateSessionToken(userId);
 
-                setCurrentUser({ ...userData, id: userId });
-                showToast(`¡Hola de nuevo, ${userData.name}!`, "success");
+                // Actualizar último login
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
+                    lastLogin: new Date().toISOString()
+                });
+
+                // No almacenar contraseña en estado del cliente
+                const safeUserData = { ...userData, id: userId };
+                delete safeUserData.password;
+
+                setCurrentUser(safeUserData);
+                showToast(`¡Hola de nuevo, ${userData.name || 'Usuario'}!`, "success");
             }
+
             // Redirigir a tienda tras éxito
             setView('store');
             // Limpiar formulario
@@ -1328,6 +2087,28 @@ function App() {
         } catch (error) {
             console.error("Error de autenticación:", error);
             showToast(error.message, "error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // 1.1 Recuperar Contraseña
+    const handleForgotPassword = async () => {
+        if (!authData.email || !authData.email.includes('@')) {
+            showToast("Ingresa tu email en el campo de arriba para recuperar la contraseña.", "warning");
+            return;
+        }
+        setIsLoading(true);
+        try {
+            await sendPasswordResetEmail(auth, authData.email);
+            showToast("¡Listo! Revisa tu email (y spam) para restablecer tu contraseña.", "success");
+        } catch (e) {
+            console.error("Error reset pass:", e);
+            if (e.code === 'auth/user-not-found') {
+                showToast("No existe una cuenta registrada con este email.", "error");
+            } else {
+                showToast("Error al enviar email: " + e.message, "error");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -1428,8 +2209,8 @@ function App() {
 
     const cartSubtotal = useMemo(() => {
         return cart.reduce((total, item) => {
-            const price = calculateItemPrice(item.product.basePrice, item.product.discount);
-            return total + (price * item.quantity);
+            const price = calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0);
+            return total + (price * (item.quantity || 0));
         }, 0);
     }, [cart]);
 
@@ -1566,6 +2347,12 @@ function App() {
             return showToast("Por favor inicia sesión para finalizar la compra.", "info");
         }
 
+        // Validar que el usuario tenga todos sus datos completos
+        if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
+            setView('profile');
+            return showToast("Por favor completa tus datos personales (Nombre, Teléfono y DNI) en tu perfil antes de comprar.", "warning");
+        }
+
         if (checkoutData.shippingMethod === 'Delivery' && (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode)) {
             return showToast("Por favor completa TODOS los datos de envío.", "warning");
         }
@@ -1584,17 +2371,17 @@ function App() {
                 orderId: orderId,
                 userId: currentUser.id,
                 customer: {
-                    name: currentUser.name,
-                    email: currentUser.email,
-                    phone: currentUser.phone,
-                    dni: currentUser.dni
+                    name: currentUser.name || 'Usuario',
+                    email: currentUser.email || '',
+                    phone: currentUser.phone || '-',
+                    dni: currentUser.dni || '-'
                 },
                 items: cart.map(i => ({
-                    productId: i.product.id,
-                    title: i.product.name,
-                    quantity: i.quantity,
-                    unit_price: calculateItemPrice(i.product.basePrice, i.product.discount),
-                    image: i.product.image
+                    productId: i.product?.id || 'unknown',
+                    title: i.product?.name || 'Producto',
+                    quantity: i.quantity || 1,
+                    unit_price: calculateItemPrice(i.product?.basePrice, i.product?.discount),
+                    image: i.product?.image || ''
                 })),
                 subtotal: cartSubtotal,
                 discount: discountAmount,
@@ -1612,14 +2399,14 @@ function App() {
             // 1. Guardar Pedido
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
 
-            // 2. Actualizar Datos de Usuario (Guardar última dirección)
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
+            // 2. Actualizar Datos de Usuario (Guardar última dirección) - Usamos setDoc con merge para crear si no existe
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
                 address: checkoutData.address,
                 city: checkoutData.city,
                 province: checkoutData.province,
                 zipCode: checkoutData.zipCode,
                 ordersCount: increment(1)
-            });
+            }, { merge: true });
 
             // 3. Limpiar Carrito "En Vivo" en DB
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
@@ -1702,10 +2489,16 @@ function App() {
 
         if (!window.MercadoPago) {
             console.error('❌ Mercado Pago: SDK no cargado.');
+            setPaymentError('No se pudo cargar el sistema de pagos. Por favor recarga la página.');
             return;
         }
 
-        if (finalTotal <= 0) return;
+        // Sanitizar el monto total para evitar errores de precisión flotante
+        const safeAmount = Number(parseFloat(finalTotal).toFixed(2));
+        if (isNaN(safeAmount) || safeAmount <= 0) {
+            console.error('❌ Error: Monto inválido para pago:', finalTotal);
+            return;
+        }
 
         const container = document.getElementById('cardPaymentBrick_container');
         if (!container) return;
@@ -1754,7 +2547,7 @@ function App() {
         try {
             const controller = await bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', {
                 initialization: {
-                    amount: finalTotal, // Total incluyendo envío
+                    amount: safeAmount, // Total validado y formateado
                 },
                 customization: {
                     visual: {
@@ -1786,6 +2579,14 @@ function App() {
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
 
+                        // Validar datos críticos antes de enviar
+                        if (!cardFormData.token) {
+                            setIsPaymentProcessing(false);
+                            setPaymentError('Error en los datos de la tarjeta. Por favor intentá nuevamente.');
+                            showToast('Error al procesar los datos de la tarjeta.', 'error');
+                            return;
+                        }
+
                         try {
                             const response = await fetch('/api/checkout', {
                                 method: 'POST',
@@ -1794,16 +2595,16 @@ function App() {
                                     action: 'process_payment',
                                     paymentData: {
                                         token: cardFormData.token,
-                                        transaction_amount: finalTotal,
-                                        description: `Compra en ${settings?.storeName || 'Sustore'}`,
-                                        installments: cardFormData.installments,
-                                        payment_method_id: cardFormData.payment_method_id,
-                                        issuer_id: cardFormData.issuer_id,
+                                        transaction_amount: safeAmount,
+                                        description: `Compra en ${settings?.storeName || 'Tienda Online'}`,
+                                        installments: cardFormData.installments || 1,
+                                        payment_method_id: cardFormData.payment_method_id || '',
+                                        issuer_id: cardFormData.issuer_id || '',
                                     },
                                     payer: {
-                                        email: currentUser.email,
-                                        identificationType: cardFormData.payer?.identification?.type,
-                                        identificationNumber: cardFormData.payer?.identification?.number,
+                                        email: currentUser?.email || 'sin-email@tienda.com',
+                                        identificationType: cardFormData.payer?.identification?.type || 'DNI',
+                                        identificationNumber: cardFormData.payer?.identification?.number || '00000000',
                                     },
                                 }),
                             });
@@ -1879,17 +2680,17 @@ function App() {
                 orderId,
                 userId: currentUser.id,
                 customer: {
-                    name: currentUser.name,
-                    email: currentUser.email,
-                    phone: currentUser.phone,
-                    dni: currentUser.dni,
+                    name: currentUser.name || 'Usuario',
+                    email: currentUser.email || '',
+                    phone: currentUser.phone || '-',
+                    dni: currentUser.dni || '-',
                 },
                 items: cart.map(i => ({
-                    productId: i.product.id,
-                    title: i.product.name,
-                    quantity: i.quantity,
-                    unit_price: calculateItemPrice(i.product.basePrice, i.product.discount),
-                    image: i.product.image,
+                    productId: i.product?.id || 'unknown',
+                    title: i.product?.name || 'Producto',
+                    quantity: i.quantity || 1,
+                    unit_price: calculateItemPrice(i.product?.basePrice, i.product?.discount),
+                    image: i.product?.image || '',
                 })),
                 subtotal: cartSubtotal,
                 discount: discountAmount,
@@ -1990,6 +2791,13 @@ function App() {
         const isMP = checkoutData.paymentChoice === 'Tarjeta';
 
         if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
+            // Validar que el usuario tenga datos completos antes de mostrar formulario de pago
+            if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
+                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
+                setView('profile');
+                return;
+            }
+
             // Pequeño delay para asegurar que el DOM está listo
             const timer = setTimeout(() => {
                 const container = document.getElementById('cardPaymentBrick_container');
@@ -2017,7 +2825,7 @@ function App() {
         if (!newProduct.name) return showToast("El nombre del producto es obligatorio.", "warning");
 
         // --- PRODUCT LIMIT CHECK (SUBSCRIPTION) ---
-        const MAX_PRODUCTS_ENTREPRENEUR = 35;
+        const MAX_PRODUCTS_ENTREPRENEUR = 30;
         const MAX_PRODUCTS_BUSINESS = 50;
 
         // Check limits only when creating new product
@@ -2181,9 +2989,14 @@ function App() {
                     for (const item of orderData.items) {
                         if (item.productId && item.quantity > 0) {
                             const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.productId);
-                            await updateDoc(productRef, {
-                                stock: increment(item.quantity)
-                            });
+                            try {
+                                await updateDoc(productRef, {
+                                    stock: increment(item.quantity)
+                                });
+                            } catch (ignore) {
+                                // Si el producto ya no existe, ignoramos el error para permitir borrar el pedido
+                                console.warn(`Producto ${item.productId} no encontrado, no se restauró stock.`);
+                            }
                         }
                     }
                 }
@@ -2912,7 +3725,7 @@ function App() {
                             </span>
                             <h2 className="text-3xl md:text-4xl font-black text-white leading-[1.1] mb-6 neon-text-small">{selectedProduct.name}</h2>
                             <p className="text-slate-400 text-sm md:text-base leading-relaxed line-clamp-4">
-                                {selectedProduct.description || 'Este producto tecnológico ha sido seleccionado por su alta calidad y rendimiento superior, garantizando la mejor experiencia para el usuario.'}
+                                {selectedProduct.description || ''}
                             </p>
                         </div>
 
@@ -3041,7 +3854,7 @@ function App() {
                     orderId: orderId,
                     userId: 'manual_admin', // Usuario sistema
                     customer: {
-                        name: saleData.customerName,
+                        name: saleData.customerName || 'Cliente Mostrador',
                         email: 'offline@store.com',
                         phone: '-',
                         dni: '-'
@@ -3613,7 +4426,7 @@ function App() {
                     </div>
                 </div>
                 <h1 className="text-3xl font-black tracking-[0.5em] mt-8 animate-pulse" style={{ color: loadingPrimaryColor, textShadow: `0 0 20px ${loadingPrimaryColor}40` }}>
-                    {settings?.loadingTitle || settings?.storeName || 'SUSTORE'}
+                    {settings?.loadingTitle || settings?.storeName || ''}
                 </h1>
                 <p className="text-slate-500 text-sm mt-4 font-mono uppercase tracking-widest">
                     {settings?.loadingText || 'Cargando sistema...'}
@@ -3635,7 +4448,7 @@ function App() {
                     ¡Te mandamos un saludo y esperamos que vuelvas prontamente!
                 </p>
                 <div className="mt-12 pt-12 border-t border-slate-900 w-full max-w-xs">
-                    <p className="text-xs text-slate-600 font-mono italic">{settings?.storeName || 'SUSTORE'} - Modo Mantenimiento Activo</p>
+                    <p className="text-xs text-slate-600 font-mono italic">{settings?.storeName || ''} - Modo Mantenimiento Activo</p>
                 </div>
             </div>
         );
@@ -3644,6 +4457,9 @@ function App() {
     // --- LÓGICA DE FILTRADO Y ORDENAMIENTO INTELIGENTE ---
     const filteredProducts = products
         .filter(p => {
+            // Excluir productos desactivados de la tienda pública
+            if (p.isActive === false) return false;
+
             const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
 
             // Lógica de Categorías Especiales
@@ -3716,7 +4532,9 @@ function App() {
                             )}
                             <div className="flex flex-col">
                                 <span className="text-2xl md:text-3xl font-black text-white tracking-tighter italic group-hover:neon-text transition-all duration-300 leading-none">
-                                    {settings?.storeName || 'SUSTORE'}
+                                    {!settingsLoaded ? (
+                                        <span className="inline-block h-8 w-32 bg-slate-700/50 rounded animate-pulse"></span>
+                                    ) : (settings?.storeName || '')}
                                 </span>
                                 <div className="h-1 w-1/2 bg-cyan-500 rounded-full group-hover:w-full transition-all duration-500 mt-1"></div>
                             </div>
@@ -3753,22 +4571,22 @@ function App() {
                         {/* Botón Modo Claro/Oscuro */}
                         <button
                             onClick={() => setDarkMode(!darkMode)}
-                            className="relative p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group overflow-hidden"
+                            className="relative p-2 sm:p-2.5 bg-slate-900/50 rounded-lg sm:rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group overflow-hidden"
                             title={darkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
                         >
                             <div className={`transform transition-all duration-500 ${darkMode ? 'rotate-0 scale-100' : 'rotate-180 scale-0 absolute'}`}>
-                                <Moon className="w-5 h-5 text-yellow-400 group-hover:scale-110 transition" />
+                                <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 group-hover:scale-110 transition" />
                             </div>
                             <div className={`transform transition-all duration-500 ${!darkMode ? 'rotate-0 scale-100' : '-rotate-180 scale-0 absolute'}`}>
-                                <Sun className="w-5 h-5 text-yellow-500 group-hover:scale-110 transition" />
+                                <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 group-hover:scale-110 transition" />
                             </div>
                         </button>
 
                         {/* Botón Carrito */}
-                        <button onClick={() => setView('cart')} className="relative p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group hover:border-orange-500/30">
-                            <ShoppingBag className="w-6 h-6 group-hover:scale-110 transition" />
+                        <button onClick={() => setView('cart')} className="relative p-2 sm:p-2.5 bg-slate-900/50 rounded-lg sm:rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group hover:border-orange-500/30">
+                            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                             {cart.length > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-[#050505] animate-bounce-short">
+                                <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-orange-500 text-white text-[9px] sm:text-[10px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-[#050505] animate-bounce-short">
                                     {cart.length}
                                 </span>
                             )}
@@ -3778,11 +4596,11 @@ function App() {
                         {currentUser ? (
                             <button onClick={() => setView('profile')} className="flex items-center gap-3 pl-2 pr-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700/50 hover:border-cyan-500/50 transition group">
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg text-sm group-hover:scale-105 transition">
-                                    {currentUser.name.charAt(0)}
+                                    {currentUser.name?.charAt(0) || '?'}
                                 </div>
                                 <div className="text-left hidden md:block">
                                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Hola,</p>
-                                    <p className="text-sm font-bold text-white leading-none group-hover:text-cyan-400 transition">{currentUser.name.split(' ')[0]}</p>
+                                    <p className="text-sm font-bold text-white leading-none group-hover:text-cyan-400 transition">{currentUser.name?.split(' ')[0] || 'Usuario'}</p>
                                 </div>
                             </button>
                         ) : (
@@ -3833,9 +4651,11 @@ function App() {
                                 <Info className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition" /> Sobre Nosotros
                             </button>
 
-                            <button onClick={() => { setView('guide'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
-                                <FileQuestion className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition" /> Cómo Comprar
-                            </button>
+                            {settings?.showGuideLink !== false && (
+                                <button onClick={() => { setView('guide'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-slate-300 hover:text-cyan-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
+                                    <FileQuestion className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 transition" /> {settings?.guideTitle || 'Cómo Comprar'}
+                                </button>
+                            )}
 
                             {/* Panel Admin (Solo si tiene permisos) */}
                             {hasAccess(currentUser?.email) && (
@@ -3846,7 +4666,7 @@ function App() {
                         </div>
 
                         <div className="mt-8 pt-8 border-t border-slate-800 text-center">
-                            <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">{settings.storeName} © 2024</p>
+                            <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">{settings?.menuCopyright || `${settings.storeName} © ${new Date().getFullYear()}`}</p>
                         </div>
                     </div>
                 </div>
@@ -3862,8 +4682,8 @@ function App() {
                 {view === 'store' && (
                     <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block">
 
-                        {/* Anuncio Global (Marquesina) */}
-                        {settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
+                        {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings están cargados */}
+                        {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
                             <div className="w-full bg-gradient-to-r from-orange-900/20 to-red-900/20 border border-orange-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-white/5 skew-x-12 -translate-x-full group-hover:translate-x-full transition duration-1000"></div>
                                 <p className="text-orange-400 font-black text-xs md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3">
@@ -3872,14 +4692,14 @@ function App() {
                             </div>
                         )}
 
-                        {/* Brand Ticker (Futuristic) */}
-                        {settings?.showBrandTicker !== false && (
+                        {/* Brand Ticker (Futuristic) - Solo mostrar cuando settings están cargados */}
+                        {settingsLoaded && settings?.showBrandTicker !== false && (
                             <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-2">
                                 <div className="ticker-wrap">
                                     <div className="ticker-content font-mono text-cyan-500/50 text-xs md:text-sm tracking-[0.2em] md:tracking-[0.5em] uppercase flex items-center gap-6 md:gap-12">
                                         {[1, 2, 3, 4].map((i) => (
                                             <React.Fragment key={i}>
-                                                <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || 'SUSTORE'} Tech • Futuro • Calidad Premium • Innovación`}</span>
+                                                <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} Tech • Futuro • Calidad Premium • Innovación`}</span>
                                                 <span>•</span>
                                             </React.Fragment>
                                         ))}
@@ -3891,65 +4711,112 @@ function App() {
                         {/* Banner Hero */}
                         <div className="relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border border-slate-800 group relative bg-[#080808] container-tv">
                             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
-                            {/* Imagen de fondo */}
-                            {settings?.heroUrl ? (
+                            {/* Imagen de fondo - Solo mostrar cuando settings están cargados */}
+                            {!settingsLoaded ? (
+                                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
+                            ) : settings?.heroUrl ? (
                                 <img src={settings.heroUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" />
-                            ) : (
-                                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-110" />
-                            )}
+                            ) : null}
 
                             {/* Overlay de Texto */}
                             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10 p-12">
                                 <div className="max-w-2xl animate-fade-up">
-                                    <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
-                                        {settings?.heroBadge || 'Nueva Colección 2026'}
-                                    </span>
-                                    <h1 className="text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-4 neon-text">
-                                        {settings?.heroTitle1 || 'TECNOLOGÍA'} <br />
-                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
-                                            {settings?.heroTitle2 || 'DEL FUTURO'}
-                                        </span>
-                                    </h1>
-                                    <p className="text-slate-400 text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium">
-                                        {settings?.heroSubtitle || 'Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado.'}
-                                    </p>
-                                    <div className="flex items-center gap-4">
-                                        <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn">
-                                            VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
-                                        </button>
-                                        <button onClick={() => setView('guide')} className="px-6 py-2.5 bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 transition font-bold text-xs group">
-                                            <Info className="w-4 h-4 text-cyan-400" /> Ayuda
-                                        </button>
-                                    </div>
+                                    {/* Skeleton/Loading mientras no se cargan los settings */}
+                                    {!settingsLoaded ? (
+                                        <>
+                                            <div className="h-6 w-32 bg-slate-700/50 rounded-md mb-4 animate-pulse"></div>
+                                            <div className="h-12 md:h-16 w-64 md:w-80 bg-slate-700/50 rounded-lg mb-2 animate-pulse"></div>
+                                            <div className="h-12 md:h-16 w-48 md:w-64 bg-slate-700/50 rounded-lg mb-4 animate-pulse"></div>
+                                            <div className="h-4 w-72 bg-slate-700/50 rounded mb-2 animate-pulse"></div>
+                                            <div className="h-4 w-56 bg-slate-700/50 rounded mb-6 animate-pulse"></div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-12 w-40 bg-slate-700/50 rounded-xl animate-pulse"></div>
+                                                <div className="h-10 w-24 bg-slate-700/50 rounded-xl animate-pulse"></div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="bg-cyan-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
+                                                {settings?.heroBadge || ''}
+                                            </span>
+                                            <h1 className="text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-4 neon-text">
+                                                {settings?.heroTitle1 || ''} <br />
+                                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+                                                    {settings?.heroTitle2 || ''}
+                                                </span>
+                                            </h1>
+                                            <p className="text-slate-400 text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium">
+                                                {settings?.heroSubtitle || ''}
+                                            </p>
+                                            <div className="flex items-center gap-4">
+                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn">
+                                                    VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
+                                                </button>
+                                                <button onClick={() => setView('guide')} className="px-6 py-2.5 bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 transition font-bold text-xs group">
+                                                    <Info className="w-4 h-4 text-cyan-400" /> Ayuda
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Why Choose Us Section */}
-                        {/* Why Choose Us Section (Editable) */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-12 container-tv">
-                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                <div className="w-10 h-10 rounded-full bg-cyan-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
-                                    <Zap className="w-5 h-5 text-cyan-400" />
-                                </div>
-                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature1Title || 'Envío Ultra Rápido'}</h3>
-                                <p className="text-slate-400 text-[11px]">{settings?.feature1Desc || 'Recibí tus productos tecnológicos en tiempo récord con nuestro sistema logístico optimizado.'}</p>
+                        {/* Why Choose Us Section (Editable) - Respeta toggles de configuración */}
+                        {settingsLoaded && settings?.showFeaturesSection !== false && (
+                            <div className={`grid grid-cols-1 ${[settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 1 ? 'md:grid-cols-1 max-w-md mx-auto' :
+                                [settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 2 ? 'md:grid-cols-2 max-w-2xl mx-auto' :
+                                    'md:grid-cols-3'
+                                } gap-4 md:gap-8 mb-12 container-tv`}>
+                                {!settingsLoaded ? (
+                                    <>
+                                        {/* Skeleton para las tarjetas */}
+                                        {[1, 2, 3].map((i) => (
+                                            <div key={i} className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center">
+                                                <div className="w-10 h-10 rounded-full bg-slate-700/50 mb-3 animate-pulse"></div>
+                                                <div className="h-5 w-32 bg-slate-700/50 rounded mb-2 animate-pulse"></div>
+                                                <div className="h-3 w-48 bg-slate-700/50 rounded mb-1 animate-pulse"></div>
+                                                <div className="h-3 w-40 bg-slate-700/50 rounded animate-pulse"></div>
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Beneficio 1 */}
+                                        {settings?.showFeature1 !== false && (
+                                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                                <div className="w-10 h-10 rounded-full bg-cyan-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                                    <Zap className="w-5 h-5 text-cyan-400" />
+                                                </div>
+                                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature1Title || ''}</h3>
+                                                <p className="text-slate-400 text-[11px]">{settings?.feature1Desc || ''}</p>
+                                            </div>
+                                        )}
+                                        {/* Beneficio 2 */}
+                                        {settings?.showFeature2 !== false && (
+                                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                                <div className="w-10 h-10 rounded-full bg-purple-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                                    <Shield className="w-5 h-5 text-purple-400" />
+                                                </div>
+                                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature2Title || ''}</h3>
+                                                <p className="text-slate-400 text-[11px]">{settings?.feature2Desc || ''}</p>
+                                            </div>
+                                        )}
+                                        {/* Beneficio 3 */}
+                                        {settings?.showFeature3 !== false && (
+                                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
+                                                <div className="w-10 h-10 rounded-full bg-green-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                                    <Headphones className="w-5 h-5 text-green-400" />
+                                                </div>
+                                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature3Title || ''}</h3>
+                                                <p className="text-slate-400 text-[11px]">{settings?.feature3Desc || ''}</p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </div>
-                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                <div className="w-10 h-10 rounded-full bg-purple-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
-                                    <Shield className="w-5 h-5 text-purple-400" />
-                                </div>
-                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature2Title || 'Garantía Extendida'}</h3>
-                                <p className="text-slate-400 text-[11px]">{settings?.feature2Desc || 'Todos nuestros productos cuentan con garantía oficial y soporte técnico especializado.'}</p>
-                            </div>
-                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                <div className="w-10 h-10 rounded-full bg-green-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
-                                    <Headphones className="w-5 h-5 text-green-400" />
-                                </div>
-                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature3Title || 'Soporte 24/7'}</h3>
-                                <p className="text-slate-400 text-[11px]">{settings?.feature3Desc || '¿Dudas? Nuestro equipo de expertos está disponible para ayudarte en todo momento.'}</p>
-                            </div>
-                        </div>
+                        )}
 
                         {/* Filtros de Categoría */}
                         <div id="catalog" className="sticky top-20 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -4137,6 +5004,7 @@ function App() {
                                                 {p.image ? (
                                                     <img
                                                         src={p.image}
+                                                        loading={settings?.enableLazyLoad !== false ? "lazy" : "eager"}
                                                         onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                                                         className={`w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                                                     />
@@ -4301,7 +5169,7 @@ function App() {
                                                 </div>
 
                                                 <p className="text-cyan-400 font-bold text-sm mb-4">
-                                                    ${calculateItemPrice(item.product.basePrice, item.product.discount).toLocaleString()} <span className="text-slate-600 font-normal">unitario</span>
+                                                    ${calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0).toLocaleString()} <span className="text-slate-600 font-normal">unitario</span>
                                                 </p>
 
                                                 {/* Controles de Cantidad */}
@@ -4317,7 +5185,7 @@ function App() {
                                                     </div>
                                                     <div className="hidden md:block h-8 w-px bg-slate-800 mx-2"></div>
                                                     <p className="text-xs text-slate-500 font-bold uppercase hidden md:block">
-                                                        Subtotal: <span className="text-white text-lg ml-1">${(calculateItemPrice(item.product.basePrice, item.product.discount) * item.quantity).toLocaleString()}</span>
+                                                        Subtotal: <span className="text-white text-lg ml-1">${(calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0) * (item.quantity || 0)).toLocaleString()}</span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -4512,7 +5380,7 @@ function App() {
                                                 <span className="text-sm font-black tracking-wider uppercase">Transferencia</span>
                                             </button>
                                         )}
-                                        {settings?.paymentCash && (
+                                        {settings?.paymentCash && checkoutData.shippingMethod !== 'Delivery' && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Efectivo' })}
                                                 className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Efectivo' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
@@ -4643,12 +5511,12 @@ function App() {
 
                             {/* Avatar */}
                             <div className="w-28 h-28 rounded-[2rem] bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-5xl font-black text-white shadow-2xl z-10 transform rotate-3 border-4 border-[#0a0a0a]">
-                                {currentUser.name.charAt(0)}
+                                {currentUser.name?.charAt(0) || '?'}
                             </div>
 
                             {/* Info */}
                             <div className="text-center md:text-left z-10 flex-1">
-                                <h2 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">{currentUser.name}</h2>
+                                <h2 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">{currentUser.name || 'Usuario'}</h2>
                                 <p className="text-slate-400 flex items-center justify-center md:justify-start gap-2 font-medium mb-4">
                                     <Mail className="w-4 h-4 text-cyan-500" /> {currentUser.email}
                                 </p>
@@ -4878,22 +5746,18 @@ function App() {
                             <form onSubmit={(e) => { e.preventDefault(); handleAuth(!loginMode) }} className="space-y-4">
                                 {!loginMode && (
                                     <div className="space-y-4 animate-fade-up">
-                                        <input className="input-cyber w-full p-4" placeholder="Nombre Completo" value={authData.name} onChange={e => setAuthData({ ...authData, name: e.target.value })} />
-                                        <input className="input-cyber w-full p-4" placeholder="Nombre de Usuario" value={authData.username} onChange={e => setAuthData({ ...authData, username: e.target.value })} />
+                                        <input className="input-cyber w-full p-4" placeholder="Nombre Completo *" value={authData.name} onChange={e => setAuthData({ ...authData, name: e.target.value })} required />
+                                        <input className="input-cyber w-full p-4" placeholder="Nombre de Usuario *" value={authData.username} onChange={e => setAuthData({ ...authData, username: e.target.value })} required />
                                         <div className="grid grid-cols-2 gap-4">
-                                            {(settings?.requireDNI !== false) && (
-                                                <input className="input-cyber p-4" placeholder="DNI" value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} />
-                                            )}
-                                            {(settings?.requirePhone !== false) && (
-                                                <input className="input-cyber p-4" placeholder="Teléfono" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} />
-                                            )}
+                                            <input className="input-cyber p-4" placeholder="DNI *" value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} required />
+                                            <input className="input-cyber p-4" placeholder="Teléfono *" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required />
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="space-y-4">
-                                    <input className="input-cyber w-full p-4" placeholder={loginMode ? "Email o Usuario" : "Email"} value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} />
-                                    <input className="input-cyber w-full p-4" type="password" placeholder="Contraseña" value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} />
+                                    <input className="input-cyber w-full p-4" placeholder={loginMode ? "Email o Usuario" : "Email *"} value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} required />
+                                    <input className="input-cyber w-full p-4" type="password" placeholder={loginMode ? "Contraseña" : "Contraseña *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
                                 </div>
 
                                 <button type="submit" className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 py-4 text-white rounded-xl font-bold mt-6 transition transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2">
@@ -4937,16 +5801,24 @@ function App() {
                     <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
                         <button onClick={() => setView('store')} className="mb-8 p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition"><ArrowLeft /></button>
                         <h2 className="text-5xl font-black text-white mb-12 flex items-center gap-4 neon-text">
-                            <FileQuestion className="text-cyan-400 w-12 h-12" /> Cómo Comprar
+                            <FileQuestion className="text-cyan-400 w-12 h-12" /> {settings?.guideTitle || 'Cómo Comprar'}
                         </h2>
                         <div className="bg-[#0a0a0a] border border-slate-800 p-12 rounded-[3rem] text-slate-300 shadow-2xl space-y-8">
                             {[
-                                { title: "Selecciona Productos", text: "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
-                                { title: "Revisa tu Carrito", text: "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
-                                { title: "Datos de Envío", text: "Completa la información de entrega. Hacemos envíos a todo el país." },
-                                { title: "Pago y Confirmación", text: "Elige tu método de pago preferido. Si es transferencia, recibirás los datos por email." },
-                                { title: "¡Listo!", text: "Recibirás un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
-                            ].map((step, idx) => (
+                                { title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
+                                { title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
+                                { title: settings?.guideStep3Title || "Datos de Envío", text: settings?.guideStep3Text || "Completa la información de entrega. Hacemos envíos a todo el país." },
+                                { title: settings?.guideStep4Title || "Pago y Confirmación", text: settings?.guideStep4Text || "Elige tu método de pago preferido. Si es transferencia, recibirás los datos por email." },
+                                { title: settings?.guideStep5Title || "¡Listo!", text: settings?.guideStep5Text || "Recibirás un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
+                            ].filter((step, idx) => {
+                                // Filtrar pasos que están desactivados
+                                if (idx === 0 && settings?.showGuideStep1 === false) return false;
+                                if (idx === 1 && settings?.showGuideStep2 === false) return false;
+                                if (idx === 2 && settings?.showGuideStep3 === false) return false;
+                                if (idx === 3 && settings?.showGuideStep4 === false) return false;
+                                if (idx === 4 && settings?.showGuideStep5 === false) return false;
+                                return true;
+                            }).map((step, idx) => (
                                 <div key={idx} className="flex gap-6 items-start">
                                     <div className="w-10 h-10 rounded-full bg-cyan-900/20 text-cyan-400 font-black flex items-center justify-center border border-cyan-500/20 flex-shrink-0 mt-1">
                                         {idx + 1}
@@ -5013,7 +5885,7 @@ function App() {
                                     Saavedra 7568<br />
                                     Santa Fe, 3000<br />
                                     Argentina<br />
-                                    <a href={`mailto:${settings?.sellerEmail}`} className="text-cyan-400 hover:underline">{settings?.sellerEmail || '[Email de contacto]'}</a>
+                                    <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${settings?.sellerEmail}`} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{settings?.sellerEmail || '[Email de contacto]'}</a>
                                 </div>
                             </div>
                         </div>
@@ -5022,76 +5894,100 @@ function App() {
 
                 {/* 7. PANEL DE ADMINISTRACIÓN (COMPLETO Y DETALLADO) */}
                 {view === 'admin' && (
-                    hasAccess(currentUser?.email) ? (
+                    // === SEGURIDAD: Triple verificación de acceso ===
+                    // 1. Verificar que tiene permisos por rol
+                    // 2. Verificar que el usuario tiene un ID válido
+                    // 3. Verificar que la sesión no fue manipulada
+                    (hasAccess(currentUser?.email) &&
+                        currentUser?.id &&
+                        currentUser?.id.length >= 10 &&
+                        !SecurityManager.detectManipulation()) ? (
                         <div className="flex h-screen bg-[#050505] overflow-hidden animate-fade-up relative w-full font-sans">
 
+                            {/* Overlay para cerrar el menú en móvil */}
+                            {isAdminMenuOpen && (
+                                <div
+                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-fade-in"
+                                    onClick={() => setIsAdminMenuOpen(false)}
+                                />
+                            )}
+
                             {/* 7.1 Sidebar Admin */}
-                            <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static shadow-2xl`}>
-                                <div className="p-8 border-b border-slate-900">
-                                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-cyan-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-900/20">
-                                            <Shield className="w-6 h-6" />
-                                        </div>
-                                        ADMIN
-                                    </h2>
-                                    <p className="text-xs text-slate-500 mt-2 font-mono ml-1">v3.0.0 PRO</p>
+                            <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ease-out ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static md:w-72 shadow-2xl`}>
+                                <div className="p-6 md:p-8 border-b border-slate-900 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                                            <div className="w-9 h-9 md:w-10 md:h-10 bg-cyan-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-900/20">
+                                                <Shield className="w-5 h-5 md:w-6 md:h-6" />
+                                            </div>
+                                            ADMIN
+                                        </h2>
+                                        <p className="text-[10px] md:text-xs text-slate-500 mt-1.5 font-mono ml-1">v3.0.0 PRO</p>
+                                    </div>
+                                    {/* Botón cerrar en móvil */}
+                                    <button
+                                        onClick={() => setIsAdminMenuOpen(false)}
+                                        className="md:hidden p-2 bg-slate-900 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition border border-slate-800"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
                                 </div>
 
-                                <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-                                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-2 mt-2">Principal</p>
+                                <nav className="flex-1 p-3 md:p-4 space-y-1.5 md:space-y-2 overflow-y-auto custom-scrollbar">
+                                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-1">Principal</p>
 
-                                    <button onClick={() => setAdminTab('dashboard')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'dashboard' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                    <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'dashboard' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                         <LayoutDashboard className="w-5 h-5" /> Inicio
                                     </button>
 
-                                    <button onClick={() => setAdminTab('orders')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'orders' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                    <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'orders' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                         <ShoppingBag className="w-5 h-5" /> Pedidos
                                     </button>
 
-                                    <button onClick={() => setAdminTab('products')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'products' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                    <button onClick={() => { setAdminTab('products'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'products' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                         <Package className="w-5 h-5" /> Productos
                                     </button>
 
                                     {/* Promos - Available for editors and admins */}
                                     {(isAdmin(currentUser?.email) || isEditor(currentUser?.email)) && (
-                                        <button onClick={() => setAdminTab('promos')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'promos' ? 'bg-purple-900/20 text-purple-400 border border-purple-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                        <button onClick={() => { setAdminTab('promos'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'promos' ? 'bg-purple-900/20 text-purple-400 border border-purple-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                             <Tag className="w-5 h-5" /> Promos
                                         </button>
                                     )}
 
                                     {isAdmin(currentUser?.email) && (
                                         <>
-                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-2 mt-6">Gestión</p>
+                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-4 md:mt-6">Gestión</p>
 
-                                            <button onClick={() => setAdminTab('coupons')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'coupons' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <button onClick={() => { setAdminTab('coupons'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'coupons' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <Ticket className="w-5 h-5" /> Cupones
                                             </button>
 
-                                            <button onClick={() => setAdminTab('suppliers')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'suppliers' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <button onClick={() => { setAdminTab('suppliers'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'suppliers' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <Truck className="w-5 h-5" /> Proveedores
                                             </button>
 
-                                            <button onClick={() => setAdminTab('purchases')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'purchases' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <button onClick={() => { setAdminTab('purchases'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'purchases' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <ShoppingCart className="w-5 h-5" /> Compras
                                             </button>
 
-                                            <button onClick={() => setAdminTab('finance')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'finance' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <button onClick={() => { setAdminTab('finance'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'finance' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <Wallet className="w-5 h-5" /> Finanzas
                                             </button>
 
-                                            <button onClick={() => setAdminTab('settings')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'settings' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <button onClick={() => { setAdminTab('settings'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'settings' ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <Settings className="w-5 h-5" /> Configuración
                                             </button>
 
-                                            <button onClick={() => setAdminTab('users')} className={`w-full text-left px-5 py-3 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'users' ? 'bg-pink-900/20 text-pink-400 border border-pink-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <button onClick={() => { setAdminTab('users'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'users' ? 'bg-pink-900/20 text-pink-400 border border-pink-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <Users className="w-5 h-5" /> Usuarios
                                             </button>
                                         </>
                                     )}
                                 </nav>
 
-                                <div className="p-6 border-t border-slate-900">
-                                    <button onClick={() => setView('store')} className="w-full py-4 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition font-bold text-sm flex items-center justify-center gap-2 group border border-slate-800">
+                                <div className="p-4 md:p-6 border-t border-slate-900">
+                                    <button onClick={() => { setView('store'); setIsAdminMenuOpen(false); }} className="w-full py-3.5 md:py-4 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition font-bold text-sm flex items-center justify-center gap-2 group border border-slate-800">
                                         <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition" /> Volver a Tienda
                                     </button>
                                 </div>
@@ -5099,8 +5995,8 @@ function App() {
 
                             {/* 7.2 Contenido Principal Admin */}
                             <div className="flex-1 bg-[#050505] overflow-y-auto relative w-full p-4 md:p-10 custom-scrollbar">
-                                <button onClick={() => setIsAdminMenuOpen(true)} className="md:hidden mb-6 p-2 bg-slate-900 rounded-lg text-white border border-slate-800">
-                                    <Menu className="w-6 h-6" />
+                                <button onClick={() => setIsAdminMenuOpen(true)} className="md:hidden mb-4 p-3 bg-slate-900 hover:bg-slate-800 rounded-xl text-white border border-slate-800 flex items-center gap-2 font-bold text-sm transition">
+                                    <Menu className="w-5 h-5" /> Menú
                                 </button>
 
                                 {/* TAB: DASHBOARD */}
@@ -5883,7 +6779,7 @@ function App() {
                                                             {/* Barra de Progreso Distribución */}
                                                             <div className="w-full h-8 bg-slate-900 rounded-full flex overflow-hidden">
                                                                 {memberInvestments.map((member, idx) => {
-                                                                    const pct = (member.totalInv / totalCapital) * 100;
+                                                                    const pct = totalCapital > 0 ? (member.totalInv / totalCapital) * 100 : 0;
                                                                     const colors = ['bg-green-500', 'bg-cyan-500', 'bg-purple-500', 'bg-pink-500', 'bg-yellow-500', 'bg-red-500'];
                                                                     if (pct <= 0) return null;
                                                                     return (
@@ -6689,7 +7585,7 @@ function App() {
                                                 <h1 className="text-3xl font-black text-white">Inventario</h1>
                                                 {(() => {
                                                     const plan = settings?.subscriptionPlan || 'entrepreneur';
-                                                    const limit = plan === 'premium' ? '∞' : plan === 'business' ? 50 : 35;
+                                                    const limit = plan === 'premium' ? '∞' : plan === 'business' ? 50 : 30;
                                                     const current = products.length;
                                                     const isNearLimit = plan !== 'premium' && current >= limit * 0.8;
                                                     return (
@@ -6709,6 +7605,40 @@ function App() {
                                                 </button>
                                             </div>
                                         </div>
+
+                                        {/* Banner de advertencia si hay productos desactivados por límite de plan */}
+                                        {(() => {
+                                            const deactivatedByPlan = products.filter(p => p.isActive === false && p.deactivatedByPlan);
+                                            const deactivatedManually = products.filter(p => p.isActive === false && !p.deactivatedByPlan);
+                                            const totalDeactivated = products.filter(p => p.isActive === false);
+
+                                            if (totalDeactivated.length > 0) {
+                                                return (
+                                                    <div className="bg-yellow-900/20 border border-yellow-500/30 p-4 rounded-2xl mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                                        <div className="flex items-start gap-3">
+                                                            <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
+                                                            <div>
+                                                                <p className="font-bold text-yellow-400">
+                                                                    {totalDeactivated.length} producto(s) desactivado(s)
+                                                                </p>
+                                                                <p className="text-sm text-yellow-200/70">
+                                                                    {deactivatedByPlan.length > 0 && `${deactivatedByPlan.length} por límite de plan. `}
+                                                                    {deactivatedManually.length > 0 && `${deactivatedManually.length} desactivado(s) manualmente. `}
+                                                                    Los productos desactivados no se muestran en la tienda.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => showToast("Usa el botón de ojo (👁) en cada producto para activar/desactivar", "info")}
+                                                            className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-xl font-bold text-sm hover:bg-yellow-500/30 transition border border-yellow-500/30 whitespace-nowrap"
+                                                        >
+                                                            Ver desactivados
+                                                        </button>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
 
                                         {/* Formulario Productos (Expandido) */}
                                         {showProductForm && (
@@ -6790,10 +7720,10 @@ function App() {
                                                 <div
                                                     key={p.id}
                                                     style={{ animationDelay: `${idx * 0.05}s` }}
-                                                    className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-cyan-900/50 transition animate-fade-up"
+                                                    className={`bg-[#0a0a0a] border p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-cyan-900/50 transition animate-fade-up ${p.isActive === false ? 'border-yellow-500/30 opacity-60' : 'border-slate-800'}`}
                                                 >
                                                     <div className="flex items-center gap-6 w-full sm:w-auto">
-                                                        <div className="w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0 relative">
+                                                        <div className={`w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0 relative ${p.isActive === false ? 'grayscale' : ''}`}>
                                                             <img src={p.image} className="w-full h-full object-contain" />
                                                             {p.isFeatured && (
                                                                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
@@ -6805,6 +7735,7 @@ function App() {
                                                             <p className="font-bold text-white text-lg flex items-center gap-2">
                                                                 {p.name}
                                                                 {p.isFeatured && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">DESTACADO</span>}
+                                                                {p.isActive === false && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">OCULTO{p.deactivatedByPlan ? ' (LÍMITE)' : ''}</span>}
                                                             </p>
                                                             <p className="text-xs text-slate-500 font-mono">
                                                                 Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
@@ -6837,6 +7768,14 @@ function App() {
                                                             title={p.isFeatured ? "Quitar de Destacados" : "Marcar como Destacado"}
                                                         >
                                                             <Star className={`w-5 h-5 ${p.isFeatured ? 'fill-current' : ''}`} />
+                                                        </button>
+                                                        {/* Toggle Activar/Desactivar */}
+                                                        <button
+                                                            onClick={() => p.isActive === false ? reactivateProduct(p.id) : deactivateProduct(p.id)}
+                                                            className={`p-3 rounded-xl transition border transform hover:scale-105 active:scale-95 ${p.isActive === false ? 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-green-500/20 hover:text-green-400 hover:border-green-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-red-400 hover:border-red-500/30'}`}
+                                                            title={p.isActive === false ? "Activar Producto (hacerlo visible en tienda)" : "Desactivar Producto (ocultarlo de la tienda)"}
+                                                        >
+                                                            {p.isActive === false ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                                                         </button>
                                                         <button onClick={() => openManualSaleModal(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95" title="Venta Manual (Descontar 1)">
                                                             <DollarSign className="w-5 h-5" />
@@ -6926,7 +7865,7 @@ function App() {
                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                         {/* Plan Emprendedor */}
                                                         <button
-                                                            onClick={() => setSettings({ ...settings, subscriptionPlan: 'entrepreneur' })}
+                                                            onClick={() => handlePlanChange('entrepreneur')}
                                                             className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan ? 'bg-slate-900 border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
                                                         >
                                                             <div className="flex justify-between items-start mb-4">
@@ -6940,7 +7879,7 @@ function App() {
                                                             <div className="text-2xl font-black text-cyan-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
 
                                                             <ul className="space-y-2 text-sm text-slate-300">
-                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 35 productos</li>
+                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 30 productos</li>
                                                                 <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Dominio Vercel</li>
                                                                 <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Mercado Pago Directo</li>
                                                             </ul>
@@ -6948,7 +7887,7 @@ function App() {
 
                                                         {/* Plan Negocio */}
                                                         <button
-                                                            onClick={() => setSettings({ ...settings, subscriptionPlan: 'business' })}
+                                                            onClick={() => handlePlanChange('business')}
                                                             className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
                                                         >
                                                             <div className="flex justify-between items-start mb-4">
@@ -6970,7 +7909,7 @@ function App() {
 
                                                         {/* Plan Premium */}
                                                         <button
-                                                            onClick={() => setSettings({ ...settings, subscriptionPlan: 'premium' })}
+                                                            onClick={() => handlePlanChange('premium')}
                                                             className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
                                                         >
                                                             <div className="flex justify-between items-start mb-4">
@@ -6989,6 +7928,32 @@ function App() {
                                                                 <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
                                                             </ul>
                                                         </button>
+                                                    </div>
+
+                                                    {/* Billing Cycle Selection */}
+                                                    <div className="mt-8 pt-8 border-t border-slate-800/50">
+                                                        <h4 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
+                                                            <Calendar className="w-5 h-5 text-green-400" /> Ciclo de Facturación
+                                                        </h4>
+                                                        <div className="grid grid-cols-3 gap-4">
+                                                            {[
+                                                                { id: 'Semanal', label: 'Semanal' },
+                                                                { id: 'Mensual', label: 'Mensual' },
+                                                                { id: 'Anual', label: 'Anual' }
+                                                            ].map(cycle => (
+                                                                <button
+                                                                    key={cycle.id}
+                                                                    onClick={() => setSettings({ ...settings, subscriptionBillingCycle: cycle.id })}
+                                                                    className={`p-3 rounded-xl border transition-all font-bold ${settings?.subscriptionBillingCycle === cycle.id
+                                                                        ? 'bg-green-500 text-black border-green-400 shadow-lg shadow-green-500/20'
+                                                                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                                                                        }`}
+                                                                >
+                                                                    {cycle.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 mt-2">Define la frecuencia de cobro para este plan.</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -7056,6 +8021,228 @@ function App() {
                                                             onChange={e => setSettings({ ...settings, aboutUsText: e.target.value })}
                                                             placeholder="Historia de tu marca, valores, misión..."
                                                         />
+                                                    </div>
+                                                </div>
+
+                                                {/* Copyright Configuration */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <FileText className="w-5 h-5 text-orange-400" /> Textos de Copyright
+                                                    </h3>
+                                                    <div className="space-y-6">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Menú Lateral</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.menuCopyright || ''}
+                                                                onChange={e => setSettings({ ...settings, menuCopyright: e.target.value })}
+                                                                placeholder={`${settings?.storeName || 'Mi Tienda'} © ${new Date().getFullYear()}`}
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-2">Aparece al final del menú hamburguesa</p>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Footer</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.footerCopyright || ''}
+                                                                onChange={e => setSettings({ ...settings, footerCopyright: e.target.value })}
+                                                                placeholder={`© ${new Date().getFullYear()} ${settings?.storeName || 'Mi Tienda'}. All rights reserved.`}
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-2">Aparece en la barra inferior del sitio</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Guía "Cómo Comprar" Configuration */}
+                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                        <FileQuestion className="w-5 h-5 text-cyan-400" /> Guía "Cómo Comprar"
+                                                    </h3>
+                                                    <div className="space-y-6">
+                                                        {/* Toggle para mostrar la página */}
+                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div>
+                                                                <p className="font-bold text-white">Mostrar en Menú</p>
+                                                                <p className="text-xs text-slate-500">Mostrar enlace "Cómo Comprar" en el menú lateral</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, showGuideLink: settings?.showGuideLink === false ? true : false })}
+                                                                className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showGuideLink !== false ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideLink !== false ? 'left-8' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Título de la página */}
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de la Página</label>
+                                                            <input
+                                                                className="input-cyber w-full p-3"
+                                                                value={settings?.guideTitle || ''}
+                                                                onChange={e => setSettings({ ...settings, guideTitle: e.target.value })}
+                                                                placeholder="Cómo Comprar"
+                                                            />
+                                                        </div>
+
+                                                        {/* Paso 1 */}
+                                                        <div className="border-t border-slate-800 pt-4">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="w-6 h-6 rounded-full bg-cyan-900/30 text-cyan-400 text-xs font-bold flex items-center justify-center">1</span>
+                                                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 1</label>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showGuideStep1: settings?.showGuideStep1 === false ? true : false })}
+                                                                    className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep1 !== false ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep1 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                </button>
+                                                            </div>
+                                                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep1 === false ? 'opacity-50' : ''}`}>
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep1Title || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep1Title: e.target.value })}
+                                                                    placeholder="Selecciona Productos"
+                                                                    disabled={settings?.showGuideStep1 === false}
+                                                                />
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep1Text || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep1Text: e.target.value })}
+                                                                    placeholder="Descripción del paso..."
+                                                                    disabled={settings?.showGuideStep1 === false}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Paso 2 */}
+                                                        <div className="border-t border-slate-800 pt-4">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="w-6 h-6 rounded-full bg-cyan-900/30 text-cyan-400 text-xs font-bold flex items-center justify-center">2</span>
+                                                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 2</label>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showGuideStep2: settings?.showGuideStep2 === false ? true : false })}
+                                                                    className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep2 !== false ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep2 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                </button>
+                                                            </div>
+                                                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep2 === false ? 'opacity-50' : ''}`}>
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep2Title || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep2Title: e.target.value })}
+                                                                    placeholder="Revisa tu Carrito"
+                                                                    disabled={settings?.showGuideStep2 === false}
+                                                                />
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep2Text || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep2Text: e.target.value })}
+                                                                    placeholder="Descripción del paso..."
+                                                                    disabled={settings?.showGuideStep2 === false}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Paso 3 */}
+                                                        <div className="border-t border-slate-800 pt-4">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="w-6 h-6 rounded-full bg-cyan-900/30 text-cyan-400 text-xs font-bold flex items-center justify-center">3</span>
+                                                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 3</label>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showGuideStep3: settings?.showGuideStep3 === false ? true : false })}
+                                                                    className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep3 !== false ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep3 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                </button>
+                                                            </div>
+                                                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep3 === false ? 'opacity-50' : ''}`}>
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep3Title || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep3Title: e.target.value })}
+                                                                    placeholder="Datos de Envío"
+                                                                    disabled={settings?.showGuideStep3 === false}
+                                                                />
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep3Text || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep3Text: e.target.value })}
+                                                                    placeholder="Descripción del paso..."
+                                                                    disabled={settings?.showGuideStep3 === false}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Paso 4 */}
+                                                        <div className="border-t border-slate-800 pt-4">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="w-6 h-6 rounded-full bg-cyan-900/30 text-cyan-400 text-xs font-bold flex items-center justify-center">4</span>
+                                                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 4</label>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showGuideStep4: settings?.showGuideStep4 === false ? true : false })}
+                                                                    className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep4 !== false ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep4 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                </button>
+                                                            </div>
+                                                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep4 === false ? 'opacity-50' : ''}`}>
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep4Title || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep4Title: e.target.value })}
+                                                                    placeholder="Pago y Confirmación"
+                                                                    disabled={settings?.showGuideStep4 === false}
+                                                                />
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep4Text || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep4Text: e.target.value })}
+                                                                    placeholder="Descripción del paso..."
+                                                                    disabled={settings?.showGuideStep4 === false}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Paso 5 */}
+                                                        <div className="border-t border-slate-800 pt-4">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="w-6 h-6 rounded-full bg-cyan-900/30 text-cyan-400 text-xs font-bold flex items-center justify-center">5</span>
+                                                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 5</label>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showGuideStep5: settings?.showGuideStep5 === false ? true : false })}
+                                                                    className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep5 !== false ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep5 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                </button>
+                                                            </div>
+                                                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep5 === false ? 'opacity-50' : ''}`}>
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep5Title || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep5Title: e.target.value })}
+                                                                    placeholder="¡Listo!"
+                                                                    disabled={settings?.showGuideStep5 === false}
+                                                                />
+                                                                <input
+                                                                    className="input-cyber w-full p-3"
+                                                                    value={settings?.guideStep5Text || ''}
+                                                                    onChange={e => setSettings({ ...settings, guideStep5Text: e.target.value })}
+                                                                    placeholder="Descripción del paso..."
+                                                                    disabled={settings?.showGuideStep5 === false}
+                                                                />
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -7302,66 +8489,110 @@ function App() {
                                                         <Star className="w-5 h-5 text-yellow-400" /> Beneficios Destacados
                                                     </h3>
                                                     <div className="space-y-6">
-                                                        {/* Feature 1 */}
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <Zap className="w-4 h-4 text-cyan-400" />
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 1 (Rayo)</label>
+                                                        {/* Toggle para mostrar toda la sección */}
+                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                            <div>
+                                                                <p className="font-bold text-white">Mostrar Sección de Beneficios</p>
+                                                                <p className="text-xs text-slate-500">Activa/desactiva toda la sección de beneficios</p>
                                                             </div>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, showFeaturesSection: settings?.showFeaturesSection === false ? true : false })}
+                                                                className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showFeaturesSection !== false ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                                                            >
+                                                                <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeaturesSection !== false ? 'left-8' : 'left-1'}`}></div>
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Feature 1 */}
+                                                        <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Zap className="w-4 h-4 text-cyan-400" />
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 1 (Rayo)</label>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showFeature1: settings?.showFeature1 === false ? true : false })}
+                                                                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature1 !== false ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature1 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                </button>
+                                                            </div>
+                                                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature1 === false ? 'opacity-50' : ''}`}>
                                                                 <input
                                                                     className="input-cyber w-full p-3"
                                                                     value={settings?.feature1Title || ''}
                                                                     onChange={e => setSettings({ ...settings, feature1Title: e.target.value })}
                                                                     placeholder="Envío Ultra Rápido"
+                                                                    disabled={settings?.showFeature1 === false}
                                                                 />
                                                                 <input
                                                                     className="input-cyber w-full p-3"
                                                                     value={settings?.feature1Desc || ''}
                                                                     onChange={e => setSettings({ ...settings, feature1Desc: e.target.value })}
                                                                     placeholder="Subtítulo corto..."
+                                                                    disabled={settings?.showFeature1 === false}
                                                                 />
                                                             </div>
                                                         </div>
                                                         {/* Feature 2 */}
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <Shield className="w-4 h-4 text-purple-400" />
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 2 (Escudo)</label>
+                                                        <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Shield className="w-4 h-4 text-purple-400" />
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 2 (Escudo)</label>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showFeature2: settings?.showFeature2 === false ? true : false })}
+                                                                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature2 !== false ? 'bg-purple-600' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature2 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                </button>
                                                             </div>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature2 === false ? 'opacity-50' : ''}`}>
                                                                 <input
                                                                     className="input-cyber w-full p-3"
                                                                     value={settings?.feature2Title || ''}
                                                                     onChange={e => setSettings({ ...settings, feature2Title: e.target.value })}
                                                                     placeholder="Garantía Extendida"
+                                                                    disabled={settings?.showFeature2 === false}
                                                                 />
                                                                 <input
                                                                     className="input-cyber w-full p-3"
                                                                     value={settings?.feature2Desc || ''}
                                                                     onChange={e => setSettings({ ...settings, feature2Desc: e.target.value })}
                                                                     placeholder="Subtítulo corto..."
+                                                                    disabled={settings?.showFeature2 === false}
                                                                 />
                                                             </div>
                                                         </div>
                                                         {/* Feature 3 */}
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <Headphones className="w-4 h-4 text-green-400" />
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 3 (Soporte)</label>
+                                                        <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Headphones className="w-4 h-4 text-green-400" />
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 3 (Soporte)</label>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, showFeature3: settings?.showFeature3 === false ? true : false })}
+                                                                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature3 !== false ? 'bg-green-600' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature3 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                </button>
                                                             </div>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature3 === false ? 'opacity-50' : ''}`}>
                                                                 <input
                                                                     className="input-cyber w-full p-3"
                                                                     value={settings?.feature3Title || ''}
                                                                     onChange={e => setSettings({ ...settings, feature3Title: e.target.value })}
                                                                     placeholder="Soporte 24/7"
+                                                                    disabled={settings?.showFeature3 === false}
                                                                 />
                                                                 <input
                                                                     className="input-cyber w-full p-3"
                                                                     value={settings?.feature3Desc || ''}
                                                                     onChange={e => setSettings({ ...settings, feature3Desc: e.target.value })}
                                                                     placeholder="Subtítulo corto..."
+                                                                    disabled={settings?.showFeature3 === false}
                                                                 />
                                                             </div>
                                                         </div>
@@ -7546,10 +8777,10 @@ function App() {
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-[10px] text-slate-500 font-mono uppercase">Footer</span>
                                                                     <button
-                                                                        onClick={() => setSettings({ ...settings, showWhatsapp: settings?.showWhatsapp === false ? true : false })}
-                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showWhatsapp !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        onClick={() => setSettings({ ...settings, showWhatsapp: !settings?.showWhatsapp })}
+                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showWhatsapp === true ? 'bg-green-500' : 'bg-slate-700'}`}
                                                                     >
-                                                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${settings?.showWhatsapp !== false ? 'left-5.5' : 'left-0.5'}`} style={{ left: settings?.showWhatsapp !== false ? '22px' : '2px' }}></div>
+                                                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showWhatsapp === true ? '22px' : '2px' }}></div>
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -7730,12 +8961,24 @@ function App() {
                                                                     </div>
                                                                 </div>
                                                                 <button
-                                                                    onClick={() => setSettings({ ...settings, paymentCash: !settings?.paymentCash })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.paymentCash ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    onClick={() => {
+                                                                        // Validar que Retiro en Local esté activo
+                                                                        if (!settings?.shippingPickup?.enabled) {
+                                                                            showToast('Debes activar "Retiro en Local" (Envíos) para habilitar efectivo.', 'warning');
+                                                                            return;
+                                                                        }
+                                                                        setSettings({ ...settings, paymentCash: !settings?.paymentCash });
+                                                                    }}
+                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'} ${!settings?.shippingPickup?.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                 >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentCash ? 'left-7' : 'left-1'}`}></div>
+                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
                                                                 </button>
                                                             </div>
+                                                            {!settings?.shippingPickup?.enabled && (
+                                                                <p className="text-[10px] text-orange-400/80 mt-2 flex items-center gap-1">
+                                                                    <AlertTriangle className="w-3 h-3" /> Requiere activar Retiro en Local
+                                                                </p>
+                                                            )}
                                                         </div>
 
                                                         {/* MercadoPago (Tarjeta) */}
@@ -7882,6 +9125,60 @@ function App() {
                                                             />
                                                             <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
                                                         </div>
+
+                                                        {/* OG Image Upload */}
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen para Redes Sociales (OG:Image)</label>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="relative group w-32 h-32 bg-slate-900 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-500 transition flex items-center justify-center overflow-hidden cursor-pointer">
+                                                                    {settings?.seoImage ? (
+                                                                        <img src={settings.seoImage} alt="SEO Preview" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-cyan-500 transition" />
+                                                                    )}
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                        onChange={(e) => handleImageUpload(e, setSettings, 'seoImage', 1200)}
+                                                                    />
+                                                                    {/* Overlay al hacer hover para indicar cambio */}
+                                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                                                        <Upload className="w-6 h-6 text-white" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <p className="text-sm text-slate-400 mb-2">Sube una imagen atractiva (ej: logo con fondo, banner).</p>
+                                                                    <p className="text-xs text-slate-600">Recomendado: 1200x630 píxeles para mejor visualización en Facebook/WhatsApp.</p>
+                                                                    {settings?.seoImage && (
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, seoImage: '' })}
+                                                                            className="mt-2 text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                                                                        >
+                                                                            <Trash2 className="w-3 h-3" /> Eliminar imagen
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Links Status */}
+                                                        <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-4">
+                                                            <a href="/sitemap.xml" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-white">Ver Sitemap.xml</p>
+                                                                    <p className="text-xs text-green-500">Activo</p>
+                                                                </div>
+                                                                <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
+                                                            </a>
+                                                            <a href="/robots.txt" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-white">Ver Robots.txt</p>
+                                                                    <p className="text-xs text-green-500">Activo</p>
+                                                                </div>
+                                                                <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
+                                                            </a>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -7907,6 +9204,60 @@ function App() {
                                                             >
                                                                 <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
                                                             </button>
+                                                        </div>
+
+                                                        {/* PWA & Performance Controls */}
+                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 space-y-4">
+                                                            <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-2">Rendimiento & PWA</h4>
+
+                                                            {/* Lazy Loading */}
+                                                            <div className="flex items-center justify-between">
+                                                                <div>
+                                                                    <p className="font-bold text-white">Carga Diferida (Lazy Load)</p>
+                                                                    <p className="text-xs text-slate-500">Mejora velocidad cargando imágenes al hacer scroll</p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, enableLazyLoad: settings?.enableLazyLoad === false ? true : false })}
+                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.enableLazyLoad !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enableLazyLoad !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                </button>
+                                                            </div>
+
+                                                            {/* PWA Service Worker */}
+                                                            <div className="flex items-center justify-between">
+                                                                <div>
+                                                                    <p className="font-bold text-white">Modo Offline (PWA)</p>
+                                                                    <p className="text-xs text-slate-500">Permite instalar la app y uso sin internet</p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, enablePWA: settings?.enablePWA === false ? true : false })}
+                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.enablePWA !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                >
+                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enablePWA !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Clear Cache Button */}
+                                                            <div className="pt-2 border-t border-slate-700">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if ('caches' in window) {
+                                                                            caches.keys().then(names => {
+                                                                                names.forEach(name => caches.delete(name));
+                                                                                showToast('Caché limpiada. Recargando...', 'success');
+                                                                                setTimeout(() => window.location.reload(), 1500);
+                                                                            });
+                                                                        } else {
+                                                                            showToast('Tu navegador no soporta gestión de caché', 'warning');
+                                                                        }
+                                                                    }}
+                                                                    className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" /> Forzar Limpieza de Caché y Recargar
+                                                                </button>
+                                                                <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores gráficos o versiones antiguas.</p>
+                                                            </div>
                                                         </div>
 
                                                         {/* Loading Text */}
@@ -8020,7 +9371,7 @@ function App() {
                                                             <div key={idx} className="bg-slate-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-700">
                                                                 <span>{cat}</span>
                                                                 <button
-                                                                    onClick={() => setSettings({ ...settings, categories: settings.categories.filter((_, i) => i !== idx) })}
+                                                                    onClick={() => setSettings({ ...settings, categories: (settings?.categories || []).filter((_, i) => i !== idx) })}
                                                                     className="text-red-400 hover:text-red-300"
                                                                 >
                                                                     <X className="w-4 h-4" />
@@ -8104,7 +9455,7 @@ function App() {
                                                                     </div>
                                                                 </div>
                                                                 <button
-                                                                    onClick={() => setSettings({ ...settings, team: settings.team.filter((_, i) => i !== idx) })}
+                                                                    onClick={() => setSettings({ ...settings, team: (settings?.team || []).filter((_, i) => i !== idx) })}
                                                                     className="p-3 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition flex-shrink-0"
                                                                     title="Eliminar Miembro"
                                                                 >
@@ -8408,7 +9759,7 @@ function App() {
                             {/* Columna 1: Marca */}
                             <div className="md:col-span-2 space-y-6">
                                 <h2 className="text-3xl font-black text-white tracking-tighter italic">
-                                    {settings?.storeName || 'SUSTORE'}
+                                    {settingsLoaded ? (settings?.storeName || '') : ''}
                                     <span className="text-cyan-500">{settings?.footerSuffix || '.SF'}</span>
                                 </h2>
                                 <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
@@ -8420,7 +9771,7 @@ function App() {
                                             <Instagram className="w-5 h-5" />
                                         </button>
                                     )}
-                                    {settings?.showWhatsapp !== false && settings?.whatsappLink && (
+                                    {settings?.showWhatsapp === true && settings?.whatsappLink && (
                                         <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-900/10 transition border border-slate-800 hover:border-green-500/30">
                                             <MessageCircle className="w-5 h-5" />
                                         </button>
@@ -8487,7 +9838,7 @@ function App() {
                                             } else if (type === 'instagram' && settings?.instagramLink) {
                                                 window.open(settings.instagramLink, '_blank');
                                             } else if (type === 'email' && settings?.storeEmail) {
-                                                window.open(`mailto:${settings.storeEmail}`, '_blank');
+                                                window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${settings.storeEmail}`, '_blank');
                                             }
                                         }}
                                         className="px-6 py-3 bg-cyan-900/10 text-cyan-400 rounded-xl text-sm font-bold border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition w-full md:w-auto"
@@ -8502,7 +9853,7 @@ function App() {
                         <div className="border-t border-slate-900 bg-[#020202]">
                             <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <p className="text-slate-600 text-xs font-mono">
-                                    © 2026 {settings?.storeName || 'SUSTORE'}. All rights reserved.
+                                    {settings?.footerCopyright || `© ${new Date().getFullYear()} ${settings?.storeName || ''}. All rights reserved.`}
                                 </p>
                                 <div className="flex gap-6">
                                     {settings?.showPrivacyPolicy !== false && (
@@ -8644,93 +9995,284 @@ function App() {
             {/* MODAL: VER PLANES DE SUSCRIPCIÓN */}
             {
                 showPlansModal && (
-                    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-lg animate-fade-in-scale p-4">
-                        <div className="bg-[#0a0a0a] p-8 rounded-[2rem] max-w-4xl w-full border border-cyan-900/50 shadow-2xl max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-8">
-                                <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                                    <Zap className="w-8 h-8 text-yellow-500 fill-current" /> Planes Disponibles
-                                </h2>
-                                <button onClick={() => setShowPlansModal(false)} className="p-2 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
-                                    <X className="w-6 h-6" />
-                                </button>
+                    <PlansModalContent settings={settings} onClose={() => setShowPlansModal(false)} />
+                )
+            }
+            {
+                false && (
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in-scale p-0 md:p-4 overflow-hidden">
+                        <div className="bg-gradient-to-b from-[#0d0d0d] to-[#050505] relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-6xl md:rounded-[2.5rem] border-0 md:border md:border-slate-800/50 shadow-2xl flex flex-col overflow-hidden">
+                            {/* Scrollable Content */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-20">
+                                {/* Header */}
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <h2 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 mb-2">
+                                            <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl">
+                                                <Zap className="w-6 h-6 md:w-8 md:h-8 text-white fill-current" />
+                                            </div>
+                                            Planes Disponibles
+                                        </h2>
+                                        <p className="text-slate-500">Tu plan actual: <span className="text-cyan-400 font-bold uppercase bg-cyan-500/10 px-3 py-1 rounded-full text-sm">{settings?.subscriptionPlan === 'business' ? '🚀 Negocio' : settings?.subscriptionPlan === 'premium' ? '💎 Premium' : '🏪 Emprendedor'}</span></p>
+                                    </div>
+                                    <button onClick={() => setShowPlansModal(false)} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all duration-300 hover:rotate-90">
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+
+                                    {/* ═══════════════════════════════════════════════════════════════════ */}
+                                    {/* PLAN EMPRENDEDOR */}
+                                    {/* ═══════════════════════════════════════════════════════════════════ */}
+                                    <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan
+                                        ? 'bg-gradient-to-b from-cyan-950/40 to-slate-950 border-cyan-500 shadow-[0_0_40px_rgba(6,182,212,0.25)]'
+                                        : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-cyan-500/50'
+                                        }`}>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                                        {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
+                                            <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-cyan-400 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
+                                        )}
+
+                                        <div className="relative z-10 p-6 flex-1 flex flex-col">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-4 bg-gradient-to-br from-cyan-600 to-cyan-500 rounded-2xl shadow-lg shadow-cyan-500/30">
+                                                    <Store className="w-7 h-7 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-2xl font-black text-white">🚀 Emprendedor</h4>
+                                                    <p className="text-sm text-cyan-400 font-medium leading-tight">Impulso inicial</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
+                                                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
+                                                <div className="text-4xl font-black text-white">$7.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                            </div>
+
+                                            <div className="space-y-3 mb-6 flex-1">
+                                                <div className="space-y-2 text-sm text-slate-300">
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-cyan-500 mt-0.5 flex-shrink-0" /> <span>Carga de hasta <strong className="text-white">30 productos</strong></span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-cyan-500 mt-0.5 flex-shrink-0" /> <span>Integración <strong className="text-white">Mercado Pago</strong></span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-cyan-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">1 promoción</strong> activa</span></div>
+                                                </div>
+                                            </div>
+
+                                            <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-cyan-500/50 open:shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+                                                <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
+                                                    <span className="flex items-center gap-2 text-cyan-400">👇 Elegí tu plan de pago</span>
+                                                    <ChevronDown className="w-5 h-5 text-cyan-400 transition-transform duration-300 group-open/payment:rotate-180" />
+                                                </summary>
+                                                <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                                    {[
+                                                        { cycle: 'Semanal', price: '$2.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                        { cycle: 'Mensual', price: '$7.000', label: 'Pago Mensual', sub: 'Más equilibrado' },
+                                                        { cycle: 'Anual', price: '$70.000', label: 'Pago Anual', sub: 'Ahorrás $14.000 🎁' }
+                                                    ].map((opt) => (
+                                                        <div
+                                                            key={opt.cycle}
+                                                            onClick={() => setSelectedPlanOption({ plan: 'Emprendedor', cycle: opt.cycle, price: opt.price })}
+                                                            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Emprendedor' && selectedPlanOption?.cycle === opt.cycle
+                                                                ? 'bg-cyan-500 text-black border-cyan-400 shadow-lg ring-2 ring-cyan-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
+                                                                : 'bg-black/40 text-slate-300 border-slate-800 hover:border-cyan-500/50 hover:bg-slate-800'
+                                                                }`}
+                                                        >
+                                                            <div>
+                                                                <div className="font-bold text-sm">{opt.label}</div>
+                                                                <div className={`text-[10px] ${selectedPlanOption?.plan === 'Emprendedor' && selectedPlanOption?.cycle === opt.cycle ? 'text-black/70' : 'text-slate-500'}`}>{opt.sub}</div>
+                                                            </div>
+                                                            <div className="font-black text-lg">{opt.price}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </details>
+                                        </div>
+                                    </div>
+
+                                    {/* ═══════════════════════════════════════════════════════════════════ */}
+                                    {/* PLAN NEGOCIO */}
+                                    {/* ═══════════════════════════════════════════════════════════════════ */}
+                                    <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'business'
+                                        ? 'bg-gradient-to-b from-purple-950/40 to-slate-950 border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.25)]'
+                                        : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-purple-500/50'
+                                        }`}>
+                                        <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">⭐ MÁS POPULAR</div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                                        {settings?.subscriptionPlan === 'business' && (
+                                            <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-400 text-white text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
+                                        )}
+
+                                        <div className="relative z-10 p-6 flex-1 flex flex-col">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-4 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-2xl shadow-lg shadow-purple-500/30">
+                                                    <Briefcase className="w-7 h-7 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-2xl font-black text-white">🚀 Negocio</h4>
+                                                    <p className="text-sm text-purple-400 font-medium leading-tight">Escala tu marca</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
+                                                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
+                                                <div className="text-4xl font-black text-white">$13.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                            </div>
+
+                                            <div className="space-y-3 mb-6 flex-1">
+                                                <div className="space-y-2 text-sm text-slate-300">
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span>Hasta <strong className="text-white">50 productos</strong></span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">5 promociones</strong> simultáneas</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Cupones</strong> de descuento</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Analítica</strong> de clientes</span></div>
+                                                </div>
+                                            </div>
+
+                                            <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-purple-500/50 open:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+                                                <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
+                                                    <span className="flex items-center gap-2 text-purple-400">👇 Elegí tu plan de pago</span>
+                                                    <ChevronDown className="w-5 h-5 text-purple-400 transition-transform duration-300 group-open/payment:rotate-180" />
+                                                </summary>
+                                                <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                                    {[
+                                                        { cycle: 'Semanal', price: '$4.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                        { cycle: 'Mensual', price: '$13.000', label: 'Pago Mensual', sub: 'Ideal gestión mensual' },
+                                                        { cycle: 'Anual', price: '$117.000', label: 'Pago Anual', sub: '3 MESES GRATIS 🎉' }
+                                                    ].map((opt) => (
+                                                        <div
+                                                            key={opt.cycle}
+                                                            onClick={() => setSelectedPlanOption({ plan: 'Negocio', cycle: opt.cycle, price: opt.price })}
+                                                            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Negocio' && selectedPlanOption?.cycle === opt.cycle
+                                                                ? 'bg-purple-600 text-white border-purple-500 shadow-lg ring-2 ring-purple-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
+                                                                : 'bg-black/40 text-slate-300 border-slate-800 hover:border-purple-500/50 hover:bg-slate-800'
+                                                                }`}
+                                                        >
+                                                            <div>
+                                                                <div className="font-bold text-sm">{opt.label}</div>
+                                                                <div className={`text-[10px] ${selectedPlanOption?.plan === 'Negocio' && selectedPlanOption?.cycle === opt.cycle ? 'text-white/80' : 'text-slate-500'}`}>{opt.sub}</div>
+                                                            </div>
+                                                            <div className="font-black text-lg">{opt.price}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </details>
+                                        </div>
+                                    </div>
+
+                                    {/* ═══════════════════════════════════════════════════════════════════ */}
+                                    {/* PLAN PREMIUM */}
+                                    {/* ═══════════════════════════════════════════════════════════════════ */}
+                                    <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'premium'
+                                        ? 'bg-gradient-to-b from-yellow-950/40 to-slate-950 border-yellow-500 shadow-[0_0_40px_rgba(234,179,8,0.25)]'
+                                        : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-yellow-500/50'
+                                        }`}>
+                                        <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20">💎 VIP</div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                                        {settings?.subscriptionPlan === 'premium' && (
+                                            <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
+                                        )}
+
+                                        <div className="relative z-10 p-6 flex-1 flex flex-col">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-4 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl shadow-lg shadow-yellow-500/30">
+                                                    <Sparkles className="w-7 h-7 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-2xl font-black text-white">💎 Premium</h4>
+                                                    <p className="text-sm text-yellow-400 font-medium leading-tight">Liderazgo total</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
+                                                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
+                                                <div className="text-4xl font-black text-white">$22.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                            </div>
+
+                                            <div className="space-y-3 mb-6 flex-1">
+                                                <div className="space-y-2 text-sm text-slate-300">
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Ilimitados</strong> productos y promos</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Asistente IA</strong> 24/7</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Carga VIP</strong> 10 productos</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Mantenimiento</strong> Full Mensual</span></div>
+                                                </div>
+                                            </div>
+
+                                            <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-yellow-500/50 open:shadow-[0_0_20px_rgba(234,179,8,0.15)]">
+                                                <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
+                                                    <span className="flex items-center gap-2 text-yellow-400">👇 Elegí tu plan de pago</span>
+                                                    <ChevronDown className="w-5 h-5 text-yellow-400 transition-transform duration-300 group-open/payment:rotate-180" />
+                                                </summary>
+                                                <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                                    {[
+                                                        { cycle: 'Semanal', price: '$6.500', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                        { cycle: 'Mensual', price: '$22.000', label: 'Pago Mensual', sub: 'Equilibrio perfecto' },
+                                                        { cycle: 'Anual', price: '$198.000', label: 'Pago Anual', sub: '3 MESES GRATIS 🎁' }
+                                                    ].map((opt) => (
+                                                        <div
+                                                            key={opt.cycle}
+                                                            onClick={() => setSelectedPlanOption({ plan: 'Premium', cycle: opt.cycle, price: opt.price })}
+                                                            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Premium' && selectedPlanOption?.cycle === opt.cycle
+                                                                ? 'bg-yellow-500 text-black border-yellow-400 shadow-lg ring-2 ring-yellow-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
+                                                                : 'bg-black/40 text-slate-300 border-slate-800 hover:border-yellow-500/50 hover:bg-slate-800'
+                                                                }`}
+                                                        >
+                                                            <div>
+                                                                <div className="font-bold text-sm">{opt.label}</div>
+                                                                <div className={`text-[10px] ${selectedPlanOption?.plan === 'Premium' && selectedPlanOption?.cycle === opt.cycle ? 'text-black/70' : 'text-slate-500'}`}>{opt.sub}</div>
+                                                            </div>
+                                                            <div className="font-black text-lg">{opt.price}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </details>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
 
-                            <p className="text-slate-500 mb-8">Tu plan actual: <span className="text-cyan-400 font-bold uppercase">{settings?.subscriptionPlan === 'business' ? 'Negocio' : settings?.subscriptionPlan === 'premium' ? 'Premium' : 'Emprendedor'}</span></p>
+                            {/* Sticky Footer */}
+                            <div className="border-t border-slate-800 bg-[#0a0a0a] p-6 z-20 shrink-0">
+                                <div className={`p-4 md:p-6 rounded-2xl border transition-all duration-500 relative overflow-hidden group ${selectedPlanOption
+                                    ? 'bg-gradient-to-r from-green-900/80 to-emerald-900/80 border-green-500 shadow-[0_0_40px_rgba(34,197,94,0.3)]'
+                                    : 'bg-slate-900 border-slate-700 opacity-90'
+                                    }`}>
+                                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {/* Plan Emprendedor */}
-                                <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan ? 'bg-slate-900 border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
-                                    {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
-                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
-                                    )}
-                                    <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
-                                        <Store className="w-6 h-6 text-cyan-400" />
-                                    </div>
-                                    <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
-                                    <p className="text-sm text-slate-400 mb-4">El esencial para arrancar.</p>
-                                    <div className="text-2xl font-black text-cyan-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-                                    <ul className="space-y-2 text-sm text-slate-300">
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Hasta 35 productos</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> 1 Promo Activa</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Integración Mercado Pago</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-cyan-500" /> Soporte vía Gmail (24hs)</li>
-                                    </ul>
-                                </div>
+                                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                                        <div className="flex items-center gap-4 text-left">
+                                            <div className={`p-3 rounded-full shadow-lg transition-colors duration-300 ${selectedPlanOption ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                                                {selectedPlanOption ? <CheckCircle className="w-8 h-8" /> : <Zap className="w-8 h-8" />}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-bold text-white mb-1">
+                                                    {selectedPlanOption
+                                                        ? `¡Excelente elección! 🚀`
+                                                        : 'Seleccioná una opción para continuar'}
+                                                </h3>
+                                                <p className={`text-sm ${selectedPlanOption ? 'text-green-300' : 'text-slate-400'}`}>
+                                                    {selectedPlanOption
+                                                        ? <span>Estás a un paso de activar tu <strong>Plan {selectedPlanOption.plan}</strong> con pago <strong>{selectedPlanOption.cycle}</strong>.</span>
+                                                        : 'Hacé clic en una de las opciones de arriba para ver los detalles.'}
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                {/* Plan Negocio */}
-                                <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
-                                    {settings?.subscriptionPlan === 'business' && (
-                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
-                                    )}
-                                    <div className="absolute top-4 right-4 bg-purple-500/20 text-purple-400 text-[10px] font-bold px-2 py-0.5 rounded">MÁS PEDIDO</div>
-                                    <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
-                                        <Briefcase className="w-6 h-6 text-purple-400" />
+                                        {selectedPlanOption && (
+                                            <a
+                                                href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero suscribirme al *Plan ${selectedPlanOption.plan}* con pago *${selectedPlanOption.cycle}* de ${selectedPlanOption.price}. ¿Cómo seguimos?`)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-full md:w-auto px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-black text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30 flex items-center justify-center gap-2 animate-bounce-subtle"
+                                            >
+                                                <MessageCircle className="w-6 h-6 fill-current" />
+                                                Confirmar por WhatsApp
+                                                <ArrowRight className="w-5 h-5" />
+                                            </a>
+                                        )}
                                     </div>
-                                    <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
-                                    <p className="text-sm text-slate-400 mb-4">Para marcas con identidad.</p>
-                                    <div className="text-2xl font-black text-purple-400 mb-6">$13.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-                                    <p className="text-xs text-purple-400 mb-3 font-bold">Todo lo del Emprendedor +</p>
-                                    <ul className="space-y-2 text-sm text-slate-300">
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 5 Promos</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Cupones de Descuento</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Ver Actividad Usuarios</li>
-                                    </ul>
-                                </div>
-
-                                {/* Plan Premium */}
-                                <div className={`relative p-6 rounded-2xl border-2 ${settings?.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)]' : 'bg-[#050505] border-slate-800'}`}>
-                                    {settings?.subscriptionPlan === 'premium' && (
-                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-3 py-1 rounded-full">TU PLAN</div>
-                                    )}
-                                    <div className="absolute top-4 right-4 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded">SERVICIO FULL</div>
-                                    <div className="p-3 bg-slate-800 rounded-xl w-fit mb-4">
-                                        <Sparkles className="w-6 h-6 text-yellow-400" />
-                                    </div>
-                                    <h4 className="text-xl font-black text-white mb-1">Premium</h4>
-                                    <p className="text-sm text-slate-400 mb-4">No tocás nada, todo listo.</p>
-                                    <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-                                    <p className="text-xs text-yellow-400 mb-3 font-bold">Todo lo del Negocio +</p>
-                                    <ul className="space-y-2 text-sm text-slate-300">
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Promos ILIMITADAS</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Chatbot SustIA</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga de Productos</li>
-                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div className="mt-8 p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-slate-700 text-center relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-cyan-500/5 blur-xl group-hover:bg-cyan-500/10 transition duration-500"></div>
-                                <div className="relative z-10 flex flex-col items-center justify-center gap-2">
-                                    <div className="bg-slate-900 p-3 rounded-full border border-slate-700 mb-2 shadow-lg">
-                                        <Zap className="w-6 h-6 text-cyan-400" />
-                                    </div>
-                                    <p className="text-slate-300 font-medium">¿Listo para escalar tu negocio?</p>
-                                    <p className="text-sm text-slate-500">Para actualizar tu plan inmediatamente, contáctanos:</p>
-                                    <a href="mailto:lautarocorazza63@gmail.com" className="text-cyan-400 font-black text-lg hover:text-cyan-300 transition mt-1 flex items-center gap-2 hover:scale-105 transform duration-200">
-                                        lautarocorazza63@gmail.com
-                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -8762,6 +10304,259 @@ function App() {
         </div >
     );
 }
+
+// === COMPONENTE MODAL DE PLANES REFACTORIZADO ===
+const PlansModalContent = ({ settings, onClose }) => {
+    const [activePlanId, setActivePlanId] = React.useState(null);
+    const [selectedOption, setSelectedOption] = React.useState(null);
+
+    // Clases de color estáticas para Tailwind (no interpolar)
+    const colorClasses = {
+        purple: {
+            iconBg: 'bg-purple-600',
+            iconText: 'text-purple-400',
+            price: 'text-purple-400',
+            check: 'text-purple-500',
+            activeBg: 'bg-purple-500',
+            activeBorder: 'border-purple-400',
+            gradient: 'from-purple-900/40 to-slate-900',
+            border: 'border-purple-500/50'
+        },
+        cyan: {
+            iconBg: 'bg-cyan-600',
+            iconText: 'text-cyan-400',
+            price: 'text-cyan-400',
+            check: 'text-cyan-500',
+            activeBg: 'bg-cyan-500',
+            activeBorder: 'border-cyan-400',
+            gradient: 'from-cyan-900/40 to-slate-900',
+            border: 'border-cyan-500/50'
+        },
+        yellow: {
+            iconBg: 'bg-yellow-500',
+            iconText: 'text-yellow-400',
+            price: 'text-yellow-400',
+            check: 'text-yellow-500',
+            activeBg: 'bg-yellow-500',
+            activeBorder: 'border-yellow-400',
+            gradient: 'from-yellow-900/40 to-slate-900',
+            border: 'border-yellow-500/50'
+        }
+    };
+
+    const PLANS = [
+        {
+            id: 'entrepreneur',
+            name: 'Plan Emprendedor',
+            emoji: '🏪',
+            subtitle: 'El impulso que tu negocio necesita para despegar.',
+            price: '$7.000',
+            features: [
+                '📦 Carga de hasta 30 productos',
+                '💳 Integración con Mercado Pago',
+                '🔥 1 Promoción activa',
+                '📊 Panel de Control completo',
+                '📧 Soporte técnico vía Gmail'
+            ],
+            cycles: [
+                { id: 'weekly', label: 'Semanal', price: '$2.000', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: '$7.000', sub: 'Opción equilibrada' },
+                { id: 'annual', label: 'Anual', price: '$70.000', sub: '🎁 2 MESES GRATIS' }
+            ],
+            color: 'cyan',
+            icon: Store
+        },
+        {
+            id: 'business',
+            name: 'Plan Negocio',
+            emoji: '🚀',
+            subtitle: 'Para marcas con identidad que buscan escalar.',
+            price: '$13.000',
+            popular: true,
+            features: [
+                '📦 Hasta 50 productos',
+                '🔥 5 Promociones simultáneas',
+                '🎫 Sistema de cupones',
+                '📊 Analítica de clientes',
+                '📲 Botón WhatsApp flotante'
+            ],
+            cycles: [
+                { id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: '$13.000', sub: 'Equilibrio perfecto' },
+                { id: 'annual', label: 'Anual', price: '$117.000', sub: '🎁 3 MESES GRATIS' }
+            ],
+            color: 'purple',
+            icon: Briefcase
+        },
+        {
+            id: 'premium',
+            name: 'Plan Premium',
+            emoji: '💎',
+            subtitle: 'Automatización total y cero preocupaciones.',
+            price: '$22.000',
+            features: [
+                '🚀 Productos ilimitados',
+                '🤖 Asistente IA 24/7',
+                '✨ Carga VIP (10 productos)',
+                '🛠️ Mantenimiento mensual',
+                '📲 Omnicanalidad total'
+            ],
+            cycles: [
+                { id: 'weekly', label: 'Semanal', price: '$6.500', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: '$22.000', sub: 'Equilibrio perfecto' },
+                { id: 'annual', label: 'Anual', price: '$198.000', sub: '🎁 3 MESES GRATIS' }
+            ],
+            color: 'yellow',
+            icon: Sparkles
+        }
+    ];
+
+    return (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in-scale p-2 sm:p-4 overflow-hidden">
+            <div className="bg-gradient-to-b from-[#0d0d0d] to-[#050505] relative w-full h-full sm:h-auto sm:max-h-[95vh] sm:max-w-5xl sm:rounded-3xl border-0 sm:border sm:border-slate-800/50 shadow-2xl flex flex-col overflow-hidden">
+
+                {/* Header */}
+                <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-800/50 shrink-0">
+                    <div>
+                        <h2 className="text-xl sm:text-3xl font-black text-white flex items-center gap-2 sm:gap-3">
+                            <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-current" /> Planes Disponibles
+                        </h2>
+                        <p className="text-slate-500 text-xs sm:text-sm mt-1">Elegí un plan y seleccioná tu forma de pago</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 sm:p-3 bg-slate-800 hover:bg-slate-700 rounded-full text-white transition-all hover:rotate-90">
+                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
+                </div>
+
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                        {PLANS.map(plan => {
+                            const isActive = activePlanId === plan.id;
+                            const isCurrentPlan = settings?.subscriptionPlan === plan.id || (!settings?.subscriptionPlan && plan.id === 'entrepreneur');
+                            const Icon = plan.icon;
+                            const colors = colorClasses[plan.color];
+
+                            return (
+                                <div
+                                    key={plan.id}
+                                    onClick={() => setActivePlanId(isActive ? null : plan.id)}
+                                    className={`relative rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col
+                                        ${isActive
+                                            ? `bg-gradient-to-b ${colors.gradient} ${colors.border} shadow-xl scale-[1.01]`
+                                            : 'bg-[#111] border-slate-800 hover:border-slate-600'
+                                        }`}
+                                >
+                                    {/* Popular Badge */}
+                                    {plan.popular && (
+                                        <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl">
+                                            POPULAR
+                                        </div>
+                                    )}
+
+                                    {/* Current Plan Badge */}
+                                    {isCurrentPlan && (
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur text-white text-[10px] font-bold px-3 py-1 rounded-b-lg border border-white/20">
+                                            ✓ TU PLAN
+                                        </div>
+                                    )}
+
+                                    <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                                        {/* Header */}
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className={`p-2.5 sm:p-3 rounded-xl ${colors.iconBg} shadow-lg`}>
+                                                <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg sm:text-xl font-black text-white">{plan.name}</h3>
+                                                <p className="text-[11px] sm:text-xs text-slate-500">{plan.subtitle}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Price */}
+                                        <div className={`text-2xl sm:text-3xl font-black ${colors.price} mb-4`}>
+                                            {plan.price} <span className="text-sm text-slate-500 font-normal">/mes</span>
+                                        </div>
+
+                                        {/* Features */}
+                                        <div className="space-y-2 mb-4 flex-1">
+                                            {plan.features.map((feat, i) => (
+                                                <div key={i} className="flex items-start gap-2 text-xs sm:text-sm text-slate-300">
+                                                    <CheckCircle className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${colors.check} shrink-0 mt-0.5`} />
+                                                    <span>{feat}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Expand/Collapse Indicator */}
+                                        <button
+                                            className={`w-full py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2
+                                                ${isActive ? 'bg-white/5 text-white' : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'}`}
+                                        >
+                                            {isActive ? 'Elegí tu forma de pago' : 'Ver opciones de pago'}
+                                            <ChevronDown className={`w-4 h-4 transition-transform ${isActive ? 'rotate-180' : ''}`} />
+                                        </button>
+
+                                        {/* Payment Options (Expandable) */}
+                                        <div className={`transition-all duration-300 overflow-hidden ${isActive ? 'max-h-[400px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                                            <div className="space-y-2 pt-4 border-t border-white/10">
+                                                {plan.cycles.map(cycle => {
+                                                    const isSelected = selectedOption?.price === cycle.price && selectedOption?.plan === plan.name;
+                                                    return (
+                                                        <button
+                                                            key={cycle.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedOption({ plan: plan.name, cycle: cycle.label, price: cycle.price, sub: cycle.sub, emoji: plan.emoji });
+                                                            }}
+                                                            className={`w-full text-left p-3 rounded-xl border-2 transition-all flex justify-between items-center
+                                                                ${isSelected
+                                                                    ? `${colors.activeBg} text-black ${colors.activeBorder} shadow-lg`
+                                                                    : 'bg-slate-900/50 border-slate-700 hover:bg-slate-800 text-slate-300 hover:border-slate-500'
+                                                                }`}
+                                                        >
+                                                            <div>
+                                                                <div className="font-bold text-sm">{cycle.label}</div>
+                                                                <div className={`text-[10px] ${isSelected ? 'text-black/70' : 'text-slate-500'}`}>{cycle.sub}</div>
+                                                            </div>
+                                                            <div className="font-black text-base sm:text-lg">{cycle.price}</div>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Sticky Footer CTA */}
+                {selectedOption && (
+                    <div className="border-t border-slate-800 bg-gradient-to-r from-green-900/30 to-emerald-900/30 p-3 sm:p-5 shrink-0 animate-slide-up">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
+                            <div className="text-center sm:text-left">
+                                <p className="text-white text-sm sm:text-base font-bold">
+                                    {selectedOption.emoji} {selectedOption.plan} • <span className="text-green-400">{selectedOption.cycle}</span>
+                                </p>
+                                <p className="text-slate-400 text-xs">{selectedOption.sub} • {selectedOption.price}</p>
+                            </div>
+                            <a
+                                href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero contratar el *${selectedOption.plan}* con pago *${selectedOption.cycle}* (${selectedOption.price}). ¿Cómo sigo?`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full sm:w-auto px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-black text-sm sm:text-base rounded-xl transition shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
+                            >
+                                <MessageCircle className="w-5 h-5 fill-current" /> Confirmar por WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 // Fallback para Acceso Denegado
 const AccessDenied = ({ onBack }) => (

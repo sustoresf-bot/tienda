@@ -1,0 +1,13 @@
+# Robots.txt para WULFIN DISEÑOS
+# Controla qué pueden indexar los buscadores
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+
+# Sitemap
+Sitemap: https://wulfindisenios.vercel.app/sitemap.xml
+
+# Crawl-delay para no sobrecargar (opcional)
+Crawl-delay: 1

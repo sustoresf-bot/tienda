@@ -7,6 +7,8 @@
     --bg-dark: #050505;
     --bg-card: #0a0a0a;
     --glass-border: rgba(255, 255, 255, 0.08);
+    /* Performance: Enable GPU acceleration */
+    --gpu-transform: translateZ(0);
 }
 
 html,
@@ -18,6 +20,10 @@ body {
     overflow-y: auto !important;
     margin: 0;
     min-height: 100vh;
+    /* Performance: Smooth scrolling */
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom Scrollbar */
@@ -215,6 +221,195 @@ body {
     }
 }
 
+/* Slide In Left Animation */
+.animate-slide-in-left {
+    animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Slide In Up Animation */
+.animate-slide-in-up {
+    animation: slideInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Zoom In Animation */
+.animate-zoom-in {
+    animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Shake Animation (para errores) */
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+/* Glow Animation */
+.animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 5px rgba(6, 182, 212, 0.2);
+    }
+
+    to {
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2);
+    }
+}
+
+/* Float Animation */
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Stagger Animation Helper */
+.stagger-1 {
+    animation-delay: 0.1s;
+}
+
+.stagger-2 {
+    animation-delay: 0.2s;
+}
+
+.stagger-3 {
+    animation-delay: 0.3s;
+}
+
+.stagger-4 {
+    animation-delay: 0.4s;
+}
+
+.stagger-5 {
+    animation-delay: 0.5s;
+}
+
+/* Card Hover Effects */
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Image Hover Zoom */
+.img-hover-zoom {
+    overflow: hidden;
+}
+
+.img-hover-zoom img {
+    transition: transform 0.5s ease;
+}
+
+.img-hover-zoom:hover img {
+    transform: scale(1.1);
+}
+
+/* Button Press Effect */
+.btn-press:active {
+    transform: scale(0.95);
+    transition: transform 0.1s;
+}
+
+/* Ripple Effect */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.2) 10%, transparent 10.01%);
+    background-repeat: no-repeat;
+    background-position: 50%;
+    transform: scale(10, 10);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+}
+
+.ripple:active::after {
+    transform: scale(0, 0);
+    opacity: 0.3;
+    transition: 0s;
+}
+
 /* Admin Sidebar */
 .admin-item {
     transition: all 0.2s;
@@ -227,6 +422,44 @@ body {
     background: linear-gradient(90deg, rgba(6, 182, 212, 0.05) 0%, rgba(6, 182, 212, 0.1) 100%);
     border-right-color: var(--primary);
     color: #22d3ee;
+}
+
+/* Admin Panel Mobile Optimizations */
+@media (max-width: 768px) {
+
+    /* Sidebar animations */
+    .admin-sidebar-enter {
+        transform: translateX(-100%);
+    }
+
+    .admin-sidebar-enter-active {
+        transform: translateX(0);
+        transition: transform 0.3s ease-out;
+    }
+
+    /* Better touch targets for admin nav */
+    nav button {
+        min-height: 48px;
+    }
+
+    /* Reduce padding in admin content on small screens */
+    .admin-content {
+        padding: 1rem;
+    }
+
+    /* Stack admin cards on mobile */
+    .admin-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Reduce card border radius on mobile for more space */
+    .rounded-\[2\.5rem\] {
+        border-radius: 1.5rem;
+    }
+
+    .rounded-\[2rem\] {
+        border-radius: 1.25rem;
+    }
 }
 
 .bg-grid {
@@ -280,11 +513,6 @@ body {
     }
 
     /* Compact cards on mobile */
-    .grid {
-        gap: 1rem;
-    }
-
-    /* Fix for cut-off cards */
     .grid {
         gap: 1rem;
     }
@@ -372,8 +600,46 @@ body {
 .animate-fade-in,
 .animate-fade-in-scale,
 .animate-slide-in-right,
+.animate-slide-in-left,
+.animate-slide-in-up,
+.animate-zoom-in,
+.animate-float,
+.card-hover,
 .neon-box {
     will-change: transform, opacity;
+    transform: var(--gpu-transform);
+}
+
+/* Performance: Contain layout for cards */
+.glass,
+.glass-panel,
+.neon-box {
+    contain: layout style;
+}
+
+/* Reduce motion for accessibility - Solo cuando el usuario lo prefiere */
+@media (prefers-reduced-motion: reduce) {
+
+    .animate-fade-up,
+    .animate-fade-in,
+    .animate-fade-in-scale,
+    .animate-slide-in-right,
+    .animate-slide-in-left,
+    .animate-slide-in-up,
+    .animate-zoom-in,
+    .animate-bounce-short,
+    .animate-pulse-slow,
+    .animate-float,
+    .animate-glow,
+    .animate-shake {
+        animation: none !important;
+        opacity: 1;
+        transform: none;
+    }
+
+    .card-hover:hover {
+        transform: none;
+    }
 }
 
 /* Safe area padding for notched phones */

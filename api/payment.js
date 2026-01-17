@@ -82,7 +82,7 @@ export default async function handler(req, res) {
                             <!-- Header -->
                             <tr>
                                 <td style="padding: 40px 40px 20px; text-align: center;">
-                                    <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Sustore</h1>
+                                    <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Tu Tienda</h1>
                                     <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; letter-spacing: 2px;">CONFIRMACIÓN DE COMPRA</p>
                                 </td>
                             </tr>
@@ -178,14 +178,14 @@ export default async function handler(req, res) {
                                         ${customer.dni ? `<p style="margin: 5px 0 0; font-size: 13px; color: #94a3b8;">DNI: ${customer.dni}</p>` : ''}
                                     </div>
 
-                                    <a href="https://sustore.vercel.app/" class="btn">VER DETALLES EN LA TIENDA</a>
+                                    <a href="#" class="btn">VER DETALLES EN LA TIENDA</a>
 
                                     <div style="margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 30px;">
                                         <p style="color: #475569; font-size: 12px; margin-bottom: 10px;">
                                             ¿Necesitas ayuda? Responde a este correo o contáctanos en Instagram.
                                         </p>
                                         <div style="font-size: 12px; color: #64748b;">
-                                            © ${new Date().getFullYear()} SUSTORE Inc.
+                                            © ${new Date().getFullYear()} Tu Tienda Online
                                         </div>
                                     </div>
                                 </td>
@@ -201,9 +201,9 @@ export default async function handler(req, res) {
     `;
     try {
         await transporter.sendMail({
-            from: `"Sustore Confirmaciones" <${process.env.EMAIL_USER}>`,
+            from: `"Confirmaciones de Pedido" <${process.env.EMAIL_USER}>`,
             to: `${customer.email}, ${process.env.EMAIL_USER}`,
-            subject: `✅ Pedido Confirmado #${orderId} - Sustore`,
+            subject: `✅ Pedido Confirmado #${orderId}`,
             html: mailContent
         });
         res.status(200).json({ success: true });
