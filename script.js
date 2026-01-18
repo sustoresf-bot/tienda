@@ -296,7 +296,7 @@ SecurityManager.init();
 
 // Configuración por defecto
 const defaultSettings = {
-    storeName: "WULFIN DISEÑOS",
+    storeName: "Cargando Tienda",
     primaryColor: "#f97316",
     currency: "$",
     admins: SUPER_ADMIN_EMAIL,
