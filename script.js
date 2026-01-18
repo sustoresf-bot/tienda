@@ -3043,10 +3043,16 @@ function App() {
         }
 
         if (!newProduct.basePrice || Number(newProduct.basePrice) <= 0) return showToast("El precio debe ser mayor a 0.", "warning");
-        if (!newProduct.category) return showToast("Selecciona una categoría.", "warning");
+
+        // Validación de categorías (array)
+        const categories = Array.isArray(newProduct.categories) ? newProduct.categories :
+            (newProduct.category ? [newProduct.category] : []);
+        if (categories.length === 0) return showToast("Selecciona al menos una categoría.", "warning");
 
         const productData = {
             ...newProduct,
+            categories: categories, // Guardar como array
+            category: undefined, // No guardar el campo antiguo
             basePrice: Number(newProduct.basePrice) || 0,
             purchasePrice: Number(newProduct.purchasePrice || 0),
             stock: Number(newProduct.stock) || 0,
@@ -3069,7 +3075,7 @@ function App() {
                 showToast("Producto creado correctamente.", "success");
             }
             // Resetear formulario
-            setNewProduct({ name: '', basePrice: '', purchasePrice: '', stock: '', category: '', image: '', description: '', discount: 0 });
+            setNewProduct({ name: '', basePrice: '', purchasePrice: '', stock: '', categories: [], image: '', description: '', discount: 0 });
             setEditingId(null);
             setShowProductForm(false);
         } catch (e) {
