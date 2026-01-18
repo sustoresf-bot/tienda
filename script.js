@@ -537,7 +537,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
             <div className="p-4 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
                 <div className="flex justify-between items-start mb-3">
                     <p className="text-[10px] text-orange-400 font-black uppercase tracking-widest border border-orange-900/30 bg-orange-900/10 px-2 py-1 rounded">
-                        {p.category}
+                        {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categoría') : (p.category || 'Sin categoría')}
                     </p>
                     {/* Estado de Stock */}
                     {settings?.showStockCount !== false && p.stock > 0 && p.stock <= (settings?.lowStockThreshold || 5) ? (
@@ -1191,7 +1191,7 @@ function App() {
         name: '',
         basePrice: '',
         stock: '',
-        category: '',
+        categories: [], // Cambio: Ahora es un array para múltiples categorías
         image: '',
         description: '',
         discount: 0,
@@ -4667,8 +4667,26 @@ function App() {
                 return matchesSearch && (p.discount > 0);
             }
 
-            const categoryMatch = p.category ? p.category.trim() : '';
-            const matchesCategory = selectedCategory === '' || categoryMatch === selectedCategory;
+            // NUEVO: Soporte para múltiples categorías
+            // Verificar si el producto tiene el array categories o el campo legacy category
+            const matchesCategory = (() => {
+                // Sin filtro seleccionado - mostrar todos
+                if (selectedCategory === '') return true;
+
+                // Producto con múltiples categorías (nuevo sistema)
+                if (Array.isArray(p.categories)) {
+                    return p.categories.includes(selectedCategory);
+                }
+
+                // Producto con categoría antigua (retrocompatibilidad)
+                if (p.category) {
+                    return p.category.trim() === selectedCategory;
+                }
+
+                // Sin categoría asignada
+                return false;
+            })();
+
             return matchesSearch && matchesCategory;
         })
         .sort((a, b) => {
