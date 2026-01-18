@@ -7808,10 +7808,95 @@ function App() {
                                                                 <input className="input-cyber w-full p-4" type="number" placeholder="Costo Compra ($)" value={newProduct.purchasePrice || ''} onChange={e => setNewProduct({ ...newProduct, purchasePrice: e.target.value })} />
                                                                 <input className="input-cyber w-full p-4" type="number" placeholder="Stock" value={newProduct.stock || ''} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
                                                             </div>
-                                                            <select className="input-cyber w-full p-4" value={newProduct.category || ''} onChange={e => setNewProduct({ ...newProduct, category: e.target.value })}>
-                                                                <option value="">Seleccionar Categoría...</option>
-                                                                {settings?.categories?.map(c => <option key={c} value={c}>{c}</option>)}
-                                                            </select>
+                                                            <div className="space-y-2">
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
+                                                                    Categorías (Selecciona una o más)
+                                                                </label>
+                                                                <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
+                                                                    {(settings?.categories || []).length === 0 ? (
+                                                                        <p className="text-center text-slate-600 py-4 text-sm">
+                                                                            No hay categorías disponibles. Agrégalas abajo.
+                                                                        </p>
+                                                                    ) : (
+                                                                        (settings?.categories || []).map(cat => {
+                                                                            // Soporte retrocompatible: verificar tanto categories (array) como category (string)
+                                                                            const isSelected = Array.isArray(newProduct.categories)
+                                                                                ? newProduct.categories.includes(cat)
+                                                                                : (newProduct.category === cat);
+
+                                                                            return (
+                                                                                <label
+                                                                                    key={cat}
+                                                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all group hover:bg-slate-800 mb-2 last:mb-0 ${isSelected ? 'bg-orange-900/20 border border-orange-500/30' : 'border border-transparent'
+                                                                                        }`}
+                                                                                >
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={isSelected}
+                                                                                        onChange={(e) => {
+                                                                                            if (e.target.checked) {
+                                                                                                // Agregar categoría
+                                                                                                const current = Array.isArray(newProduct.categories)
+                                                                                                    ? newProduct.categories
+                                                                                                    : (newProduct.category ? [newProduct.category] : []);
+                                                                                                setNewProduct({
+                                                                                                    ...newProduct,
+                                                                                                    categories: [...current, cat],
+                                                                                                    category: undefined // Eliminar el campo antiguo
+                                                                                                });
+                                                                                            } else {
+                                                                                                // Remover categoría
+                                                                                                const updated = Array.isArray(newProduct.categories)
+                                                                                                    ? newProduct.categories.filter(c => c !== cat)
+                                                                                                    : [];
+                                                                                                setNewProduct({
+                                                                                                    ...newProduct,
+                                                                                                    categories: updated
+                                                                                                });
+                                                                                            }
+                                                                                        }}
+                                                                                        className="w-4 h-4 text-orange-600 bg-slate-900 border-slate-600 rounded focus:ring-orange-500 focus:ring-2"
+                                                                                    />
+                                                                                    <span className={`flex-1 text-sm font-medium transition-colors ${isSelected ? 'text-orange-400' : 'text-slate-300 group-hover:text-white'
+                                                                                        }`}>
+                                                                                        {cat}
+                                                                                    </span>
+                                                                                    {isSelected && (
+                                                                                        <span className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded flex items-center gap-1">
+                                                                                            <CheckCircle className="w-3 h-3" />
+                                                                                        </span>
+                                                                                    )}
+                                                                                </label>
+                                                                            );
+                                                                        })
+                                                                    )}
+                                                                </div>
+                                                                {/* Mostrar categorías seleccionadas como tags */}
+                                                                {newProduct.categories && newProduct.categories.length > 0 && (
+                                                                    <div className="flex flex-wrap gap-2 mt-3">
+                                                                        {newProduct.categories.map(cat => (
+                                                                            <span
+                                                                                key={cat}
+                                                                                className="bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-500/30 flex items-center gap-2"
+                                                                            >
+                                                                                {cat}
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setNewProduct({
+                                                                                            ...newProduct,
+                                                                                            categories: newProduct.categories.filter(c => c !== cat)
+                                                                                        });
+                                                                                    }}
+                                                                                    className="hover:text-orange-300 transition"
+                                                                                >
+                                                                                    <X className="w-3 h-3" />
+                                                                                </button>
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setShowCategoryModal(true)}
