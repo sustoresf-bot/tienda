@@ -2558,12 +2558,6 @@ function App() {
                                 baseColor: '#06b6d4',
                                 borderRadiusMedium: '12px',
                                 borderRadiusLarge: '16px',
-                                inputBackgroundColor: '#1e293b',
-                                inputTextColor: '#ffffff', // Texto blanco para contraste
-                                inputLabelTextColor: '#cbd5e1', // Etiqueta clara
-                                inputPlaceholderTextColor: '#64748b', // Placeholder visible
-                                inputErrorColor: '#f87171', // Rojo claro para errores
-                                formPadding: '20px',
                             },
                         },
                     },
