@@ -43,25 +43,28 @@ export default async function handler(req, res) {
                 description: paymentData.description || 'Compra en Tienda Online',
                 installments: Number(paymentData.installments) || 1,
                 payment_method_id: paymentData.payment_method_id,
+                issuer_id: paymentData.issuer_id ? Number(paymentData.issuer_id) : undefined,
                 payer: {
                     email: payer.email,
+                    identification: {
+                        type: payer.identificationType || 'DNI',
+                        number: String(payer.identificationNumber || ''),
+                    },
                 },
             };
 
-            if (paymentData.issuer_id) {
-                paymentBody.issuer_id = paymentData.issuer_id;
+            // Eliminar issuer_id si es undefined
+            if (!paymentBody.issuer_id) {
+                delete paymentBody.issuer_id;
             }
 
-            if (payer.identificationType && payer.identificationNumber) {
-                paymentBody.payer.identification = {
-                    type: payer.identificationType,
-                    number: payer.identificationNumber,
-                };
-            }
-
-            console.log('Enviando pago a MP...');
+            console.log('Enviando pago a MP:', JSON.stringify(paymentBody, null, 2));
             const paymentResponse = await payment.create({ body: paymentBody });
-            console.log('Respuesta de MP con éxito:', paymentResponse.status);
+            console.log('Respuesta de MP:', JSON.stringify({
+                status: paymentResponse.status,
+                status_detail: paymentResponse.status_detail,
+                id: paymentResponse.id
+            }));
 
             return res.status(200).json({
                 status: paymentResponse.status,
