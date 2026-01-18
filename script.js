@@ -18,19 +18,19 @@ import {
 
 // --- CONFIGURACIÓN FIREBASE ---
 const firebaseConfig = {
-    apiKey: "AIzaSyBFR3Q7gWhHmjNWF8l05m8HkotMT1gHDRE",
-    authDomain: "wulfin-disenios.firebaseapp.com",
-    projectId: "wulfin-disenios",
-    storageBucket: "wulfin-disenios.firebasestorage.app",
-    messagingSenderId: "321044100446",
-    appId: "1:321044100446:web:04ef830aa879e70b294bcf",
-    measurementId: "G-PHDKVTWSVJ"
+    apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
+    authDomain: "sustore-63266.firebaseapp.com",
+    projectId: "sustore-63266",
+    storageBucket: "sustore-63266.firebasestorage.app",
+    messagingSenderId: "684651914850",
+    appId: "1:684651914850:web:f3df09e5caf6e50e9e533b",
+    measurementId: "G-X3K7XGYPRD"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = "wulfin-disenios-prod";
+const appId = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
 
 // === SEGURIDAD: Email de Super Admin ofuscado (múltiples capas) ===

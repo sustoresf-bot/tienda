@@ -1,10 +1,10 @@
 // ============================================
-// FIRESTORE SECURITY RULES - WULFIN DISEÑOS
+// FIRESTORE SECURITY RULES - SUSTORE 63266
 // ============================================
 //
 // INSTRUCCIONES:
 // 1. Ve a la consola de Firebase: https://console.firebase.google.com
-// 2. Selecciona tu proyecto "wulfin-disenios"
+// 2. Selecciona tu proyecto "sustore-63266"
 // 3. Ve a Firestore Database → Rules
 // 4. Reemplaza TODO el contenido con las reglas de abajo
 // 5. Click en "Publish"
@@ -28,7 +28,7 @@ service cloud.firestore {
 
     // Verificar si está en el equipo como admin
     function isTeamAdmin() {
-      let configData = get(/databases/$(database)/documents/artifacts/wulfin-disenios-prod/public/data/settings/config).data;
+      let configData = get(/databases/$(database)/documents/artifacts/sustore-63266-prod/public/data/settings/config).data;
       return request.auth != null &&
         configData.team != null &&
         configData.team.hasAny([{'email': request.auth.token.email, 'role': 'admin'}]);
