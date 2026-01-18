@@ -2558,6 +2558,7 @@ function App() {
                                 baseColor: '#06b6d4',
                                 borderRadiusMedium: '12px',
                                 borderRadiusLarge: '16px',
+                                inputBackgroundColor: '#1e293b',
                             },
                         },
                     },
