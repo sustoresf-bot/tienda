@@ -2552,13 +2552,14 @@ function App() {
                 customization: {
                     visual: {
                         style: {
-                            theme: 'dark',
+                            theme: 'default',
                             customVariables: {
-                                formBackgroundColor: '#0a0a0a',
+                                formBackgroundColor: '#0f172a',
                                 baseColor: '#06b6d4',
                                 borderRadiusMedium: '12px',
                                 borderRadiusLarge: '16px',
-                                inputBackgroundColor: '#1e293b',
+                                textPrimaryColor: '#000000',
+                                textSecondaryColor: '#334155',
                             },
                         },
                     },
