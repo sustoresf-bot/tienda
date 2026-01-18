@@ -2536,8 +2536,8 @@ function App() {
         // Limpiar errores previos
         setPaymentError(null);
 
-        // CREDENCIALES DE PRODUCCIÓN (REAL)
-        const publicKey = 'APP_USR-6c7ba3ec-c928-42a9-a137-5f355dfc5366';
+        // CREDENCIALES DE PRUEBA (SANDBOX)
+        const publicKey = 'TEST-09ac29ee-bd1f-48e0-a7d5-2420a324b896';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
         });
@@ -2559,6 +2559,11 @@ function App() {
                                 borderRadiusMedium: '12px',
                                 borderRadiusLarge: '16px',
                                 inputBackgroundColor: '#1e293b',
+                                inputTextColor: '#ffffff', // Texto blanco para contraste
+                                inputLabelTextColor: '#cbd5e1', // Etiqueta clara
+                                inputPlaceholderTextColor: '#64748b', // Placeholder visible
+                                inputErrorColor: '#f87171', // Rojo claro para errores
+                                formPadding: '20px',
                             },
                         },
                     },
