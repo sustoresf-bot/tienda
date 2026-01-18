@@ -3052,7 +3052,6 @@ function App() {
         const productData = {
             ...newProduct,
             categories: categories, // Guardar como array
-            category: undefined, // No guardar el campo antiguo
             basePrice: Number(newProduct.basePrice) || 0,
             purchasePrice: Number(newProduct.purchasePrice || 0),
             stock: Number(newProduct.stock) || 0,
@@ -3060,6 +3059,9 @@ function App() {
             image: newProduct.image || 'https://via.placeholder.com/150',
             lastUpdated: new Date().toISOString()
         };
+
+        // Eliminar propiedad legacy para evitar error de "undefined" en Firestore
+        if ('category' in productData) delete productData.category;
 
         try {
             if (editingId) {
