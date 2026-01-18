@@ -201,8 +201,10 @@ const SecurityManager = {
 
     // Validar claim de admin (requiere verificación del servidor)
     _validateAdminClaim(userData) {
-        // El rol de admin debe venir del servidor, no del cliente
-        // Esta es una validación básica, la real se hace en Firestore Rules
+        // 1. Permitir siempre al Super Admin (Hardcoded)
+        if (userData.email === SUPER_ADMIN_EMAIL) return true;
+
+        // 2. Permitir si tiene la flag de verificación (seteada al loguear/cargar desde DB)
         return userData._adminVerified === true;
     },
 
@@ -1398,6 +1400,12 @@ function App() {
 
                         if (userDocSnap.exists()) {
                             const freshUserData = { ...userDocSnap.data(), id: userDocSnap.id };
+
+                            // Asegurar flag de verificación para admins al recargar
+                            if (freshUserData.role === 'admin') {
+                                freshUserData._adminVerified = true;
+                            }
+
                             // Verificar si hay cambios reales antes de actualizar estado
                             if (JSON.stringify(freshUserData) !== JSON.stringify(currentUser)) {
                                 setCurrentUser(freshUserData);
@@ -2103,6 +2111,11 @@ function App() {
                 const safeUserData = { ...userData, id: userId };
                 delete safeUserData.password;
 
+                // Estampar verificación de admin
+                if (safeUserData.role === 'admin') {
+                    safeUserData._adminVerified = true;
+                }
+
                 setCurrentUser(safeUserData);
                 showToast(`¡Hola de nuevo, ${userData.name || 'Usuario'}!`, "success");
             }
@@ -2655,7 +2668,18 @@ function App() {
                                 }
                             } else {
                                 // ERROR DE NEGOCIO (Pago rechazado, tarjeta inválida, etc)
-                                const detailedError = result.status_detail || result.error || 'Pago rechazado';
+                                const mpErrorMap = {
+                                    'cc_rejected_high_risk': 'El pago fue rechazado por controles de seguridad de Mercado Pago. Te recomendamos probar con otra tarjeta o medio de pago.',
+                                    'cc_rejected_insufficient_amount': 'Tu tarjeta no tiene fondos suficientes.',
+                                    'cc_rejected_bad_filled_other': 'Revisá los datos de tu tarjeta.',
+                                    'cc_rejected_bad_filled_date': 'La fecha de vencimiento es incorrecta.',
+                                    'cc_rejected_bad_filled_security_code': 'El código de seguridad es incorrecto.',
+                                    'cc_rejected_call_for_authorize': 'Debés autorizar el pago llamando a tu banco.',
+                                    'cc_rejected_card_disabled': 'Tu tarjeta está inactiva. Llamá a tu banco para activarla.',
+                                    'cc_rejected_max_attempts': 'Llegaste al límite de intentos permitidos. Usá otra tarjeta.',
+                                    'cc_rejected_duplicated_payment': 'Ya hiciste un pago similar recientemente. Esperá unos minutos.'
+                                };
+                                const detailedError = mpErrorMap[result.status_detail] || result.status_detail || result.error || 'Pago rechazado';
                                 console.error('❌ Motivo del rechazo:', detailedError);
 
                                 // IMPORTANTE: Si el pago falla, destruimos el brick para que al reintentar se cree uno nuevo y limpio
@@ -2669,8 +2693,8 @@ function App() {
 
                                 setIsPaymentProcessing(false);
                                 // Mensaje de máxima tranquilidad para el cliente
-                                setPaymentError(`El pago fue RECHAZADO: ${detailedError}. NO se ha realizado ningún cargo en tu tarjeta. Podés intentar con otra tarjeta o medio de pago.`);
-                                showToast('Pago rechazado. No se realizó ningún cobro.', 'error');
+                                setPaymentError(`${detailedError}`); // Mensaje limpio y directo
+                                showToast('El pago no se pudo completar. Revisá los detalles.', 'error');
                             }
                         } catch (error) {
                             // ERROR DE CONEXIÓN
@@ -5438,6 +5462,16 @@ function App() {
                                                 <p className="text-slate-400 text-sm mb-4">
                                                     Pagá de forma segura con Visa, MasterCard, AMEX y más.
                                                 </p>
+
+                                                {/* WARNING: AD BLOCKER */}
+                                                <div className="mb-6 p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
+                                                    <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                                                    <p className="text-xs text-orange-200 leading-relaxed font-medium">
+                                                        <strong className="text-orange-400 block mb-1">ATENCIÓN:</strong>
+                                                        Si tenés activado un <span className="text-white font-bold">AdBlocker/Bloqueador de Anuncios</span>, por favor desactivalo temporalmente.
+                                                        Es posible que el pago no se concrete si el bloqueador interfiere con la seguridad del banco.
+                                                    </p>
+                                                </div>
 
                                                 {/* Contenedor del Card Payment Brick de Mercado Pago */}
                                                 <div id="cardPaymentBrick_container" ref={cardPaymentBrickRef} className="min-h-[400px]"></div>
