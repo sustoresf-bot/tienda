@@ -584,8 +584,8 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
 
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
 const SustIABot = React.memo(({ settings, products, addToCart }) => {
-    // 1. Verificación de Plan (DESHABILITADO POR AHORA PARA TESTING)
-    // if (settings?.subscriptionPlan !== 'premium') return null;
+    // 1. Verificación de Plan - Solo disponible en Plan Premium
+    if (settings?.subscriptionPlan !== 'premium') return null;
 
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
