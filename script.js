@@ -2712,14 +2712,15 @@ function App() {
             // 1. Guardar Pedido
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
 
-            // 2. Actualizar Datos de Usuario
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
-                address: checkoutData.address,
-                city: checkoutData.city,
-                province: checkoutData.province,
-                zipCode: checkoutData.zipCode,
+            // 2. Actualizar Datos de Usuario (usar setDoc con merge para crear si no existe)
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
+                address: checkoutData.address || '',
+                city: checkoutData.city || '',
+                province: checkoutData.province || '',
+                zipCode: checkoutData.zipCode || '',
                 ordersCount: increment(1),
-            });
+                lastOrderDate: new Date().toISOString(),
+            }, { merge: true });
 
             // 3. Limpiar Carrito en DB
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
