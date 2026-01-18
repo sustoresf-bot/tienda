@@ -4998,7 +4998,7 @@ function App() {
                         )}
 
                         {/* Grid de Productos - Filtrando productos inválidos (ej: tests) */}
-                        {products.filter(p => p.isActive !== false && p.name && p.name.length > 2 && p.basePrice > 0).length === 0 ? (
+                        {products.filter(p => p.isActive !== false).length === 0 ? (
                             // Empty State explícito (sin componente externo para "bulk")
                             <div className="flex flex-col items-center justify-center p-20 text-center border-2 border-dashed border-slate-800 rounded-[3rem] bg-slate-950/30">
                                 <div className="p-8 bg-slate-900 rounded-full mb-6 shadow-2xl border border-slate-800">
