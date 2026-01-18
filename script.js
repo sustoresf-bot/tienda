@@ -5468,8 +5468,8 @@ function App() {
                                         </div>
                                     </div>
 
-                                    {/* Botón Confirmar - Solo para métodos que NO son Mercado Pago */}
-                                    {checkoutData.paymentChoice !== 'Mercado Pago' ? (
+                                    {/* Botón Confirmar - Solo para Efectivo o Transferencia (NO para Tarjeta) */}
+                                    {checkoutData.paymentChoice && checkoutData.paymentChoice !== 'Tarjeta' ? (
                                         <>
                                             <button
                                                 onClick={confirmOrder}
@@ -5484,7 +5484,7 @@ function App() {
                                                 Al confirmar, aceptas nuestros términos de servicio y política de privacidad.
                                             </p>
                                         </>
-                                    ) : (
+                                    ) : checkoutData.paymentChoice === 'Tarjeta' ? (
                                         <div className="bg-cyan-900/10 border border-cyan-500/20 p-4 rounded-2xl text-center">
                                             <p className="text-cyan-400 text-sm font-medium flex items-center justify-center gap-2">
                                                 <CreditCard className="w-4 h-4" />
@@ -5494,7 +5494,7 @@ function App() {
                                                 Tu compra quedará confirmada automáticamente al procesar el pago.
                                             </p>
                                         </div>
-                                    )}
+                                    ) : null}
                                 </div>
                             </div>
                         </div>
