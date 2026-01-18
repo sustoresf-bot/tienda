@@ -2537,7 +2537,7 @@ function App() {
         setPaymentError(null);
 
         // CREDENCIALES DE PRUEBA (SANDBOX)
-        const publicKey = 'TEST-09ac29ee-bd1f-48e0-a7d5-2420a324b896';
+        const publicKey = 'TEST-a700c0fb-8bac-40cb-8e99-2605b391efa3';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
         });
