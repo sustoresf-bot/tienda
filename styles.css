@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap');
 
 :root {
-    --primary: #06b6d4;
-    --primary-dark: #0891b2;
+    --primary: #f97316;
+    --primary-dark: #ea580c;
     --secondary: #8b5cf6;
     --bg-dark: #050505;
     --bg-card: #0a0a0a;
@@ -71,7 +71,7 @@ body {
 
 /* Neon Effects */
 .neon-text {
-    text-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+    text-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
 }
 
 .neon-box {
@@ -80,14 +80,14 @@ body {
 }
 
 .neon-box:hover {
-    box-shadow: 0 0 25px rgba(6, 182, 212, 0.15), inset 0 0 10px rgba(6, 182, 212, 0.05);
-    border-color: rgba(6, 182, 212, 0.4);
+    box-shadow: 0 0 25px rgba(249, 115, 22, 0.15), inset 0 0 10px rgba(249, 115, 22, 0.05);
+    border-color: rgba(249, 115, 22, 0.4);
     transform: translateY(-4px);
 }
 
 /* Buttons & Inputs */
 .neon-button {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, #2563eb 100%);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
     position: relative;
     z-index: 1;
     overflow: hidden;
@@ -102,7 +102,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #2563eb 0%, var(--primary-dark) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     opacity: 0;
     z-index: -1;
     transition: opacity 0.3s;
@@ -113,7 +113,7 @@ body {
 }
 
 .neon-button:hover {
-    box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+    box-shadow: 0 0 25px rgba(249, 115, 22, 0.5);
     transform: translateY(-2px);
 }
 
@@ -127,7 +127,7 @@ body {
 
 .input-cyber:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
     background: #161622;
     outline: none;
 }
@@ -307,11 +307,11 @@ body {
 
 @keyframes glow {
     from {
-        box-shadow: 0 0 5px rgba(6, 182, 212, 0.2);
+        box-shadow: 0 0 5px rgba(249, 115, 22, 0.2);
     }
 
     to {
-        box-shadow: 0 0 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2);
+        box-shadow: 0 0 20px rgba(249, 115, 22, 0.4), 0 0 40px rgba(249, 115, 22, 0.2);
     }
 }
 
@@ -419,9 +419,9 @@ body {
 
 .admin-item:hover,
 .admin-item.active {
-    background: linear-gradient(90deg, rgba(6, 182, 212, 0.05) 0%, rgba(6, 182, 212, 0.1) 100%);
+    background: linear-gradient(90deg, rgba(249, 115, 22, 0.05) 0%, rgba(249, 115, 22, 0.1) 100%);
     border-right-color: var(--primary);
-    color: #22d3ee;
+    color: #fb923c;
 }
 
 /* Admin Panel Mobile Optimizations */
@@ -582,7 +582,7 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(6, 182, 212, 0.3);
+    background: rgba(249, 115, 22, 0.3);
     border-radius: 4px;
 }
 
@@ -689,11 +689,11 @@ body {
 
 /* Subtle Tech Glow */
 .tech-glow {
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.3), inset 0 0 10px rgba(6, 182, 212, 0.1);
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.3), inset 0 0 10px rgba(249, 115, 22, 0.1);
 }
 
 .tech-border {
-    border: 1px solid rgba(6, 182, 212, 0.3);
+    border: 1px solid rgba(249, 115, 22, 0.3);
 }
 
 /* Infinite Brand Ticker Animation */
