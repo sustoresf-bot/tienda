@@ -444,10 +444,148 @@ class ErrorBoundary extends React.Component {
     }
 }
 
+// --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
+const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice }) => {
+    return (
+        <div className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-orange-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.1)] transition duration-500 relative flex flex-col h-full animate-fade-in content-visibility-auto contain-content">
+
+            {/* Imagen y Badges */}
+            <div className="h-60 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-6 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => setSelectedProduct(p)}>
+                {/* Efecto Glow Fondo */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+                {p.image ? (
+                    <img
+                        src={p.image}
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        className={`w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                    />
+                ) : null}
+
+                {/* Botón Ver (Visible en Mobile/Touch) */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(p);
+                    }}
+                    className="absolute bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md p-3 rounded-full text-white border border-white/20 md:hidden"
+                >
+                    <Maximize2 className="w-5 h-5" />
+                </button>
+
+                {/* Fallback Icon */}
+                <div className="hidden w-full h-full flex items-center justify-center z-0 absolute inset-0" style={{ display: p.image ? 'none' : 'flex' }}>
+                    <div className="flex flex-col items-center justify-center text-slate-700">
+                        <ImageIcon className="w-16 h-16 mb-2 opacity-50" />
+                        <span className="text-xs font-bold uppercase tracking-widest opacity-50">Sin Imagen</span>
+                    </div>
+                </div>
+
+                {/* OVERLAY AGOTADO (Mejorado) */}
+                {p.stock <= 0 && (
+                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                        <div className="border-4 border-red-500 p-4 -rotate-12 bg-black/80 shadow-[0_0_30px_rgba(239,68,68,0.5)] transform scale-110">
+                            <span className="text-red-500 font-black text-2xl md:text-3xl tracking-[0.2em] uppercase">AGOTADO</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* BADGE: DESTACADO */}
+                {p.isFeatured && p.stock > 0 && (
+                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[10px] font-black px-4 py-1.5 rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-current" /> Destacado
+                    </div>
+                )}
+
+                {/* Descuento Badge */}
+                {p.discount > 0 && p.stock > 0 && !p.isFeatured && (
+                    <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20">
+                        -{p.discount}% OFF
+                    </span>
+                )}
+
+                {/* Combined Badge (Featured + Discount) */}
+                {p.discount > 0 && p.stock > 0 && p.isFeatured && (
+                    <span className="absolute top-10 left-0 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-r-lg shadow-lg z-20">
+                        -{p.discount}% OFF
+                    </span>
+                )}
+
+                {/* Botón Favorito (Funcional) */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
+                    className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500'}`}
+                >
+                    <Heart className={`w-5 h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
+                </button>
+
+                {/* Botón Rápido Agregar (Solo si hay stock) */}
+                {p.stock > 0 && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); manageCart(p, 1) }}
+                        className="absolute bottom-4 right-4 w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-110 hover:bg-orange-400 hover:shadow-orange-400/50 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300"
+                        title="Agregar al carrito"
+                    >
+                        <Plus className="w-6 h-6" />
+                    </button>
+                )}
+            </div>
+
+            {/* Información */}
+            <div className="p-4 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
+                <div className="flex justify-between items-start mb-3">
+                    <p className="text-[10px] text-orange-400 font-black uppercase tracking-widest border border-orange-900/30 bg-orange-900/10 px-2 py-1 rounded">
+                        {p.category}
+                    </p>
+                    {/* Estado de Stock */}
+                    {settings?.showStockCount !== false && p.stock > 0 && p.stock <= (settings?.lowStockThreshold || 5) ? (
+                        <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> Últimos {p.stock}
+                        </span>
+                    ) : null}
+                </div>
+
+                <h3 className="text-white font-bold text-base leading-tight mb-4 group-hover:text-orange-200 transition line-clamp-2 min-h-[2.5rem]">
+                    {p.name}
+                </h3>
+
+                <div className="mt-auto pt-4 border-t border-slate-800/50 flex items-end justify-between">
+                    <div className="flex flex-col">
+                        {p.discount > 0 && (
+                            <span className="text-xs text-slate-500 line-through font-medium mb-1">
+                                ${p.basePrice.toLocaleString()}
+                            </span>
+                        )}
+                        <span className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
+                            ${calculateItemPrice(p.basePrice, p.discount).toLocaleString()}
+                        </span>
+                    </div>
+                    {p.discount > 0 && (
+                        <div className="w-8 h-8 rounded-full bg-green-900/20 border border-green-500/20 flex items-center justify-center">
+                            <Percent className="w-4 h-4 text-green-400" />
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}, (prev, next) => {
+    return (
+        prev.p.id === next.p.id &&
+        prev.p.stock === next.p.stock &&
+        prev.p.basePrice === next.p.basePrice &&
+        prev.p.name === next.p.name &&
+        prev.p.image === next.p.image &&
+        prev.currentUser?.favorites?.includes(prev.p.id) === next.currentUser?.favorites?.includes(next.p.id)
+    );
+});
+
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
-const SustIABot = ({ settings, products, addToCart }) => {
-    // 1. Verificación de Plan Premium
-    if (settings?.subscriptionPlan !== 'premium') return null;
+const SustIABot = React.memo(({ settings, products, addToCart }) => {
+    // 1. Verificación de Plan (DESHABILITADO POR AHORA PARA TESTING)
+    // if (settings?.subscriptionPlan !== 'premium') return null;
 
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
@@ -684,7 +822,14 @@ const SustIABot = ({ settings, products, addToCart }) => {
             </button>
         </div>
     );
-};
+}, (prevProps, nextProps) => {
+    // Custom comparison for performance optimization
+    // Only re-render if isOpen state changes internally (handled by internal state mainly)
+    // or if critical props change deep inside
+    if (prevProps.settings?.subscriptionPlan !== nextProps.settings?.subscriptionPlan) return false;
+    // Don't re-render on addToCart change (function ref usually stable but check if it matters)
+    return true;
+});
 
 const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
     const [catName, setCatName] = React.useState('');
@@ -5053,128 +5198,16 @@ function App() {
                                 )}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 pb-32">
                                     {filteredProducts.map(p => (
-                                        <div key={p.id} className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-orange-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.1)] transition duration-500 relative flex flex-col h-full">
-
-                                            {/* Imagen y Badges */}
-                                            <div className="h-60 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-6 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => setSelectedProduct(p)}>
-                                                {/* Efecto Glow Fondo */}
-                                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
-
-                                                {p.image ? (
-                                                    <img
-                                                        src={p.image}
-                                                        loading={settings?.enableLazyLoad !== false ? "lazy" : "eager"}
-                                                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                                                        className={`w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
-                                                    />
-                                                ) : null}
-
-                                                {/* Botón Ver (Visible en Mobile/Touch) */}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedProduct(p);
-                                                    }}
-                                                    className="absolute bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md p-3 rounded-full text-white border border-white/20 md:hidden"
-                                                >
-                                                    <Maximize2 className="w-5 h-5" />
-                                                </button>
-
-                                                {/* Fallback Icon */}
-                                                <div className="hidden w-full h-full flex items-center justify-center z-0 absolute inset-0" style={{ display: p.image ? 'none' : 'flex' }}>
-                                                    <div className="flex flex-col items-center justify-center text-slate-700">
-                                                        <ImageIcon className="w-16 h-16 mb-2 opacity-50" />
-                                                        <span className="text-xs font-bold uppercase tracking-widest opacity-50">Sin Imagen</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* OVERLAY AGOTADO (Mejorado) */}
-                                                {p.stock <= 0 && (
-                                                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-                                                        <div className="border-4 border-red-500 p-4 -rotate-12 bg-black/80 shadow-[0_0_30px_rgba(239,68,68,0.5)] transform scale-110 animate-pulse">
-                                                            <span className="text-red-500 font-black text-2xl md:text-3xl tracking-[0.2em] uppercase">AGOTADO</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* BADGE: DESTACADO */}
-                                                {p.isFeatured && p.stock > 0 && (
-                                                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[10px] font-black px-4 py-1.5 rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1">
-                                                        <Star className="w-3 h-3 fill-current" /> Destacado
-                                                    </div>
-                                                )}
-
-                                                {/* Descuento Badge */}
-                                                {p.discount > 0 && p.stock > 0 && !p.isFeatured && (
-                                                    <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20 animate-pulse">
-                                                        -{p.discount}% OFF
-                                                    </span>
-                                                )}
-
-                                                {/* Combined Badge (Featured + Discount) */}
-                                                {p.discount > 0 && p.stock > 0 && p.isFeatured && (
-                                                    <span className="absolute top-10 left-0 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-r-lg shadow-lg z-20">
-                                                        -{p.discount}% OFF
-                                                    </span>
-                                                )}
-
-                                                {/* Botón Favorito (Funcional) */}
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
-                                                    className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500'}`}
-                                                >
-                                                    <Heart className={`w-5 h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
-                                                </button>
-
-                                                {/* Botón Rápido Agregar (Solo si hay stock) */}
-                                                {p.stock > 0 && (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); manageCart(p, 1) }}
-                                                        className="absolute bottom-4 right-4 w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-110 hover:bg-orange-400 hover:shadow-orange-400/50 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300"
-                                                        title="Agregar al carrito"
-                                                    >
-                                                        <Plus className="w-6 h-6" />
-                                                    </button>
-                                                )}
-                                            </div>
-
-                                            {/* Información */}
-                                            <div className="p-4 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <p className="text-[10px] text-orange-400 font-black uppercase tracking-widest border border-orange-900/30 bg-orange-900/10 px-2 py-1 rounded">
-                                                        {p.category}
-                                                    </p>
-                                                    {/* Estado de Stock */}
-                                                    {settings?.showStockCount !== false && p.stock > 0 && p.stock <= (settings?.lowStockThreshold || 5) ? (
-                                                        <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
-                                                            <AlertCircle className="w-3 h-3" /> Últimos {p.stock}
-                                                        </span>
-                                                    ) : null}
-                                                </div>
-
-                                                <h3 className="text-white font-bold text-base leading-tight mb-4 group-hover:text-orange-200 transition line-clamp-2 min-h-[2.5rem]">
-                                                    {p.name}
-                                                </h3>
-
-                                                <div className="mt-auto pt-4 border-t border-slate-800/50 flex items-end justify-between">
-                                                    <div className="flex flex-col">
-                                                        {p.discount > 0 && (
-                                                            <span className="text-xs text-slate-500 line-through font-medium mb-1">
-                                                                ${p.basePrice.toLocaleString()}
-                                                            </span>
-                                                        )}
-                                                        <span className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
-                                                            ${calculateItemPrice(p.basePrice, p.discount).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                    {p.discount > 0 && (
-                                                        <div className="w-8 h-8 rounded-full bg-green-900/20 border border-green-500/20 flex items-center justify-center">
-                                                            <Percent className="w-4 h-4 text-green-400" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <ProductCard
+                                            key={p.id}
+                                            p={p}
+                                            settings={settings}
+                                            currentUser={currentUser}
+                                            toggleFavorite={toggleFavorite}
+                                            setSelectedProduct={setSelectedProduct}
+                                            manageCart={manageCart}
+                                            calculateItemPrice={calculateItemPrice}
+                                        />
                                     ))}
                                 </div>
                             </>
@@ -5418,11 +5451,11 @@ function App() {
                                     <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
                                         <CreditCard className="text-orange-400 w-6 h-6" /> Método de Pago
                                     </h2>
-                                    <div className="grid grid-cols-2 gap-4 relative z-10">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                                         {settings?.paymentMercadoPago?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Tarjeta' })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Tarjeta' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Tarjeta' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
                                             >
                                                 {checkoutData.paymentChoice === 'Tarjeta' && <CheckCircle className="absolute top-2 right-2 text-orange-500" />}
                                                 <CreditCard className="w-8 h-8 group-hover:scale-110 transition" />
@@ -5432,7 +5465,7 @@ function App() {
                                         {settings?.paymentTransfer?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Transferencia' })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Transferencia' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Transferencia' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
                                             >
                                                 {checkoutData.paymentChoice === 'Transferencia' && <CheckCircle className="absolute top-2 right-2 text-orange-500" />}
                                                 <RefreshCw className="w-8 h-8 group-hover:scale-110 transition" />
@@ -5442,7 +5475,7 @@ function App() {
                                         {settings?.paymentCash && checkoutData.shippingMethod !== 'Delivery' && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Efectivo' })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Efectivo' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Efectivo' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
                                             >
                                                 {checkoutData.paymentChoice === 'Efectivo' && <CheckCircle className="absolute top-2 right-2 text-orange-500" />}
                                                 <Banknote className="w-8 h-8 group-hover:scale-110 transition" />
