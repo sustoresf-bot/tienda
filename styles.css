@@ -1,21 +1,76 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap');
 
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* SISTEMA DE TEMAS - CLARO (POR DEFECTO) Y OSCURO                            */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
+    /* Colores Base */
     --primary: #f97316;
     --primary-dark: #ea580c;
     --secondary: #8b5cf6;
-    --bg-dark: #050505;
-    --bg-card: #0a0a0a;
-    --glass-border: rgba(255, 255, 255, 0.08);
+    
+    /* TEMA CLARO (Por defecto) */
+    --bg-main: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --bg-input: #f1f5f9;
+    --bg-nav: rgba(255, 255, 255, 0.85);
+    --bg-overlay: rgba(0, 0, 0, 0.5);
+    --bg-modal: #ffffff;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-inverted: #ffffff;
+    
+    --border-color: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    
+    --btn-primary-bg: #f97316;
+    --btn-primary-text: #ffffff;
+    --btn-secondary-bg: #0f172a;
+    --btn-secondary-text: #ffffff;
+    
     /* Performance: Enable GPU acceleration */
     --gpu-transform: translateZ(0);
+}
+
+/* TEMA OSCURO */
+.dark-mode {
+    --bg-main: #050505;
+    --bg-secondary: #0a0a0a;
+    --bg-card: #0a0a0a;
+    --bg-card-hover: #111111;
+    --bg-input: #0f0f16;
+    --bg-nav: rgba(10, 10, 10, 0.85);
+    --bg-overlay: rgba(0, 0, 0, 0.9);
+    --bg-modal: #0a0a0a;
+    
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-inverted: #0f172a;
+    
+    --border-color: #1e293b;
+    --border-hover: #334155;
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    
+    --btn-primary-bg: #f97316;
+    --btn-primary-text: #000000;
+    --btn-secondary-bg: #ffffff;
+    --btn-secondary-text: #000000;
 }
 
 html,
 body {
     font-family: 'Outfit', sans-serif;
-    background-color: #050505 !important;
-    color: #e2e8f0;
+    background-color: var(--bg-main) !important;
+    color: var(--text-primary);
     overflow-x: hidden;
     overflow-y: auto !important;
     margin: 0;
@@ -24,6 +79,7 @@ body {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom Scrollbar */
