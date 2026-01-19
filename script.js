@@ -445,14 +445,25 @@ class ErrorBoundary extends React.Component {
 }
 
 // --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
-const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice }) => {
+const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode }) => {
+    // Clases dinámicas basadas en el tema
+    const cardBg = darkMode ? 'bg-[#0a0a0a]' : 'bg-white';
+    const cardBorder = darkMode ? 'border-slate-800/50' : 'border-slate-200';
+    const cardHoverBorder = darkMode ? 'hover:border-orange-500/50' : 'hover:border-orange-400';
+    const cardShadow = darkMode ? 'hover:shadow-[0_0_30px_rgba(249,115,22,0.1)]' : 'shadow-md hover:shadow-xl hover:shadow-orange-100';
+    const imageBg = darkMode ? 'bg-gradient-to-b from-slate-900 to-[#0a0a0a]' : 'bg-gradient-to-b from-slate-100 to-white';
+    const textPrimary = darkMode ? 'text-white' : 'text-slate-900';
+    const textSecondary = darkMode ? 'text-slate-400' : 'text-slate-600';
+    const infoBg = darkMode ? 'bg-[#0a0a0a]' : 'bg-white';
+    const borderColor = darkMode ? 'border-slate-800/50' : 'border-slate-200';
+
     return (
-        <div className="bg-[#0a0a0a] rounded-[2rem] border border-slate-800/50 overflow-hidden group hover:border-orange-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.1)] transition duration-500 relative flex flex-col h-full animate-fade-in content-visibility-auto contain-content">
+        <div className={`${cardBg} rounded-2xl sm:rounded-3xl border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col h-full animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
-            <div className="h-60 bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-6 flex items-center justify-center relative overflow-hidden cursor-zoom-in" onClick={() => setSelectedProduct(p)}>
+            <div className={`h-56 sm:h-80 ${imageBg} p-2 sm:p-5 flex items-center justify-center relative overflow-hidden cursor-zoom-in group-hover:p-1 transition-all duration-500 border-b ${borderColor}`} onClick={() => setSelectedProduct(p)}>
                 {/* Efecto Glow Fondo */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
                 {p.image ? (
                     <img
@@ -460,7 +471,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                         loading="lazy"
                         decoding="async"
                         onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                        className={`w-full h-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                        className={`w-full h-full object-contain drop-shadow-xl z-10 transition-transform duration-700 group-hover:scale-110 rounded-2xl md:rounded-3xl ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                     />
                 ) : null}
 
@@ -470,45 +481,45 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                         e.stopPropagation();
                         setSelectedProduct(p);
                     }}
-                    className="absolute bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md p-3 rounded-full text-white border border-white/20 md:hidden"
+                    className={`absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-30 ${darkMode ? 'bg-black/60 border-white/20' : 'bg-white/90 border-slate-200'} backdrop-blur-md p-2 sm:p-3 rounded-full ${darkMode ? 'text-white' : 'text-slate-700'} border md:hidden`}
                 >
-                    <Maximize2 className="w-5 h-5" />
+                    <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
 
                 {/* Fallback Icon */}
                 <div className="hidden w-full h-full flex items-center justify-center z-0 absolute inset-0" style={{ display: p.image ? 'none' : 'flex' }}>
-                    <div className="flex flex-col items-center justify-center text-slate-700">
-                        <ImageIcon className="w-16 h-16 mb-2 opacity-50" />
-                        <span className="text-xs font-bold uppercase tracking-widest opacity-50">Sin Imagen</span>
+                    <div className={`flex flex-col items-center justify-center ${darkMode ? 'text-slate-700' : 'text-slate-400'}`}>
+                        <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mb-2 opacity-50" />
+                        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50">Sin Imagen</span>
                     </div>
                 </div>
 
                 {/* OVERLAY AGOTADO (Mejorado) */}
                 {p.stock <= 0 && (
-                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-                        <div className="border-4 border-red-500 p-4 -rotate-12 bg-black/80 shadow-[0_0_30px_rgba(239,68,68,0.5)] transform scale-110">
-                            <span className="text-red-500 font-black text-2xl md:text-3xl tracking-[0.2em] uppercase">AGOTADO</span>
+                    <div className={`absolute inset-0 z-30 flex items-center justify-center ${darkMode ? 'bg-black/40' : 'bg-white/60'} backdrop-blur-[2px]`}>
+                        <div className="border-4 border-red-500 p-2 sm:p-4 -rotate-12 bg-black/80 shadow-[0_0_30px_rgba(239,68,68,0.5)] transform scale-90 sm:scale-110">
+                            <span className="text-red-500 font-black text-lg sm:text-2xl md:text-3xl tracking-[0.15em] sm:tracking-[0.2em] uppercase">AGOTADO</span>
                         </div>
                     </div>
                 )}
 
                 {/* BADGE: DESTACADO */}
                 {p.isFeatured && p.stock > 0 && (
-                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[10px] font-black px-4 py-1.5 rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-current" /> Destacado
+                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[9px] sm:text-[10px] font-black px-2 sm:px-4 py-1 sm:py-1.5 rounded-br-xl sm:rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1">
+                        <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" /> Destacado
                     </div>
                 )}
 
                 {/* Descuento Badge */}
                 {p.discount > 0 && p.stock > 0 && !p.isFeatured && (
-                    <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20">
+                    <span className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-red-600 text-white text-[9px] sm:text-[10px] font-black px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20">
                         -{p.discount}% OFF
                     </span>
                 )}
 
                 {/* Combined Badge (Featured + Discount) */}
                 {p.discount > 0 && p.stock > 0 && p.isFeatured && (
-                    <span className="absolute top-10 left-0 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-r-lg shadow-lg z-20">
+                    <span className="absolute top-8 sm:top-10 left-0 bg-red-600 text-white text-[9px] sm:text-[10px] font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-r-lg shadow-lg z-20">
                         -{p.discount}% OFF
                     </span>
                 )}
@@ -516,55 +527,55 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                 {/* Botón Favorito (Funcional) */}
                 <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
-                    className={`absolute top-4 right-4 p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500'}`}
+                    className={`absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'}`}
                 >
-                    <Heart className={`w-5 h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
                 </button>
 
                 {/* Botón Rápido Agregar (Solo si hay stock) */}
                 {p.stock > 0 && (
                     <button
                         onClick={(e) => { e.stopPropagation(); manageCart(p, 1) }}
-                        className="absolute bottom-4 right-4 w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-110 hover:bg-orange-400 hover:shadow-orange-400/50 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300"
+                        className={`absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-10 h-10 sm:w-12 sm:h-12 ${darkMode ? 'bg-white text-black hover:bg-orange-400' : 'bg-orange-500 text-white hover:bg-orange-600'} rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300`}
                         title="Agregar al carrito"
                     >
-                        <Plus className="w-6 h-6" />
+                        <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                 )}
             </div>
 
             {/* Información */}
-            <div className="p-4 flex-1 flex flex-col relative z-10 bg-[#0a0a0a]">
-                <div className="flex justify-between items-start mb-3">
-                    <p className="text-[10px] text-orange-400 font-black uppercase tracking-widest border border-orange-900/30 bg-orange-900/10 px-2 py-1 rounded">
+            <div className={`p-3 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
+                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                    <p className={`text-[9px] sm:text-[10px] text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
                         {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categoría') : (p.category || 'Sin categoría')}
                     </p>
                     {/* Estado de Stock */}
                     {settings?.showStockCount !== false && p.stock > 0 && p.stock <= (settings?.lowStockThreshold || 5) ? (
-                        <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" /> Últimos {p.stock}
+                        <span className="text-[9px] sm:text-[10px] text-red-500 font-bold flex items-center gap-1">
+                            <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Últimos {p.stock}
                         </span>
                     ) : null}
                 </div>
 
-                <h3 className="text-white font-bold text-base leading-tight mb-4 group-hover:text-orange-200 transition line-clamp-2 min-h-[2.5rem]">
+                <h3 className={`${textPrimary} font-bold text-sm sm:text-base leading-tight mb-2 sm:mb-4 group-hover:text-orange-600 transition line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem]`}>
                     {p.name}
                 </h3>
 
-                <div className="mt-auto pt-4 border-t border-slate-800/50 flex items-end justify-between">
+                <div className={`mt-auto pt-2 sm:pt-4 border-t ${borderColor} flex items-end justify-between`}>
                     <div className="flex flex-col">
                         {p.discount > 0 && (
-                            <span className="text-xs text-slate-500 line-through font-medium mb-1">
+                            <span className={`text-[10px] sm:text-xs ${textSecondary} line-through font-medium mb-0.5 sm:mb-1`}>
                                 ${p.basePrice.toLocaleString()}
                             </span>
                         )}
-                        <span className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
+                        <span className={`text-lg sm:text-2xl font-black ${textPrimary} tracking-tight flex items-center gap-1`}>
                             ${calculateItemPrice(p.basePrice, p.discount).toLocaleString()}
                         </span>
                     </div>
                     {p.discount > 0 && (
-                        <div className="w-8 h-8 rounded-full bg-green-900/20 border border-green-500/20 flex items-center justify-center">
-                            <Percent className="w-4 h-4 text-green-400" />
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full ${darkMode ? 'bg-green-900/20 border-green-500/20' : 'bg-green-50 border-green-200'} border flex items-center justify-center`}>
+                            <Percent className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                         </div>
                     )}
                 </div>
@@ -907,8 +918,8 @@ function App() {
     const [darkMode, setDarkMode] = useState(() => {
         try {
             const saved = localStorage.getItem('sustore_dark_mode');
-            return saved !== null ? JSON.parse(saved) : true; // Default to dark mode
-        } catch (e) { return true; }
+            return saved !== null ? JSON.parse(saved) : false; // Default to light mode (blanco)
+        } catch (e) { return false; }
     });
 
     // Usuarios y Autenticación
@@ -1428,6 +1439,20 @@ function App() {
     };
 
     // --- EFECTOS DE SINCRONIZACIÓN (FIREBASE) ---
+
+    // 0. Sincronizar Dark Mode con el DOM y localStorage
+    useEffect(() => {
+        // Aplicar/remover clase dark-mode en el body
+        if (darkMode) {
+            document.documentElement.classList.add('dark-mode');
+            document.body.classList.add('dark-mode');
+        } else {
+            document.documentElement.classList.remove('dark-mode');
+            document.body.classList.remove('dark-mode');
+        }
+        // Guardar preferencia en localStorage
+        localStorage.setItem('sustore_dark_mode', JSON.stringify(darkMode));
+    }, [darkMode]);
 
     // 1. Sincronizar Carrito Local y Remoto (Live Cart)
     useEffect(() => {
@@ -4710,7 +4735,7 @@ function App() {
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
 
-        <div className="min-h-screen flex flex-col relative w-full bg-grid bg-[#050505] font-sans selection:bg-orange-500/30 selection:text-orange-200">
+        <div className={`min-h-screen flex flex-col relative w-full bg-grid font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-slate-50'}`}>
             {/* DEBUGGER VISUAL (SOLO DESARROLLO) */}
             {view === 'store' && currentUser?.role === 'admin' && (
                 <div className="fixed bottom-4 left-4 z-[9999] bg-black/80 text-green-400 font-mono text-xs p-2 rounded border border-green-900 pointer-events-none">
@@ -4743,34 +4768,34 @@ function App() {
 
             {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
             {view !== 'admin' && (
-                <nav className="fixed top-0 w-full h-20 glass z-50 px-6 md:px-12 flex items-center justify-between border-b border-slate-800/50 backdrop-blur-xl transition-all duration-300">
+                <nav className={`fixed top-0 w-full h-16 sm:h-20 z-50 px-3 sm:px-6 md:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 ${darkMode ? 'glass border-b border-slate-800/50' : 'bg-white/95 border-b border-slate-200 shadow-sm'}`}>
                     {/* Logo y Menú */}
-                    <div className="flex items-center gap-6">
-                        <button onClick={() => setIsMenuOpen(true)} className="p-3 bg-slate-900/50 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition border border-slate-700/50 group">
-                            <Menu className="w-6 h-6 group-hover:scale-110 transition" />
+                    <div className="flex items-center gap-2 sm:gap-6">
+                        <button onClick={() => setIsMenuOpen(true)} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
+                            <Menu className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                         </button>
-                        <div className="cursor-pointer group flex items-center gap-3" onClick={() => setView('store')}>
+                        <div className="cursor-pointer group flex items-center gap-2 sm:gap-3" onClick={() => setView('store')}>
                             {settings?.logoUrl && (
-                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-slate-800 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 transition-colors duration-300">
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 transition-colors duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                     <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
                                 </div>
                             )}
                             <div className="flex flex-col">
-                                <span className="text-2xl md:text-3xl font-black text-white tracking-tighter italic group-hover:neon-text transition-all duration-300 leading-none">
+                                <span className={`text-xl sm:text-2xl md:text-4xl font-black tracking-tighter italic group-hover:text-orange-500 transition-all duration-300 leading-none ${darkMode ? 'text-white' : 'text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] filter'}`}>
                                     {!settingsLoaded ? (
-                                        <span className="inline-block h-8 w-32 bg-slate-700/50 rounded animate-pulse"></span>
+                                        <span className={`inline-block h-6 sm:h-8 w-20 sm:w-32 rounded animate-pulse ${darkMode ? 'bg-slate-700/50' : 'bg-slate-200'}`}></span>
                                     ) : (settings?.storeName || '')}
                                 </span>
-                                <div className="h-1 w-1/2 bg-orange-500 rounded-full group-hover:w-full transition-all duration-500 mt-1"></div>
+                                <div className="h-0.5 sm:h-1 w-1/2 bg-orange-500 rounded-full group-hover:w-full transition-all duration-500 mt-0.5 sm:mt-1 shadow-sm"></div>
                             </div>
                         </div>
                     </div>
 
                     {/* Barra de Búsqueda (Visible en Desktop) */}
-                    <div className="hidden lg:flex items-center bg-slate-900/50 border border-slate-700/50 rounded-2xl px-6 py-3 w-1/3 focus-within:border-orange-500/50 focus-within:bg-slate-900 transition shadow-inner group">
-                        <Search className="w-5 h-5 text-slate-400 mr-3 group-focus-within:text-orange-400 transition" />
+                    <div className={`hidden lg:flex items-center rounded-2xl px-6 py-3 w-1/3 transition shadow-inner group ${darkMode ? 'bg-slate-900/50 border border-slate-700/50 focus-within:border-orange-500/50 focus-within:bg-slate-900' : 'bg-slate-100 border border-slate-200 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-md'}`}>
+                        <Search className={`w-5 h-5 mr-3 group-focus-within:text-orange-500 transition ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                         <input
-                            className="bg-transparent outline-none text-sm w-full text-white placeholder-slate-500 font-medium"
+                            className={`bg-transparent outline-none text-sm w-full font-medium ${darkMode ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
                             placeholder="¿Qué estás buscando hoy?"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
@@ -4796,22 +4821,22 @@ function App() {
                         {/* Botón Modo Claro/Oscuro */}
                         <button
                             onClick={() => setDarkMode(!darkMode)}
-                            className="relative p-2 sm:p-2.5 bg-slate-900/50 rounded-lg sm:rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group overflow-hidden"
+                            className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group overflow-hidden border ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
                             title={darkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
                         >
                             <div className={`transform transition-all duration-500 ${darkMode ? 'rotate-0 scale-100' : 'rotate-180 scale-0 absolute'}`}>
-                                <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 group-hover:scale-110 transition" />
+                                <Moon className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition" />
                             </div>
                             <div className={`transform transition-all duration-500 ${!darkMode ? 'rotate-0 scale-100' : '-rotate-180 scale-0 absolute'}`}>
-                                <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 group-hover:scale-110 transition" />
+                                <Sun className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition" />
                             </div>
                         </button>
 
                         {/* Botón Carrito */}
-                        <button onClick={() => setView('cart')} className="relative p-2 sm:p-2.5 bg-slate-900/50 rounded-lg sm:rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/50 transition group hover:border-orange-500/30">
+                        <button onClick={() => setView('cart')} className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50 hover:border-orange-500/30' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200 hover:border-orange-400'}`}>
                             <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                             {cart.length > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-orange-500 text-white text-[9px] sm:text-[10px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-[#050505] animate-bounce-short">
+                                <span className={`absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-orange-500 text-white text-[9px] sm:text-[10px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg border-2 animate-bounce-short ${darkMode ? 'border-[#050505]' : 'border-white'}`}>
                                     {cart.length}
                                 </span>
                             )}
@@ -4819,18 +4844,18 @@ function App() {
 
                         {/* Perfil / Login - Solo mostrar perfil si el usuario tiene datos válidos */}
                         {currentUser && currentUser.id && currentUser.email && currentUser.name ? (
-                            <button onClick={() => setView('profile')} className="flex items-center gap-3 pl-2 pr-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700/50 hover:border-orange-500/50 transition group">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold shadow-lg text-sm group-hover:scale-105 transition">
+                            <button onClick={() => setView('profile')} className={`flex items-center gap-2 sm:gap-3 pl-2 pr-3 sm:pr-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border transition group ${darkMode ? 'bg-slate-900/50 border-slate-700/50 hover:border-orange-500/50' : 'bg-slate-100 border-slate-200 hover:border-orange-400'}`}>
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold shadow-lg text-xs sm:text-sm group-hover:scale-105 transition">
                                     {currentUser.name.charAt(0)}
                                 </div>
                                 <div className="text-left hidden md:block">
-                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Hola,</p>
-                                    <p className="text-sm font-bold text-white leading-none group-hover:text-orange-400 transition">{currentUser.name.split(' ')[0]}</p>
+                                    <p className={`text-[9px] sm:text-[10px] uppercase font-bold tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Hola,</p>
+                                    <p className={`text-xs sm:text-sm font-bold leading-none group-hover:text-orange-500 transition ${darkMode ? 'text-white' : 'text-slate-900'}`}>{currentUser.name.split(' ')[0]}</p>
                                 </div>
                             </button>
                         ) : (
-                            <button onClick={() => setView('login')} className="px-6 py-3 bg-white text-black rounded-xl text-sm font-black hover:bg-orange-500 hover:text-white transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center gap-2 transform hover:-translate-y-0.5">
-                                <User className="w-5 h-5" /> INGRESAR
+                            <button onClick={() => setView('login')} className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black transition shadow-lg flex items-center gap-1 sm:gap-2 transform hover:-translate-y-0.5 ${darkMode ? 'bg-white text-black hover:bg-orange-500 hover:text-white' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
+                                <User className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">INGRESAR</span><span className="sm:hidden">Entrar</span>
                             </button>
                         )}
                     </div>
@@ -4840,65 +4865,65 @@ function App() {
             {/* --- MENÚ MÓVIL (DETALLADO Y EXPLÍCITO) --- */}
             {isMenuOpen && (
                 <div className="fixed inset-0 z-[10000] flex justify-start">
-                    {/* Backdrop oscuro */}
-                    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onClick={() => setIsMenuOpen(false)}></div>
+                    {/* Backdrop */}
+                    <div className={`fixed inset-0 backdrop-blur-sm transition-opacity ${darkMode ? 'bg-black/90' : 'bg-black/50'}`} onClick={() => setIsMenuOpen(false)}></div>
 
                     {/* Panel Lateral */}
-                    <div className="relative w-80 bg-[#0a0a0a] h-full p-8 border-r border-slate-800 animate-fade-in-right flex flex-col shadow-2xl z-[10001]">
-                        <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
-                            <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-md">MENÚ</h2>
-                            <button onClick={() => setIsMenuOpen(false)} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 border border-slate-800">
-                                <X className="w-6 h-6" />
+                    <div className={`relative w-72 sm:w-80 h-full p-6 sm:p-8 animate-fade-in-right flex flex-col shadow-2xl z-[10001] ${darkMode ? 'bg-[#0a0a0a] border-r border-slate-800' : 'bg-white border-r border-slate-200'}`}>
+                        <div className={`flex justify-between items-center mb-8 sm:mb-10 border-b pb-4 sm:pb-6 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                            <h2 className={`text-2xl sm:text-3xl font-black tracking-tight drop-shadow-md ${darkMode ? 'text-white' : 'text-slate-900'}`}>MENÚ</h2>
+                            <button onClick={() => setIsMenuOpen(false)} className={`p-2 sm:p-3 rounded-full transition border ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
                         </div>
 
-                        {/* Lista de Botones Explícita */}
-                        <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2">
-                            <button onClick={() => { setView('store'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-slate-300 hover:text-orange-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
-                                <Home className="w-6 h-6 text-slate-500 group-hover:text-orange-400 transition" /> Inicio
+                        {/* Lista de Botones */}
+                        <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                            <button onClick={() => { setView('store'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
+                                <Home className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> Inicio
                             </button>
 
-                            <button onClick={() => { setView('profile'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-slate-300 hover:text-orange-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
-                                <User className="w-6 h-6 text-slate-500 group-hover:text-orange-400 transition" /> Mi Perfil
+                            <button onClick={() => { setView('profile'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
+                                <User className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> Mi Perfil
                             </button>
 
-                            <button onClick={() => { setView('cart'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-slate-300 hover:text-orange-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
+                            <button onClick={() => { setView('cart'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
                                 <div className="relative">
-                                    <ShoppingBag className="w-6 h-6 text-slate-500 group-hover:text-orange-400 transition" />
+                                    <ShoppingBag className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
                                     {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-orange-500 text-[10px] text-white rounded-full w-4 h-4 flex items-center justify-center font-bold">{cart.length}</span>}
                                 </div>
                                 Mi Carrito
                             </button>
 
-                            <div className="h-px bg-slate-800 my-4 mx-4"></div>
+                            <div className={`h-px my-3 sm:my-4 mx-4 ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
 
-                            <button onClick={() => { setView('about'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-slate-300 hover:text-orange-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
-                                <Info className="w-6 h-6 text-slate-500 group-hover:text-orange-400 transition" /> Sobre Nosotros
+                            <button onClick={() => { setView('about'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
+                                <Info className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> Sobre Nosotros
                             </button>
 
                             {settings?.showGuideLink !== false && (
-                                <button onClick={() => { setView('guide'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-slate-300 hover:text-orange-400 transition flex items-center gap-4 p-4 hover:bg-slate-900/50 rounded-xl group border border-transparent hover:border-slate-800">
-                                    <FileQuestion className="w-6 h-6 text-slate-500 group-hover:text-orange-400 transition" /> {settings?.guideTitle || 'Cómo Comprar'}
+                                <button onClick={() => { setView('guide'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
+                                    <FileQuestion className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> {settings?.guideTitle || 'Cómo Comprar'}
                                 </button>
                             )}
 
                             {/* Panel Admin (Solo si tiene permisos) */}
                             {hasAccess(currentUser?.email) && (
-                                <button onClick={() => { setView('admin'); setIsMenuOpen(false) }} className="w-full text-left text-lg font-bold text-orange-400 mt-6 pt-6 border-t border-slate-800 flex items-center gap-4 p-4 bg-orange-900/10 rounded-xl hover:bg-orange-900/20 transition border border-orange-500/20">
-                                    <Shield className="w-6 h-6" /> Admin Panel
+                                <button onClick={() => { setView('admin'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold text-orange-500 mt-4 sm:mt-6 pt-4 sm:pt-6 flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition border ${darkMode ? 'border-t border-slate-800 bg-orange-900/10 hover:bg-orange-900/20 border-orange-500/20' : 'border-t border-slate-200 bg-orange-50 hover:bg-orange-100 border-orange-200'}`}>
+                                    <Shield className="w-5 h-5 sm:w-6 sm:h-6" /> Admin Panel
                                 </button>
                             )}
                         </div>
 
-                        <div className="mt-8 pt-8 border-t border-slate-800 text-center">
-                            <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">{settings?.menuCopyright || `${settings.storeName} © ${new Date().getFullYear()}`}</p>
+                        <div className={`mt-6 sm:mt-8 pt-6 sm:pt-8 border-t text-center ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                            <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>{settings?.menuCopyright || settings.storeName}</p>
                         </div>
                     </div>
                 </div>
             )}
 
             {/* Espaciador para el Navbar Fixed */}
-            {view !== 'admin' && <div className="h-24"></div>}
+            {view !== 'admin' && <div className="h-16 sm:h-20 md:h-24"></div>}
 
             {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
             <main className={`flex-grow relative z-10 ${view === 'admin' ? 'h-screen flex overflow-hidden' : 'p-4 md:p-8'}`}>
@@ -4919,9 +4944,9 @@ function App() {
 
                         {/* Brand Ticker (Futuristic) - Solo mostrar cuando settings están cargados */}
                         {settingsLoaded && settings?.showBrandTicker !== false && (
-                            <div className="mb-8 w-full overflow-hidden border-y border-slate-800/50 bg-[#0a0a0a]/50 backdrop-blur-sm py-2">
+                            <div className={`mb-8 w-full overflow-hidden border-y backdrop-blur-sm py-2 ${darkMode ? 'border-slate-800/50 bg-[#0a0a0a]/50' : 'border-slate-200 bg-slate-100/50'}`}>
                                 <div className="ticker-wrap">
-                                    <div className="ticker-content font-mono text-orange-500/50 text-xs md:text-sm tracking-[0.2em] md:tracking-[0.5em] uppercase flex items-center gap-6 md:gap-12">
+                                    <div className={`ticker-content font-mono text-xs md:text-sm tracking-[0.2em] md:tracking-[0.5em] uppercase flex items-center gap-6 md:gap-12 ${darkMode ? 'text-orange-500/50' : 'text-orange-600/70'}`}>
                                         {[1, 2, 3, 4].map((i) => (
                                             <React.Fragment key={i}>
                                                 <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} Tech • Futuro • Calidad Premium • Innovación`}</span>
@@ -5049,31 +5074,31 @@ function App() {
                         )}
 
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className="sticky top-20 z-40 bg-[#050505]/80 backdrop-blur-xl py-4 mb-8 -mx-4 px-4 border-y border-slate-800/50 flex items-center gap-2 overflow-x-auto no-scrollbar">
-                            <Filter className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                        <div id="catalog" className={`sticky top-16 sm:top-20 z-40 backdrop-blur-xl py-3 sm:py-4 mb-6 sm:mb-8 -mx-4 px-4 border-y flex items-center gap-2 overflow-x-auto no-scrollbar ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
+                            <Filter className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
 
                             {/* BOTÓN PROMOS (SPECIAL) */}
                             <button
                                 onClick={() => setSelectedCategory('Promos')}
-                                className={`px-5 py-2 rounded-xl font-black text-xs transition border whitespace-nowrap flex items-center gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50'}`}
+                                className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : darkMode ? 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100 hover:border-purple-300'}`}
                             >
                                 {selectedCategory === 'Promos' && <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 animate-gradient-xy"></div>}
-                                <span className="relative z-10 flex items-center gap-2"><Sparkles className="w-4 h-4" /> PROMOS</span>
+                                <span className="relative z-10 flex items-center gap-1.5 sm:gap-2"><Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> PROMOS</span>
                             </button>
 
                             {/* BOTÓN OFERTAS (SPECIAL) */}
                             <button
                                 onClick={() => setSelectedCategory('Ofertas')}
-                                className={`px-5 py-2 rounded-xl font-bold text-xs transition border whitespace-nowrap flex items-center gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-400 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50'}`}
+                                className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-500 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50' : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'}`}
                             >
-                                <Percent className="w-4 h-4" /> OFERTAS
+                                <Percent className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> OFERTAS
                             </button>
 
-                            <button onClick={() => setSelectedCategory('')} className={`px-5 py-2 rounded-xl font-bold text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === '' ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
+                            <button onClick={() => setSelectedCategory('')} className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === '' ? darkMode ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-slate-900 text-white border-slate-900 shadow-md' : darkMode ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}>
                                 Todos
                             </button>
                             {settings?.categories?.map(c => (
-                                <button key={c} onClick={() => setSelectedCategory(c)} className={`px-5 py-2 rounded-xl font-bold text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === c ? 'bg-orange-500 text-black border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}>
+                                <button key={c} onClick={() => setSelectedCategory(c)} className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === c ? 'bg-orange-500 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600'}`}>
                                     {c}
                                 </button>
                             ))}
@@ -5222,7 +5247,7 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 pb-32">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-4 sm:gap-6 md:gap-8 pb-32">
                                     {filteredProducts.map(p => (
                                         <ProductCard
                                             key={p.id}
@@ -5233,9 +5258,11 @@ function App() {
                                             setSelectedProduct={setSelectedProduct}
                                             manageCart={manageCart}
                                             calculateItemPrice={calculateItemPrice}
+                                            darkMode={darkMode}
                                         />
                                     ))}
                                 </div>
+
                             </>
                         )}
                     </div>
@@ -5248,17 +5275,17 @@ function App() {
                             <button onClick={() => setView('store')} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 group">
                                 <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition" />
                             </button>
-                            <h1 className="text-4xl font-black text-white neon-text flex items-center gap-3">
-                                <ShoppingBag className="w-10 h-10 text-orange-400" /> Mi Carrito
+                            <h1 className={`text-4xl font-black flex items-center gap-3 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                                <ShoppingBag className="w-10 h-10 text-orange-500" /> Mi Carrito
                             </h1>
                         </div>
 
                         {cart.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center p-16 text-center border-2 border-dashed border-slate-800 rounded-[3rem] bg-slate-950/30">
-                                <div className="p-8 bg-slate-900 rounded-full mb-6 shadow-[0_0_20px_rgba(0,0,0,0.5)] border border-slate-800">
-                                    <ShoppingCart className="w-16 h-16 text-slate-600" />
+                            <div className={`flex flex-col items-center justify-center p-16 text-center border-2 border-dashed rounded-[3rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
+                                <div className={`p-8 rounded-full mb-6 shadow-xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <ShoppingCart className={`w-16 h-16 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
                                 </div>
-                                <h3 className="text-2xl font-black text-white mb-2">Tu carrito está vacío</h3>
+                                <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Tu carrito está vacío</h3>
                                 <p className="text-slate-500 text-sm max-w-xs mb-8 leading-relaxed">
                                     ¡Es un buen momento para buscar ese producto que tanto quieres!
                                 </p>
@@ -5312,8 +5339,8 @@ function App() {
                                 </div>
 
                                 {/* Resumen y Checkout */}
-                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] h-fit sticky top-28 shadow-2xl">
-                                    <h3 className="text-2xl font-black text-white mb-8 border-b border-slate-800 pb-4">Resumen de Compra</h3>
+                                <div className={`border p-8 rounded-[2.5rem] h-fit sticky top-28 shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <h3 className={`text-2xl font-black mb-8 border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>Resumen de Compra</h3>
 
                                     {/* Sección de Cupones */}
                                     <div className="mb-8">
@@ -5341,20 +5368,20 @@ function App() {
                                     </div>
 
                                     {/* Desglose de Precios */}
-                                    <div className="space-y-4 border-b border-slate-800 pb-8 mb-8">
-                                        <div className="flex justify-between text-slate-400 font-medium">
+                                    <div className={`space-y-4 border-b pb-8 mb-8 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                                        <div className={`flex justify-between font-medium ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                             <span>Subtotal</span>
-                                            <span className="font-mono font-bold text-white">${cartSubtotal.toLocaleString()}</span>
+                                            <span className={`font-mono font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>${cartSubtotal.toLocaleString()}</span>
                                         </div>
-                                        <div className="flex justify-between text-slate-400 text-sm font-medium">
+                                        <div className={`flex justify-between text-sm font-medium ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                             <span>Envío {checkoutData.shippingMethod === 'Delivery' ? '(A domicilio)' : '(Retiro)'}</span>
-                                            <span className="text-orange-400 font-bold flex items-center gap-1">
+                                            <span className="text-orange-500 font-bold flex items-center gap-1">
                                                 <Truck className="w-3 h-3" />
                                                 {shippingFee > 0 ? `$${shippingFee.toLocaleString()}` : (checkoutData.shippingMethod === 'Pickup' ? 'Gratis' : '¡Envío Gratis!')}
                                             </span>
                                         </div>
                                         {appliedCoupon && (
-                                            <div className="flex justify-between text-purple-400 font-bold text-sm animate-pulse bg-purple-900/10 p-2 rounded-lg">
+                                            <div className="flex justify-between text-purple-500 font-bold text-sm animate-pulse bg-purple-900/10 p-2 rounded-lg">
                                                 <span>Descuento aplicado</span>
                                                 <span>-${discountAmount.toLocaleString()}</span>
                                             </div>
@@ -5363,8 +5390,8 @@ function App() {
 
                                     {/* Total Final */}
                                     <div className="flex justify-between items-end mb-8">
-                                        <span className="text-white font-bold text-lg">Total Final</span>
-                                        <span className="text-4xl font-black text-white neon-text tracking-tighter">
+                                        <span className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-slate-900'}`}>Total Final</span>
+                                        <span className={`text-4xl font-black tracking-tighter ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
                                             ${finalTotal.toLocaleString()}
                                         </span>
                                     </div>
@@ -5391,16 +5418,16 @@ function App() {
                             <div className="md:col-span-3 space-y-8">
 
                                 {/* Opciones de Entrega */}
-                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-900/10 rounded-bl-[100px] pointer-events-none"></div>
-                                    <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                                        <Truck className="text-orange-400 w-6 h-6" /> Método de Entrega
+                                <div className={`border p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-bl-[100px] pointer-events-none"></div>
+                                    <h2 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        <Truck className="text-orange-500 w-6 h-6" /> Método de Entrega
                                     </h2>
                                     <div className="grid grid-cols-2 gap-4 relative z-10 mb-6">
                                         {settings?.shippingPickup?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, shippingMethod: 'Pickup' })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Pickup' ? 'border-orange-500 bg-orange-900/20 text-orange-400' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500'}`}
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Pickup' ? 'border-orange-500 bg-orange-500/10 text-orange-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}
                                             >
                                                 {checkoutData.shippingMethod === 'Pickup' && <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-orange-500" />}
                                                 <MapPin className="w-8 h-8 group-hover:scale-110 transition" />
@@ -5410,7 +5437,7 @@ function App() {
                                         {settings?.shippingDelivery?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, shippingMethod: 'Delivery' })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Delivery' ? 'border-orange-500 bg-orange-900/20 text-orange-400' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500'}`}
+                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Delivery' ? 'border-orange-500 bg-orange-500/10 text-orange-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}
                                             >
                                                 {checkoutData.shippingMethod === 'Delivery' && <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-orange-500" />}
                                                 <Truck className="w-8 h-8 group-hover:scale-110 transition" />
@@ -5472,10 +5499,10 @@ function App() {
                                 </div>
 
                                 {/* Método de Pago */}
-                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-green-900/10 rounded-bl-[100px] pointer-events-none"></div>
-                                    <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                                        <CreditCard className="text-orange-400 w-6 h-6" /> Método de Pago
+                                <div className={`border p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-bl-[100px] pointer-events-none"></div>
+                                    <h2 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        <CreditCard className="text-orange-500 w-6 h-6" /> Método de Pago
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                                         {settings?.paymentMercadoPago?.enabled && (
@@ -5570,27 +5597,27 @@ function App() {
 
                             {/* Columna Derecha: Confirmación */}
                             <div className="md:col-span-2">
-                                <div className="bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border border-slate-800 p-8 rounded-[2.5rem] sticky top-28 shadow-2xl">
-                                    <h3 className="font-black text-white mb-8 text-xl border-b border-slate-800 pb-4">Resumen Final</h3>
+                                <div className={`border p-8 rounded-[2.5rem] sticky top-28 shadow-2xl ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <h3 className={`font-black mb-8 text-xl border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-100'}`}>Resumen Final</h3>
 
                                     <div className="space-y-4 mb-8">
-                                        <div className="flex justify-between text-slate-400">
+                                        <div className={`flex justify-between ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                             <span>Productos ({cart.length})</span>
-                                            <span className="font-bold text-white">${cartSubtotal.toLocaleString()}</span>
+                                            <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>${cartSubtotal.toLocaleString()}</span>
                                         </div>
 
                                         {discountAmount > 0 && (
-                                            <div className="flex justify-between text-purple-400 font-bold">
+                                            <div className="flex justify-between text-purple-500 font-bold">
                                                 <span>Descuento</span>
                                                 <span>-${discountAmount.toLocaleString()}</span>
                                             </div>
                                         )}
 
-                                        <div className="h-px bg-slate-800 my-4 border-t border-dashed border-slate-700"></div>
+                                        <div className={`h-px my-4 border-t border-dashed ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'}`}></div>
 
                                         <div className="flex justify-between items-end">
-                                            <span className="text-white font-bold">Total a Pagar</span>
-                                            <span className="text-3xl font-black text-white neon-text">${finalTotal.toLocaleString()}</span>
+                                            <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Total a Pagar</span>
+                                            <span className={`text-3xl font-black tracking-tighter ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>${finalTotal.toLocaleString()}</span>
                                         </div>
                                     </div>
 
@@ -5921,22 +5948,22 @@ function App() {
                 {/* 6. VISTAS ESTÁTICAS (ABOUT & GUIDE) */}
                 {view === 'about' && (
                     <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
-                        <button onClick={() => setView('store')} className="mb-8 p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition"><ArrowLeft /></button>
-                        <h2 className="text-5xl font-black text-white mb-12 flex items-center gap-4 neon-text">
-                            <Info className="text-orange-400 w-12 h-12" /> Sobre Nosotros
+                        <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
+                        <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                            <Info className="text-orange-500 w-12 h-12" /> Sobre Nosotros
                         </h2>
-                        <div className="bg-[#0a0a0a] border border-slate-800 p-12 rounded-[3rem] text-slate-300 text-xl leading-relaxed whitespace-pre-wrap shadow-2xl relative overflow-hidden">
+                        <div className={`border p-8 md:p-12 rounded-[3rem] text-xl leading-relaxed whitespace-pre-wrap shadow-2xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
                             <p className="relative z-10">{settings.aboutUsText}</p>
 
-                            <div className="mt-12 pt-12 border-t border-slate-800 flex flex-col md:flex-row gap-8">
+                            <div className={`mt-12 pt-12 border-t flex flex-col md:flex-row gap-8 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800"><Shield className="text-orange-400" /></div>
-                                    <div><h4 className="font-bold text-white">Garantía Oficial</h4><p className="text-sm text-slate-500">En todos los productos</p></div>
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}><Shield className="text-orange-500" /></div>
+                                    <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Garantía Oficial</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>En todos los productos</p></div>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800"><Truck className="text-purple-400" /></div>
-                                    <div><h4 className="font-bold text-white">Envíos Seguros</h4><p className="text-sm text-slate-500">A todo el país</p></div>
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}><Truck className="text-purple-500" /></div>
+                                    <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Envíos Seguros</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>A todo el país</p></div>
                                 </div>
                             </div>
                         </div>
@@ -5945,11 +5972,11 @@ function App() {
 
                 {view === 'guide' && (
                     <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
-                        <button onClick={() => setView('store')} className="mb-8 p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition"><ArrowLeft /></button>
-                        <h2 className="text-5xl font-black text-white mb-12 flex items-center gap-4 neon-text">
-                            <FileQuestion className="text-orange-400 w-12 h-12" /> {settings?.guideTitle || 'Cómo Comprar'}
+                        <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
+                        <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                            <FileQuestion className="text-orange-500 w-12 h-12" /> {settings?.guideTitle || 'Cómo Comprar'}
                         </h2>
-                        <div className="bg-[#0a0a0a] border border-slate-800 p-12 rounded-[3rem] text-slate-300 shadow-2xl space-y-8">
+                        <div className={`border p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                             {[
                                 { title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
                                 { title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
@@ -5966,12 +5993,12 @@ function App() {
                                 return true;
                             }).map((step, idx) => (
                                 <div key={idx} className="flex gap-6 items-start">
-                                    <div className="w-10 h-10 rounded-full bg-orange-900/20 text-orange-400 font-black flex items-center justify-center border border-orange-500/20 flex-shrink-0 mt-1">
+                                    <div className={`w-10 h-10 rounded-full font-black flex items-center justify-center border flex-shrink-0 mt-1 ${darkMode ? 'bg-orange-900/20 text-orange-400 border-orange-500/20' : 'bg-orange-100 text-orange-600 border-orange-200'}`}>
                                         {idx + 1}
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
-                                        <p className="text-slate-400 leading-relaxed">{step.text}</p>
+                                        <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{step.title}</h3>
+                                        <p className={`leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{step.text}</p>
                                     </div>
                                 </div>
                             ))}
@@ -5981,22 +6008,22 @@ function App() {
 
                 {view === 'privacy' && (
                     <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
-                        <button onClick={() => setView('store')} className="mb-8 p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition"><ArrowLeft /></button>
-                        <h2 className="text-5xl font-black text-white mb-12 flex items-center gap-4 neon-text">
-                            <Shield className="text-orange-400 w-12 h-12" /> Política de Privacidad
+                        <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
+                        <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                            <Shield className="text-orange-500 w-12 h-12" /> Política de Privacidad
                         </h2>
-                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 md:p-12 rounded-[3rem] text-slate-300 shadow-2xl space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <div className={`border p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                             <div className="prose prose-invert max-w-none">
-                                <p className="text-sm text-slate-500 mb-8 italic">Última actualización: 07 de enero de 2026</p>
+                                <p className={`text-sm mb-8 italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Última actualización: 07 de enero de 2026</p>
 
                                 <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cómo y por qué podríamos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su información personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
                                 <ul className="list-disc pl-5 space-y-2">
-                                    <li>Visita nuestro sitio web en <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
+                                    <li>Visita nuestro sitio web en <a href="https://sustore.vercel.app" className="text-orange-500 hover:underline">https://sustore.vercel.app</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
                                     <li>Interactúe con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
                                 </ul>
 
-                                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 my-8">
-                                    <h3 className="text-xl font-bold text-white mb-4">RESUMEN DE PUNTOS CLAVE</h3>
+                                <div className={`p-6 rounded-2xl border my-8 ${darkMode ? 'bg-slate-900/50 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                                    <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>RESUMEN DE PUNTOS CLAVE</h3>
                                     <ul className="space-y-4 text-sm">
                                         <li><strong>¿Qué información personal procesamos?</strong> Información proporcionada al registrarse o comprar.</li>
                                         <li><strong>¿Procesamos información confidencial?</strong> No.</li>
@@ -6006,11 +6033,11 @@ function App() {
                                     </ul>
                                 </div>
 
-                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">1. ¿QUÉ INFORMACIÓN RECOPILAMOS?</h3>
+                                <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>1. ¿QUÉ INFORMACIÓN RECOPILAMOS?</h3>
                                 <p>Recopilamos información que usted nos proporciona voluntariamente: nombres, teléfonos, emails, direcciones, nombres de usuario y contraseñas.</p>
                                 <p>También recopilamos datos técnicos automáticamente (IP, tipo de navegador) para seguridad y análisis del sitio.</p>
 
-                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">2. ¿CÓMO PROCESAMOS TU INFORMACIÓN?</h3>
+                                <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>2. ¿CÓMO PROCESAMOS TU INFORMACIÓN?</h3>
                                 <ul className="list-disc pl-5 space-y-2">
                                     <li>Facilitar creación y administración de cuentas.</li>
                                     <li>Gestionar pedidos, pagos y envíos.</li>
@@ -6018,20 +6045,20 @@ function App() {
                                     <li>Evaluar y mejorar la experiencia del usuario.</li>
                                 </ul>
 
-                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">3. ¿CUÁNTO TIEMPO CONSERVAMOS TU INFORMACIÓN?</h3>
+                                <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>3. ¿CUÁNTO TIEMPO CONSERVAMOS TU INFORMACIÓN?</h3>
                                 <p>Conservamos su información mientras tenga una cuenta activa con nosotros o según lo exija la ley para fines contables o legales.</p>
 
-                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">4. ¿CUÁLES SON SUS DERECHOS?</h3>
+                                <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>4. ¿CUÁLES SON SUS DERECHOS?</h3>
                                 <p>Puede revisar, cambiar o cancelar su cuenta en cualquier momento desde su perfil o contactándonos directamente.</p>
 
-                                <h3 className="text-xl font-bold text-white mt-12 mb-4 border-b border-slate-800 pb-2">5. CONTACTO</h3>
+                                <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>5. CONTACTO</h3>
                                 <p>Para preguntas sobre este aviso, puede escribirnos a:</p>
-                                <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 font-mono text-sm leading-relaxed">
+                                <div className={`p-6 rounded-xl border font-mono text-sm leading-relaxed ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                                     <strong>{settings?.storeName || 'Sustore'}</strong><br />
                                     Saavedra 7568<br />
                                     Santa Fe, 3000<br />
                                     Argentina<br />
-                                    <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${settings?.sellerEmail}`} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">{settings?.sellerEmail || '[Email de contacto]'}</a>
+                                    <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${settings?.sellerEmail}`} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline">{settings?.sellerEmail || '[Email de contacto]'}</a>
                                 </div>
                             </div>
                         </div>

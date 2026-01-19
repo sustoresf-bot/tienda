@@ -9,7 +9,7 @@
     --primary: #f97316;
     --primary-dark: #ea580c;
     --secondary: #8b5cf6;
-    
+
     /* TEMA CLARO (Por defecto) */
     --bg-main: #f8fafc;
     --bg-secondary: #ffffff;
@@ -19,22 +19,22 @@
     --bg-nav: rgba(255, 255, 255, 0.85);
     --bg-overlay: rgba(0, 0, 0, 0.5);
     --bg-modal: #ffffff;
-    
+
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --text-muted: #64748b;
     --text-inverted: #ffffff;
-    
+
     --border-color: #e2e8f0;
     --border-hover: #cbd5e1;
     --glass-border: rgba(0, 0, 0, 0.08);
     --shadow-color: rgba(0, 0, 0, 0.1);
-    
+
     --btn-primary-bg: #f97316;
     --btn-primary-text: #ffffff;
     --btn-secondary-bg: #0f172a;
     --btn-secondary-text: #ffffff;
-    
+
     /* Performance: Enable GPU acceleration */
     --gpu-transform: translateZ(0);
 }
@@ -49,17 +49,17 @@
     --bg-nav: rgba(10, 10, 10, 0.85);
     --bg-overlay: rgba(0, 0, 0, 0.9);
     --bg-modal: #0a0a0a;
-    
+
     --text-primary: #f1f5f9;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
     --text-inverted: #0f172a;
-    
+
     --border-color: #1e293b;
     --border-hover: #334155;
     --glass-border: rgba(255, 255, 255, 0.08);
     --shadow-color: rgba(0, 0, 0, 0.5);
-    
+
     --btn-primary-bg: #f97316;
     --btn-primary-text: #000000;
     --btn-secondary-bg: #ffffff;
@@ -89,11 +89,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg-dark);
+    background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #333;
+    background: var(--border-color);
     border-radius: 10px;
 }
 
@@ -111,18 +111,20 @@ body {
     scrollbar-width: none;
 }
 
-/* Glassmorphism Advanced */
+/* Glassmorphism Advanced - Adaptado a temas */
 .glass {
-    background: rgba(15, 15, 20, 0.7);
+    background: var(--bg-nav);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px 0 var(--shadow-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .glass-panel {
-    background: linear-gradient(145deg, rgba(20, 20, 25, 0.9) 0%, rgba(10, 10, 15, 0.95) 100%);
-    border: 1px solid var(--glass-border);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Neon Effects */
@@ -174,9 +176,9 @@ body {
 }
 
 .input-cyber {
-    background: #0f0f16;
-    border: 1px solid #2a2a35;
-    color: white;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     border-radius: 0.75rem;
     transition: all 0.3s;
 }
@@ -184,8 +186,12 @@ body {
 .input-cyber:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
-    background: #161622;
+    background: var(--bg-card);
     outline: none;
+}
+
+.input-cyber::placeholder {
+    color: var(--text-muted);
 }
 
 /* Animations */
@@ -780,4 +786,181 @@ body {
     .ticker-content {
         animation-duration: 15s;
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* CLASES UTILITARIAS PARA SISTEMA DE TEMAS                                    */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Backgrounds tematizados */
+.bg-themed-main {
+    background-color: var(--bg-main);
+}
+
+.bg-themed-card {
+    background-color: var(--bg-card);
+}
+
+.bg-themed-secondary {
+    background-color: var(--bg-secondary);
+}
+
+.bg-themed-input {
+    background-color: var(--bg-input);
+}
+
+/* Textos tematizados */
+.text-themed-primary {
+    color: var(--text-primary);
+}
+
+.text-themed-secondary {
+    color: var(--text-secondary);
+}
+
+.text-themed-muted {
+    color: var(--text-muted);
+}
+
+/* Bordes tematizados */
+.border-themed {
+    border-color: var(--border-color);
+}
+
+/* Cards con tema adaptativo */
+.themed-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.themed-card:hover {
+    background-color: var(--bg-card-hover);
+    border-color: var(--border-hover);
+}
+
+/* Overlay adaptativo */
+.themed-overlay {
+    background-color: var(--bg-overlay);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* MEJORAS DE RESPONSIVE AVANZADAS                                             */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Grid de productos optimizado para móviles */
+@media (max-width: 640px) {
+
+    /* Productos: 2 columnas en móvil pequeño */
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Cards más compactas */
+    .product-card-mobile {
+        padding: 0.75rem !important;
+    }
+
+    .product-card-mobile .card-image {
+        height: 120px !important;
+    }
+
+    .product-card-mobile .card-title {
+        font-size: 0.8rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .product-card-mobile .card-price {
+        font-size: 1rem !important;
+    }
+
+    /* Hero más compacto en móvil */
+    .hero-mobile {
+        height: 200px !important;
+        padding: 1rem !important;
+    }
+
+    .hero-mobile h1 {
+        font-size: 1.5rem !important;
+    }
+
+    /* Navbar más compacta */
+    .nav-mobile {
+        height: 60px !important;
+        padding: 0 0.75rem !important;
+    }
+
+    /* Espaciador navbar */
+    .nav-spacer-mobile {
+        height: 60px !important;
+    }
+}
+
+/* Tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .product-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 1rem !important;
+    }
+}
+
+/* Desktop grande */
+@media (min-width: 1440px) {
+    .product-grid {
+        grid-template-columns: repeat(5, 1fr) !important;
+    }
+}
+
+/* Mejoras de touch targets */
+@media (hover: none) and (pointer: coarse) {
+
+    /* Dispositivos táctiles */
+    button,
+    a,
+    [role="button"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Botones de cantidad más grandes */
+    .quantity-btn {
+        width: 48px !important;
+        height: 48px !important;
+    }
+}
+
+/* Modo oscuro específico para elementos que necesitan override */
+.dark-mode .announcement-banner {
+    background: linear-gradient(to right, rgba(249, 115, 22, 0.1), rgba(239, 68, 68, 0.1));
+}
+
+.dark-mode .feature-card {
+    background: rgba(15, 23, 42, 0.5);
+}
+
+/* Modo claro específico */
+:root:not(.dark-mode) .announcement-banner {
+    background: linear-gradient(to right, rgba(249, 115, 22, 0.08), rgba(239, 68, 68, 0.08));
+    border-color: rgba(249, 115, 22, 0.2);
+}
+
+:root:not(.dark-mode) .feature-card {
+    background: rgba(241, 245, 249, 0.8);
+    border-color: var(--border-color);
+}
+
+/* Toast adaptativo al tema */
+.toast-themed {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+/* Modal adaptativo */
+.modal-themed {
+    background-color: var(--bg-modal);
+    border-color: var(--border-color);
+    color: var(--text-primary);
 }
