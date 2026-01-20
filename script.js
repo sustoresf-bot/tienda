@@ -16,7 +16,8 @@ import {
     where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter
 } from 'firebase/firestore';
 
-// --- CONFIGURACIÓN FIREBASE ---
+// --- CONFIGURACIÓN FIREBASE (PROYECTO: sustore-63266) ---
+// Nota: esta es la configuración pública del SDK web. NO incluyas aquí el JSON de service account.
 const firebaseConfig = {
     apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
     authDomain: "sustore-63266.firebaseapp.com",
@@ -30,6 +31,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+// ID interno de la app (no es el appId de Firebase). Puedes cambiarlo si quieres diferenciar entornos.
 const appId = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
 
@@ -467,6 +469,61 @@ class ErrorBoundary extends React.Component {
     }
 }
 
+// Componente Auxiliar para Botón de Agregar Rápido
+const QuickAddButton = ({ product, onAdd, darkMode }) => {
+    const [qty, setQty] = useState(1);
+    const [added, setAdded] = useState(false);
+
+    const handleAdd = (e) => {
+        e.stopPropagation();
+        onAdd(product, qty);
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+        setQty(1);
+    };
+
+    const isMax = qty >= product.stock;
+    const isMin = qty <= 1;
+
+    return (
+        <div className="flex flex-col items-end gap-2" onClick={(e) => e.stopPropagation()}>
+            <div className={`flex items-center rounded-lg ${darkMode ? 'bg-zinc-800' : 'bg-slate-100'} p-0.5 border ${darkMode ? 'border-zinc-700' : 'border-slate-200'}`}>
+                <button
+                    onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
+                    disabled={isMin}
+                    className={`w-7 h-7 flex items-center justify-center rounded-md transition ${isMin ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                ><Minus className="w-3 h-3" /></button>
+
+                <span className={`w-8 text-center text-xs font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
+
+                <button
+                    onClick={(e) => { e.stopPropagation(); setQty(Math.min(product.stock, qty + 1)); }}
+                    disabled={isMax}
+                    className={`w-7 h-7 flex items-center justify-center rounded-md transition ${isMax ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                ><Plus className="w-3 h-3" /></button>
+            </div>
+
+            <button
+                onClick={handleAdd}
+                className={`w-full py-1.5 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 ${added
+                    ? 'bg-green-500 text-white shadow-green-500/30'
+                    : darkMode
+                        ? 'bg-white text-black hover:bg-orange-400 hover:text-black shadow-white/10'
+                        : 'bg-orange-500 text-white hover:bg-orange-600 shadow-orange-500/20'
+                    }`}
+            >
+                {added ? (
+                    <CheckCircle className="w-4 h-4" />
+                ) : (
+                    <>
+                        <Plus className="w-5 h-5 md:w-4 md:h-4" />
+                    </>
+                )}
+            </button>
+        </div>
+    );
+};
+
 // --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
 const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode }) => {
     // Clases dinámicas basadas en el tema
@@ -558,16 +615,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
                 </button>
 
-                {/* Botón Rápido Agregar (Solo si hay stock) */}
-                {p.stock > 0 && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); manageCart(p, 1) }}
-                        className={`absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-10 h-10 sm:w-12 sm:h-12 ${darkMode ? 'bg-white text-black hover:bg-orange-400' : 'bg-orange-500 text-white hover:bg-orange-600'} rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition z-20 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 duration-300`}
-                        title="Agregar al carrito"
-                    >
-                        <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </button>
-                )}
+
             </div>
 
             {/* Información */}
@@ -599,14 +647,23 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                             ${calculateItemPrice(p.basePrice, p.discount).toLocaleString()}
                         </span>
                     </div>
-                    {p.discount > 0 && (
-                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full ${darkMode ? 'bg-green-900/20 border-green-500/20' : 'bg-green-50 border-green-200'} border flex items-center justify-center`}>
-                            <Percent className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+
+                    {/* Add to Cart with Quantity */}
+                    {p.stock > 0 && (
+                        <div
+                            className="flex items-center gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <QuickAddButton
+                                product={p}
+                                onAdd={(product, qty) => manageCart(product, qty)}
+                                darkMode={darkMode}
+                            />
                         </div>
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }, (prev, next) => {
     return (
@@ -620,17 +677,78 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
 });
 
 
+// --- Bot Product Card Component ---
+const BotProductCard = ({ product, onAdd }) => {
+    const [qty, setQty] = useState(1);
+    const hasStock = product.stock > 0;
+
+    return (
+        <div className="min-w-[140px] w-[140px] bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-lg snap-start flex-shrink-0 group flex flex-col">
+            <div className="h-28 bg-white relative overflow-hidden">
+                <img
+                    src={product.image || 'https://via.placeholder.com/150'}
+                    alt={product.name}
+                    className={`w-full h-full object-contain p-2 transition duration-300 ${hasStock ? 'group-hover:scale-110' : 'grayscale opacity-50'}`}
+                />
+                {!hasStock && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold bg-red-600 px-2 py-1 rounded">AGOTADO</span>
+                    </div>
+                )}
+            </div>
+            <div className="p-2 flex-1 flex flex-col">
+                <h4 className="text-white text-xs font-bold truncate mb-1">{product.name}</h4>
+                <div className="flex justify-between items-center mb-2">
+                    <p className="text-yellow-500 text-xs font-black">${parseInt(product.basePrice).toLocaleString()}</p>
+                    {product.discount > 0 && <span className="text-[10px] text-red-400 font-bold">-{product.discount}%</span>}
+                </div>
+
+                {hasStock ? (
+                    <div className="mt-auto space-y-2">
+                        <div className="flex items-center justify-between bg-zinc-800 rounded-lg p-1 mb-2">
+                            <button
+                                onClick={() => setQty(Math.max(1, qty - 1))}
+                                className="w-6 h-6 flex items-center justify-center text-white hover:bg-zinc-700 rounded transition font-bold"
+                            >-</button>
+                            <span className="text-white text-xs font-mono font-bold">{qty}</span>
+                            <button
+                                onClick={() => setQty(Math.min(product.stock, qty + 1))}
+                                className="w-6 h-6 flex items-center justify-center text-white hover:bg-zinc-700 rounded transition font-bold"
+                            >+</button>
+                        </div>
+                        <button
+                            onClick={() => onAdd(product, qty)}
+                            className="w-full bg-yellow-600 hover:bg-yellow-500 text-white text-[10px] py-1.5 rounded-lg transition font-medium flex items-center justify-center gap-1 active:scale-95"
+                        >
+                            Agregar <span className="text-xs">+</span>
+                        </button>
+                    </div>
+                ) : (
+                    <button disabled className="w-full mt-auto bg-slate-700 text-slate-400 text-[10px] py-1.5 rounded-lg cursor-not-allowed">
+                        Sin Stock
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
-const SustIABot = React.memo(({ settings, products, addToCart }) => {
+const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, coupons }) => {
     // 1. Verificación de Plan - Solo disponible en Plan Premium
     if (settings?.subscriptionPlan !== 'premium') return null;
 
     const [isOpen, setIsOpen] = useState(false);
+
+    // Custom Bot Image (Configurable)
+    const botImage = settings?.botImage || "sustia-ai-v2.jpg";
+
     const [messages, setMessages] = useState([
         { role: 'model', text: '¡Hola! Soy SustIA 🤖, tu asistente personal. ¿Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' }
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [lastContext, setLastContext] = useState(null); // Para manejar contexto (Sí/No)
     const messagesEndRef = useRef(null);
 
     // Auto-scroll al último mensaje
@@ -638,91 +756,230 @@ const SustIABot = React.memo(({ settings, products, addToCart }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
-    // --- CEREBRO LOCAL AVANZADO V4 (Contextual & Comparativo) ---
+    // --- HERRAMIENTA DE BÚSQUEDA INTELIGENTE (FUZZY) ---
+    const fuzzySearch = (text, query) => {
+        if (!query || typeof query !== 'string') return false;
+        if (!text || typeof text !== 'string') return false;
+
+        const str = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const patt = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        if (str.includes(patt)) return true; // Coincidencia exacta parcial
+
+        // Coincidencia aproximada simple (para Typos)
+        // Si más del 70% de los caracteres están presentes en orden relativo
+        let matches = 0;
+        let lastIndex = -1;
+        for (let char of patt) {
+            const index = str.indexOf(char, lastIndex + 1);
+            if (index > -1) {
+                matches++;
+                lastIndex = index;
+            }
+        }
+        return (matches / patt.length) > 0.75;
+    };
+
+    // --- CEREBRO LOCAL AVANZADO V5 (Universal & Contextual) ---
     const callLocalBrain = async (userText, currentMessages) => {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simular pensamiento
         const text = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        // 0. Detectar Intenciones
-        const isCheaper = text.match(/(?:mas|muy|super)\s*(?:barato|economico|bajo)|oferta|menos/);
-        const isExpensive = text.match(/(?:mas|muy|super)\s*(?:caro|mejor|calidad|top|premium)|costoso|lujo/);
-        const isBestValue = text.match(/calidad\s*precio|conviene|rendidor|equilibrado|mejor opcion/);
-
-        // 1. Recuperar Contexto (Historial)
-        const lastBotMsg = [...currentMessages].reverse().find(m => m.role === 'model' && m.products?.length > 0);
-        const contextProducts = lastBotMsg ? lastBotMsg.products : [];
-        const contextCategory = contextProducts.length > 0 ? contextProducts[0].category : null;
-        const contextPrice = contextProducts.length > 0 ? parseInt(contextProducts[0].basePrice) : null;
-
-        // 2. Extracción de Filtros
-        const getPriceLimit = (t) => {
-            const match = t.match(/(?:menos|bajo|maximo|hasta|no mas de)\s*(?:de)?\s*\$?(\d+)/);
-            return match ? parseInt(match[1]) : null;
-        };
-        const availableCategories = [...new Set(products.map(p => p.category.toLowerCase()))];
-        const detectCategory = (t) => availableCategories.find(c => t.includes(c) || c.includes(t));
-
-        const maxPrice = getPriceLimit(text);
-        let targetCategory = detectCategory(text);
-        const isBuying = text.match(/(?:agrega|comprar|quiero|dame|carrito|llevo)/);
-
-        // Inferencia Contextual
-        if (!targetCategory && (isCheaper || isExpensive || isBestValue) && contextCategory) {
-            targetCategory = contextCategory.toLowerCase();
+        // 0. Detectar Saludos
+        if (text.match(/\b(hola|holas|buen dia|buenos dias|buenas tardes|buenas noches|buenas|hello|hi|hey|que tal|como estas|como va|todo bien)\b/)) {
+            return { text: "¡Hola! 👋 ¿En qué puedo ayudarte hoy? Puedes pedirme buscar productos o ver ofertas." };
         }
 
-        // 3. Selección de Candidatos
-        const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale', 'quiero', 'necesito', 'hay', 'donde', 'mas', 'menos'];
+        // 0.1 Comandos de Sistema (Universal)
+        if (controlPanel) {
+            if (text.match(/modo\s*(?:oscuro|noche|dark)/)) {
+                controlPanel.setDarkMode(true);
+                return { text: "He activado el modo oscuro 🌙. ¿Mejor para tus ojos?" };
+            }
+            if (text.match(/modo\s*(?:claro|dia|light)/)) {
+                controlPanel.setDarkMode(false);
+                return { text: "He activado el modo claro ☀️." };
+            }
+            if (text.match(/(?:ver|abrir|ir al)\s*(?:carrito|bolsa|cesta)/)) {
+                controlPanel.openCart();
+                return { text: "Abriendo tu carrito de compras... 🛒" };
+            }
+        }
+
+        // 0.2 Detectar Ayuda/Contacto
+        if (text.match(/\b(ayuda|soporte|contacto|human|persona|asesor)\b/)) {
+            if (settings?.whatsappLink) {
+                return { text: `Claro. Si necesitas asistencia personalizada con un humano 🧑‍💻, escríbenos a nuestro WhatsApp: ${settings.whatsappLink} 📲` };
+            }
+            return { text: "Estoy diseñado para ayudarte a encontrar productos las 24hs. 🤖 ¿Buscas algo en específico?" };
+        }
+
+        // 0.3 Detectar Promociones/Cupones
+        if (text.match(/\b(descuento|promo|cupon|oferta|codigo|rebaja)\b/)) {
+            const activeCoupons = (coupons || []).filter(c => c.active);
+            const productsWithDiscount = products.filter(p => p.discount > 0).length;
+
+            if (activeCoupons.length > 0) {
+                const couponText = activeCoupons.map(c => `🎫 **${c.code}** (${c.discountType === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`).join("\n");
+                return { text: `¡Sí! Tenemos estos cupones disponibles para ti:\n\n${couponText}\n\n¡Úsalos al finalizar tu compra! 🛒` };
+            } else if (productsWithDiscount > 0) {
+                return { text: `No tengo códigos de cupón activos ahora, ¡pero tenemos ${productsWithDiscount} productos con descuento especial en la tienda! 🏷️ ¿Quieres verlos?` };
+            } else {
+                return { text: "Por el momento no tengo códigos promocionales activos, pero nuestros precios son los mejores del mercado. 😉" };
+            }
+        }
+
+        // 1. Manejo de Contexto (Conversacional)
+        if (lastContext) {
+            if (text.match(/\b(si|claro|dale|bueno|yes|por favor|obvio)\b/)) {
+                const ctx = lastContext;
+                setLastContext(null);
+                if (ctx.type === 'suggest_cross_sell') {
+                    return {
+                        text: "¡Excelente! Mira estas oportunidades que seleccioné para ti: 🔥",
+                        products: ctx.data
+                    };
+                }
+            } else if (text.match(/\b(no|gracias|paso|cancelar|asi esta bien)\b/)) {
+                setLastContext(null);
+                return { text: "Entendido. ¿Necesitas ayuda con algo más? 😊" };
+            }
+        }
+
+        // 2. Detectar Intenciones
+        const isCheaper = text.match(/(?:mas|muy|super)\s*(?:barato|economico|bajo)|oferta|menos/);
+        const isExpensive = text.match(/(?:mas|muy|super)\s*(?:caro|mejor|calidad|top|premium)|costoso|lujo/);
+        const isBuying = text.match(/(?:agrega|comprar|quiero|dame|carrito|llevo|lo quiero)/);
+
+        // 2.1 Filtros de Precio Inteligentes (NUEVO)
+        let minPrice = 0;
+        let maxPrice = Infinity;
+
+        // Detectar "menos de X"
+        const lessThanMatch = text.match(/(?:menos|menor|bajo)\s*(?:de|a|que)?\s*\$?\s*(\d+(?:[.,]\d+)?)/);
+        if (lessThanMatch) {
+            maxPrice = parseFloat(lessThanMatch[1].replace(',', '.'));
+            // Soporte simple para "mil" (ej: 10 mil)
+            if (text.includes(lessThanMatch[1] + ' mil') || text.includes(lessThanMatch[1] + 'k')) {
+                maxPrice *= 1000;
+            }
+        }
+
+        // Detectar "entre X y Y"
+        const betweenMatch = text.match(/entre\s*\$?\s*(\d+(?:[.,]\d+)?)\s*y\s*\$?\s*(\d+(?:[.,]\d+)?)/);
+        if (betweenMatch) {
+            minPrice = parseFloat(betweenMatch[1].replace(',', '.'));
+            maxPrice = parseFloat(betweenMatch[2].replace(',', '.'));
+            if (text.includes(betweenMatch[1] + ' mil') || text.includes(betweenMatch[1] + 'k')) minPrice *= 1000;
+            if (text.includes(betweenMatch[2] + ' mil') || text.includes(betweenMatch[2] + 'k')) maxPrice *= 1000;
+        }
+
+        // 3. Detectar Categoría (Fuzzy)
+        const availableCategories = [...new Set(products.filter(p => p.category && typeof p.category === 'string').map(p => p.category))];
+        const detectedCategoryVal = availableCategories.find(c => fuzzySearch(c, text) || fuzzySearch(text, c));
+        const targetCategory = detectedCategoryVal ? detectedCategoryVal.toLowerCase() : null;
+
+        // 4. Búsqueda y Scoring de Productos
+        const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale', 'quiero', 'necesito', 'hay', 'donde', 'mas', 'menos', 'agregalo', 'agrega', 'compralo'];
         const keywords = text.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w) && isNaN(w));
 
         let candidates = products.filter(p => p.stock > 0);
 
-        if (targetCategory) candidates = candidates.filter(p => p.category.toLowerCase().includes(targetCategory));
-        if (maxPrice) candidates = candidates.filter(p => p.basePrice <= maxPrice);
+        // Aplicar filtros de precio
+        candidates = candidates.filter(p => p.basePrice >= minPrice && p.basePrice <= maxPrice);
 
-        // Filtro Contextual (Precio relativo)
-        if (isCheaper && contextPrice && !maxPrice) {
-            candidates = candidates.filter(p => p.basePrice < contextPrice);
-        } else if (isExpensive && contextPrice && !maxPrice) {
-            candidates = candidates.filter(p => p.basePrice > contextPrice);
+        // Filtro por categoría detectada
+        if (targetCategory) {
+            candidates = candidates.filter(p => p.category && p.category.toLowerCase() === targetCategory);
         }
 
-        // Keywords Score
+        // Scoring
         if (keywords.length > 0) {
             candidates = candidates.map(p => {
                 let score = 0;
-                const str = (p.name + " " + p.category + " " + (p.description || "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const pName = (p.name || "").toLowerCase().normalize("NFD");
+                const pCategory = (p.category || "").toLowerCase().normalize("NFD");
+
+                // Coincidencia exacta o fuzzy
                 keywords.forEach(k => {
-                    if (str.includes(k)) score += 1;
-                    if (p.name.toLowerCase().includes(k)) score += 2;
+                    if (pName.includes(k)) score += 10;
+                    else if (fuzzySearch(pName, k)) score += 5;
+
+                    if (pCategory.includes(k)) score += 5;
                 });
                 return { ...p, score };
             }).filter(p => p.score > 0);
+
+            // Ordenar por relevancia
+            candidates.sort((a, b) => b.score - a.score);
         }
 
-        // 4. Ordenamiento Inteligente
-        if (isCheaper) {
-            candidates.sort((a, b) => a.basePrice - b.basePrice); // Menor a mayor
-        } else if (isExpensive) {
-            candidates.sort((a, b) => b.basePrice - a.basePrice); // Mayor a menor
-        } else if (isBestValue) {
-            const avg = candidates.reduce((sum, p) => sum + parseInt(p.basePrice), 0) / (candidates.length || 1);
-            candidates.sort((a, b) => Math.abs(a.basePrice - avg) - Math.abs(b.basePrice - avg)); // Cercanos al promedio
-        } else if (keywords.length > 0) {
-            candidates.sort((a, b) => b.score - a.score); // Relevancia
+        // 4.1 Recuperación Contextual (Si el usuario dice "agregalo" y no hay keywords de producto)
+        // Buscamos en el historial previo si se mostraron productos
+        if (candidates.length === 0 && isBuying) {
+            // Buscar el último mensaje del modelo que tuviera productos
+            // currentMessages incluye el mensaje actual del usuario al final.
+            const history = [...currentMessages].reverse();
+            // history[0] es el mensaje del usuario actual
+            // history[1] debería ser el último del modelo
+            const lastModelMsg = history.find(m => m.role === 'model' && m.products && m.products.length > 0);
+
+            if (lastModelMsg) {
+                // Asumimos el primero de la lista anterior como el deseado
+                candidates = [lastModelMsg.products[0]];
+            }
         }
+
+        // Ordenamiento por precio (secundario)
+        if (isCheaper) candidates.sort((a, b) => a.basePrice - b.basePrice);
+        if (isExpensive) candidates.sort((a, b) => b.basePrice - a.basePrice);
 
         // 5. Respuesta
         if (candidates.length === 0) {
-            const suggestion = targetCategory ? ` en ${targetCategory}` : '';
-            return { text: `Mmm, no encontré opciones ${isCheaper ? 'más económicas' : ''}${suggestion} con esos criterios. 📉 Intenta ser más general o ver todo el catálogo.` };
+            // Inteligencia Proactiva: Si no hay match, ofrecer ofertas o destacados
+            const deals = products.filter(p => p.discount > 0 && p.stock > 0).slice(0, 3);
+            if (deals.length > 0) {
+                setLastContext({ type: 'suggest_cross_sell', data: deals });
+                return { text: "Mmm, no encontré exactamente eso 🤔. ¿Pero te gustaría ver nuestras ofertas del día? 🏷️" };
+            }
+            // Dynamic "Smart" Suggestions
+            let suggestionText = "No encontré nada parecido. 😅";
+
+            if (availableCategories.length > 0) {
+                // Get 3 random unique categories
+                const shuffled = availableCategories.sort(() => 0.5 - Math.random());
+                const topCats = shuffled.slice(0, 3).join(", ");
+                suggestionText = `No tengo eso por ahora. Pero mira, en esta tienda tenemos cosas de: **${topCats}**. ¿Te sirve algo de eso?`;
+            } else {
+                suggestionText = "No encontré nada con ese nombre. ¿Quizás probando con otra palabra más simple?";
+            }
+
+            return { text: suggestionText };
         }
 
         const topMatches = candidates.slice(0, 5);
 
+        // Acción de Compra
         if (isBuying && topMatches.length > 0) {
             const best = topMatches[0];
             addToCart(best);
+
+            // --- CROSS-SELLING UNIVERSAL ---
+            // Buscar productos complementarios (Destacados o con Descuento que NO sean el que acaba de comprar)
+            // Esto funciona para cualquier tienda
+            const suggestions = products
+                .filter(p => (p.isFeatured || p.discount > 0) && p.id !== best.id && p.stock > 0)
+                .sort(() => 0.5 - Math.random()) // Mezclar
+                .slice(0, 3);
+
+            if (suggestions.length > 0) {
+                setLastContext({ type: 'suggest_cross_sell', data: suggestions });
+                return {
+                    text: `¡Listo! Agregué **${best.name}** a tu carrito. 🛒\n\n¿Te gustaría ver algunos productos destacados para complementar tu compra? 👀`,
+                    products: [best]
+                };
+            }
+
             return {
                 text: `¡Listo! Agregué **${best.name}** a tu carrito. 🛒 ¿Algo más?`,
                 products: [best]
@@ -730,9 +987,8 @@ const SustIABot = React.memo(({ settings, products, addToCart }) => {
         }
 
         let msg = "Aquí tienes algunas opciones:";
-        if (isCheaper) msg = "Encontré estas alternativas más accesibles: 📉";
-        else if (isExpensive) msg = "Mira estas opciones Premium: 💎";
-        else if (isBestValue) msg = "Lo mejor en Calidad/Precio: ⚖️";
+        if (targetCategory) msg = `Encontré esto en la categoría ${targetCategory}:`;
+        if (isCheaper) msg = "Las opciones más económicas:";
 
         return {
             text: msg,
@@ -769,8 +1025,8 @@ const SustIABot = React.memo(({ settings, products, addToCart }) => {
                 <div className="pointer-events-auto bg-[#0a0a0a] border border-yellow-500/30 rounded-2xl w-80 md:w-96 h-[550px] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden font-sans">
                     <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center shadow-md">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white/10 rounded-full backdrop-blur-sm">
-                                <Bot className="w-5 h-5 text-white" />
+                            <div className="p-1 bg-white/10 rounded-full backdrop-blur-sm overflow-hidden border border-white/20">
+                                <img src={botImage} className="w-8 h-8 object-cover rounded-full opacity-90" alt="SustIA" />
                             </div>
                             <div>
                                 <h3 className="font-bold text-white text-sm">SustIA</h3>
@@ -798,21 +1054,14 @@ const SustIABot = React.memo(({ settings, products, addToCart }) => {
                                 {m.products && m.products.length > 0 && (
                                     <div className="mt-3 flex gap-3 overflow-x-auto pb-2 w-full custom-scrollbar pl-1 snap-x">
                                         {m.products.map(product => (
-                                            <div key={product.id} className="min-w-[140px] w-[140px] bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-lg snap-start flex-shrink-0 group">
-                                                <div className="h-28 bg-white relative overflow-hidden">
-                                                    <img src={product.image} alt={product.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition duration-300" />
-                                                </div>
-                                                <div className="p-2">
-                                                    <h4 className="text-white text-xs font-bold truncate">{product.name}</h4>
-                                                    <p className="text-yellow-500 text-xs font-black mt-1">${parseInt(product.basePrice).toLocaleString()}</p>
-                                                    <button
-                                                        onClick={() => { addToCart(product); setMessages(prev => [...prev, { role: 'model', text: `Agregado ${product.name} al carrito! 🛒` }]) }}
-                                                        className="w-full mt-2 bg-white/10 hover:bg-yellow-600 text-white text-[10px] py-1.5 rounded-lg transition font-medium flex items-center justify-center gap-1"
-                                                    >
-                                                        Agregar <span className="text-xs">+</span>
-                                                    </button>
-                                                </div>
-                                            </div>
+                                            <BotProductCard
+                                                key={product.id}
+                                                product={product}
+                                                onAdd={(p, qty) => {
+                                                    addToCart(p, qty);
+                                                    setMessages(prev => [...prev, { role: 'model', text: `Agregado ${qty}x ${p.name} al carrito! 🛒` }]);
+                                                }}
+                                            />
                                         ))}
                                     </div>
                                 )}
@@ -850,7 +1099,7 @@ const SustIABot = React.memo(({ settings, products, addToCart }) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="pointer-events-auto w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform group relative z-50"
             >
-                {isOpen ? <X className="w-6 h-6 text-white" /> : <Bot className="w-7 h-7 text-white" />}
+                {isOpen ? <X className="w-6 h-6 text-white" /> : <img src="sustia-ai-v2.jpg" className="w-full h-full object-cover rounded-full opacity-95 hover:scale-110 transition-transform duration-300" alt="SustIA" />}
                 {!isOpen && (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
@@ -865,6 +1114,7 @@ const SustIABot = React.memo(({ settings, products, addToCart }) => {
     // Only re-render if isOpen state changes internally (handled by internal state mainly)
     // or if critical props change deep inside
     if (prevProps.settings?.subscriptionPlan !== nextProps.settings?.subscriptionPlan) return false;
+    if (prevProps.products !== nextProps.products) return false;
     // Don't re-render on addToCart change (function ref usually stable but check if it matters)
     return true;
 });
@@ -2529,7 +2779,7 @@ function App() {
             } else {
                 // Agregar nuevo item
                 showToast("¡Producto agregado al carrito!", "success");
-                return [...prevCart, { product: product, quantity: 1 }];
+                return [...prevCart, { product: product, quantity: newQuantity }];
             }
         });
     };
@@ -2871,7 +3121,7 @@ function App() {
         setPaymentError(null);
 
         // CREDENCIALES DE PRODUCCIÓN
-        const publicKey = 'APP_USR-6c7ba3ec-c928-42a9-a137-5f355dfc5366';
+        const publicKey = 'APP_USR-1dfabea2-cf9c-46d8-b974-a39ada166425';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
         });
@@ -4047,9 +4297,39 @@ function App() {
     const ProductDetailModal = () => {
         if (!selectedProduct) return null;
 
+        const [qty, setQty] = useState(1);
+        const [added, setAdded] = useState(false);
+
         const isPromo = selectedProduct.isPromo || !!selectedProduct.items;
-        const hasStock = isPromo ? (selectedProduct.stock > 0) : (Number(selectedProduct.stock) > 0);
+        const stockLimit = isPromo ? Number(selectedProduct.stock) : Number(selectedProduct.stock);
+
+        // Calcular stock real disponible restando lo que ya está en carrito
+        const cartItem = cart.find(item => item.product.id === selectedProduct.id);
+        const inCartQty = cartItem ? cartItem.quantity : 0;
+        const availableToAdd = Math.max(0, stockLimit - inCartQty);
+
+        const hasStock = stockLimit > 0;
+        const isMaxInCart = availableToAdd === 0 && hasStock;
         const displayPrice = isPromo ? Number(selectedProduct.price || selectedProduct.basePrice) : calculateItemPrice(selectedProduct.basePrice, selectedProduct.discount);
+
+        const handleAdd = (e) => {
+            e.stopPropagation();
+            if (!hasStock) return;
+
+            const itemToAdd = isPromo ? {
+                id: selectedProduct.id,
+                name: selectedProduct.name,
+                basePrice: selectedProduct.price || selectedProduct.basePrice,
+                image: selectedProduct.image,
+                isPromo: true,
+                items: selectedProduct.items,
+                stock: selectedProduct.stock
+            } : selectedProduct;
+
+            manageCart(itemToAdd, qty);
+            setAdded(true);
+            setTimeout(() => setAdded(false), 2000);
+        };
 
         return (
             <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-4" onClick={() => setSelectedProduct(null)}>
@@ -4113,10 +4393,10 @@ function App() {
                                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Inversión Total</span>
                                     <div className="flex items-center gap-3">
                                         {selectedProduct.discount > 0 && !isPromo && (
-                                            <span className="text-sm text-slate-600 line-through font-bold">${selectedProduct.basePrice.toLocaleString()}</span>
+                                            <span className="text-sm text-slate-600 line-through font-bold">${(selectedProduct.basePrice * qty).toLocaleString()}</span>
                                         )}
                                         <span className="text-4xl font-black text-white tracking-tighter">
-                                            ${displayPrice.toLocaleString()}
+                                            ${(displayPrice * qty).toLocaleString()}
                                         </span>
                                     </div>
                                 </div>
@@ -4127,33 +4407,47 @@ function App() {
                                 )}
                             </div>
 
-                            <button
-                                onClick={() => {
-                                    if (!hasStock) return;
-                                    if (isPromo) {
-                                        manageCart({
-                                            id: selectedProduct.id,
-                                            name: selectedProduct.name,
-                                            basePrice: selectedProduct.price || selectedProduct.basePrice,
-                                            image: selectedProduct.image,
-                                            isPromo: true,
-                                            items: selectedProduct.items,
-                                            stock: selectedProduct.stock
-                                        }, 1);
-                                    } else {
-                                        manageCart(selectedProduct, 1);
-                                    }
-                                    setSelectedProduct(null);
-                                }}
-                                disabled={!hasStock}
-                                className={`w-full py-5 rounded-2xl font-black transition flex items-center justify-center gap-3 shadow-2xl ${hasStock ? 'bg-white text-black hover:bg-orange-400 hover:text-white hover:scale-[1.02] active:scale-[0.98]' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}`}
-                            >
-                                {hasStock ? (
-                                    <><ShoppingCart className="w-6 h-6" /> AGREGAR AL CARRITO</>
-                                ) : (
-                                    <><AlertCircle className="w-6 h-6" /> PRODUCTO AGOTADO</>
-                                )}
-                            </button>
+                            <div className="flex gap-3">
+                                {/* Selector de Cantidad */}
+                                <div className="flex items-center gap-3 bg-slate-900 rounded-2xl p-2 border border-slate-800">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
+                                        disabled={qty <= 1}
+                                        className="w-12 h-12 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        <Minus className="w-5 h-5" />
+                                    </button>
+                                    <span className="text-xl font-bold w-8 text-center text-white font-mono">{qty}</span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setQty(Math.min(availableToAdd, qty + 1)); }}
+                                        disabled={qty >= availableToAdd}
+                                        className="w-12 h-12 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <button
+                                    onClick={handleAdd}
+                                    disabled={!hasStock || isMaxInCart}
+                                    className={`flex-1 py-5 rounded-2xl font-black transition flex items-center justify-center gap-3 shadow-2xl ${added
+                                        ? 'bg-green-500 text-white'
+                                        : (hasStock && !isMaxInCart)
+                                            ? 'bg-white text-black hover:bg-orange-400 hover:text-white hover:scale-[1.02] active:scale-[0.98]'
+                                            : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
+                                        }`}
+                                >
+                                    {added ? (
+                                        <><CheckCircle className="w-6 h-6" /> LISTO</>
+                                    ) : isMaxInCart ? (
+                                        <><AlertCircle className="w-6 h-6" /> MAX EN CARRITO</>
+                                    ) : hasStock ? (
+                                        <><ShoppingCart className="w-6 h-6" /> AGREGAR</>
+                                    ) : (
+                                        <><AlertCircle className="w-6 h-6" /> AGOTADO</>
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
 
@@ -4450,17 +4744,199 @@ function App() {
     };
 
 
+    // --- SUB-COMPONENTS FOR ADMIN DRAWER ---
+
+    const UserCartView = ({ cartItems, isLoading }) => {
+        if (isLoading) {
+            return (
+                <div className="py-20 flex flex-col items-center gap-4 opacity-50">
+                    <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
+                    <p className="text-xs font-black tracking-widest text-slate-500">SINCRONIZANDO DATOS...</p>
+                </div>
+            );
+        }
+        if (cartItems.length === 0) {
+            return (
+                <div className="py-20 text-center flex flex-col items-center gap-6">
+                    <div className="p-6 rounded-full bg-white/5 border border-white/5">
+                        <ShoppingCart className="w-12 h-12 text-slate-700" />
+                    </div>
+                    <p className="text-sm font-black uppercase tracking-widest text-slate-500 italic">No hay productos activos</p>
+                </div>
+            );
+        }
+        return (
+            <>
+                <div className="flex justify-between items-center px-2">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contenido del Carrito</p>
+                    <p className="text-xs font-bold text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full">{cartItems.length} ITEMS</p>
+                </div>
+                <div className="space-y-3">
+                    {cartItems.map((item, idx) => (
+                        <div key={idx} className="bg-white/[0.03] border border-white/10 p-4 rounded-2xl flex gap-4 transition hover:bg-white/[0.05] hover:border-orange-500/20 group animate-fade-up" style={{ animationDelay: `${idx * 0.05}s` }}>
+                            <div className="w-16 h-16 bg-[#0a0a0a] rounded-xl overflow-hidden shadow-inner border border-white/5 flex-shrink-0">
+                                <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            </div>
+                            <div className="flex-1 flex flex-col justify-center">
+                                <p className="font-bold text-white text-sm leading-tight mb-1">{item.name}</p>
+                                <div className="flex justify-between items-center">
+                                    <p className="text-xs text-slate-500">Cant: <span className="text-white font-mono font-bold">{item.quantity}</span></p>
+                                    <p className="text-orange-400 font-black font-mono text-xs">${Number(item.price).toLocaleString()}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="pt-6 border-t border-white/5">
+                    <div className="flex justify-between items-center bg-orange-500/5 p-6 rounded-2xl border border-orange-500/20">
+                        <p className="text-slate-400 font-bold">Valor Total</p>
+                        <p className="text-2xl font-black text-white font-mono">${cartItems.reduce((acc, i) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}</p>
+                    </div>
+                </div>
+            </>
+        );
+    };
+
+    const UserEditForm = ({ user, currentUser, initialData, onSubmit, onDelete, isSaving }) => {
+        const [formData, setFormData] = useState(initialData);
+        const SUPER_ADMIN_EMAIL = 'lautarocorazza63@gmail.com';
+        const isSuperAdminProfile = user.email === SUPER_ADMIN_EMAIL;
+
+        // Update local state when initialData changes
+        useEffect(() => {
+            setFormData(initialData);
+        }, [initialData]);
+
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            onSubmit(formData);
+        };
+
+        return (
+            <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
+                {/* Datos de Identidad */}
+                <div className="space-y-6">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <User className="w-3 h-3" /> Datos Identidad
+                    </p>
+                    <div className="grid grid-cols-1 gap-6">
+                        <div>
+                            <input
+                                className="input-cyber w-full p-4 text-sm"
+                                placeholder="Nombre Completo"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <input
+                                className="input-cyber w-full p-4 text-sm font-mono"
+                                placeholder="Username / Alias"
+                                value={formData.username}
+                                onChange={e => setFormData({ ...formData, username: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <input
+                                className={`input-cyber w-full p-4 text-sm font-mono ${isSuperAdminProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                placeholder="Email de la cuenta (Principal)"
+                                value={formData.email}
+                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                required
+                                disabled={isSuperAdminProfile}
+                                title={isSuperAdminProfile ? "No se puede modificar el email del Super Admin" : ""}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <input
+                                className="input-cyber w-full p-4 text-sm font-mono"
+                                placeholder="DNI"
+                                value={formData.dni}
+                                onChange={e => setFormData({ ...formData, dni: e.target.value })}
+                            />
+                            <input
+                                className="input-cyber w-full p-4 text-sm font-mono"
+                                placeholder="Teléfono"
+                                value={formData.phone}
+                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Seguridad y Rol */}
+                <div className="space-y-6 pt-4">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <Lock className="w-3 h-3" /> Seguridad & Rol
+                    </p>
+                    <div className="space-y-4">
+                        <div>
+                            <div className="relative group">
+                                <input
+                                    type="password"
+                                    className="input-cyber w-full p-4 text-sm font-mono"
+                                    placeholder="Nueva Contraseña (Dejar vacío para no cambiar)"
+                                    value={formData.newPassword}
+                                    onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
+                                />
+                            </div>
+                            <p className="text-[9px] text-slate-600 mt-2 ml-1 italic">Mínimo 6 caracteres para actualizar.</p>
+                        </div>
+
+                        <div className={`flex bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 ${isSuperAdminProfile ? 'opacity-50 pointer-events-none' : ''}`}>
+                            {['user', 'editor', 'admin'].map(r => (
+                                <button
+                                    key={r}
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, role: r })}
+                                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.role === r ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'
+                                        }`}
+                                >
+                                    {r}
+                                </button>
+                            ))}
+                        </div>
+                        {isSuperAdminProfile && <p className="text-[9px] text-orange-400 mt-1 ml-1">Rol de Super Admin inmutable.</p>}
+                    </div>
+                </div>
+
+                <div className="space-y-4 pt-6">
+                    <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="w-full py-5 bg-gradient-to-r from-indigo-600 to-orange-600 hover:from-indigo-500 hover:to-orange-500 text-white font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                    >
+                        {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                        SINCRONIZAR CAMBIOS
+                    </button>
+
+                    {!isSuperAdminProfile && (
+                        <button
+                            type="button"
+                            onClick={onDelete}
+                            className="w-full py-4 border border-red-500/30 bg-red-500/5 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/10 transition flex items-center justify-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" /> Eliminar Cuenta Permanente
+                        </button>
+                    )}
+                </div>
+            </form>
+        );
+    };
+
     // Unified Right Sidebar Drawer (Admin)
     const AdminUserDrawer = () => {
         const [userCartItems, setUserCartItems] = useState([]);
         const [isLoadingCart, setIsLoadingCart] = useState(false);
         const [isSaving, setIsSaving] = useState(false);
         const active = viewUserCart || userPassModal || viewUserEdit;
-        // Determinamos el tipo basado en qué activó el drawer, pero ahora 'edit' es el modo principal
+
+        // Determinamos el tipo basado en qué activó el drawer: 'cart', 'edit', o 'password'
         const type = viewUserCart ? 'cart' : (userPassModal ? 'password' : 'edit');
         const user = viewUserCart || userPassModal || viewUserEdit;
 
-        const [editForm, setEditForm] = useState({
+        const [initialFormState, setInitialFormState] = useState({
             name: '',
             username: '',
             email: '',
@@ -4470,6 +4946,7 @@ function App() {
             newPassword: ''
         });
 
+        // Effect to update initial form state and fetch cart
         useEffect(() => {
             if (active && user) {
                 if (type === 'cart') {
@@ -4484,8 +4961,7 @@ function App() {
                     fetchCart();
                 }
 
-                // Siempre cargamos los datos básicos para el formulario si estamos en edit o password
-                setEditForm({
+                setInitialFormState({
                     name: user.name || '',
                     username: user.username || '',
                     email: user.email || '',
@@ -4497,20 +4973,20 @@ function App() {
             }
         }, [active, user, type]);
 
+
         const closeDrawer = () => {
             setViewUserCart(null);
             setUserPassModal(null);
             setViewUserEdit(null);
         };
 
-        const handleEditSubmit = async (e) => {
-            e.preventDefault();
+        const handleEditSubmit = async (formData) => {
             setIsSaving(true);
             try {
                 // 1. Actualización Crítica (Auth) vía API si cambió email o password
                 const authUpdate = {};
-                if (editForm.email !== user.email) authUpdate.email = editForm.email;
-                if (editForm.newPassword) authUpdate.password = editForm.newPassword;
+                if (formData.email !== user.email) authUpdate.email = formData.email;
+                if (formData.newPassword) authUpdate.password = formData.newPassword;
 
                 if (Object.keys(authUpdate).length > 0) {
                     const res = await fetch('/api/admin/update-user', {
@@ -4524,20 +5000,20 @@ function App() {
 
                 // 2. Actualización de Perfil (Firestore)
                 const firestoreUpdate = {
-                    name: editForm.name,
-                    username: editForm.username,
-                    email: editForm.email,
-                    emailLower: editForm.email.toLowerCase(), // Mantener sincronizado
-                    phone: editForm.phone,
-                    dni: editForm.dni,
-                    role: editForm.role,
+                    name: formData.name,
+                    username: formData.username,
+                    email: formData.email,
+                    emailLower: formData.email.toLowerCase(),
+                    phone: formData.phone,
+                    dni: formData.dni,
+                    role: formData.role,
                     lastModifiedBy: currentUser.email,
                     updatedAt: new Date().toISOString()
                 };
 
                 // Si cambió la contraseña, también actualizarla en Firestore
-                if (editForm.newPassword && editForm.newPassword.length >= 6) {
-                    firestoreUpdate.password = editForm.newPassword;
+                if (formData.newPassword && formData.newPassword.length >= 6) {
+                    firestoreUpdate.password = formData.newPassword;
                 }
 
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), firestoreUpdate);
@@ -4549,6 +5025,7 @@ function App() {
 
                 showToast("Perfil de usuario actualizado correctamente.", "success");
                 closeDrawer();
+
             } catch (e) {
                 console.error(e);
                 showToast(e.message || "Error al actualizar perfil.", "error");
@@ -4564,7 +5041,6 @@ function App() {
             openConfirm("ELIMINAR USUARIO", `¿Estás seguro de eliminar a ${user.name}? Esta acción es irreversible y borrará su acceso y datos.`, async () => {
                 setIsSaving(true);
                 try {
-                    // 1. Borrar de Auth vía API
                     const res = await fetch('/api/admin/delete-user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -4572,7 +5048,6 @@ function App() {
                     });
                     if (!res.ok) throw new Error("Error eliminando acceso de Auth");
 
-                    // 2. Borrar de Firestore
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id));
 
                     showToast("Usuario eliminado definitivamente.", "success");
@@ -4610,158 +5085,16 @@ function App() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8">
-                        {type === 'cart' && (
-                            <div className="space-y-6">
-                                {isLoadingCart ? (
-                                    <div className="py-20 flex flex-col items-center gap-4 opacity-50">
-                                        <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-                                        <p className="text-xs font-black tracking-widest text-slate-500">SINCRONIZANDO DATOS...</p>
-                                    </div>
-                                ) : userCartItems.length === 0 ? (
-                                    <div className="py-20 text-center flex flex-col items-center gap-6">
-                                        <div className="p-6 rounded-full bg-white/5 border border-white/5">
-                                            <ShoppingCart className="w-12 h-12 text-slate-700" />
-                                        </div>
-                                        <p className="text-sm font-black uppercase tracking-widest text-slate-500 italic">No hay productos activos</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex justify-between items-center px-2">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contenido del Carrito</p>
-                                            <p className="text-xs font-bold text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full">{userCartItems.length} ITEMS</p>
-                                        </div>
-                                        <div className="space-y-3">
-                                            {userCartItems.map((item, idx) => (
-                                                <div key={idx} className="bg-white/[0.03] border border-white/10 p-4 rounded-2xl flex gap-4 transition hover:bg-white/[0.05] hover:border-orange-500/20 group animate-fade-up" style={{ animationDelay: `${idx * 0.05}s` }}>
-                                                    <div className="w-16 h-16 bg-[#0a0a0a] rounded-xl overflow-hidden shadow-inner border border-white/5 flex-shrink-0">
-                                                        <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                                    </div>
-                                                    <div className="flex-1 flex flex-col justify-center">
-                                                        <p className="font-bold text-white text-sm leading-tight mb-1">{item.name}</p>
-                                                        <div className="flex justify-between items-center">
-                                                            <p className="text-xs text-slate-500">Cant: <span className="text-white font-mono font-bold">{item.quantity}</span></p>
-                                                            <p className="text-orange-400 font-black font-mono text-xs">${item.price.toLocaleString()}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="pt-6 border-t border-white/5">
-                                            <div className="flex justify-between items-center bg-orange-500/5 p-6 rounded-2xl border border-orange-500/20">
-                                                <p className="text-slate-400 font-bold">Valor Total</p>
-                                                <p className="text-2xl font-black text-white font-mono">${userCartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}</p>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        )}
-
+                        {type === 'cart' && <UserCartView cartItems={userCartItems} isLoading={isLoadingCart} />}
                         {(type === 'edit' || type === 'password') && (
-                            <form onSubmit={handleEditSubmit} className="space-y-8 animate-fade-in">
-                                {/* Datos de Identidad */}
-                                <div className="space-y-6">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                        <User className="w-3 h-3" /> Datos Identidad
-                                    </p>
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div>
-                                            <input
-                                                className="input-cyber w-full p-4 text-sm"
-                                                placeholder="Nombre Completo"
-                                                value={editForm.name}
-                                                onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <input
-                                                className="input-cyber w-full p-4 text-sm font-mono"
-                                                placeholder="Username / Alias"
-                                                value={editForm.username}
-                                                onChange={e => setEditForm({ ...editForm, username: e.target.value })}
-                                            />
-                                        </div>
-                                        <div>
-                                            <input
-                                                className="input-cyber w-full p-4 text-sm font-mono"
-                                                placeholder="Email de la cuenta (Principal)"
-                                                value={editForm.email}
-                                                onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input
-                                                className="input-cyber w-full p-4 text-sm font-mono"
-                                                placeholder="DNI"
-                                                value={editForm.dni}
-                                                onChange={e => setEditForm({ ...editForm, dni: e.target.value })}
-                                            />
-                                            <input
-                                                className="input-cyber w-full p-4 text-sm font-mono"
-                                                placeholder="Teléfono"
-                                                value={editForm.phone}
-                                                onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Seguridad y Rol */}
-                                <div className="space-y-6 pt-4">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                        <Lock className="w-3 h-3" /> Seguridad & Rol
-                                    </p>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <div className="relative group">
-                                                <input
-                                                    type="password"
-                                                    className="input-cyber w-full p-4 text-sm font-mono"
-                                                    placeholder="Nueva Contraseña (Dejar vacío para no cambiar)"
-                                                    value={editForm.newPassword}
-                                                    onChange={e => setEditForm({ ...editForm, newPassword: e.target.value })}
-                                                />
-                                            </div>
-                                            <p className="text-[9px] text-slate-600 mt-2 ml-1 italic">Mínimo 6 caracteres para actualizar.</p>
-                                        </div>
-
-                                        <div className="flex bg-slate-900/50 p-1.5 rounded-2xl border border-white/5">
-                                            {['user', 'editor', 'admin'].map(r => (
-                                                <button
-                                                    key={r}
-                                                    type="button"
-                                                    onClick={() => setEditForm({ ...editForm, role: r })}
-                                                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${editForm.role === r ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'
-                                                        }`}
-                                                >
-                                                    {r}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 pt-6">
-                                    <button
-                                        type="submit"
-                                        disabled={isSaving}
-                                        className="w-full py-5 bg-gradient-to-r from-indigo-600 to-orange-600 hover:from-indigo-500 hover:to-orange-500 text-white font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
-                                    >
-                                        {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-                                        SINCRONIZAR CAMBIOS
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleDeleteUser}
-                                        className="w-full py-4 border border-red-500/30 bg-red-500/5 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/10 transition flex items-center justify-center gap-2"
-                                    >
-                                        <Trash2 className="w-4 h-4" /> Eliminar Cuenta Permanente
-                                    </button>
-                                </div>
-                            </form>
+                            <UserEditForm
+                                user={user}
+                                currentUser={currentUser}
+                                initialData={initialFormState}
+                                onSubmit={handleEditSubmit}
+                                onDelete={handleDeleteUser}
+                                isSaving={isSaving}
+                            />
                         )}
                     </div>
                 </div>
@@ -9570,11 +9903,11 @@ function App() {
                                                                         <input
                                                                             type="file"
                                                                             accept="image/*"
-                                                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                            className="absolute inset-0 opacity-0 cursor-pointer z-50"
                                                                             onChange={(e) => handleImageUpload(e, setSettings, 'seoImage', 1200)}
                                                                         />
                                                                         {/* Overlay al hacer hover para indicar cambio */}
-                                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
                                                                             <Upload className="w-6 h-6 text-white" />
                                                                         </div>
                                                                     </div>
@@ -9793,6 +10126,47 @@ function App() {
                                                         </div>
                                                     </div>
 
+                                                    {/* AI Config Block (SustIA) */}
+                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                            <Sparkles className="w-5 h-5 text-yellow-500" /> Personalización IA
+                                                        </h3>
+                                                        <div className="flex items-center gap-6">
+                                                            <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-dashed border-slate-700 hover:border-yellow-500 transition flex items-center justify-center overflow-hidden cursor-pointer shrink-0 shadow-xl">
+                                                                {settings?.botImage ? (
+                                                                    <img src={settings.botImage} alt="Bot Preview" className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <Sparkles className="w-8 h-8 text-slate-600 group-hover:text-yellow-500 transition" />
+                                                                )}
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-50"
+                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'botImage', 300)}
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
+                                                                    <Upload className="w-6 h-6 text-white" />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-white text-base mb-1">Avatar del Asistente</p>
+                                                                <p className="text-xs text-slate-500 mb-3 max-w-xs leading-relaxed">Sube una imagen personalizada para el bot (PNG/JPG). Se recomienda formato cuadrado.</p>
+                                                                {settings?.botImage ? (
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, botImage: '' })}
+                                                                        className="text-xs bg-red-900/20 text-red-400 hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition flex items-center gap-2 border border-red-500/20"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" /> Restaurar Default
+                                                                    </button>
+                                                                ) : (
+                                                                    <span className="text-xs text-yellow-600 bg-yellow-900/20 px-3 py-1 rounded-lg border border-yellow-700/30">
+                                                                        Usando imagen por defecto
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                         <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                             <FolderPlus className="w-5 h-5 text-orange-400" /> Categorías de Productos
@@ -9853,7 +10227,7 @@ function App() {
                                                                             <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Email (Acceso)</label>
                                                                             <input
                                                                                 type="email"
-                                                                                className="input-cyber w-full p-2 text-sm"
+                                                                                className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                                 value={member.email || ''}
                                                                                 onChange={e => {
                                                                                     const updated = [...(settings?.team || [])];
@@ -9861,18 +10235,20 @@ function App() {
                                                                                     setSettings({ ...settings, team: updated });
                                                                                 }}
                                                                                 placeholder="usuario@email.com"
+                                                                                disabled={member.email === SUPER_ADMIN_EMAIL}
                                                                             />
                                                                         </div>
                                                                         <div>
                                                                             <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Rol</label>
                                                                             <select
-                                                                                className="input-cyber w-full p-2 text-sm"
+                                                                                className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                                 value={member.role || 'employee'}
                                                                                 onChange={e => {
                                                                                     const updated = [...(settings?.team || [])];
                                                                                     updated[idx] = { ...updated[idx], role: e.target.value };
                                                                                     setSettings({ ...settings, team: updated });
                                                                                 }}
+                                                                                disabled={member.email === SUPER_ADMIN_EMAIL}
                                                                             >
                                                                                 <option value="employee">Empleado</option>
                                                                                 <option value="admin">Admin</option>
@@ -9885,13 +10261,15 @@ function App() {
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, team: (settings?.team || []).filter((_, i) => i !== idx) })}
-                                                                        className="p-3 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition flex-shrink-0"
-                                                                        title="Eliminar Miembro"
-                                                                    >
-                                                                        <Trash2 className="w-5 h-5" />
-                                                                    </button>
+                                                                    {member.email !== SUPER_ADMIN_EMAIL && (
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, team: (settings?.team || []).filter((_, i) => i !== idx) })}
+                                                                            className="p-3 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition flex-shrink-0"
+                                                                            title="Eliminar Miembro"
+                                                                        >
+                                                                            <Trash2 className="w-5 h-5" />
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -10284,7 +10662,7 @@ function App() {
                         <div className="border-t border-slate-900 bg-[#020202]">
                             <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <p className="text-slate-600 text-xs font-mono">
-                                    {settings?.footerCopyright || `© ${new Date().getFullYear()} ${settings?.storeName || ''}. All rights reserved.`}
+                                    © 2026 Sustore. Todos los derechos reservados.
                                 </p>
                                 <div className="flex gap-6">
                                     {settings?.showPrivacyPolicy !== false && (
@@ -10414,7 +10792,7 @@ function App() {
                 settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
                     <button
                         onClick={() => window.open(settings.whatsappLink, '_blank')}
-                        className="fixed bottom-6 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
+                        className="fixed bottom-24 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
                         title="Chatea con nosotros"
                     >
                         <MessageCircle className="w-8 h-8 text-white fill-white" />
@@ -10730,7 +11108,12 @@ function App() {
             <SustIABot
                 settings={settings}
                 products={products}
-                addToCart={(p) => manageCart(p, 1)}
+                addToCart={(p, q = 1) => manageCart(p, q)}
+                controlPanel={{
+                    setDarkMode: setDarkMode,
+                    openCart: () => setView('cart')
+                }}
+                coupons={coupons}
             />
         </div >
     );

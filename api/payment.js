@@ -82,7 +82,7 @@ export default async function handler(req, res) {
                             <!-- Header -->
                             <tr>
                                 <td style="padding: 40px 40px 20px; text-align: center;">
-                                    <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Tu Tienda</h1>
+                                    <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Gran Porvenir</h1>
                                     <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; letter-spacing: 2px;">CONFIRMACIÓN DE COMPRA</p>
                                 </td>
                             </tr>
@@ -178,14 +178,14 @@ export default async function handler(req, res) {
                                         ${customer.dni ? `<p style="margin: 5px 0 0; font-size: 13px; color: #94a3b8;">DNI: ${customer.dni}</p>` : ''}
                                     </div>
 
-                                    <a href="#" class="btn">VER DETALLES EN LA TIENDA</a>
+                                    <a href="https://granporvenir.vercel.app/" class="btn">VER DETALLES EN LA TIENDA</a>
 
                                     <div style="margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 30px;">
-                                        <p style="color: #475569; font-size: 12px; margin-bottom: 10px;">
-                                            ¿Necesitas ayuda? Responde a este correo o contáctanos en Instagram.
-                                        </p>
+                                        <a href="https://wa.me/92241468911" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 14px; text-align: center; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); margin-bottom: 20px;">
+                                            ¿NECESITAS AYUDA? CONTACTANOS
+                                        </a>
                                         <div style="font-size: 12px; color: #64748b;">
-                                            © ${new Date().getFullYear()} Tu Tienda Online
+                                            © 2026 Sustore. Todos los derechos reservados.
                                         </div>
                                     </div>
                                 </td>
@@ -201,8 +201,9 @@ export default async function handler(req, res) {
     `;
     try {
         await transporter.sendMail({
-            from: `"Confirmaciones de Pedido" <${process.env.EMAIL_USER}>`,
-            to: `${customer.email}, ${process.env.EMAIL_USER}`,
+            from: `"Gran Porvenir" <${process.env.EMAIL_USER}>`,
+            to: `${customer.email}, granporvenirchascomus@gmail.com`,
+            replyTo: 'granporvenirchascomus@gmail.com',
             subject: `✅ Pedido Confirmado #${orderId}`,
             html: mailContent
         });
