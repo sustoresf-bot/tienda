@@ -2301,10 +2301,36 @@ function App() {
     }, [products, currentUser, cart]); // Se ejecuta cuando productos, usuario o EL CARRITO cambian
 
     // --- EFECTO VISUAL: SEO, FAVICON Y TÍTULO DINÁMICO ---
+
+    const lastSavedSettingsRef = useRef(null);
+
     // Actualiza todas las meta tags de SEO según la configuración de la tienda
     useEffect(() => {
         // IMPORTANTE: Esperar a que la configuración cargue realmente para evitar "parpadeo" del logo default
         if (!settingsLoaded || !settings) return;
+
+        const currentSettingsStr = JSON.stringify(settings);
+
+        // Prevent infinite loop: Only save if content changed
+        if (lastSavedSettingsRef.current === currentSettingsStr) {
+            return;
+        }
+
+        // Auto-Save Settings Logic (Debounced)
+        const autoSaveTimer = setTimeout(async () => {
+            try {
+                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                // Use merge true to be safe, though we usually have the full object
+                await setDoc(settingsRef, settings, { merge: true });
+
+                // Update the ref to match what we just saved
+                lastSavedSettingsRef.current = JSON.stringify(settings);
+
+                console.log("[AutoSave] Settings saved successfully.");
+            } catch (error) {
+                console.error("[AutoSave] Error saving settings:", error);
+            }
+        }, 2000); // 2 seconds debounce
 
         // Helper para actualizar meta tags de forma segura
         const updateMetaTag = (selector, content) => {
@@ -2410,7 +2436,9 @@ function App() {
             }
         }
 
-        console.log('[SEO] Meta tags actualizados dinámicamente');
+        console.log('[SEO & AutoSave] Updated and Autosaved.');
+
+        return () => clearTimeout(autoSaveTimer);
     }, [settings, settingsLoaded]);
 
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
