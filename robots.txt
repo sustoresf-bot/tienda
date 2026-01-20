@@ -1,13 +1,14 @@
-# Robots.txt para WULFIN DISEÑOS
+# Robots.txt para Tienda Online
 # Controla qué pueden indexar los buscadores
+# NOTA: Actualizar la URL del Sitemap con tu dominio
 
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin
 
-# Sitemap
-Sitemap: https://wulfindisenios.vercel.app/sitemap.xml
+# Sitemap - ACTUALIZAR CON TU DOMINIO
+# Sitemap: https://tu-dominio.com/sitemap.xml
 
 # Crawl-delay para no sobrecargar (opcional)
 Crawl-delay: 1

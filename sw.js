@@ -1,7 +1,7 @@
-// Service Worker para WULFIN DISEÑOS
+// Service Worker para Tienda Online
 // Permite funcionamiento offline y mejor rendimiento
 
-const CACHE_NAME = 'wulfin-cache-v1';
+const CACHE_NAME = 'tienda-cache-v1';
 const STATIC_ASSETS = [
     '/',
     '/index.html',

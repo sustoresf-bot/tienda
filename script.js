@@ -47,7 +47,7 @@ const SecurityManager = {
 
     // Salt dinámico basado en timestamp (más seguro que salt fijo)
     _generateSalt() {
-        const base = 'wulfin_secure_2024';
+        const base = 'tienda_secure_2024';
         const timestamp = Math.floor(Date.now() / 86400000); // Cambia cada día
         return base + '_' + timestamp;
     },
@@ -136,7 +136,7 @@ const SecurityManager = {
     // Firma simple del token
     _signToken(token) {
         let hash = 0;
-        const secret = 'wulfin_secret_key_2024';
+        const secret = 'tienda_secret_key_2024';
         const toSign = token + secret;
         for (let i = 0; i < toSign.length; i++) {
             hash = ((hash << 5) - hash) + toSign.charCodeAt(i);
@@ -296,22 +296,45 @@ SecurityManager.init();
 
 // Configuración por defecto
 const defaultSettings = {
-    storeName: "Cargando Tienda",
+    // --- Identidad de la Tienda ---
+    storeName: "Tienda Online",
     primaryColor: "#f97316",
     currency: "$",
+
+    // --- Administración ---
     admins: SUPER_ADMIN_EMAIL,
     team: [{ email: SUPER_ADMIN_EMAIL, role: "admin", name: "Administrador" }],
-    sellerEmail: "sustoresf@gmail.com",
-    instagramUser: "sustore_sf",
-    whatsappLink: "https://wa.me/message/3MU36VTEKINKP1",
+
+    // --- Contacto ---
+    sellerEmail: "",
+    instagramUser: "",
+    instagramLink: "",
+    whatsappLink: "",
     showWhatsapp: false,
     showFloatingWhatsapp: false,
+    showInstagram: false,
+
+    // --- Imágenes ---
     logoUrl: "",
     heroUrl: "",
+
+    // --- Configuración de Tienda ---
     markupPercentage: 0,
-    announcementMessage: "🔥 ENVÍOS GRATIS EN COMPRAS SUPERIORES A $50.000 🔥",
-    categories: ["Celulares", "Accesorios", "Audio", "Computación", "Gaming"],
-    aboutUsText: "Somos una empresa dedicada a traer la mejor tecnología al mejor precio del mercado.\n\nContamos con garantía oficial en todos nuestros productos y soporte personalizado."
+    announcementMessage: "",
+    categories: ["General"],
+    aboutUsText: "Bienvenido a nuestra tienda. Ofrecemos productos de calidad con envío a todo el país.",
+
+    // --- SEO (Search Engine Optimization) ---
+    seoTitle: "",
+    seoDescription: "Tu tienda online de confianza. Calidad y vanguardia en cada producto. Envíos a todo el país.",
+    seoKeywords: "tienda online, productos, comprar, envíos",
+    seoAuthor: "",
+    seoUrl: "",
+    seoImage: "",
+
+    // --- Textos de Carga ---
+    loadingTitle: "",
+    loadingText: "Cargando sistema..."
 };
 
 // --- COMPONENTES DE UI ---
@@ -461,19 +484,22 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
         <div className={`${cardBg} rounded-2xl sm:rounded-3xl border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col h-full animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
-            <div className={`h-56 sm:h-80 ${imageBg} p-2 sm:p-5 flex items-center justify-center relative overflow-hidden cursor-zoom-in group-hover:p-1 transition-all duration-500 border-b ${borderColor}`} onClick={() => setSelectedProduct(p)}>
+            <div className={`h-56 sm:h-80 ${imageBg} m-2 sm:m-3 p-2 sm:p-3 flex items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
                 {/* Efecto Glow Fondo */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
                 {p.image ? (
-                    <img
-                        src={p.image}
-                        loading="lazy"
-                        decoding="async"
-                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                        className={`w-full h-full object-contain drop-shadow-xl z-10 transition-transform duration-700 group-hover:scale-110 rounded-2xl md:rounded-3xl ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
-                    />
+                    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                        <img
+                            src={p.image}
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.nextSibling.style.display = 'flex'; }}
+                            className={`max-w-full max-h-full rounded-xl sm:rounded-2xl border-4 ${darkMode ? 'border-cyan-500/30' : 'border-orange-300'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-105 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                        />
+                    </div>
                 ) : null}
+
 
                 {/* Botón Ver (Visible en Mobile/Touch) */}
                 <button
@@ -592,6 +618,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
         prev.currentUser?.favorites?.includes(prev.p.id) === next.currentUser?.favorites?.includes(next.p.id)
     );
 });
+
 
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
 const SustIABot = React.memo(({ settings, products, addToCart }) => {
@@ -972,6 +999,35 @@ function App() {
     // Estados de Interfaz de Usuario
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
+
+    // --- DRAG TO SCROLL (Categorías) ---
+    const categoriesScrollRef = useRef(null);
+    const [isDraggingCategories, setIsDraggingCategories] = useState(false);
+    const [startXCategories, setStartXCategories] = useState(0);
+    const [scrollLeftCategories, setScrollLeftCategories] = useState(0);
+
+    const handleMouseDownCategories = (e) => {
+        setIsDraggingCategories(true);
+        setStartXCategories(e.pageX - categoriesScrollRef.current.offsetLeft);
+        setScrollLeftCategories(categoriesScrollRef.current.scrollLeft);
+    };
+
+    const handleMouseLeaveCategories = () => {
+        setIsDraggingCategories(false);
+    };
+
+    const handleMouseUpCategories = () => {
+        setIsDraggingCategories(false);
+    };
+
+    const handleMouseMoveCategories = (e) => {
+        if (!isDraggingCategories) return;
+        e.preventDefault();
+        const x = e.pageX - categoriesScrollRef.current.offsetLeft;
+        const walk = (x - startXCategories) * 2; // Velocidad de desplazamiento
+        categoriesScrollRef.current.scrollLeft = scrollLeftCategories - walk;
+    };
+
 
     // Formularios de Autenticación
     const [authData, setAuthData] = useState({
@@ -1994,18 +2050,83 @@ function App() {
         }
     }, [products, currentUser, cart]); // Se ejecuta cuando productos, usuario o EL CARRITO cambian
 
-    // --- EFECTO VISUAL: FAVICON Y TÍTULO DINÁMICO ---
-    // Cambia el logo de la pestaña y el título según la configuración de la tienda
+    // --- EFECTO VISUAL: SEO, FAVICON Y TÍTULO DINÁMICO ---
+    // Actualiza todas las meta tags de SEO según la configuración de la tienda
     useEffect(() => {
         // IMPORTANTE: Esperar a que la configuración cargue realmente para evitar "parpadeo" del logo default
         if (!settingsLoaded || !settings) return;
 
+        // Helper para actualizar meta tags de forma segura
+        const updateMetaTag = (selector, content) => {
+            const element = document.querySelector(selector);
+            if (element && content) {
+                element.setAttribute('content', content);
+            }
+        };
+
+        const updateMetaTagById = (id, content) => {
+            const element = document.getElementById(id);
+            if (element && content) {
+                element.setAttribute('content', content);
+            }
+        };
+
+        const updateLinkTag = (id, href) => {
+            const element = document.getElementById(id);
+            if (element && href) {
+                element.setAttribute('href', href);
+            }
+        };
+
         // 1. Título de la Pestaña
-        if (settings.seoTitle || settings.storeName) {
-            document.title = settings.seoTitle || `${settings.storeName} - Tienda Online`;
+        const pageTitle = settings.seoTitle || (settings.storeName ? `${settings.storeName} - Tienda Online` : 'Tienda Online');
+        document.title = pageTitle;
+
+        // 2. Meta Description
+        const description = settings.seoDescription || `${settings.storeName || 'Tienda'} - Tu tienda online de confianza.`;
+        updateMetaTagById('meta-description', description);
+
+        // 3. Meta Keywords
+        const keywords = settings.seoKeywords || `${settings.storeName || 'tienda'}, productos, comprar, envíos`;
+        updateMetaTagById('meta-keywords', keywords);
+
+        // 4. Meta Author
+        const author = settings.seoAuthor || settings.storeName || 'Tienda Online';
+        updateMetaTagById('meta-author', author);
+
+        // 5. Apple Mobile Web App Title
+        updateMetaTagById('meta-apple-title', settings.storeName || 'Tienda');
+
+        // 6. Theme Color
+        if (settings.primaryColor) {
+            updateMetaTagById('meta-theme-color', settings.primaryColor);
         }
 
-        // 2. Favicon (Icono de Pestaña) - Auto Circular
+        // 7. Canonical URL
+        if (settings.seoUrl) {
+            updateLinkTag('link-canonical', settings.seoUrl);
+        }
+
+        // 8. Open Graph Tags
+        const ogImage = settings.seoImage || settings.logoUrl || settings.heroUrl || '';
+        updateMetaTagById('og-title', pageTitle);
+        updateMetaTagById('og-description', description);
+        updateMetaTagById('og-site-name', settings.storeName || 'Tienda Online');
+        if (settings.seoUrl) {
+            updateMetaTagById('og-url', settings.seoUrl);
+        }
+        if (ogImage) {
+            updateMetaTagById('og-image', ogImage);
+        }
+
+        // 9. Twitter Card Tags
+        updateMetaTagById('twitter-title', pageTitle);
+        updateMetaTagById('twitter-description', description);
+        if (ogImage) {
+            updateMetaTagById('twitter-image', ogImage);
+        }
+
+        // 10. Favicon (Icono de Pestaña) - Auto Circular
         const link = document.getElementById('dynamic-favicon') || document.querySelector("link[rel*='icon']");
         if (link) {
             if (settings.logoUrl) {
@@ -2038,6 +2159,8 @@ function App() {
                 link.href = '/icon-192.png';
             }
         }
+
+        console.log('[SEO] Meta tags actualizados dinámicamente');
     }, [settings, settingsLoaded]);
 
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
@@ -4650,17 +4773,17 @@ function App() {
     if (isLoading && view === 'store') {
         const loadingPrimaryColor = settings?.primaryColor || '#f97316';
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white px-4">
                 <div className="relative">
-                    <div className="w-24 h-24 rounded-full border-4 border-slate-800 animate-spin" style={{ borderTopColor: loadingPrimaryColor }}></div>
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-slate-800 animate-spin" style={{ borderTopColor: loadingPrimaryColor }}></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Zap className="w-8 h-8 animate-pulse" style={{ color: loadingPrimaryColor }} />
+                        <Zap className="w-6 h-6 sm:w-8 sm:h-8 animate-pulse" style={{ color: loadingPrimaryColor }} />
                     </div>
                 </div>
-                <h1 className="text-3xl font-black tracking-[0.5em] mt-8 animate-pulse" style={{ color: loadingPrimaryColor, textShadow: `0 0 20px ${loadingPrimaryColor}40` }}>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-[0.1em] sm:tracking-[0.2em] md:tracking-[0.3em] mt-6 sm:mt-8 animate-pulse text-center max-w-[90vw]" style={{ color: loadingPrimaryColor, textShadow: `0 0 20px ${loadingPrimaryColor}40` }}>
                     {settings?.loadingTitle || settings?.storeName || ''}
                 </h1>
-                <p className="text-slate-500 text-sm mt-4 font-mono uppercase tracking-widest">
+                <p className="text-slate-500 text-xs sm:text-sm mt-3 sm:mt-4 font-mono uppercase tracking-wider sm:tracking-widest text-center">
                     {settings?.loadingText || 'Cargando sistema...'}
                 </p>
             </div>
@@ -4670,17 +4793,17 @@ function App() {
     // Modo Mantenimiento
     if (settings?.maintenanceMode && !isAdmin(currentUser?.email)) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white p-6 text-center">
-                <div className="w-24 h-24 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mb-8 border border-red-900/50 animate-pulse">
-                    <AlertTriangle className="w-12 h-12" />
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white p-4 sm:p-6 text-center">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mb-6 sm:mb-8 border border-red-900/50 animate-pulse">
+                    <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
                 </div>
-                <h1 className="text-4xl font-black mb-4 tracking-tight uppercase">Sistema en Mantenimiento</h1>
-                <p className="text-slate-400 max-w-md mx-auto leading-relaxed">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-black mb-3 sm:mb-4 tracking-tight uppercase">Sistema en Mantenimiento</h1>
+                <p className="text-slate-400 max-w-sm sm:max-w-md mx-auto leading-relaxed text-sm sm:text-base">
                     Estamos realizando mejoras para brindarte una experiencia premium.
                     ¡Te mandamos un saludo y esperamos que vuelvas prontamente!
                 </p>
-                <div className="mt-12 pt-12 border-t border-slate-900 w-full max-w-xs">
-                    <p className="text-xs text-slate-600 font-mono italic">{settings?.storeName || ''} - Modo Mantenimiento Activo</p>
+                <div className="mt-8 sm:mt-12 pt-8 sm:pt-12 border-t border-slate-900 w-full max-w-xs">
+                    <p className="text-[10px] sm:text-xs text-slate-600 font-mono italic">{settings?.storeName || ''} - Modo Mantenimiento Activo</p>
                 </div>
             </div>
         );
@@ -5074,35 +5197,46 @@ function App() {
                         )}
 
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className={`sticky top-16 sm:top-20 z-40 backdrop-blur-xl py-3 sm:py-4 mb-6 sm:mb-8 -mx-4 px-4 border-y flex items-center gap-2 overflow-x-auto no-scrollbar ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
-                            <Filter className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
-
-                            {/* BOTÓN PROMOS (SPECIAL) */}
-                            <button
-                                onClick={() => setSelectedCategory('Promos')}
-                                className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : darkMode ? 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100 hover:border-purple-300'}`}
+                        <div id="catalog" className={`sticky top-16 sm:top-20 z-40 backdrop-blur-xl py-3 sm:py-4 mb-6 sm:mb-8 -mx-4 px-4 border-y ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
+                            <div
+                                ref={categoriesScrollRef}
+                                onMouseDown={handleMouseDownCategories}
+                                onMouseLeave={handleMouseLeaveCategories}
+                                onMouseUp={handleMouseUpCategories}
+                                onMouseMove={handleMouseMoveCategories}
+                                className={`flex items-center gap-2 overflow-x-auto pb-1 ${isDraggingCategories ? 'cursor-grabbing scroll-auto' : 'cursor-grab scroll-smooth'}`}
+                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
                             >
-                                {selectedCategory === 'Promos' && <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 animate-gradient-xy"></div>}
-                                <span className="relative z-10 flex items-center gap-1.5 sm:gap-2"><Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> PROMOS</span>
-                            </button>
+                                <Filter className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
 
-                            {/* BOTÓN OFERTAS (SPECIAL) */}
-                            <button
-                                onClick={() => setSelectedCategory('Ofertas')}
-                                className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-500 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50' : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'}`}
-                            >
-                                <Percent className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> OFERTAS
-                            </button>
-
-                            <button onClick={() => setSelectedCategory('')} className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === '' ? darkMode ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-slate-900 text-white border-slate-900 shadow-md' : darkMode ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}>
-                                Todos
-                            </button>
-                            {settings?.categories?.map(c => (
-                                <button key={c} onClick={() => setSelectedCategory(c)} className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === c ? 'bg-orange-500 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600'}`}>
-                                    {c}
+                                {/* BOTÓN PROMOS (SPECIAL) */}
+                                <button
+                                    onClick={() => setSelectedCategory('Promos')}
+                                    className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : darkMode ? 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100 hover:border-purple-300'}`}
+                                >
+                                    {selectedCategory === 'Promos' && <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 animate-gradient-xy"></div>}
+                                    <span className="relative z-10 flex items-center gap-1.5 sm:gap-2"><Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> PROMOS</span>
                                 </button>
-                            ))}
+
+                                {/* BOTÓN OFERTAS (SPECIAL) */}
+                                <button
+                                    onClick={() => setSelectedCategory('Ofertas')}
+                                    className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-500 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50' : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'}`}
+                                >
+                                    <Percent className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> OFERTAS
+                                </button>
+
+                                <button onClick={() => setSelectedCategory('')} className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === '' ? darkMode ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-slate-900 text-white border-slate-900 shadow-md' : darkMode ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}>
+                                    Todos
+                                </button>
+                                {settings?.categories?.map(c => (
+                                    <button key={c} onClick={() => setSelectedCategory(c)} className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === c ? 'bg-orange-500 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600'}`}>
+                                        {c}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
+
 
                         {/* SECCIÓN PROMOS (NUEVO) */}
                         {/* SECCIÓN PROMOS (TAB VIEW) */}
@@ -9397,6 +9531,30 @@ function App() {
                                                                     placeholder="tienda online, productos, ofertas, descuentos"
                                                                 />
                                                                 <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
+                                                            </div>
+
+                                                            {/* URL Canónica */}
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Canónica)</label>
+                                                                <input
+                                                                    className="input-cyber w-full p-4"
+                                                                    value={settings?.seoUrl || ''}
+                                                                    onChange={e => setSettings({ ...settings, seoUrl: e.target.value })}
+                                                                    placeholder="https://mitienda.vercel.app"
+                                                                />
+                                                                <p className="text-xs text-slate-500 mt-1">URL oficial de tu tienda (aparece en Google y redes sociales)</p>
+                                                            </div>
+
+                                                            {/* Autor */}
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Autor / Empresa</label>
+                                                                <input
+                                                                    className="input-cyber w-full p-4"
+                                                                    value={settings?.seoAuthor || ''}
+                                                                    onChange={e => setSettings({ ...settings, seoAuthor: e.target.value })}
+                                                                    placeholder="Mi Empresa S.A."
+                                                                />
+                                                                <p className="text-xs text-slate-500 mt-1">Nombre que aparece como autor del sitio</p>
                                                             </div>
 
                                                             {/* OG Image Upload */}
