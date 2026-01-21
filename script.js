@@ -3149,7 +3149,7 @@ function App() {
         setPaymentError(null);
 
         // CREDENCIALES DE PRODUCCIÓN
-        const publicKey = 'APP_USR-1dfabea2-cf9c-46d8-b974-a39ada166425';
+        const publicKey = 'APP_USR-6c7ba3ec-c928-42a9-a137-5f355dfc5366';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
         });
