@@ -230,7 +230,7 @@ export default async function handler(req, res) {
                                         <a href="https://granporvenir.vercel.app/" class="btn">VER DETALLES EN LA TIENDA</a>
 
                                         <div style="margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 30px;">
-                                            <a href="https://wa.me/92241468911" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 14px; text-align: center; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); margin-bottom: 20px;">
+                                            <a href="https://wa.me/5493425906300" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 14px; text-align: center; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); margin-bottom: 20px;">
                                                 ¿NECESITAS AYUDA? CONTACTANOS
                                             </a>
                                             <div style="font-size: 12px; color: #64748b;">
