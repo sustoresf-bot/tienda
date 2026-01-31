@@ -5864,125 +5864,151 @@ function App() {
                         </div>
 
                         {cart.length === 0 ? (
-                            <div className={`flex flex-col items-center justify-center p-16 text-center border-2 border-dashed rounded-[3rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
-                                <div className={`p-8 rounded-full mb-6 shadow-xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                                    <ShoppingCart className={`w-16 h-16 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
+                            <div className={`flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-[2rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
+                                <div className={`p-6 rounded-full mb-4 shadow-xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <ShoppingCart className={`w-12 h-12 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
                                 </div>
-                                <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Tu carrito está vacío</h3>
-                                <p className="text-slate-500 text-sm max-w-xs mb-8 leading-relaxed">
+                                <h3 className={`text-xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Tu carrito está vacío</h3>
+                                <p className="text-slate-500 text-sm max-w-xs mb-6 leading-relaxed">
                                     ¡Es un buen momento para buscar ese producto que tanto quieres!
                                 </p>
-                                <button onClick={() => setView('store')} className="px-8 py-4 bg-orange-600 text-white rounded-xl font-bold transition shadow-lg hover:bg-orange-500 hover:shadow-orange-500/30 flex items-center gap-2">
-                                    Ir a la Tienda <ArrowRight className="w-5 h-5" />
+                                <button onClick={() => setView('store')} className="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold transition shadow-lg hover:bg-orange-500 hover:shadow-orange-500/30 flex items-center gap-2 text-sm">
+                                    Ir a la Tienda <ArrowRight className="w-4 h-4" />
                                 </button>
                             </div>
                         ) : (
-                            <div className="grid lg:grid-cols-3 gap-8">
-                                {/* Lista de Items */}
-                                <div className="lg:col-span-2 space-y-4">
+                            <div className="grid lg:grid-cols-3 gap-6">
+                                {/* Lista de Items Compacta */}
+                                <div className="lg:col-span-2 space-y-3">
                                     {cart.map((item) => (
-                                        <div key={item.product.id} className={`border p-4 md:p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm'}`}>
-                                            {/* Imagen */}
-                                            <div className={`w-full md:w-32 h-32 rounded-2xl flex items-center justify-center p-2 flex-shrink-0 shadow-lg ${darkMode ? 'bg-white' : 'bg-slate-50'}`}>
+                                        <div key={item.product.id} className={`border p-3 rounded-2xl flex gap-4 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm'}`}>
+                                            {/* Imagen Compacta */}
+                                            <div className={`w-20 h-20 rounded-xl flex items-center justify-center p-1 flex-shrink-0 shadow-sm ${darkMode ? 'bg-white' : 'bg-slate-50'}`}>
                                                 <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain" />
                                             </div>
 
-                                            {/* Info */}
-                                            <div className="flex-1 w-full text-center md:text-left z-10">
-                                                <div className="flex justify-between items-start w-full">
-                                                    <h3 className={`font-bold text-lg truncate mb-1 pr-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.product.name}</h3>
-                                                    <button onClick={() => manageCart(item.product, -item.quantity)} className="text-slate-600 hover:text-red-500 transition p-2 bg-slate-900 rounded-lg hover:bg-red-900/20">
-                                                        <Trash2 className="w-5 h-5" />
+                                            {/* Info Compacta */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-start w-full mb-1">
+                                                    <h3 className={`font-bold text-base truncate pr-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.product.name}</h3>
+                                                    <button onClick={() => manageCart(item.product, -item.quantity)} className="text-slate-400 hover:text-red-500 transition p-1.5 rounded-lg hover:bg-red-900/20 shrink-0">
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
 
-                                                <p className={`${darkMode ? 'text-orange-400' : 'text-orange-600'} font-bold text-sm mb-4`}>
-                                                    ${calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0).toLocaleString()} <span className="text-slate-600 font-normal">unitario</span>
-                                                </p>
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className={`${darkMode ? 'text-orange-400' : 'text-orange-600'} font-bold text-sm`}>
+                                                            ${calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0).toLocaleString()}
+                                                        </p>
+                                                        {item.quantity > 1 && (
+                                                            <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
+                                                                Subtotal: ${(calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0) * item.quantity).toLocaleString()}
+                                                            </p>
+                                                        )}
+                                                    </div>
 
-                                                {/* Controles de Cantidad */}
-                                                <div className="flex items-center justify-center md:justify-start gap-4">
-                                                    <div className={`flex items-center gap-3 rounded-xl p-1 border ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
-                                                        <button onClick={() => manageCart(item.product, -1)} className={`w-10 h-10 flex items-center justify-center rounded-lg transition ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-600 hover:text-slate-900 shadow-sm'}`}>
-                                                            <Minus className="w-4 h-4" />
+                                                    {/* Controles de Cantidad Compactos */}
+                                                    <div className={`flex items-center gap-2 rounded-lg p-1 border ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+                                                        <button onClick={() => manageCart(item.product, -1)} className={`w-7 h-7 flex items-center justify-center rounded-md transition ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-600 hover:text-slate-900 shadow-sm'}`}>
+                                                            <Minus className="w-3 h-3" />
                                                         </button>
-                                                        <span className={`text-base font-bold w-8 text-center ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.quantity}</span>
-                                                        <button onClick={() => manageCart(item.product, 1)} className={`w-10 h-10 flex items-center justify-center rounded-lg transition ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-600 hover:text-slate-900 shadow-sm'}`}>
-                                                            <Plus className="w-4 h-4" />
+                                                        <span className={`text-sm font-bold w-6 text-center ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.quantity}</span>
+                                                        <button onClick={() => manageCart(item.product, 1)} className={`w-7 h-7 flex items-center justify-center rounded-md transition ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-600 hover:text-slate-900 shadow-sm'}`}>
+                                                            <Plus className="w-3 h-3" />
                                                         </button>
                                                     </div>
-                                                    <div className="hidden md:block h-8 w-px bg-slate-800 mx-2"></div>
-                                                    <p className="text-xs text-slate-500 font-bold uppercase hidden md:block">
-                                                        Subtotal: <span className={`text-lg ml-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>${(calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0) * (item.quantity || 0)).toLocaleString()}</span>
-                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Resumen y Checkout */}
-                                <div className={`border p-8 rounded-[2.5rem] h-fit sticky top-28 shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
-                                    <h3 className={`text-2xl font-black mb-8 border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>Resumen de Compra</h3>
+                                {/* Resumen y Actions */}
+                                <div className={`border p-6 rounded-[2rem] h-fit sticky top-24 shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <h3 className={`text-xl font-black mb-6 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        <ShoppingBag className="w-5 h-5 text-orange-500" /> Resumen
+                                    </h3>
 
-                                    {/* Sección de Cupones */}
-                                    <div className="mb-8">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block flex items-center gap-2">
-                                            <Tag className="w-4 h-4" /> Cupón de Descuento
-                                        </label>
+                                    {/* Cupón Compacto */}
+                                    <div className="mb-6">
                                         {appliedCoupon ? (
-                                            <div className="bg-purple-900/20 border border-purple-500/30 p-4 rounded-2xl flex justify-between items-center relative overflow-hidden group animate-fade-up">
-                                                <div className="absolute inset-0 bg-purple-500/5 group-hover:bg-purple-500/10 transition"></div>
+                                            <div className="bg-purple-900/20 border border-purple-500/30 p-3 rounded-xl flex justify-between items-center relative overflow-hidden group">
                                                 <div className="relative z-10">
-                                                    <p className="font-black text-purple-300 text-lg tracking-widest">{appliedCoupon.code}</p>
-                                                    <p className="text-xs text-purple-400 font-bold">
+                                                    <p className="font-black text-purple-300 text-sm tracking-widest">{appliedCoupon.code}</p>
+                                                    <p className="text-[10px] text-purple-400 font-bold">
                                                         {appliedCoupon.type === 'fixed' ? `$${appliedCoupon.value} OFF` : `${appliedCoupon.value}% OFF`}
                                                     </p>
                                                 </div>
-                                                <button onClick={() => setAppliedCoupon(null)} className="p-2 bg-slate-900/50 rounded-full text-purple-300 hover:text-red-400 hover:bg-red-900/30 transition relative z-10 border border-transparent hover:border-red-500/30">
-                                                    <Trash2 className="w-4 h-4" />
+                                                <button onClick={() => setAppliedCoupon(null)} className="p-1.5 bg-slate-900/50 rounded-full text-purple-300 hover:text-red-400 hover:bg-red-900/30 transition relative z-10">
+                                                    <Trash2 className="w-3 h-3" />
                                                 </button>
                                             </div>
                                         ) : (
-                                            <button onClick={() => setShowCouponModal(true)} className="w-full py-4 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 hover:bg-purple-900/10 text-slate-400 hover:text-purple-300 rounded-2xl transition flex items-center justify-center gap-2 text-sm font-bold group">
-                                                <Ticket className="w-5 h-5 group-hover:rotate-12 transition" /> Ver cupones disponibles
+                                            <button onClick={() => setShowCouponModal(true)} className="w-full py-3 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 text-slate-400 hover:text-purple-300 rounded-xl transition flex items-center justify-center gap-2 text-xs font-bold">
+                                                <Ticket className="w-4 h-4" /> Tengo un cupón
                                             </button>
                                         )}
                                     </div>
 
-                                    {/* Desglose de Precios */}
-                                    <div className={`space-y-4 border-b pb-8 mb-8 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                                        <div className={`flex justify-between font-medium ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                    {/* Totales */}
+                                    <div className={`space-y-3 border-b pb-6 mb-6 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                                        <div className={`flex justify-between text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                             <span>Subtotal</span>
                                             <span className={`font-mono font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>${cartSubtotal.toLocaleString()}</span>
                                         </div>
-                                        <div className={`flex justify-between text-sm font-medium ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                            <span>Envío {checkoutData.shippingMethod === 'Delivery' ? '(A domicilio)' : '(Retiro)'}</span>
-                                            <span className="text-orange-500 font-bold flex items-center gap-1">
-                                                <Truck className="w-3 h-3" />
-                                                {shippingFee > 0 ? `$${shippingFee.toLocaleString()}` : (checkoutData.shippingMethod === 'Pickup' ? 'Gratis' : '¡Envío Gratis!')}
-                                            </span>
-                                        </div>
                                         {appliedCoupon && (
-                                            <div className="flex justify-between text-purple-500 font-bold text-sm animate-pulse bg-purple-900/10 p-2 rounded-lg">
-                                                <span>Descuento aplicado</span>
+                                            <div className="flex justify-between text-purple-500 font-bold text-sm">
+                                                <span>Descuento</span>
                                                 <span>-${discountAmount.toLocaleString()}</span>
                                             </div>
                                         )}
+                                        <div className="flex justify-between items-end pt-2">
+                                            <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Total</span>
+                                            <span className={`text-3xl font-black tracking-tighter ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                                                ${finalTotal.toLocaleString()}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    {/* Total Final */}
-                                    <div className="flex justify-between items-end mb-8">
-                                        <span className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-slate-900'}`}>Total Final</span>
-                                        <span className={`text-4xl font-black tracking-tighter ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                                            ${finalTotal.toLocaleString()}
-                                        </span>
-                                    </div>
+                                    {/* Botones de Acción */}
+                                    <div className="space-y-3">
+                                        <button onClick={() => setView('checkout')} className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-4 text-white font-bold text-base rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2">
+                                            Iniciar Compra <ArrowRight className="w-5 h-5" />
+                                        </button>
 
-                                    {/* Botón Acción */}
-                                    <button onClick={() => setView('checkout')} className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-5 text-white font-bold text-lg rounded-2xl shadow-[0_0_25px_rgba(249,115,22,0.3)] hover:shadow-[0_0_35px_rgba(249,115,22,0.5)] transition-all flex items-center justify-center gap-3 transform hover:-translate-y-1">
-                                        Iniciar Compra <ArrowRight className="w-6 h-6" />
-                                    </button>
+                                        {/* Botón WhatsApp Configurable */}
+                                        {settings?.whatsappCartEnabled && (
+                                            <button
+                                                onClick={() => {
+                                                    try {
+                                                        const phone = settings?.whatsappLink || '';
+                                                        const match = phone.match(/\d+/g);
+                                                        let cleanPhone = match ? match.join('') : '';
+                                                        if (!cleanPhone) return showToast("WhatsApp no configurado", "error");
+
+                                                        if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+                                                        if (!cleanPhone.startsWith('54')) {
+                                                            if (cleanPhone.length === 10) cleanPhone = '549' + cleanPhone;
+                                                            else cleanPhone = '54' + cleanPhone;
+                                                        } else {
+                                                            if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
+                                                        }
+
+                                                        const itemsList = cart.map(i => `• ${i.quantity}x ${i.product.name} $${calculateItemPrice(i.product.basePrice, i.product.discount).toLocaleString()}`).join('\n');
+                                                        const msg = `Hola! Quiero comprar lo siguiente:\n\n${itemsList}\n\n*Total: $${finalTotal.toLocaleString()}*\n\n¿Como procedemos?`;
+
+                                                        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                                    } catch (e) {
+                                                        showToast("Error al abrir WhatsApp", "error");
+                                                    }
+                                                }}
+                                                className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition text-sm ${darkMode ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30 border border-green-600/30' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                                            >
+                                                <MessageCircle className="w-4 h-4" /> {settings?.whatsappCartText || 'Compra por WhatsApp'}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -10472,6 +10498,33 @@ function App() {
                                                                 >
                                                                     <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requireDNI !== false ? 'left-7' : 'left-1'}`}></div>
                                                                 </button>
+                                                            </div>
+
+                                                            {/* WhatsApp Cart Button Config */}
+                                                            <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
+                                                                <div className="flex items-center justify-between mb-4">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Botón WhatsApp en Carrito</p>
+                                                                        <p className="text-xs text-slate-500">Permitir enviar pedido por WhatsApp</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, whatsappCartEnabled: settings?.whatsappCartEnabled === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.whatsappCartEnabled !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.whatsappCartEnabled !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+                                                                {settings?.whatsappCartEnabled !== false && (
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Texto del Botón</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.whatsappCartText || 'Compra por WhatsApp'}
+                                                                            onChange={e => setSettings({ ...settings, whatsappCartText: e.target.value })}
+                                                                            placeholder="Ej: Compra por WhatsApp"
+                                                                        />
+                                                                    </div>
+                                                                )}
                                                             </div>
 
                                                             {/* Low Stock Threshold */}
