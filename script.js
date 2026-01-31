@@ -6505,7 +6505,7 @@ function App() {
                                                                 const match = phone.match(/\d+/g);
                                                                 let cleanPhone = match ? match.join('') : '';
 
-                                                                // Si no hay número en el link, intentar buscar en otros campos o usar un default (alerta)
+                                                                // Si no hay número en el link, intentar buscar en otros campos
                                                                 if (!cleanPhone && settings?.phone) {
                                                                     const match2 = settings.phone.match(/\d+/g);
                                                                     cleanPhone = match2 ? match2.join('') : '';
@@ -6515,10 +6515,25 @@ function App() {
                                                                     return showToast("El número de WhatsApp de la tienda no está configurado correctamente.", "error");
                                                                 }
 
-                                                                // Asegurar prefijo 54 (Argentina) si no lo tiene y parece ser un número local (ej: 10 dígitos sin 54)
-                                                                // O simplemente asegurar que empiece con 54 si el usuario lo pide estrictamente
+                                                                // LOGICA ARGENTINA ROBUSTA
+                                                                // Si empieza con 0, quitarlo
+                                                                if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+
+                                                                // Si no empieza con 54, agregarlo
                                                                 if (!cleanPhone.startsWith('54')) {
-                                                                    cleanPhone = '54' + cleanPhone;
+                                                                    // Si tiene 10 dígitos (ej: 3425906630), es movil sin 15 ni 0, necesita 9 despues del 54
+                                                                    if (cleanPhone.length === 10) {
+                                                                        cleanPhone = '549' + cleanPhone;
+                                                                    } else {
+                                                                        cleanPhone = '54' + cleanPhone;
+                                                                    }
+                                                                } else {
+                                                                    // Si ya empieza con 54
+                                                                    // Chequear si le falta el 9 para celular (aprox longitud total 12 o 13 digitos)
+                                                                    // Si tiene 12 digitos (54 + 10 del numero), insertar 9
+                                                                    if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) {
+                                                                        cleanPhone = '549' + cleanPhone.substring(2);
+                                                                    }
                                                                 }
 
                                                                 // 2. Construir mensaje detallado
@@ -8498,7 +8513,26 @@ function App() {
                                                                 {/* WhatsApp Cliente */}
                                                                 {o.customer.phone && o.customer.phone !== '-' && (
                                                                     <a
-                                                                        href={'https://wa.me/54' + o.customer.phone.replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido de: ' + o.items.map(i => i.quantity + 'x ' + i.title).join(', '))}
+                                                                        href={(() => {
+                                                                            let phone = o.customer.phone.replace(/\D/g, '');
+                                                                            // Normalización para Argentina
+                                                                            if (phone.startsWith('0')) phone = phone.substring(1);
+                                                                            if (phone.startsWith('15')) phone = phone.substring(2); // Si el usuario puso 15... (casos raros sin area code previo, pero comunmente es area+15)
+                                                                            // Mejor: Si empieza con 54 y no 549, agregar 9. Si no empieza con 54, agregar 549.
+
+                                                                            // Logica robusta simplificada:
+                                                                            if (phone.startsWith('549')) {
+                                                                                // Ya está bien
+                                                                            } else if (phone.startsWith('54')) {
+                                                                                // Tiene 54 pero falta 9 (asumiendo movil)
+                                                                                phone = '549' + phone.substring(2);
+                                                                            } else {
+                                                                                // No tiene pais, asumir local y agregar 549
+                                                                                phone = '549' + phone;
+                                                                            }
+
+                                                                            return `https://wa.me/${phone}?text=${encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido de: ' + o.items.map(i => i.quantity + 'x ' + i.title).join(', '))}`;
+                                                                        })()}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/30"
@@ -10917,7 +10951,19 @@ function App() {
                                         </button>
                                     )}
                                     {settings?.showWhatsapp === true && settings?.whatsappLink && (
-                                        <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-green-400 hover:bg-green-900/10 hover:border-green-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-green-500 hover:bg-green-50 hover:border-green-300'}`}>
+                                        <button onClick={() => {
+                                            let phone = settings.whatsappLink;
+                                            const match = phone.match(/\d+/g);
+                                            let cleanPhone = match ? match.join('') : '';
+                                            if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+                                            if (!cleanPhone.startsWith('54')) {
+                                                if (cleanPhone.length === 10) cleanPhone = '549' + cleanPhone;
+                                                else cleanPhone = '54' + cleanPhone;
+                                            } else {
+                                                if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
+                                            }
+                                            window.open(`https://wa.me/${cleanPhone}`, '_blank');
+                                        }} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-green-400 hover:bg-green-900/10 hover:border-green-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-green-500 hover:bg-green-50 hover:border-green-300'}`}>
                                             <MessageCircle className="w-5 h-5" />
                                         </button>
                                     )}
@@ -10979,7 +11025,17 @@ function App() {
                                         onClick={() => {
                                             const type = settings?.footerContactType || 'whatsapp';
                                             if (type === 'whatsapp' && settings?.whatsappLink) {
-                                                window.open(settings.whatsappLink, '_blank');
+                                                let phone = settings.whatsappLink;
+                                                const match = phone.match(/\d+/g);
+                                                let cleanPhone = match ? match.join('') : '';
+                                                if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+                                                if (!cleanPhone.startsWith('54')) {
+                                                    if (cleanPhone.length === 10) cleanPhone = '549' + cleanPhone;
+                                                    else cleanPhone = '54' + cleanPhone;
+                                                } else {
+                                                    if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
+                                                }
+                                                window.open(`https://wa.me/${cleanPhone}`, '_blank');
                                             } else if (type === 'instagram' && settings?.instagramLink) {
                                                 window.open(settings.instagramLink, '_blank');
                                             } else if (type === 'email' && settings?.storeEmail) {
@@ -11127,7 +11183,19 @@ function App() {
             {
                 settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
                     <button
-                        onClick={() => window.open(settings.whatsappLink, '_blank')}
+                        onClick={() => {
+                            let phone = settings.whatsappLink;
+                            const match = phone.match(/\d+/g);
+                            let cleanPhone = match ? match.join('') : '';
+                            if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+                            if (!cleanPhone.startsWith('54')) {
+                                if (cleanPhone.length === 10) cleanPhone = '549' + cleanPhone;
+                                else cleanPhone = '54' + cleanPhone;
+                            } else {
+                                if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
+                            }
+                            window.open(`https://wa.me/${cleanPhone}`, '_blank');
+                        }}
                         className="fixed bottom-24 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
                         title="Chatea con nosotros"
                     >
