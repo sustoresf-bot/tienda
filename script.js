@@ -10625,7 +10625,7 @@ function App() {
             {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
             {
                 view !== 'admin' && view !== 'login' && view !== 'register' && (
-                    <footer className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-slate-50 border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}>
+                    <footer className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}>
                         {/* Decoración de Fondo */}
                         <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
                         <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
@@ -10633,7 +10633,7 @@ function App() {
                         <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
                             {/* Columna 1: Marca */}
                             <div className="md:col-span-2 space-y-6">
-                                <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-slate-900'} tracking-tighter italic`}>
+                                <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-black'} tracking-tighter italic`}>
                                     {settingsLoaded ? (settings?.storeName || '') : ''}
                                     <span className="text-orange-500">{settings?.footerSuffix || '.SF'}</span>
                                 </h2>
