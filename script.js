@@ -2033,10 +2033,7 @@ function App() {
                     box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important;
                 }
                 
-                /* Footer */
-                footer { background-color: #0f172a !important; }
-                footer .text-white { color: #ffffff !important; }
-                footer .text-slate-500, footer .text-slate-400, footer .text-slate-600 { color: #94a3b8 !important; }
+                /* Footer - Dynamic styles allowed */
                 
                 /* Admin panel stays dark */
                 [class*="admin"] .bg-\\[\\#050505\\] { background-color: #050505 !important; }
