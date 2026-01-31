@@ -6811,9 +6811,32 @@ function App() {
                                         )}
                                     </nav>
 
-                                    <div className="p-4 md:p-6 border-t border-slate-900">
+                                    <div className="p-4 md:p-6 border-t border-slate-900 space-y-3">
                                         <button onClick={() => { setView('store'); setIsAdminMenuOpen(false); }} className="w-full py-3.5 md:py-4 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition font-bold text-sm flex items-center justify-center gap-2 group border border-slate-800">
                                             <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition" /> Volver a Tienda
+                                        </button>
+
+                                        {/* Control Global de Sonido */}
+                                        <button
+                                            onClick={() => {
+                                                const newState = !soundEnabled;
+                                                setSoundEnabled(newState);
+                                                if (newState) {
+                                                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                                                    audio.volume = 0.6;
+                                                    audio.play().catch(() => { });
+                                                    showToast("Sonido activado 🔔", "success");
+                                                } else {
+                                                    showToast("Sonido desactivado 🔕", "info");
+                                                }
+                                            }}
+                                            className={`w-full py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition border ${soundEnabled
+                                                ? 'bg-green-900/20 text-green-400 border-green-900/30 hover:bg-green-900/30'
+                                                : 'bg-slate-900 text-slate-500 border-slate-800 hover:bg-slate-800 hover:text-slate-300'
+                                                }`}
+                                        >
+                                            {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                                            {soundEnabled ? 'Notificaciones SI' : 'Notificaciones NO'}
                                         </button>
                                     </div>
                                 </div>
@@ -6837,34 +6860,8 @@ function App() {
                                                     <h1 className="text-4xl font-black text-white neon-text">Panel de Control</h1>
                                                     <p className="text-slate-500 mt-2">Resumen administrativo y financiero.</p>
                                                 </div>
-                                                <div className="flex items-center gap-3">
-                                                    {/* Botón Control Sonido */}
-                                                    <button
-                                                        onClick={() => {
-                                                            const newState = !soundEnabled;
-                                                            setSoundEnabled(newState);
-                                                            if (newState) {
-                                                                // Reproducir sonido de prueba al activar
-                                                                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                                                                audio.volume = 0.6;
-                                                                audio.play().catch(() => { });
-                                                                showToast("Sonido activado 🔔", "success");
-                                                            } else {
-                                                                showToast("Sonido desactivado 🔕", "info");
-                                                            }
-                                                        }}
-                                                        className={`px-4 py-2 rounded-lg text-xs font-bold font-mono border transition flex items-center gap-2 ${soundEnabled
-                                                            ? 'bg-green-900/20 text-green-400 border-green-900/50 hover:bg-green-900/30'
-                                                            : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-slate-300'
-                                                            }`}
-                                                    >
-                                                        {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                                                        {soundEnabled ? 'SONIDO ON' : 'SONIDO OFF'}
-                                                    </button>
-
-                                                    <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
-                                                        {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                                    </div>
+                                                <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
+                                                    {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                                 </div>
                                             </div>
 
