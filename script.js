@@ -1631,6 +1631,16 @@ function App() {
         localStorage.setItem('sustore_sound_enabled', JSON.stringify(soundEnabled));
     }, [soundEnabled]);
 
+    // Actualizar pedidos vistos al entrar a la pestaña 'orders'
+    useEffect(() => {
+        if (view === 'admin' && adminTab === 'orders') {
+            const currentTotal = orders.length; // orders viene del hook global
+            if (currentTotal > 0) {
+                localStorage.setItem('sustore_last_viewed_orders', currentTotal.toString());
+            }
+        }
+    }, [view, adminTab, orders.length]);
+
     // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
     const [mpBrickController, setMpBrickController] = useState(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
@@ -2091,25 +2101,30 @@ function App() {
                 const sortedOrders = ordersData.sort((a, b) => new Date(b.date) - new Date(a.date));
                 setOrders(sortedOrders);
 
-                // --- SISTEMA DE NOTIFICACIONES DE NUEVOS PEDIDOS ---
-                // Verifica si es admin y si hay más pedidos que antes (ignora carga inicial)
+                // --- SISTEMA DE NOTIFICACIONES DE NUEVOS PEDIDOS (V2) ---
                 if (isAdmin(currentUser?.email)) {
-                    const prevCount = prevOrdersCountRef.current;
-                    // Solo notificar si ya teníamos datos cargados (prevCount > 0 o initialized) y aumentó la cantidad
-                    if (prevCount !== null && sortedOrders.length > prevCount) {
-                        try {
-                            if (soundEnabled) {
-                                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Sonido "Ding" suave
-                                audio.volume = 0.6;
-                                audio.play().catch(e => console.log("Audio autoplay blocked", e));
-                                showToast("¡Nuevo Pedido Recibido! 🔔", "success");
-                            }
-                        } catch (e) {
-                            console.error("Error playing notification sound", e);
+                    // Obtener la cantidad de pedidos vistos previamente (persistido)
+                    const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
+
+                    // Si hay MÁS pedidos que los vistos
+                    if (sortedOrders.length > lastViewedCount) {
+                        // Si NO estamos en la pestaña de pedidos, sonar
+                        if (adminTab !== 'orders' && soundEnabled) {
+                            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                            audio.volume = 0.6;
+                            // Throttle: evitar reproducir mil veces si llegan muchos juntos.
+                            // Simplemente intentamos reproducir.
+                            try {
+                                audio.play().catch(() => { });
+                                showToast(`¡Tienes ${sortedOrders.length - lastViewedCount} pedidos nuevos!`, "success");
+                            } catch (e) { }
+                        }
+
+                        // Si ESTAMOS en la pestaña de pedidos, actualizar inmediatamente lo visto (silencio)
+                        if (adminTab === 'orders') {
+                            localStorage.setItem('sustore_last_viewed_orders', sortedOrders.length.toString());
                         }
                     }
-                    // Actualizar referencia
-                    prevOrdersCountRef.current = sortedOrders.length;
                 }
             }),
 
