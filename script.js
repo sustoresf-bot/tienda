@@ -6887,7 +6887,7 @@ function App() {
                                 currentUser?.id &&
                                 currentUser?.id.length >= 10 &&
                                 !SecurityManager.detectManipulation()) ? (
-                                <div className="flex h-screen bg-[#050505] animate-fade-up relative w-full font-sans overflow-hidden">
+                                <div className="flex min-h-screen bg-[#050505] animate-fade-up relative w-full font-sans">
 
                                     {/* Overlay para cerrar el menú en móvil */}
                                     {isAdminMenuOpen && (
@@ -7007,7 +7007,7 @@ function App() {
                                     </div>
 
                                     {/* 7.2 Contenido Principal Admin */}
-                                    <div className="flex-1 bg-[#050505] relative w-full h-full overflow-y-auto custom-scrollbar p-4 md:p-10" data-lenis-prevent>
+                                    <div className="flex-1 bg-[#050505] relative w-full h-full p-4 md:p-10">
                                         <button onClick={() => setIsAdminMenuOpen(true)} className="md:hidden mb-4 p-3 bg-slate-900 hover:bg-slate-800 rounded-xl text-white border border-slate-800 flex items-center gap-2 font-bold text-sm transition">
                                             <Menu className="w-5 h-5" /> Menú
                                         </button>
