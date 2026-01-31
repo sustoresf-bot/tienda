@@ -6045,60 +6045,6 @@ function App() {
                                         )}
                                     </div>
 
-                                    {/* Datos Bancarios para Transferencia */}
-                                    {checkoutData.paymentChoice === 'Transferencia' && (
-                                        <div className="mt-6 animate-fade-up">
-                                            <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/50 border-orange-500/30' : 'bg-orange-50 border-orange-200'}`}>
-                                                <h3 className={`font-bold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                                    <Building className="w-5 h-5 text-orange-400" />
-                                                    Datos para Transferencia
-                                                </h3>
-                                                <div className="space-y-3">
-                                                    {settings?.paymentTransfer?.alias && (
-                                                        <div className={`flex justify-between items-center p-3 rounded-xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
-                                                            <span className="text-sm text-slate-500">Alias</span>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`font-mono font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{settings.paymentTransfer.alias}</span>
-                                                                <button
-                                                                    onClick={() => { navigator.clipboard.writeText(settings.paymentTransfer.alias); showToast('Alias copiado!', 'success'); }}
-                                                                    className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 rounded-lg transition"
-                                                                >
-                                                                    <Copy className="w-4 h-4 text-orange-400" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {settings?.paymentTransfer?.cvuCbu && (
-                                                        <div className={`flex justify-between items-center p-3 rounded-xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
-                                                            <span className="text-sm text-slate-500">CVU/CBU</span>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`font-mono text-xs font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>{settings.paymentTransfer.cvuCbu}</span>
-                                                                <button
-                                                                    onClick={() => { navigator.clipboard.writeText(settings.paymentTransfer.cvuCbu); showToast('CVU/CBU copiado!', 'success'); }}
-                                                                    className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 rounded-lg transition"
-                                                                >
-                                                                    <Copy className="w-4 h-4 text-orange-400" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {settings?.paymentTransfer?.titular && (
-                                                        <div className={`flex justify-between items-center p-3 rounded-xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
-                                                            <span className="text-sm text-slate-500">Titular</span>
-                                                            <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{settings.paymentTransfer.titular}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className={`mt-4 p-4 rounded-xl flex items-start gap-3 ${darkMode ? 'bg-orange-900/20 border border-orange-500/20' : 'bg-orange-100'}`}>
-                                                    <Info className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                                                    <p className={`text-xs leading-relaxed ${darkMode ? 'text-orange-200' : 'text-orange-700'}`}>
-                                                        Realizá la transferencia y luego confirmá tu pedido. Te enviaremos un email con los detalles. Recordá enviar el comprobante por WhatsApp para acelerar la verificación.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {/* Card Payment Brick Container - Solo para Tarjeta */}
                                     {checkoutData.paymentChoice === 'Tarjeta' && (
                                         <div className="mt-8 animate-fade-up">
@@ -6110,17 +6056,6 @@ function App() {
                                                 <p className="text-slate-400 text-sm mb-4">
                                                     Pagá de forma segura con Visa, MasterCard, AMEX y más.
                                                 </p>
-
-                                                {/* Mensaje de SEGURIDAD */}
-                                                <div className="mb-6 p-4 bg-green-900/20 border border-green-500/30 rounded-xl flex items-start gap-3">
-                                                    <Shield className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                                                    <div>
-                                                        <p className="text-green-400 text-sm font-bold mb-1">🔒 Pago 100% Seguro</p>
-                                                        <p className="text-xs text-green-200/80 leading-relaxed">
-                                                            Tus datos son procesados de forma encriptada por Mercado Pago. <strong className="text-green-300">No almacenamos información de tu tarjeta.</strong> Tu privacidad está protegida.
-                                                        </p>
-                                                    </div>
-                                                </div>
 
                                                 {/* WARNING: AD BLOCKER */}
                                                 <div className="mb-6 p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
@@ -6722,14 +6657,8 @@ function App() {
                                             <LayoutDashboard className="w-5 h-5" /> Inicio
                                         </button>
 
-                                        <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition relative ${adminTab === 'orders' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                        <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'orders' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                             <ShoppingBag className="w-5 h-5" /> Pedidos
-                                            {/* Badge de pedidos pendientes */}
-                                            {orders.filter(o => o.status === 'Pendiente').length > 0 && (
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1.5 animate-pulse shadow-lg shadow-red-500/30">
-                                                    {orders.filter(o => o.status === 'Pendiente').length}
-                                                </span>
-                                            )}
                                         </button>
 
                                         <button onClick={() => { setAdminTab('products'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'products' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
@@ -8344,19 +8273,6 @@ function App() {
 
                                                             {/* Acciones */}
                                                             <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
-                                                                {/* Botón WhatsApp Cliente */}
-                                                                {o.customer.phone && o.customer.phone !== '-' && (
-                                                                    <a
-                                                                        href={'https://wa.me/' + o.customer.phone.replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido #' + o.orderId)}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/30"
-                                                                        title={'WhatsApp: ' + o.customer.phone}
-                                                                    >
-                                                                        <MessageCircle className="w-5 h-5" />
-                                                                    </a>
-                                                                )}
-
                                                                 <button onClick={() => setSelectedOrder(o)} className="p-3 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition border border-slate-800" title="Ver Detalles">
                                                                     <Eye className="w-5 h-5" />
                                                                 </button>
@@ -9834,42 +9750,6 @@ function App() {
                                                                         <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentTransfer?.enabled ? 'left-7' : 'left-1'}`}></div>
                                                                     </button>
                                                                 </div>
-                                                                {/* Campos de datos bancarios cuando está activada */}
-                                                                {settings?.paymentTransfer?.enabled && (
-                                                                    <div className="mt-4 space-y-3 pt-4 border-t border-slate-700">
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Alias</label>
-                                                                            <input
-                                                                                className="input-cyber w-full p-3 text-sm font-mono uppercase"
-                                                                                placeholder="MI.ALIAS.MP"
-                                                                                value={settings?.paymentTransfer?.alias || ''}
-                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, alias: e.target.value.toUpperCase() } })}
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">CVU / CBU</label>
-                                                                            <input
-                                                                                className="input-cyber w-full p-3 text-sm font-mono"
-                                                                                placeholder="0000000000000000000000"
-                                                                                value={settings?.paymentTransfer?.cvuCbu || ''}
-                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, cvuCbu: e.target.value.replace(/[^0-9]/g, '') } })}
-                                                                                maxLength={22}
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Titular de la Cuenta</label>
-                                                                            <input
-                                                                                className="input-cyber w-full p-3 text-sm"
-                                                                                placeholder="Nombre y Apellido del Titular"
-                                                                                value={settings?.paymentTransfer?.titular || ''}
-                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, titular: e.target.value } })}
-                                                                            />
-                                                                        </div>
-                                                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
-                                                                            <AlertCircle className="w-3 h-3" /> Estos datos se mostrarán al cliente cuando elija pagar por transferencia
-                                                                        </p>
-                                                                    </div>
-                                                                )}
                                                             </div>
 
                                                             {/* Cash */}
