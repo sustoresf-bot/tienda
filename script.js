@@ -15,6 +15,7 @@ import {
     getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc,
     where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter
 } from 'firebase/firestore';
+import Lenis from 'lenis';
 
 // --- CONFIGURACIÓN FIREBASE (PROYECTO: sustore-63266) ---
 // Nota: esta es la configuración pública del SDK web. NO incluyas aquí el JSON de service account.
@@ -8346,11 +8347,11 @@ function App() {
                                                                 {/* WhatsApp Cliente */}
                                                                 {o.customer.phone && o.customer.phone !== '-' && (
                                                                     <a
-                                                                        href={'https://wa.me/' + o.customer.phone.replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido #' + o.orderId)}
+                                                                        href={'https://wa.me/54' + o.customer.phone.replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido de: ' + o.items.map(i => i.quantity + 'x ' + i.title).join(', '))}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/30"
-                                                                        title={'WhatsApp: ' + o.customer.phone}
+                                                                        title={'WhatsApp: +54 ' + o.customer.phone}
                                                                     >
                                                                         <MessageCircle className="w-5 h-5" />
                                                                     </a>
@@ -11559,11 +11560,40 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
 };
 
 
+// Componente de Scroll Suave (Lenis)
+const SmoothScroll = () => {
+    useEffect(() => {
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            orientation: 'vertical',
+            gestureOrientation: 'vertical',
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            touchMultiplier: 2,
+            infinite: false,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+
+        requestAnimationFrame(raf);
+
+        return () => {
+            lenis.destroy();
+        };
+    }, []);
+
+    return null;
+};
 
 // Renderizado Final
 const root = createRoot(document.getElementById('root'));
 root.render(
     <ErrorBoundary>
+        <SmoothScroll />
         <App />
     </ErrorBoundary>
 );
