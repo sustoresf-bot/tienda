@@ -6887,7 +6887,7 @@ function App() {
                                 currentUser?.id &&
                                 currentUser?.id.length >= 10 &&
                                 !SecurityManager.detectManipulation()) ? (
-                                <div className="flex min-h-screen bg-[#050505] animate-fade-up relative w-full font-sans">
+                                <div className="flex h-[100dvh] bg-[#050505] animate-fade-up relative w-full font-sans overflow-hidden">
 
                                     {/* Overlay para cerrar el menú en móvil */}
                                     {isAdminMenuOpen && (
@@ -6898,7 +6898,7 @@ function App() {
                                     )}
 
                                     {/* 7.1 Sidebar Admin */}
-                                    <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ease-out ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:sticky md:top-0 md:h-screen shadow-2xl`} data-lenis-prevent>
+                                    <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ease-out ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:relative md:h-full shadow-2xl`} data-lenis-prevent>
                                         <div className="p-6 md:p-8 border-b border-slate-900 flex items-center justify-between">
                                             <div>
                                                 <h2 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-3">
@@ -7007,7 +7007,7 @@ function App() {
                                     </div>
 
                                     {/* 7.2 Contenido Principal Admin */}
-                                    <div className="flex-1 bg-[#050505] relative w-full h-full p-4 md:p-10">
+                                    <div className="flex-1 bg-[#050505] relative w-full h-full overflow-y-auto custom-scrollbar p-4 md:p-10" data-lenis-prevent>
                                         <button onClick={() => setIsAdminMenuOpen(true)} className="md:hidden mb-4 p-3 bg-slate-900 hover:bg-slate-800 rounded-xl text-white border border-slate-800 flex items-center gap-2 font-bold text-sm transition">
                                             <Menu className="w-5 h-5" /> Menú
                                         </button>
