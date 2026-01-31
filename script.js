@@ -8344,6 +8344,19 @@ function App() {
 
                                                             {/* Acciones */}
                                                             <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
+                                                                {/* Botón WhatsApp Cliente */}
+                                                                {o.customer.phone && o.customer.phone !== '-' && (
+                                                                    <a
+                                                                        href={`https://wa.me/${o.customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`¡Hola ${o.customer.name}! 👋 Te escribimos desde ${settings?.storeName || 'nuestra tienda'} por tu pedido #${o.orderId}.`)}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/30"
+                                                                        title={`WhatsApp: ${o.customer.phone}`}
+                                                                    >
+                                                                        <MessageCircle className="w-5 h-5" />
+                                                                    </a>
+                                                                )}
+
                                                                 <button onClick={() => setSelectedOrder(o)} className="p-3 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition border border-slate-800" title="Ver Detalles">
                                                                     <Eye className="w-5 h-5" />
                                                                 </button>
