@@ -1641,6 +1641,42 @@ function App() {
         }
     }, [view, adminTab, orders.length]);
 
+    // Ref para evitar notificaciones repetidas en la misma sesión/batch
+    const lastNotifiedCountRef = useRef(0);
+
+    // --- EFECTO DE SONIDO (SEPARADO PARA EVITAR STALE CLOSURES) ---
+    useEffect(() => {
+        if (!isAdmin(currentUser?.email)) return;
+
+        const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
+        const currentCount = orders.length;
+
+        // Si tenemos más pedidos de los que el admin vio por última vez
+        if (currentCount > lastViewedCount) {
+
+            // Si estamos en la pestaña orders, marcamos como visto automáticamente
+            if (view === 'admin' && adminTab === 'orders') {
+                localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
+                // También actualizamos el ref para que no suene si salimos y volvemos rápido
+                lastNotifiedCountRef.current = currentCount;
+            }
+            // Si NO estamos en orders, y no hemos notificado ya por este batch
+            else if (soundEnabled && currentCount > lastNotifiedCountRef.current) {
+                try {
+                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                    audio.volume = 0.6;
+                    audio.play().catch(e => console.log("Audio autoplay blocked", e));
+                    showToast(`¡Nuevo Pedido Recibido! (${currentCount - lastViewedCount}) 🔔`, "success");
+
+                    // Marcar que ya notificamos para este conteo
+                    lastNotifiedCountRef.current = currentCount;
+                } catch (e) {
+                    console.error("Notification Error", e);
+                }
+            }
+        }
+    }, [orders, soundEnabled, adminTab, view, currentUser]);
+
     // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
     const [mpBrickController, setMpBrickController] = useState(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
@@ -2100,32 +2136,6 @@ function App() {
                 const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 const sortedOrders = ordersData.sort((a, b) => new Date(b.date) - new Date(a.date));
                 setOrders(sortedOrders);
-
-                // --- SISTEMA DE NOTIFICACIONES DE NUEVOS PEDIDOS (V2) ---
-                if (isAdmin(currentUser?.email)) {
-                    // Obtener la cantidad de pedidos vistos previamente (persistido)
-                    const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
-
-                    // Si hay MÁS pedidos que los vistos
-                    if (sortedOrders.length > lastViewedCount) {
-                        // Si NO estamos en la pestaña de pedidos, sonar
-                        if (adminTab !== 'orders' && soundEnabled) {
-                            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                            audio.volume = 0.6;
-                            // Throttle: evitar reproducir mil veces si llegan muchos juntos.
-                            // Simplemente intentamos reproducir.
-                            try {
-                                audio.play().catch(() => { });
-                                showToast(`¡Tienes ${sortedOrders.length - lastViewedCount} pedidos nuevos!`, "success");
-                            } catch (e) { }
-                        }
-
-                        // Si ESTAMOS en la pestaña de pedidos, actualizar inmediatamente lo visto (silencio)
-                        if (adminTab === 'orders') {
-                            localStorage.setItem('sustore_last_viewed_orders', sortedOrders.length.toString());
-                        }
-                    }
-                }
             }),
 
             // Usuarios
