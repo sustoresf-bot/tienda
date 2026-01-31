@@ -5232,7 +5232,7 @@ function App() {
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
 
-        <div className={`min-h-screen flex flex-col relative w-full bg-grid font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-slate-50'}`}>
+        <div className={`min-h-screen flex flex-col relative w-full bg-grid font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-white'}`}>
             {/* DEBUGGER VISUAL (SOLO DESARROLLO) */}
             {view === 'store' && currentUser?.role === 'admin' && (
                 <div className="fixed bottom-4 left-4 z-[9999] bg-black/80 text-green-400 font-mono text-xs p-2 rounded border border-green-900 pointer-events-none">

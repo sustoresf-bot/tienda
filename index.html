@@ -71,7 +71,7 @@
     <style>
         /* Critical above-the-fold styles */
         body {
-            background-color: #f8fafc;
+            background-color: #ffffff;
             color: #0f172a;
             margin: 0;
             font-family: system-ui, sans-serif;
@@ -79,7 +79,8 @@
 
         #root {
             min-height: 100vh;
-            /* Removed flex centering to allow natural flow */
+            display: flex;
+            flex-direction: column;
         }
 
         .loading-spinner {
