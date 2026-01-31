@@ -5474,7 +5474,7 @@ function App() {
                             )}
 
                             {/* Overlay de Texto */}
-                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 bg-gradient-to-t md:bg-gradient-to-r transition-colors duration-500 ${darkMode ? 'from-[#050505] via-[#050505]/80 to-transparent' : 'from-white via-white/90 to-transparent'}`}>
+                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 bg-gradient-to-t md:bg-gradient-to-r transition-colors duration-500 ${darkMode ? 'from-[#050505] via-[#050505]/60 to-transparent' : 'from-white via-white/50 to-transparent'}`}>
                                 <div className="max-w-2xl animate-fade-up">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
