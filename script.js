@@ -10630,7 +10630,7 @@ function App() {
                         <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
                         <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
 
-                        <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
+                        <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-8 relative z-10">
                             {/* Columna 1: Marca */}
                             <div className="md:col-span-2 space-y-6">
                                 <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-black'} tracking-tighter italic`}>
