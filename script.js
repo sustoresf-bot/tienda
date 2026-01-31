@@ -10625,7 +10625,10 @@ function App() {
             {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
             {
                 view !== 'admin' && view !== 'login' && view !== 'register' && (
-                    <footer className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}>
+                    <footer
+                        className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}
+                        style={{ backgroundColor: darkMode ? '#050505' : '#ffffff' }}
+                    >
                         {/* Decoración de Fondo */}
                         <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
                         <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
