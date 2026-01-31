@@ -1058,7 +1058,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                         </button>
                     </div>
 
-                    <div className={`flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar ${darkMode ? 'bg-[#111]' : 'bg-slate-50'}`}>
+                    <div className={`flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar ${darkMode ? 'bg-[#111]' : 'bg-slate-50'}`} data-lenis-prevent>
                         {messages.map((m, i) => (
                             <div key={i} className={`flex flex-col ${m.role === 'client' ? 'items-end' : 'items-start'}`}>
                                 <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${m.role === 'client'
@@ -1173,7 +1173,7 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
                     </button>
                 </form>
 
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar" data-lenis-prevent>
                     {categories.map((cat, index) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800 group hover:border-slate-700 transition">
                             <span className="text-slate-300 font-medium">{cat}</span>
@@ -5450,7 +5450,7 @@ function App() {
                         </div>
 
                         {/* Lista de Botones */}
-                        <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                        <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2" data-lenis-prevent>
                             <button onClick={() => { setView('store'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
                                 <Home className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> Inicio
                             </button>
@@ -6859,7 +6859,7 @@ function App() {
                                         </button>
                                     </div>
 
-                                    <nav className="flex-1 p-3 md:p-4 space-y-1.5 md:space-y-2 overflow-y-auto custom-scrollbar">
+                                    <nav className="flex-1 p-3 md:p-4 space-y-1.5 md:space-y-2 overflow-y-auto custom-scrollbar" data-lenis-prevent>
                                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-1">Principal</p>
 
                                         <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'dashboard' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
@@ -10699,7 +10699,7 @@ function App() {
                                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">
                                                                     Asignar Productos Suministrados
                                                                 </label>
-                                                                <div className="h-48 overflow-y-auto bg-slate-900/50 rounded-xl p-2 border border-slate-800 custom-scrollbar">
+                                                                <div className="h-48 overflow-y-auto bg-slate-900/50 rounded-xl p-2 border border-slate-800 custom-scrollbar" data-lenis-prevent>
                                                                     {products.length === 0 ? (
                                                                         <p className="text-center text-slate-600 text-xs py-4">Carga productos primero.</p>
                                                                     ) : products.map(p => (
@@ -11649,7 +11649,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6" data-lenis-prevent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                         {PLANS.map(plan => {
                             const isActive = activePlanId === plan.id;
