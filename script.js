@@ -3490,14 +3490,26 @@ function App() {
                 return;
             }
 
-            // Pequeño delay para asegurar que el DOM está listo
-            const timer = setTimeout(() => {
+            // Polling inteligente para asegurar que el contenedor está listo antes de inicializar
+            let attempts = 0;
+            const maxAttempts = 20; // 2 segundos máximo
+
+            const pollContainer = setInterval(() => {
                 const container = document.getElementById('cardPaymentBrick_container');
                 if (container) {
+                    clearInterval(pollContainer);
                     initializeCardPaymentBrick();
+                } else {
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollContainer);
+                        console.error('❌ Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
+                        showToast('Error cargando el formulario de pago. Por favor recarga la página.', 'error');
+                    }
                 }
-            }, 300);
-            return () => clearTimeout(timer);
+            }, 100);
+
+            return () => clearInterval(pollContainer);
         } else if (mpBrickController && (!isCheckoutView || !isMP)) {
             // Limpiar brick si se cambia de método de pago O de vista
             console.log('Sweep: Limpiando Brick por cambio de vista o método.');
@@ -6018,8 +6030,11 @@ function App() {
                                         <div className="space-y-5 relative z-10 animate-fade-up mt-4">
                                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest pl-2">Datos de Destino</h3>
                                             <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Dirección y Altura</label>
+                                                <label htmlFor="address" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Dirección y Altura</label>
                                                 <input
+                                                    id="address"
+                                                    name="address"
+                                                    autocomplete="street-address"
                                                     className={`w-full rounded-xl p-4 outline-none transition font-medium ${darkMode ? 'bg-slate-900 border border-slate-700 text-white placeholder-slate-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500' : 'bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500'}`}
                                                     placeholder="Ej: Av. Santa Fe 1234"
                                                     value={checkoutData.address || ''}
@@ -6028,8 +6043,11 @@ function App() {
                                             </div>
                                             <div className="grid grid-cols-2 gap-5">
                                                 <div>
-                                                    <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Ciudad</label>
+                                                    <label htmlFor="city" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Ciudad</label>
                                                     <input
+                                                        id="city"
+                                                        name="city"
+                                                        autocomplete="address-level2"
                                                         className={`w-full rounded-xl p-4 outline-none transition font-medium ${darkMode ? 'bg-slate-900 border border-slate-700 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`}
                                                         placeholder="Ej: Rosario"
                                                         value={checkoutData.city || ''}
@@ -6037,8 +6055,11 @@ function App() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Provincia</label>
+                                                    <label htmlFor="province" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Provincia</label>
                                                     <input
+                                                        id="province"
+                                                        name="province"
+                                                        autocomplete="address-level1"
                                                         className={`w-full rounded-xl p-4 outline-none transition font-medium ${darkMode ? 'bg-slate-900 border border-slate-700 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`}
                                                         placeholder="Ej: Santa Fe"
                                                         value={checkoutData.province || ''}
@@ -6047,8 +6068,11 @@ function App() {
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Código Postal</label>
+                                                <label htmlFor="zipCode" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Código Postal</label>
                                                 <input
+                                                    id="zipCode"
+                                                    name="zipCode"
+                                                    autocomplete="postal-code"
                                                     className={`w-full rounded-xl p-4 outline-none transition font-medium ${darkMode ? 'bg-slate-900 border border-slate-700 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`}
                                                     placeholder="Ej: 2000"
                                                     value={checkoutData.zipCode || ''}
