@@ -11673,15 +11673,14 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
 const SmoothScroll = () => {
     useEffect(() => {
         const lenis = new Lenis({
-            duration: 1.8,
-            easing: (t) => 1 - Math.pow(1 - t, 4),
+            duration: 1.5,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
-            wheelMultiplier: 0.8,
-            touchMultiplier: 1.5,
+            wheelMultiplier: 1,
+            touchMultiplier: 2,
             infinite: false,
-            lerp: 0.06,
         });
 
         function raf(time) {
