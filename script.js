@@ -7,7 +7,7 @@ import {
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, EyeOff, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
-    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload
+    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, BellOff, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -1616,6 +1616,21 @@ function App() {
         newPlan: null
     });
 
+
+    // --- NOTIFICACIONES PARA ADMINS ---
+    const [soundEnabled, setSoundEnabled] = useState(() => {
+        try {
+            const saved = localStorage.getItem('sustore_sound_enabled');
+            return saved !== null ? JSON.parse(saved) : false; // Default off por autoplay policy
+        } catch { return false; }
+    });
+    const prevOrdersCountRef = useRef(null);
+
+    // Persistir preferencia de sonido
+    useEffect(() => {
+        localStorage.setItem('sustore_sound_enabled', JSON.stringify(soundEnabled));
+    }, [soundEnabled]);
+
     // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
     const [mpBrickController, setMpBrickController] = useState(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
@@ -2073,7 +2088,29 @@ function App() {
             // Pedidos (Ordenados por fecha descendente)
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), snapshot => {
                 const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                setOrders(ordersData.sort((a, b) => new Date(b.date) - new Date(a.date)));
+                const sortedOrders = ordersData.sort((a, b) => new Date(b.date) - new Date(a.date));
+                setOrders(sortedOrders);
+
+                // --- SISTEMA DE NOTIFICACIONES DE NUEVOS PEDIDOS ---
+                // Verifica si es admin y si hay más pedidos que antes (ignora carga inicial)
+                if (isAdmin(currentUser?.email)) {
+                    const prevCount = prevOrdersCountRef.current;
+                    // Solo notificar si ya teníamos datos cargados (prevCount > 0 o initialized) y aumentó la cantidad
+                    if (prevCount !== null && sortedOrders.length > prevCount) {
+                        try {
+                            if (soundEnabled) {
+                                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Sonido "Ding" suave
+                                audio.volume = 0.6;
+                                audio.play().catch(e => console.log("Audio autoplay blocked", e));
+                                showToast("¡Nuevo Pedido Recibido! 🔔", "success");
+                            }
+                        } catch (e) {
+                            console.error("Error playing notification sound", e);
+                        }
+                    }
+                    // Actualizar referencia
+                    prevOrdersCountRef.current = sortedOrders.length;
+                }
             }),
 
             // Usuarios
@@ -6800,8 +6837,34 @@ function App() {
                                                     <h1 className="text-4xl font-black text-white neon-text">Panel de Control</h1>
                                                     <p className="text-slate-500 mt-2">Resumen administrativo y financiero.</p>
                                                 </div>
-                                                <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
-                                                    {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                <div className="flex items-center gap-3">
+                                                    {/* Botón Control Sonido */}
+                                                    <button
+                                                        onClick={() => {
+                                                            const newState = !soundEnabled;
+                                                            setSoundEnabled(newState);
+                                                            if (newState) {
+                                                                // Reproducir sonido de prueba al activar
+                                                                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                                                                audio.volume = 0.6;
+                                                                audio.play().catch(() => { });
+                                                                showToast("Sonido activado 🔔", "success");
+                                                            } else {
+                                                                showToast("Sonido desactivado 🔕", "info");
+                                                            }
+                                                        }}
+                                                        className={`px-4 py-2 rounded-lg text-xs font-bold font-mono border transition flex items-center gap-2 ${soundEnabled
+                                                            ? 'bg-green-900/20 text-green-400 border-green-900/50 hover:bg-green-900/30'
+                                                            : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-slate-300'
+                                                            }`}
+                                                    >
+                                                        {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                                                        {soundEnabled ? 'SONIDO ON' : 'SONIDO OFF'}
+                                                    </button>
+
+                                                    <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
+                                                        {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -11564,14 +11627,15 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
 const SmoothScroll = () => {
     useEffect(() => {
         const lenis = new Lenis({
-            duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            duration: 1.8,
+            easing: (t) => 1 - Math.pow(1 - t, 4),
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
-            wheelMultiplier: 1,
-            touchMultiplier: 2,
+            wheelMultiplier: 0.8,
+            touchMultiplier: 1.5,
             infinite: false,
+            lerp: 0.06,
         });
 
         function raf(time) {
