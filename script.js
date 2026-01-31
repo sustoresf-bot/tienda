@@ -6494,6 +6494,48 @@ function App() {
                                                         <span className="text-xs text-slate-500">Total Pedido</span>
                                                         <span className={`font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>${order.total.toLocaleString()}</span>
                                                     </div>
+
+                                                    {/* Botón de WhatsApp para pedidos */}
+                                                    <button
+                                                        onClick={() => {
+                                                            try {
+                                                                // 1. Obtener número de teléfono limpio
+                                                                let phone = settings?.whatsappLink || '';
+                                                                // Intentar extraer número de un link tipo wa.me o usar el string directo
+                                                                const match = phone.match(/\d+/g);
+                                                                let cleanPhone = match ? match.join('') : '';
+
+                                                                // Si no hay número en el link, intentar buscar en otros campos o usar un default (alerta)
+                                                                if (!cleanPhone && settings?.phone) {
+                                                                    const match2 = settings.phone.match(/\d+/g);
+                                                                    cleanPhone = match2 ? match2.join('') : '';
+                                                                }
+
+                                                                if (!cleanPhone || cleanPhone.length < 5) {
+                                                                    return showToast("El número de WhatsApp de la tienda no está configurado correctamente.", "error");
+                                                                }
+
+                                                                // Asegurar prefijo 54 (Argentina) si no lo tiene y parece ser un número local (ej: 10 dígitos sin 54)
+                                                                // O simplemente asegurar que empiece con 54 si el usuario lo pide estrictamente
+                                                                if (!cleanPhone.startsWith('54')) {
+                                                                    cleanPhone = '54' + cleanPhone;
+                                                                }
+
+                                                                // 2. Construir mensaje detallado
+                                                                const itemsList = order.items.map(i => `• ${i.quantity}x ${i.title} ($${Number(i.unit_price).toLocaleString()})`).join('\n');
+                                                                const msg = `Hola! Hice un pedido en *${settings?.storeName || 'la tienda'}*:\n\n${itemsList}\n\n*Total: $${order.total.toLocaleString()}*\nPedido: #${order.id.slice(0, 8)}\n\nMi nombre es ${currentUser?.name || ''}.`;
+
+                                                                // 3. Abrir WhatsApp
+                                                                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                                            } catch (err) {
+                                                                console.error(err);
+                                                                showToast("Error al abrir WhatsApp", "error");
+                                                            }
+                                                        }}
+                                                        className={`mt-3 w-full py-2 rounded-xl font-bold flex items-center justify-center gap-2 transition text-sm ${darkMode ? 'bg-green-900/20 text-green-400 hover:bg-green-900/40 border border-green-500/20' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                                                    >
+                                                        <MessageCircle className="w-4 h-4" /> Confirmar por WhatsApp
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
