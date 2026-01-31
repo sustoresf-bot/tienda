@@ -10621,18 +10621,19 @@ function App() {
                 }
             </main >
 
+
             {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
             {
                 view !== 'admin' && view !== 'login' && view !== 'register' && (
-                    <footer className="bg-[#050505] border-t border-slate-900 pt-16 pb-8 relative overflow-hidden">
+                    <footer className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-slate-50 border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}>
                         {/* Decoración de Fondo */}
-                        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-900/50 to-transparent"></div>
-                        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-900/5 rounded-full blur-[100px] pointer-events-none"></div>
+                        <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
+                        <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
 
                         <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
                             {/* Columna 1: Marca */}
                             <div className="md:col-span-2 space-y-6">
-                                <h2 className="text-3xl font-black text-white tracking-tighter italic">
+                                <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-slate-900'} tracking-tighter italic`}>
                                     {settingsLoaded ? (settings?.storeName || '') : ''}
                                     <span className="text-orange-500">{settings?.footerSuffix || '.SF'}</span>
                                 </h2>
@@ -10641,32 +10642,32 @@ function App() {
                                 </p>
                                 <div className="flex gap-3 pt-2 flex-wrap">
                                     {settings?.showInstagram !== false && settings?.instagramLink && (
-                                        <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-pink-400 hover:bg-pink-900/10 transition border border-slate-800 hover:border-pink-500/30">
+                                        <button onClick={() => window.open(settings?.instagramLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-pink-400 hover:bg-pink-900/10 hover:border-pink-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-pink-500 hover:bg-pink-50 hover:border-pink-300'}`}>
                                             <Instagram className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showWhatsapp === true && settings?.whatsappLink && (
-                                        <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-900/10 transition border border-slate-800 hover:border-green-500/30">
+                                        <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-green-400 hover:bg-green-900/10 hover:border-green-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-green-500 hover:bg-green-50 hover:border-green-300'}`}>
                                             <MessageCircle className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showFacebook && settings?.facebookLink && (
-                                        <button onClick={() => window.open(settings?.facebookLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-900/10 transition border border-slate-800 hover:border-blue-500/30">
+                                        <button onClick={() => window.open(settings?.facebookLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-blue-400 hover:bg-blue-900/10 hover:border-blue-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-blue-500 hover:bg-blue-50 hover:border-blue-300'}`}>
                                             <Facebook className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showTwitter && settings?.twitterLink && (
-                                        <button onClick={() => window.open(settings?.twitterLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-sky-900/10 transition border border-slate-800 hover:border-sky-500/30">
+                                        <button onClick={() => window.open(settings?.twitterLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-sky-400 hover:bg-sky-900/10 hover:border-sky-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-sky-500 hover:bg-sky-50 hover:border-sky-300'}`}>
                                             <Twitter className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showTiktok && settings?.tiktokLink && (
-                                        <button onClick={() => window.open(settings?.tiktokLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-900/10 transition border border-slate-800 hover:border-rose-500/30">
+                                        <button onClick={() => window.open(settings?.tiktokLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-rose-400 hover:bg-rose-900/10 hover:border-rose-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-300'}`}>
                                             <Music className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showYoutube && settings?.youtubeLink && (
-                                        <button onClick={() => window.open(settings?.youtubeLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/10 transition border border-slate-800 hover:border-red-500/30">
+                                        <button onClick={() => window.open(settings?.youtubeLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-red-400 hover:bg-red-900/10 hover:border-red-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-red-500 hover:bg-red-50 hover:border-red-300'}`}>
                                             <Youtube className="w-5 h-5" />
                                         </button>
                                     )}
@@ -10675,7 +10676,7 @@ function App() {
 
                             {/* Columna 2: Quick Links */}
                             <div className="space-y-6">
-                                <h3 className="text-white font-bold uppercase tracking-widest text-xs">Enlaces Rápidos</h3>
+                                <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>Enlaces Rápidos</h3>
                                 <ul className="space-y-3 text-sm text-slate-500 font-medium">
                                     <li>
                                         <button onClick={() => setView('store')} className="hover:text-orange-400 transition flex items-center gap-2 group">
@@ -10698,7 +10699,7 @@ function App() {
                             {/* Columna 3: Soporte */}
                             {settings?.showFooterContact !== false && (
                                 <div className="space-y-6">
-                                    <h3 className="text-white font-bold uppercase tracking-widest text-xs">
+                                    <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>
                                         {settings?.footerContactTitle || 'Contacto'}
                                     </h3>
                                     <p className="text-slate-500 text-sm leading-relaxed mb-4">
@@ -10715,7 +10716,7 @@ function App() {
                                                 window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${settings.storeEmail}`, '_blank');
                                             }
                                         }}
-                                        className="px-6 py-3 bg-orange-900/10 text-orange-400 rounded-xl text-sm font-bold border border-orange-500/20 hover:bg-orange-500 hover:text-white transition w-full md:w-auto"
+                                        className={`px-6 py-3 rounded-xl text-sm font-bold border transition w-full md:w-auto ${darkMode ? 'bg-orange-900/10 text-orange-400 border-orange-500/20 hover:bg-orange-500 hover:text-white' : 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-500 hover:text-white'}`}
                                     >
                                         {settings?.footerContactButtonText || 'Contactar Soporte'}
                                     </button>
@@ -10724,17 +10725,17 @@ function App() {
                         </div>
 
                         {/* Copyright Bar */}
-                        <div className="border-t border-slate-900 bg-[#020202]">
+                        <div className={`border-t ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-white'}`}>
                             <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <p className="text-slate-600 text-xs font-mono">
                                     © 2026 Sustore. Todos los derechos reservados.
                                 </p>
                                 <div className="flex gap-6">
                                     {settings?.showPrivacyPolicy !== false && (
-                                        <span onClick={() => setView('privacy')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Privacy Policy</span>
+                                        <span onClick={() => setView('privacy')} className={`text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline ${darkMode ? 'text-slate-700 decoration-slate-900' : 'text-slate-500 decoration-slate-200'} underline-offset-4`}>Privacy Policy</span>
                                     )}
                                     {settings?.showTermsOfService !== false && (
-                                        <span onClick={() => setView('terms')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Terms of Service</span>
+                                        <span onClick={() => setView('terms')} className={`text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline ${darkMode ? 'text-slate-700 decoration-slate-900' : 'text-slate-500 decoration-slate-200'} underline-offset-4`}>Terms of Service</span>
                                     )}
                                 </div>
                             </div>
