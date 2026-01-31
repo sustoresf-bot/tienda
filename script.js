@@ -5441,7 +5441,7 @@ function App() {
                     <div className={`fixed inset-0 backdrop-blur-sm transition-opacity ${darkMode ? 'bg-black/90' : 'bg-black/50'}`} onClick={() => setIsMenuOpen(false)}></div>
 
                     {/* Panel Lateral */}
-                    <div className={`relative w-72 sm:w-80 h-full p-6 sm:p-8 animate-fade-in-right flex flex-col shadow-2xl z-[10001] ${darkMode ? 'bg-[#0a0a0a] border-r border-slate-800' : 'bg-white border-r border-slate-200'}`}>
+                    <div className={`relative w-72 sm:w-80 h-full p-6 sm:p-8 animate-fade-in-right flex flex-col shadow-2xl z-[10001] ${darkMode ? 'bg-[#0a0a0a] border-r border-slate-800' : 'bg-white border-r border-slate-200'}`} data-lenis-prevent>
                         <div className={`flex justify-between items-center mb-8 sm:mb-10 border-b pb-4 sm:pb-6 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                             <h2 className={`text-2xl sm:text-3xl font-black tracking-tight drop-shadow-md ${darkMode ? 'text-white' : 'text-slate-900'}`}>MENÚ</h2>
                             <button onClick={() => setIsMenuOpen(false)} className={`p-2 sm:p-3 rounded-full transition border ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
@@ -5450,7 +5450,7 @@ function App() {
                         </div>
 
                         {/* Lista de Botones */}
-                        <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2" data-lenis-prevent>
+                        <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2">
                             <button onClick={() => { setView('store'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
                                 <Home className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> Inicio
                             </button>
@@ -6839,7 +6839,7 @@ function App() {
                                 )}
 
                                 {/* 7.1 Sidebar Admin */}
-                                <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ease-out ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:sticky md:top-0 md:h-screen shadow-2xl`}>
+                                <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ease-out ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:sticky md:top-0 md:h-screen shadow-2xl`} data-lenis-prevent>
                                     <div className="p-6 md:p-8 border-b border-slate-900 flex items-center justify-between">
                                         <div>
                                             <h2 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-3">
@@ -6859,7 +6859,7 @@ function App() {
                                         </button>
                                     </div>
 
-                                    <nav className="flex-1 p-3 md:p-4 space-y-1.5 md:space-y-2 overflow-y-auto custom-scrollbar" data-lenis-prevent>
+                                    <nav className="flex-1 p-3 md:p-4 space-y-1.5 md:space-y-2 overflow-y-auto custom-scrollbar">
                                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-1">Principal</p>
 
                                         <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'dashboard' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
@@ -10679,7 +10679,7 @@ function App() {
                                     {
                                         showSupplierModal && (
                                             <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in-scale">
-                                                <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+                                                <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]" data-lenis-prevent>
                                                     <div className="overflow-y-auto custom-scrollbar pr-2 pb-20">
                                                         <h3 className="text-2xl font-black text-white mb-6 sticky top-0 bg-[#0a0a0a] py-2 z-10">
                                                             {editingSupplierId ? 'Editar' : 'Nuevo'} Proveedor
@@ -11633,7 +11633,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
 
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in-scale p-2 sm:p-4 overflow-hidden">
-            <div className={`relative w-full h-full sm:h-auto sm:max-h-[95vh] sm:max-w-5xl sm:rounded-3xl border-0 sm:border shadow-2xl flex flex-col overflow-hidden ${darkMode ? 'bg-gradient-to-b from-[#0d0d0d] to-[#050505] border-slate-800/50' : 'bg-white border-slate-200'}`}>
+            <div className={`relative w-full h-full sm:h-auto sm:max-h-[95vh] sm:max-w-5xl sm:rounded-3xl border-0 sm:border shadow-2xl flex flex-col overflow-hidden ${darkMode ? 'bg-gradient-to-b from-[#0d0d0d] to-[#050505] border-slate-800/50' : 'bg-white border-slate-200'}`} data-lenis-prevent>
 
                 {/* Header */}
                 <div className={`flex justify-between items-center p-4 sm:p-6 border-b shrink-0 ${darkMode ? 'border-slate-800/50' : 'border-slate-100'}`}>
@@ -11649,7 +11649,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6" data-lenis-prevent>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                         {PLANS.map(plan => {
                             const isActive = activePlanId === plan.id;
