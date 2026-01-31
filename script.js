@@ -8347,11 +8347,11 @@ function App() {
                                                                 {/* Botón WhatsApp Cliente */}
                                                                 {o.customer.phone && o.customer.phone !== '-' && (
                                                                     <a
-                                                                        href={`https://wa.me/${o.customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`¡Hola ${o.customer.name}! 👋 Te escribimos desde ${settings?.storeName || 'nuestra tienda'} por tu pedido #${o.orderId}.`)}`}
+                                                                        href={'https://wa.me/' + o.customer.phone.replace(/\D/g, '') + '?text=' + encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido #' + o.orderId)}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/30"
-                                                                        title={`WhatsApp: ${o.customer.phone}`}
+                                                                        title={'WhatsApp: ' + o.customer.phone}
                                                                     >
                                                                         <MessageCircle className="w-5 h-5" />
                                                                     </a>
