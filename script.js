@@ -8347,7 +8347,7 @@ function App() {
                                                                 {/* Botón WhatsApp Cliente */}
                                                                 {o.customer.phone && o.customer.phone !== '-' && (
                                                                     <a
-                                                                        href={'https://wa.me/' + o.customer.phone.replace(/\D/g, '') + '?text=' + encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido #' + o.orderId)}
+                                                                        href={'https://wa.me/' + o.customer.phone.replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido #' + o.orderId)}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/30"
@@ -9852,7 +9852,7 @@ function App() {
                                                                                 className="input-cyber w-full p-3 text-sm font-mono"
                                                                                 placeholder="0000000000000000000000"
                                                                                 value={settings?.paymentTransfer?.cvuCbu || ''}
-                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, cvuCbu: e.target.value.replace(/\D/g, '') } })}
+                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, cvuCbu: e.target.value.replace(/[^0-9]/g, '') } })}
                                                                                 maxLength={22}
                                                                             />
                                                                         </div>
