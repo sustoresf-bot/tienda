@@ -61,11 +61,16 @@
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://esm.sh">
     <link rel="preconnect" href="https://www.gstatic.com">
+    <link rel="preconnect" href="https://unpkg.com">
 
     <!-- DNS Prefetch for CDNs -->
     <link rel="dns-prefetch" href="https://sdk.mercadopago.com">
-    <link rel="dns-prefetch" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
 
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" as="script" fetchpriority="high">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script" fetchpriority="high">
+    <link rel="preload" href="script.js" as="script" fetchpriority="high">
 
     <!-- Critical CSS inline for faster first paint -->
     <style>
@@ -81,6 +86,8 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .loading-spinner {
@@ -107,7 +114,7 @@
         }
     </style>
 
-    <!-- TailwindCSS -->
+    <!-- TailwindCSS - load immediately -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Import Map for ES Modules -->
@@ -124,13 +131,16 @@
     }
     </script>
 
-    <!-- Babel - defer loading to not block render -->
-    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" defer></script>
+    <!-- Babel - Load ASAP for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
 
     <!-- Main Stylesheet (non-blocking) -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="styles.css">
+    </noscript>
 
-    <!-- Mercado Pago SDK - defer loading -->
+    <!-- Mercado Pago SDK - defer loading (only needed at checkout) -->
     <script src="https://sdk.mercadopago.com/js/v2" defer></script>
 </head>
 
