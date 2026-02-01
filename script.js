@@ -7025,23 +7025,24 @@ function App() {
                                             )}
                                         </nav>
 
-                                        <div className="p-6 mt-auto border-t border-white/5 space-y-4">
+                                        <div className="p-6 mt-auto border-t border-white/5 space-y-4 bg-gradient-to-t from-black/50 to-transparent">
                                             {/* User Profile Hook */}
-                                            <div className="flex items-center gap-3 px-4 py-3 bg-white/5 rounded-2xl border border-white/5">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-pink-500 flex items-center justify-center text-white font-black text-xs shadow-lg">
+                                            <div className="flex items-center gap-3 px-4 py-3 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors group cursor-pointer relative overflow-hidden">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-pink-500 flex items-center justify-center text-white font-black text-xs shadow-lg ring-2 ring-white/10">
                                                     {currentUser?.name?.charAt(0) || 'A'}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-xs font-black text-white truncate">{currentUser?.name || 'Administrador'}</p>
-                                                    <p className="text-[10px] text-slate-500 truncate">{currentUser?.email}</p>
+                                                    <p className="text-[10px] text-slate-500 truncate font-mono">{currentUser?.email}</p>
                                                 </div>
-                                                <button onClick={() => auth.signOut()} className="text-slate-600 hover:text-white transition-colors">
+                                                <button onClick={() => auth.signOut()} className="text-slate-600 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-lg">
                                                     <LogOut className="w-4 h-4" />
                                                 </button>
                                             </div>
 
-                                            <button onClick={() => { setView('store'); setIsAdminMenuOpen(false); }} className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-[0_10px_20px_rgba(249,115,22,0.1)] flex items-center justify-center gap-2 group border border-orange-400/20 active:scale-95">
-                                                <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Ir a Tienda
+                                            <button onClick={() => { setView('store'); setIsAdminMenuOpen(false); }} className="w-full py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-[0_10px_20px_rgba(249,115,22,0.2)] flex items-center justify-center gap-2 group border border-orange-400/20 active:scale-95 hover:shadow-[0_15px_30px_rgba(249,115,22,0.3)]">
+                                                <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> IR A TIENDA
                                             </button>
 
                                             <button
@@ -7058,11 +7059,11 @@ function App() {
                                                     }
                                                 }}
                                                 className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all border ${soundEnabled
-                                                    ? 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.1)]'
-                                                    : 'bg-slate-800/50 text-slate-500 border-slate-700 hover:bg-slate-800 hover:text-slate-300'
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                                                    : 'bg-slate-800/30 text-slate-500 border-slate-700 hover:bg-slate-800/50 hover:text-slate-300'
                                                     }`}
                                             >
-                                                {soundEnabled ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+                                                {soundEnabled ? <Bell className="w-5 h-5 animate-pulse" /> : <BellOff className="w-5 h-5" />}
                                                 {soundEnabled ? 'ALERTAS ON' : 'ALERTAS OFF'}
                                             </button>
                                         </div>
@@ -7090,14 +7091,14 @@ function App() {
                                                     {/* Modales Admin Users */}
 
 
-                                                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-12">
+                                                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-12 relative z-20">
                                                         <div>
-                                                            <div className="flex items-center gap-3 text-orange-500 font-black text-xs uppercase tracking-[0.3em] mb-3">
-                                                                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                                                                Live Metrics
+                                                            <div className="flex items-center gap-3 text-orange-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4 bg-orange-500/5 px-4 py-2 rounded-full w-fit border border-orange-500/10">
+                                                                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
+                                                                Live Metrics • Apps v3.5
                                                             </div>
-                                                            <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter mb-4">
-                                                                Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-600">Control</span>
+                                                            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-4 drop-shadow-2xl">
+                                                                Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-200 to-orange-600 animate-gradient-x">Control</span>
                                                             </h1>
                                                             <p className="text-slate-400 font-medium max-w-md">Bienvenido de nuevo. Aquí tienes el rendimiento de tu tienda en tiempo real.</p>
                                                         </div>
@@ -7121,10 +7122,12 @@ function App() {
                                                         </div>
                                                     </div>
 
-                                                    {/* SECCIÓN 1: ANALÍTICA FINANCIERA (Lista Gráfica) */}
-                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                    {/* SECCIÓN 1: TARJETAS PRINCIPALES (PREMIUM) */}
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                                                         {/* INGRESOS BRUTOS */}
-                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-green-500/30 transition">
+                                                        <div className="bg-gradient-to-br from-[#0a0a0a] to-[#111] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/20 transition-all duration-500 shadow-2xl shadow-black/50">
+                                                            {/* Background Glow */}
+                                                            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-green-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-green-500/10 transition-colors duration-1000"></div>
                                                             <div className="flex justify-between items-center mb-6">
                                                                 <div>
                                                                     <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-1">Ingresos Brutos</p>
@@ -7162,7 +7165,9 @@ function App() {
                                                         </div>
 
                                                         {/* BENEFICIO NETO */}
-                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/30 transition">
+                                                        <div className="bg-gradient-to-br from-[#0a0a0a] to-[#111] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-blue-500/20 transition-all duration-500 shadow-2xl shadow-black/50">
+                                                            {/* Background Glow */}
+                                                            <div className={`absolute top-0 right-0 w-[300px] h-[300px] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 transition-colors duration-1000 ${dashboardMetrics.netIncome >= 0 ? 'bg-orange-500/5 group-hover:bg-orange-500/10' : 'bg-red-500/5 group-hover:bg-red-500/10'}`}></div>
                                                             <div className="flex justify-between items-center mb-6">
                                                                 <div>
                                                                     <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-1">Beneficio Neto (Estimado)</p>
@@ -7206,49 +7211,65 @@ function App() {
                                                         </div>
                                                     </div>
 
-                                                    {/* SECCIÓN 2: KPIs RÁPIDOS */}
+                                                    {/* SECCIÓN 2: KPIs RÁPIDOS (PREMIUM) */}
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                        <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
-                                                            <p className="text-slate-500 text-[10px] uppercase font-bold text-center">Usuarios Totales</p>
-                                                            <p className="text-white font-black text-2xl text-center mt-1">{dashboardMetrics.totalUsers}</p>
+                                                        <div className="bg-gradient-to-br from-slate-900/50 to-slate-900/80 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors group">
+                                                            <div className="flex justify-center mb-3 text-slate-600 group-hover:text-blue-400 transition-colors">
+                                                                <Users className="w-6 h-6" />
+                                                            </div>
+                                                            <p className="text-slate-500 text-[10px] uppercase font-bold text-center tracking-widest">Usuarios</p>
+                                                            <p className="text-white font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300">{dashboardMetrics.totalUsers}</p>
                                                         </div>
-                                                        <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
-                                                            <p className="text-slate-500 text-[10px] uppercase font-bold text-center">Pedidos Totales</p>
-                                                            <p className="text-white font-black text-2xl text-center mt-1">{dashboardMetrics.totalOrders}</p>
+                                                        <div className="bg-gradient-to-br from-slate-900/50 to-slate-900/80 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors group">
+                                                            <div className="flex justify-center mb-3 text-slate-600 group-hover:text-purple-400 transition-colors">
+                                                                <ShoppingBag className="w-6 h-6" />
+                                                            </div>
+                                                            <p className="text-slate-500 text-[10px] uppercase font-bold text-center tracking-widest">Pedidos</p>
+                                                            <p className="text-white font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300">{dashboardMetrics.totalOrders}</p>
                                                         </div>
-                                                        <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
-                                                            <p className="text-slate-500 text-[10px] uppercase font-bold text-center">Ticket Promedio</p>
-                                                            <p className="text-white font-black text-2xl text-center mt-1">
+                                                        <div className="bg-gradient-to-br from-slate-900/50 to-slate-900/80 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors group">
+                                                            <div className="flex justify-center mb-3 text-slate-600 group-hover:text-green-400 transition-colors">
+                                                                <DollarSign className="w-6 h-6" />
+                                                            </div>
+                                                            <p className="text-slate-500 text-[10px] uppercase font-bold text-center tracking-widest">Ticket Promedio</p>
+                                                            <p className="text-white font-black text-2xl text-center mt-2 group-hover:scale-110 transition-transform duration-300 font-mono text-green-400">
                                                                 ${dashboardMetrics.totalOrders > 0 ? Math.round(dashboardMetrics.revenue / dashboardMetrics.totalOrders).toLocaleString() : 0}
                                                             </p>
                                                         </div>
-                                                        <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
-                                                            <p className="text-slate-500 text-[10px] uppercase font-bold text-center">Stock Bajo</p>
-                                                            <p className={`font-black text-2xl text-center mt-1 ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                                        <div className="bg-gradient-to-br from-slate-900/50 to-slate-900/80 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors group">
+                                                            <div className={`flex justify-center mb-3 transition-colors ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500 animate-pulse' : 'text-slate-600 group-hover:text-white'}`}>
+                                                                <AlertCircle className="w-6 h-6" />
+                                                            </div>
+                                                            <p className="text-slate-500 text-[10px] uppercase font-bold text-center tracking-widest">Stock Bajo</p>
+                                                            <p className={`font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300 ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500' : 'text-white'}`}>
                                                                 {dashboardMetrics.lowStockProducts.length}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    {/* SECCIÓN 2.5: MEJORES Y PEORES (NUEVO) */}
+                                                    {/* SECCIÓN 2.5: MEJORES Y PEORES (PREMIUM) */}
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                         {/* BEST SELLER */}
-                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-yellow-500/30 transition">
-                                                            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                                                        <div className="bg-gradient-to-br from-[#0a0a0a] to-[#161618] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500 shadow-xl">
+                                                            <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                                            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700">
                                                                 <Star className="w-32 h-32 text-yellow-500" />
                                                             </div>
-                                                            <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-4 flex items-center gap-2">
-                                                                <Star className="w-4 h-4 text-yellow-500" /> Producto Estrella
+                                                            <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-6 flex items-center gap-2 relative z-10">
+                                                                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" /> Producto Estrella
                                                             </p>
                                                             {dashboardMetrics.starProduct ? (
-                                                                <div className="flex items-center gap-6 relative z-10">
-                                                                    <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg flex-shrink-0">
+                                                                <div className="flex items-center gap-8 relative z-10">
+                                                                    <div className="w-28 h-28 bg-white rounded-2xl p-2 shadow-2xl flex-shrink-0 rotate-3 group-hover:rotate-0 transition-transform duration-500">
                                                                         <img src={dashboardMetrics.starProduct.image} className="w-full h-full object-contain" />
                                                                     </div>
                                                                     <div>
-                                                                        <h3 className="text-xl font-black text-white leading-tight mb-1">{dashboardMetrics.starProduct.name}</h3>
-                                                                        <p className="text-yellow-400 font-bold text-lg">{dashboardMetrics.starProduct.sales} Und. vendidas</p>
-                                                                        <p className="text-slate-500 text-xs mt-1">Stock actual: {dashboardMetrics.starProduct.stock}</p>
+                                                                        <h3 className="text-2xl font-black text-white leading-none mb-2">{dashboardMetrics.starProduct.name}</h3>
+                                                                        <div className="flex items-baseline gap-2">
+                                                                            <p className="text-yellow-400 font-black text-3xl">{dashboardMetrics.starProduct.sales}</p>
+                                                                            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Unidades</p>
+                                                                        </div>
+                                                                        <p className="text-slate-500 text-xs mt-2 bg-white/5 py-1 px-3 rounded-full w-fit">Stock disponible: {dashboardMetrics.starProduct.stock}</p>
                                                                     </div>
                                                                 </div>
                                                             ) : (
@@ -7257,24 +7278,29 @@ function App() {
                                                         </div>
 
                                                         {/* WORST SELLER */}
-                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-slate-600 transition">
-                                                            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                                                                <AlertCircle className="w-32 h-32 text-slate-500" />
+                                                        <div className="bg-gradient-to-br from-[#0a0a0a] to-[#161618] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-slate-500/30 transition-all duration-500 shadow-xl">
+                                                            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                                                                <TrendingDown className="w-32 h-32 text-slate-500" />
                                                             </div>
-                                                            <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-4 flex items-center gap-2">
+                                                            <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-6 flex items-center gap-2 relative z-10">
                                                                 <TrendingDown className="w-4 h-4 text-slate-500" /> Menos Vendido (En Stock)
                                                             </p>
                                                             {dashboardMetrics.leastSoldProduct ? (
-                                                                <div className="flex items-center gap-6 relative z-10">
-                                                                    <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg grayscale flex-shrink-0">
+                                                                <div className="flex items-center gap-8 relative z-10">
+                                                                    <div className="w-28 h-28 bg-white rounded-2xl p-2 shadow-2xl grayscale flex-shrink-0 -rotate-3 group-hover:rotate-0 transition-transform duration-500">
                                                                         <img src={dashboardMetrics.leastSoldProduct.image} className="w-full h-full object-contain" />
                                                                     </div>
                                                                     <div>
-                                                                        <h3 className="text-xl font-black text-white leading-tight mb-1">{dashboardMetrics.leastSoldProduct.name}</h3>
-                                                                        <p className="text-slate-400 font-bold text-lg">
-                                                                            {dashboardMetrics.salesCount[dashboardMetrics.leastSoldProduct.id] || 0} Und. vendidas
+                                                                        <h3 className="text-2xl font-black text-white leading-none mb-2">{dashboardMetrics.leastSoldProduct.name}</h3>
+                                                                        <div className="flex items-baseline gap-2">
+                                                                            <p className="text-slate-200 font-black text-3xl">
+                                                                                {dashboardMetrics.salesCount[dashboardMetrics.leastSoldProduct.id] || 0}
+                                                                            </p>
+                                                                            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Unidades</p>
+                                                                        </div>
+                                                                        <p className="text-slate-500 text-xs mt-2 bg-white/5 py-1 px-3 rounded-full w-fit flex items-center gap-2">
+                                                                            <RefreshCw className="w-3 h-3" /> Sugerencia: Oferta Flash
                                                                         </p>
-                                                                        <p className="text-slate-500 text-xs mt-1">Hay que rotar este stock.</p>
                                                                     </div>
                                                                 </div>
                                                             ) : (
