@@ -1519,19 +1519,19 @@ function App() {
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [showCouponModal, setShowCouponModal] = useState(false);
 
-    // Auto-corrección de método de pago al cambiar envío
-    useEffect(() => {
-        if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
-            showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
-            // Cambiar a otro método válido automáticamente
-            const hasTransfer = settings?.paymentTransfer?.enabled;
-            const hasCard = settings?.paymentMercadoPago?.enabled;
-            setCheckoutData(prev => ({
-                ...prev,
-                paymentChoice: hasTransfer ? 'Transferencia' : (hasCard ? 'Tarjeta' : '')
-            }));
-        }
-    }, [checkoutData.shippingMethod, settings]);
+    // TODO: ESTE useEffect SERÁ MOVIDO - Auto-corrección de método de pago al cambiar envío
+    // useEffect(() => {
+    //     if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
+    //         showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
+    //         // Cambiar a otro método válido automáticamente
+    //         const hasTransfer = settings?.paymentTransfer?.enabled;
+    //         const hasCard = settings?.paymentMercadoPago?.enabled;
+    //         setCheckoutData(prev => ({
+    //             ...prev,
+    //             paymentChoice: hasTransfer ? 'Transferencia' : (hasCard ? 'Tarjeta' : '')
+    //         }));
+    //     }
+    // }, [checkoutData.shippingMethod, settings]);
 
     // --- ESTADOS DE ADMINISTRACIÓN (DETALLADOS) ---
 
@@ -1641,57 +1641,67 @@ function App() {
     });
     const prevOrdersCountRef = useRef(null);
 
-    // Persistir preferencia de sonido
-    useEffect(() => {
-        localStorage.setItem('sustore_sound_enabled', JSON.stringify(soundEnabled));
-    }, [soundEnabled]);
+    // TODO: ESTE useEffect SERÁ MOVIDO - Persistir preferencia de sonido
+    // useEffect(() => {
+    //     localStorage.setItem('sustore_sound_enabled', JSON.stringify(soundEnabled));
+    // }, [soundEnabled]);
 
-    // Actualizar pedidos vistos al entrar a la pestaña 'orders'
-    useEffect(() => {
-        if (view === 'admin' && adminTab === 'orders') {
-            const currentTotal = orders.length; // orders viene del hook global
-            if (currentTotal > 0) {
-                localStorage.setItem('sustore_last_viewed_orders', currentTotal.toString());
-            }
-        }
-    }, [view, adminTab, orders.length]);
+    // TODO: ESTE useEffect SERÁ MOVIDO - Actualizar pedidos vistos al entrar a la pestaña 'orders'
+    // useEffect(() => {
+    //     if (view === 'admin' && adminTab === 'orders') {
+    //         const currentTotal = orders.length; // orders viene del hook global
+    //         if (currentTotal > 0) {
+    //             localStorage.setItem('sustore_last_viewed_orders', currentTotal.toString());
+    //         }
+    //     }
+    // }, [view, adminTab, orders.length]);
 
     // Ref para evitar notificaciones repetidas en la misma sesión/batch
     const lastNotifiedCountRef = useRef(0);
 
-    // --- EFECTO DE SONIDO (SEPARADO PARA EVITAR STALE CLOSURES) ---
-    useEffect(() => {
-        if (!isAdmin(currentUser?.email)) return;
-
-        const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
-        const currentCount = orders.length;
-
-        // Si tenemos más pedidos de los que el admin vio por última vez
-        if (currentCount > lastViewedCount) {
-
-            // Si estamos en la pestaña orders, marcamos como visto automáticamente
-            if (view === 'admin' && adminTab === 'orders') {
-                localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
-                // También actualizamos el ref para que no suene si salimos y volvemos rápido
-                lastNotifiedCountRef.current = currentCount;
-            }
-            // Si NO estamos en orders, y no hemos notificado ya por este batch
-            else if (soundEnabled && currentCount > lastNotifiedCountRef.current) {
-                try {
-                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                    audio.volume = 0.6;
-                    audio.play().catch(e => console.log("Audio autoplay blocked", e));
-                    showToast(`¡Nuevo Pedido Recibido! (${currentCount - lastViewedCount}) 🔔`, "success");
-
-                    // Marcar que ya notificamos para este conteo
-                    lastNotifiedCountRef.current = currentCount;
-                } catch (e) {
-                    console.error("Notification Error", e);
-                }
-            }
-        }
-    }, [orders, soundEnabled, adminTab, view, currentUser]);
-
+    // TODO: ESTE useEffect SERÁ MOVIDO - EFECTO DE SONIDO (SEPARADO PARA EVITAR STALE CLOSURES)
+    // useEffect(() => {
+    //     if (!isAdmin(currentUser?.email)) return;
+    //
+    //     const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
+    //     const currentCount = orders.length;
+    //
+    //     // Si tenemos más pedidos de los que el admin vio por última vez
+    //     if (currentCount > lastViewedCount) {
+    //
+    //         // Si estamos en la pestaña orders, marcamos como visto automáticamente
+    //         if (view === 'admin' && adminTab === 'orders') {
+    //             localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
+    //             // También actualizamos el ref para que no suene si salimos y volvemos rápido
+    //             lastNotifiedCountRef.current = currentCount;
+    //         }
+    //         // Si NO estamos en orders, y no hemos notificado ya por este batch
+    //         else if (soundEnabled && currentCount > lastNotifiedCountRef.current) {
+    //             try {
+    //                 const audio = new Audio('/notification.mp3');
+    //                 audio.volume = 0.4;
+    //                 audio.play().catch(() => { });
+    //
+    //                 // Mostrar Toast de Notificación
+    //                 const newOrdersCount = currentCount - lastViewedCount;
+    //                 showToast(
+    //                     `🔔 ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`,
+    //                     'info'
+    //                 );
+    //
+    //                 // Actualizar el contador de notificados para evitar repetir
+    //                 lastNotifiedCountRef.current = currentCount;
+    //             } catch (e) {
+    //                 console.error('Error playing notification sound:', e);
+    //             }
+    //         }
+    //     }
+    //     // Si el contador bajó (ej: pedido eliminado), resetear el ref para sincronizarlo
+    //     else if (currentCount < lastViewedCount) {
+    //         localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
+    //         lastNotifiedCountRef.current = currentCount;
+    //     }
+    // }, [orders, view, adminTab, soundEnabled, currentUser]);
     // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
     const [mpBrickController, setMpBrickController] = useState(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
