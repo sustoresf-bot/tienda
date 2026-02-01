@@ -7861,9 +7861,8 @@ function App() {
                                                                 const team = settings?.team || [];
                                                                 // Calcular Total Invertido por Miembro desde la colección 'investments'
                                                                 const memberInvestments = team.map(member => {
-                                                                    const totalInv = investments
-                                                                        .filter(inv => inv.investor === member.name || inv.investor === member.email) // Match by Name or Email
-                                                                        .reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0);
+                                                                    // Use manual investment value from settings
+                                                                    const totalInv = Number(member.investment) || 0;
                                                                     return { ...member, totalInv };
                                                                 });
 
@@ -11054,10 +11053,18 @@ function App() {
                                                                                     </select>
                                                                                 </div>
                                                                                 <div>
-                                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Total Invertido</label>
-                                                                                    <div className="input-cyber w-full p-2 text-sm bg-slate-900/50 text-slate-400 flex items-center cursor-not-allowed">
-                                                                                        $ {investments.filter(inv => inv.investor === member.name || inv.investor === member.email).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toLocaleString()}
-                                                                                    </div>
+                                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Total Invertido ($)</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        className="input-cyber w-full p-2 text-sm"
+                                                                                        value={member.investment || 0}
+                                                                                        onChange={e => {
+                                                                                            const updated = [...(settings?.team || [])];
+                                                                                            updated[idx] = { ...updated[idx], investment: Number(e.target.value) };
+                                                                                            setSettings({ ...settings, team: updated });
+                                                                                        }}
+                                                                                        placeholder="0"
+                                                                                    />
                                                                                 </div>
                                                                             </div>
                                                                             {member.email !== SUPER_ADMIN_EMAIL && (
@@ -11084,7 +11091,7 @@ function App() {
                                                     )}
 
                                                     {/* Save Button */}
-                                                    <div className="fixed bottom-8 right-8 z-50">
+                                                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
                                                         <button
                                                             onClick={async () => {
                                                                 try {
