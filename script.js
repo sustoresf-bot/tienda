@@ -2474,8 +2474,121 @@ function App() {
         return () => clearTimeout(autoSaveTimer);
     }, [settings, settingsLoaded]);
 
+    // --- HOOKS ADICIONALES (Notificaciones, Hero, Mercado Pago) ---
 
+    // 1. Auto-corrección de método de pago
+    useEffect(() => {
+        if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
+            showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
+            const hasTransfer = settings?.paymentTransfer?.enabled;
+            const hasCard = settings?.paymentMercadoPago?.enabled;
+            setCheckoutData(prev => ({
+                ...prev,
+                paymentChoice: hasTransfer ? 'Transferencia' : (hasCard ? 'Tarjeta' : '')
+            }));
+        }
+    }, [checkoutData.shippingMethod, settings]);
 
+    // 2. Persistir preferencia de sonido
+    useEffect(() => {
+        localStorage.setItem('sustore_sound_enabled', JSON.stringify(soundEnabled));
+    }, [soundEnabled]);
+
+    // 3. Actualizar pedidos vistos
+    useEffect(() => {
+        if (view === 'admin' && adminTab === 'orders') {
+            const currentTotal = orders.length;
+            if (currentTotal > 0) {
+                localStorage.setItem('sustore_last_viewed_orders', currentTotal.toString());
+            }
+        }
+    }, [view, adminTab, orders.length]);
+
+    // 4. Efecto de Notificaciones y Sonido
+    useEffect(() => {
+        if (!isAdmin(currentUser?.email)) return;
+
+        const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
+        const currentCount = orders.length;
+
+        if (currentCount > lastViewedCount) {
+            if (view === 'admin' && adminTab === 'orders') {
+                localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
+                lastNotifiedCountRef.current = currentCount;
+            }
+            else if (soundEnabled && currentCount > lastNotifiedCountRef.current) {
+                try {
+                    const audio = new Audio('/notification.mp3');
+                    audio.volume = 0.4;
+                    audio.play().catch(() => { });
+                    const newOrdersCount = currentCount - lastViewedCount;
+                    showToast(`🔔 ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`, 'info');
+                    lastNotifiedCountRef.current = currentCount;
+                } catch (e) {
+                    console.error('Error playing notification sound:', e);
+                }
+            }
+        } else if (currentCount < lastViewedCount) {
+            localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
+            lastNotifiedCountRef.current = currentCount;
+        }
+    }, [orders, view, adminTab, soundEnabled, currentUser]);
+
+    // 5. Rotación Automática Carrusel Hero
+    useEffect(() => {
+        const heroImages = settings?.heroImages?.length ? settings.heroImages :
+            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
+        const hasMultipleImages = heroImages.length > 1;
+
+        if (!hasMultipleImages) return;
+
+        const interval = setInterval(() => {
+            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
+        }, settings?.heroCarouselInterval || 5000);
+
+        return () => clearInterval(interval);
+    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
+
+    // 6. Inicialización Mercado Pago Brick
+    useEffect(() => {
+        const isCheckoutView = view === 'checkout';
+        const isMP = checkoutData.paymentChoice === 'Tarjeta';
+
+        if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
+            if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
+                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
+                setView('profile');
+                return;
+            }
+
+            let attempts = 0;
+            const maxAttempts = 20;
+
+            const pollContainer = setInterval(() => {
+                const container = document.getElementById('cardPaymentBrick_container');
+                if (container) {
+                    clearInterval(pollContainer);
+                    initializeCardPaymentBrick();
+                } else {
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollContainer);
+                        console.error('❌ Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
+                        showToast('Error cargando el formulario de pago. Por favor recarga la página.', 'error');
+                    }
+                }
+            }, 100);
+
+            return () => clearInterval(pollContainer);
+        } else if (mpBrickController && (!isCheckoutView || !isMP)) {
+            console.log('Sweep: Limpiando Brick por cambio de vista o método.');
+            try {
+                mpBrickController.unmount();
+            } catch (e) { }
+            setMpBrickController(null);
+            isInitializingBrick.current = false;
+        }
+    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
 
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
@@ -3448,122 +3561,6 @@ function App() {
     };
 
 
-    // --- EFECTOS CONSOLIDADOS (TOP LEVEL) ---
-    /*
-    // 1. Auto-corrección de método de pago
-    useEffect(() => {
-        if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
-            showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
-            const hasTransfer = settings?.paymentTransfer?.enabled;
-            const hasCard = settings?.paymentMercadoPago?.enabled;
-            setCheckoutData(prev => ({
-                ...prev,
-                paymentChoice: hasTransfer ? 'Transferencia' : (hasCard ? 'Tarjeta' : '')
-            }));
-        }
-    }, [checkoutData.shippingMethod, settings]);
-
-    // 2. Persistir preferencia de sonido
-    useEffect(() => {
-        localStorage.setItem('sustore_sound_enabled', JSON.stringify(soundEnabled));
-    }, [soundEnabled]);
-
-    // 3. Actualizar pedidos vistos
-    useEffect(() => {
-        if (view === 'admin' && adminTab === 'orders') {
-            const currentTotal = orders.length; 
-            if (currentTotal > 0) {
-                localStorage.setItem('sustore_last_viewed_orders', currentTotal.toString());
-            }
-        }
-    }, [view, adminTab, orders.length]);
-
-    // 4. Efecto de Notificaciones y Sonido
-    useEffect(() => {
-        if (!isAdmin(currentUser?.email)) return;
-
-        const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
-        const currentCount = orders.length;
-
-        if (currentCount > lastViewedCount) {
-            if (view === 'admin' && adminTab === 'orders') {
-                localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
-                lastNotifiedCountRef.current = currentCount;
-            }
-            else if (soundEnabled && currentCount > lastNotifiedCountRef.current) {
-                try {
-                    const audio = new Audio('/notification.mp3');
-                    audio.volume = 0.4;
-                    audio.play().catch(() => { });
-                    const newOrdersCount = currentCount - lastViewedCount;
-                    showToast(`🔔 ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`, 'info');
-                    lastNotifiedCountRef.current = currentCount;
-                } catch (e) {
-                    console.error('Error playing notification sound:', e);
-                }
-            }
-        } else if (currentCount < lastViewedCount) {
-             localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
-             lastNotifiedCountRef.current = currentCount;
-        }
-    }, [orders, view, adminTab, soundEnabled, currentUser]);
-
-    // 5. Rotación Automática Carrusel Hero
-    useEffect(() => {
-        const heroImages = settings?.heroImages?.length ? settings.heroImages :
-            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
-        const hasMultipleImages = heroImages.length > 1;
-
-        if (!hasMultipleImages) return;
-
-        const interval = setInterval(() => {
-            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
-        }, settings?.heroCarouselInterval || 5000);
-
-        return () => clearInterval(interval);
-    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
-
-    // 6. Inicialización Mercado Pago Brick
-    useEffect(() => {
-        const isCheckoutView = view === 'checkout';
-        const isMP = checkoutData.paymentChoice === 'Tarjeta';
-
-        if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
-            if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
-                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
-                setView('profile');
-                return;
-            }
-
-            let attempts = 0;
-            const maxAttempts = 20;
-
-            const pollContainer = setInterval(() => {
-                const container = document.getElementById('cardPaymentBrick_container');
-                if (container) {
-                    clearInterval(pollContainer);
-                    initializeCardPaymentBrick();
-                } else {
-                    attempts++;
-                    if (attempts >= maxAttempts) {
-                        clearInterval(pollContainer);
-                        console.error('❌ Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
-                        showToast('Error cargando el formulario de pago. Por favor recarga la página.', 'error');
-                    }
-                }
-            }, 100);
-
-            return () => clearInterval(pollContainer);
-        } else if (mpBrickController && (!isCheckoutView || !isMP)) {
-            console.log('Sweep: Limpiando Brick por cambio de vista o método.');
-            try {
-                mpBrickController.unmount();
-            } catch (e) { }
-            setMpBrickController(null);
-            isInitializingBrick.current = false;
-        }
-    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
-    */
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
