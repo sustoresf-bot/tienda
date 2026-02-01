@@ -319,7 +319,8 @@ const defaultSettings = {
 
     // --- Imágenes ---
     logoUrl: "",
-    heroUrl: "",
+    heroImages: [], // Array de { url, linkedProductId?, linkedPromoId? }
+    heroCarouselInterval: 5000, // Intervalo en ms para rotación del carrusel
 
     // --- Configuración de Tienda ---
     markupPercentage: 0,
@@ -1294,6 +1295,7 @@ function App() {
 
     const [settings, setSettings] = useState(defaultSettings);
     const [settingsLoaded, setSettingsLoaded] = useState(false); // Indica si los settings ya se cargaron de Firebase
+    const [currentHeroSlide, setCurrentHeroSlide] = useState(0); // Estado para el carrusel del hero
 
     // Estados de Interfaz de Usuario
     const [searchQuery, setSearchQuery] = useState('');
@@ -2492,7 +2494,7 @@ function App() {
         }
 
         // 8. Open Graph Tags
-        const ogImage = settings.seoImage || settings.logoUrl || settings.heroUrl || '';
+        const ogImage = settings.seoImage || settings.logoUrl || (settings.heroImages?.[0]?.url) || '';
         updateMetaTagById('og-title', pageTitle);
         updateMetaTagById('og-description', description);
         updateMetaTagById('og-site-name', settings.storeName || 'Tienda Online');
@@ -5563,64 +5565,120 @@ function App() {
                                 </div>
                             )}
 
-                            {/* Banner Hero */}
-                            <div className={`relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-colors duration-500 ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
-                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
-                                {/* Imagen de fondo - Solo mostrar cuando settings están cargados */}
-                                {!settingsLoaded ? (
-                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
-                                ) : settings?.heroUrl ? (
-                                    <img src={settings.heroUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" />
-                                ) : (
-                                    // Fallback Hero Background si no hay URL configurada
-                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40 opacity-60">
-                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                                    </div>
-                                )}
 
-                                {/* Overlay de Texto */}
-                                <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 bg-gradient-to-t md:bg-gradient-to-r transition-colors duration-500 ${darkMode ? 'from-[#050505] via-[#050505]/60 to-transparent' : 'from-white via-white/50 to-transparent'}`}>
-                                    <div className="max-w-2xl animate-fade-up">
-                                        {/* Skeleton/Loading mientras no se cargan los settings */}
+                            {/* Banner Hero - Carrusel */}
+                            {(() => {
+                                // Compatibilidad: usar heroImages o fallback a heroUrl
+                                const heroImages = settings?.heroImages?.length ? settings.heroImages :
+                                    (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
+                                const hasMultipleImages = heroImages.length > 1;
+
+                                // Effect para rotación automática del carrusel
+                                React.useEffect(() => {
+                                    if (!hasMultipleImages) return;
+                                    const interval = setInterval(() => {
+                                        setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
+                                    }, settings?.heroCarouselInterval || 5000);
+                                    return () => clearInterval(interval);
+                                }, [heroImages.length, settings?.heroCarouselInterval, hasMultipleImages]);
+
+                                // Handler para click en imagen (ir a producto/promo)
+                                const handleHeroClick = (image) => {
+                                    if (image?.linkedProductId) {
+                                        const product = products.find(p => p.id === image.linkedProductId);
+                                        if (product) setSelectedProduct(product);
+                                    } else if (image?.linkedPromoId) {
+                                        setSelectedCategory('Promos');
+                                    }
+                                };
+
+                                return (
+                                    <div className={`relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-colors duration-500 ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
+
+                                        {/* Imágenes del Carrusel */}
                                         {!settingsLoaded ? (
-                                            <>
-                                                <div className="h-6 w-32 bg-slate-700/50 rounded-md mb-4 animate-pulse"></div>
-                                                <div className="h-12 md:h-16 w-64 md:w-80 bg-slate-700/50 rounded-lg mb-2 animate-pulse"></div>
-                                                <div className="h-12 md:h-16 w-48 md:w-64 bg-slate-700/50 rounded-lg mb-4 animate-pulse"></div>
-                                                <div className="h-4 w-72 bg-slate-700/50 rounded mb-2 animate-pulse"></div>
-                                                <div className="h-4 w-56 bg-slate-700/50 rounded mb-6 animate-pulse"></div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="h-12 w-40 bg-slate-700/50 rounded-xl animate-pulse"></div>
-                                                    <div className="h-10 w-24 bg-slate-700/50 rounded-xl animate-pulse"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
+                                        ) : heroImages.length > 0 ? (
+                                            heroImages.map((image, index) => (
+                                                <div
+                                                    key={index}
+                                                    onClick={() => handleHeroClick(image)}
+                                                    className={`absolute inset-0 transition-opacity duration-700 ${image?.linkedProductId || image?.linkedPromoId ? 'cursor-pointer' : ''} ${currentHeroSlide === index ? 'opacity-100 z-[1]' : 'opacity-0 z-0'}`}
+                                                >
+                                                    <img
+                                                        src={image.url}
+                                                        className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105"
+                                                        alt={`Hero ${index + 1}`}
+                                                    />
                                                 </div>
-                                            </>
+                                            ))
                                         ) : (
-                                            <>
-                                                <span className="bg-orange-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
-                                                    {settings?.heroBadge || ''}
-                                                </span>
-                                                <h1 className={`text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.9] drop-shadow-2xl mb-4 transition-colors duration-300 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                                                    {settings?.heroTitle1 || ''} <br />
-                                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-blue-600">
-                                                        {settings?.heroTitle2 || ''}
-                                                    </span>
-                                                </h1>
-                                                <p className={`text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium transition-colors ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                    {settings?.heroSubtitle || ''}
-                                                </p>
-                                                <div className="flex items-center gap-4">
-                                                    <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className={`px-8 py-4 font-black rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn ${darkMode ? 'bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.1)]' : 'bg-slate-900 text-white shadow-xl hover:bg-slate-800'}`}>
-                                                        VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
-                                                    </button>
-                                                    <button onClick={() => setView('guide')} className={`px-6 py-2.5 backdrop-blur-md border rounded-xl flex items-center gap-2 transition font-bold text-xs group ${darkMode ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'}`}>
-                                                        <Info className="w-4 h-4 text-orange-400" /> Ayuda
-                                                    </button>
-                                                </div>
-                                            </>
+                                            // Fallback Hero Background si no hay imágenes
+                                            <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40 opacity-60">
+                                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                                            </div>
+                                        )}
+
+                                        {/* Overlay de Texto - Solo en primera imagen (slide 0) */}
+                                        <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 bg-gradient-to-t md:bg-gradient-to-r transition-all duration-500 ${darkMode ? 'from-[#050505] via-[#050505]/60 to-transparent' : 'from-white via-white/50 to-transparent'} ${currentHeroSlide === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                                            <div className="max-w-2xl animate-fade-up">
+                                                {!settingsLoaded ? (
+                                                    <>
+                                                        <div className="h-6 w-32 bg-slate-700/50 rounded-md mb-4 animate-pulse"></div>
+                                                        <div className="h-12 md:h-16 w-64 md:w-80 bg-slate-700/50 rounded-lg mb-2 animate-pulse"></div>
+                                                        <div className="h-12 md:h-16 w-48 md:w-64 bg-slate-700/50 rounded-lg mb-4 animate-pulse"></div>
+                                                        <div className="h-4 w-72 bg-slate-700/50 rounded mb-2 animate-pulse"></div>
+                                                        <div className="h-4 w-56 bg-slate-700/50 rounded mb-6 animate-pulse"></div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="h-12 w-40 bg-slate-700/50 rounded-xl animate-pulse"></div>
+                                                            <div className="h-10 w-24 bg-slate-700/50 rounded-xl animate-pulse"></div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="bg-orange-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
+                                                            {settings?.heroBadge || ''}
+                                                        </span>
+                                                        <h1 className={`text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.9] drop-shadow-2xl mb-4 transition-colors duration-300 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                                                            {settings?.heroTitle1 || ''} <br />
+                                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-blue-600">
+                                                                {settings?.heroTitle2 || ''}
+                                                            </span>
+                                                        </h1>
+                                                        <p className={`text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium transition-colors ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                            {settings?.heroSubtitle || ''}
+                                                        </p>
+                                                        <div className="flex items-center gap-4">
+                                                            <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className={`px-8 py-4 font-black rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn ${darkMode ? 'bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.1)]' : 'bg-slate-900 text-white shadow-xl hover:bg-slate-800'}`}>
+                                                                VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
+                                                            </button>
+                                                            <button onClick={() => setView('guide')} className={`px-6 py-2.5 backdrop-blur-md border rounded-xl flex items-center gap-2 transition font-bold text-xs group ${darkMode ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'}`}>
+                                                                <Info className="w-4 h-4 text-orange-400" /> Ayuda
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Indicadores del Carrusel (dots) - Solo si hay múltiples imágenes */}
+                                        {hasMultipleImages && settingsLoaded && (
+                                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                                                {heroImages.map((_, index) => (
+                                                    <button
+                                                        key={index}
+                                                        onClick={() => setCurrentHeroSlide(index)}
+                                                        className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${currentHeroSlide === index
+                                                            ? 'bg-orange-500 w-6'
+                                                            : (darkMode ? 'bg-white/30 hover:bg-white/50' : 'bg-slate-900/30 hover:bg-slate-900/50')}`}
+                                                    />
+                                                ))}
+                                            </div>
                                         )}
                                     </div>
-                                </div>
-                            </div>
+                                );
+                            })()}
 
                             {/* Why Choose Us Section */}
                             {/* Why Choose Us Section (Editable) - Respeta toggles de configuración */}
@@ -9593,37 +9651,158 @@ function App() {
                                                                             <div className="space-y-6 animate-fade-up">
                                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                                        <ImageIcon className="w-5 h-5 text-purple-400" /> Imágenes
+                                                                                        <ImageIcon className="w-5 h-5 text-purple-400" /> Imágenes del Carrusel Hero
                                                                                     </h3>
-                                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                                                        <div>
-                                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen Hero (Banner Principal)</label>
-                                                                                            <input
-                                                                                                type="file"
-                                                                                                accept="image/*"
-                                                                                                onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl')}
-                                                                                                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
-                                                                                            />
-                                                                                            {settings?.heroUrl && (
-                                                                                                <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
-                                                                                                    <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
+
+                                                                                    {/* Lista de imágenes del carrusel */}
+                                                                                    <div className="space-y-4 mb-6">
+                                                                                        {(settings?.heroImages || []).map((image, index) => (
+                                                                                            <div key={index} className="flex items-center gap-4 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                                                {/* Thumbnail */}
+                                                                                                <div className="w-20 h-14 rounded-lg overflow-hidden border border-slate-700 flex-shrink-0">
+                                                                                                    <img src={image.url} className="w-full h-full object-cover" alt={`Slide ${index + 1}`} />
                                                                                                 </div>
-                                                                                            )}
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Logo de la Tienda</label>
-                                                                                            <input
-                                                                                                type="file"
-                                                                                                accept="image/*"
-                                                                                                onChange={(e) => handleImageUpload(e, setSettings, 'logoUrl')}
-                                                                                                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
-                                                                                            />
-                                                                                            {settings?.logoUrl && (
-                                                                                                <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
-                                                                                                    <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
+
+                                                                                                {/* Info y controles */}
+                                                                                                <div className="flex-1 min-w-0">
+                                                                                                    <p className="text-white font-medium text-sm mb-1">Slide {index + 1} {index === 0 && <span className="text-orange-400 text-xs">(Texto visible)</span>}</p>
+
+                                                                                                    {/* Selector de vinculación */}
+                                                                                                    <select
+                                                                                                        className="input-cyber w-full p-2 text-xs"
+                                                                                                        value={image.linkedProductId || image.linkedPromoId || ''}
+                                                                                                        onChange={(e) => {
+                                                                                                            const value = e.target.value;
+                                                                                                            const newImages = [...(settings?.heroImages || [])];
+                                                                                                            if (value.startsWith('promo_')) {
+                                                                                                                newImages[index] = { ...newImages[index], linkedProductId: null, linkedPromoId: value.replace('promo_', '') };
+                                                                                                            } else if (value) {
+                                                                                                                newImages[index] = { ...newImages[index], linkedProductId: value, linkedPromoId: null };
+                                                                                                            } else {
+                                                                                                                newImages[index] = { ...newImages[index], linkedProductId: null, linkedPromoId: null };
+                                                                                                            }
+                                                                                                            setSettings({ ...settings, heroImages: newImages });
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <option value="">Sin vincular (solo decorativo)</option>
+                                                                                                        <optgroup label="Productos">
+                                                                                                            {products.map(p => (
+                                                                                                                <option key={p.id} value={p.id}>{p.name}</option>
+                                                                                                            ))}
+                                                                                                        </optgroup>
+                                                                                                        <optgroup label="Promos">
+                                                                                                            {promos.map(promo => (
+                                                                                                                <option key={promo.id} value={`promo_${promo.id}`}>{promo.name || promo.title}</option>
+                                                                                                            ))}
+                                                                                                        </optgroup>
+                                                                                                    </select>
                                                                                                 </div>
-                                                                                            )}
+
+                                                                                                {/* Botón eliminar */}
+                                                                                                <button
+                                                                                                    onClick={() => {
+                                                                                                        const newImages = (settings?.heroImages || []).filter((_, i) => i !== index);
+                                                                                                        setSettings({ ...settings, heroImages: newImages });
+                                                                                                    }}
+                                                                                                    className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg transition"
+                                                                                                >
+                                                                                                    <X className="w-5 h-5" />
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        ))}
+
+                                                                                        {(!settings?.heroImages || settings.heroImages.length === 0) && (
+                                                                                            <div className="text-center py-8 text-slate-500 border border-dashed border-slate-700 rounded-xl">
+                                                                                                <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                                                                                <p>No hay imágenes en el carrusel</p>
+                                                                                                <p className="text-xs mt-1">Agrega hasta 5 imágenes</p>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+
+                                                                                    {/* Botón agregar imagen */}
+                                                                                    {(!settings?.heroImages || settings.heroImages.length < 5) && (
+                                                                                        <div className="mb-6">
+                                                                                            <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-3 bg-purple-900/20 hover:bg-purple-900/40 text-purple-400 rounded-xl transition font-semibold text-sm">
+                                                                                                <Plus className="w-5 h-5" /> Agregar Imagen al Carrusel
+                                                                                                <input
+                                                                                                    type="file"
+                                                                                                    accept="image/*"
+                                                                                                    className="hidden"
+                                                                                                    onChange={(e) => {
+                                                                                                        const file = e.target.files?.[0];
+                                                                                                        if (!file) return;
+                                                                                                        if (!file.type.startsWith('image/')) {
+                                                                                                            return showToast("Por favor selecciona una imagen válida.", "warning");
+                                                                                                        }
+                                                                                                        const reader = new FileReader();
+                                                                                                        reader.onload = (event) => {
+                                                                                                            const img = new Image();
+                                                                                                            img.onload = () => {
+                                                                                                                const canvas = document.createElement('canvas');
+                                                                                                                const MAX_WIDTH = 1920;
+                                                                                                                let width = img.width;
+                                                                                                                let height = img.height;
+                                                                                                                if (width > MAX_WIDTH) {
+                                                                                                                    height *= MAX_WIDTH / width;
+                                                                                                                    width = MAX_WIDTH;
+                                                                                                                }
+                                                                                                                canvas.width = width;
+                                                                                                                canvas.height = height;
+                                                                                                                const ctx = canvas.getContext('2d');
+                                                                                                                ctx.drawImage(img, 0, 0, width, height);
+                                                                                                                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                                                                                                                const newImages = [...(settings?.heroImages || []), { url: dataUrl, linkedProductId: null, linkedPromoId: null }];
+                                                                                                                setSettings({ ...settings, heroImages: newImages });
+                                                                                                                showToast("Imagen agregada al carrusel.", "success");
+                                                                                                            };
+                                                                                                            img.src = event.target.result;
+                                                                                                        };
+                                                                                                        reader.readAsDataURL(file);
+                                                                                                        e.target.value = ''; // Reset input
+                                                                                                    }}
+                                                                                                />
+                                                                                            </label>
                                                                                         </div>
+                                                                                    )}
+
+                                                                                    {/* Intervalo del carrusel */}
+                                                                                    <div className="pt-4 border-t border-slate-800">
+                                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Intervalo de Rotación</label>
+                                                                                        <div className="flex items-center gap-4">
+                                                                                            <input
+                                                                                                type="range"
+                                                                                                min="2000"
+                                                                                                max="15000"
+                                                                                                step="1000"
+                                                                                                value={settings?.heroCarouselInterval || 5000}
+                                                                                                onChange={e => setSettings({ ...settings, heroCarouselInterval: parseInt(e.target.value) })}
+                                                                                                className="flex-1"
+                                                                                            />
+                                                                                            <span className="text-white font-mono text-sm w-14">{((settings?.heroCarouselInterval || 5000) / 1000).toFixed(0)}s</span>
+                                                                                        </div>
+                                                                                        <p className="text-xs text-slate-500 mt-2">Tiempo entre cada slide (2-15 segundos)</p>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {/* Logo de la Tienda */}
+                                                                                <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                                        <Store className="w-5 h-5 text-orange-400" /> Logo de la Tienda
+                                                                                    </h3>
+                                                                                    <div>
+                                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen del Logo</label>
+                                                                                        <input
+                                                                                            type="file"
+                                                                                            accept="image/*"
+                                                                                            onChange={(e) => handleImageUpload(e, setSettings, 'logoUrl')}
+                                                                                            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
+                                                                                        />
+                                                                                        {settings?.logoUrl && (
+                                                                                            <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
+                                                                                                <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
+                                                                                            </div>
+                                                                                        )}
                                                                                     </div>
                                                                                 </div>
 
@@ -9761,20 +9940,11 @@ function App() {
                                                                                                 placeholder="Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado."
                                                                                             />
                                                                                         </div>
-                                                                                        <div>
-                                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen de Fondo</label>
-                                                                                            <input
-                                                                                                type="file"
-                                                                                                accept="image/*"
-                                                                                                onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl', 1920)}
-                                                                                                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
-                                                                                            />
-                                                                                            {settings?.heroUrl && (
-                                                                                                <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
-                                                                                                    <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
-                                                                                                </div>
-                                                                                            )}
-                                                                                            <p className="text-xs text-slate-500 mt-2">Recomendado: 1920x800 px mínimo</p>
+                                                                                        <div className="p-4 bg-purple-900/10 border border-purple-900/30 rounded-xl">
+                                                                                            <p className="text-purple-400 text-sm flex items-center gap-2">
+                                                                                                <ImageIcon className="w-4 h-4" />
+                                                                                                Las imágenes de fondo se gestionan arriba en "Imágenes del Carrusel Hero"
+                                                                                            </p>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
