@@ -6953,7 +6953,8 @@ function App() {
                                             )}
 
                                             {/* 7.1 Sidebar Admin */}
-                                            <div className={`fixed inset-y-0 left-0 z-50 w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} h-screen shadow-[10px_0_40px_rgba(0,0,0,0.5)]`}>
+                                            {/* 7.1 Sidebar Admin - FORCE FIXED */}
+                                            <div style={{ position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100 }} className={`w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-300 md:transition-none ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} shadow-[10px_0_40px_rgba(0,0,0,0.5)]`}>
                                                 <div className="p-8 border-b border-white/5 flex items-center justify-between">
                                                     <div className="group cursor-pointer">
                                                         <h2 className="text-2xl font-black text-white tracking-tighter flex items-center gap-4 group-hover:scale-105 transition-transform">
