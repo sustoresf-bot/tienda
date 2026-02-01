@@ -1298,6 +1298,23 @@ function App() {
         setIsDraggingCategories(false);
     };
 
+    // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
+    const [mpBrickController, setMpBrickController] = useState(null);
+    const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+    const [paymentError, setPaymentError] = useState(null);
+    const isInitializingBrick = useRef(false);
+    const cardPaymentBrickRef = useRef(null);
+
+    // --- NOTIFICACIONES PARA ADMINS ---
+    const [soundEnabled, setSoundEnabled] = useState(() => {
+        try {
+            const saved = localStorage.getItem('sustore_sound_enabled');
+            return saved !== null ? JSON.parse(saved) : false; // Default off por autoplay policy
+        } catch { return false; }
+    });
+    const prevOrdersCountRef = useRef(null);
+    const lastNotifiedCountRef = useRef(0);
+
     const handleMouseUpCategories = () => {
         setIsDraggingCategories(false);
     };
@@ -1519,19 +1536,7 @@ function App() {
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [showCouponModal, setShowCouponModal] = useState(false);
 
-    // TODO: ESTE useEffect SERÁ MOVIDO - Auto-corrección de método de pago al cambiar envío
-    // useEffect(() => {
-    //     if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
-    //         showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
-    //         // Cambiar a otro método válido automáticamente
-    //         const hasTransfer = settings?.paymentTransfer?.enabled;
-    //         const hasCard = settings?.paymentMercadoPago?.enabled;
-    //         setCheckoutData(prev => ({
-    //             ...prev,
-    //             paymentChoice: hasTransfer ? 'Transferencia' : (hasCard ? 'Tarjeta' : '')
-    //         }));
-    //     }
-    // }, [checkoutData.shippingMethod, settings]);
+
 
     // --- ESTADOS DE ADMINISTRACIÓN (DETALLADOS) ---
 
@@ -1633,81 +1638,7 @@ function App() {
 
 
     // --- NOTIFICACIONES PARA ADMINS ---
-    const [soundEnabled, setSoundEnabled] = useState(() => {
-        try {
-            const saved = localStorage.getItem('sustore_sound_enabled');
-            return saved !== null ? JSON.parse(saved) : false; // Default off por autoplay policy
-        } catch { return false; }
-    });
-    const prevOrdersCountRef = useRef(null);
 
-    // TODO: ESTE useEffect SERÁ MOVIDO - Persistir preferencia de sonido
-    // useEffect(() => {
-    //     localStorage.setItem('sustore_sound_enabled', JSON.stringify(soundEnabled));
-    // }, [soundEnabled]);
-
-    // TODO: ESTE useEffect SERÁ MOVIDO - Actualizar pedidos vistos al entrar a la pestaña 'orders'
-    // useEffect(() => {
-    //     if (view === 'admin' && adminTab === 'orders') {
-    //         const currentTotal = orders.length; // orders viene del hook global
-    //         if (currentTotal > 0) {
-    //             localStorage.setItem('sustore_last_viewed_orders', currentTotal.toString());
-    //         }
-    //     }
-    // }, [view, adminTab, orders.length]);
-
-    // Ref para evitar notificaciones repetidas en la misma sesión/batch
-    const lastNotifiedCountRef = useRef(0);
-
-    // TODO: ESTE useEffect SERÁ MOVIDO - EFECTO DE SONIDO (SEPARADO PARA EVITAR STALE CLOSURES)
-    // useEffect(() => {
-    //     if (!isAdmin(currentUser?.email)) return;
-    //
-    //     const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
-    //     const currentCount = orders.length;
-    //
-    //     // Si tenemos más pedidos de los que el admin vio por última vez
-    //     if (currentCount > lastViewedCount) {
-    //
-    //         // Si estamos en la pestaña orders, marcamos como visto automáticamente
-    //         if (view === 'admin' && adminTab === 'orders') {
-    //             localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
-    //             // También actualizamos el ref para que no suene si salimos y volvemos rápido
-    //             lastNotifiedCountRef.current = currentCount;
-    //         }
-    //         // Si NO estamos en orders, y no hemos notificado ya por este batch
-    //         else if (soundEnabled && currentCount > lastNotifiedCountRef.current) {
-    //             try {
-    //                 const audio = new Audio('/notification.mp3');
-    //                 audio.volume = 0.4;
-    //                 audio.play().catch(() => { });
-    //
-    //                 // Mostrar Toast de Notificación
-    //                 const newOrdersCount = currentCount - lastViewedCount;
-    //                 showToast(
-    //                     `🔔 ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`,
-    //                     'info'
-    //                 );
-    //
-    //                 // Actualizar el contador de notificados para evitar repetir
-    //                 lastNotifiedCountRef.current = currentCount;
-    //             } catch (e) {
-    //                 console.error('Error playing notification sound:', e);
-    //             }
-    //         }
-    //     }
-    //     // Si el contador bajó (ej: pedido eliminado), resetear el ref para sincronizarlo
-    //     else if (currentCount < lastViewedCount) {
-    //         localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
-    //         lastNotifiedCountRef.current = currentCount;
-    //     }
-    // }, [orders, view, adminTab, soundEnabled, currentUser]);
-    // --- ESTADOS PARA MERCADO PAGO CARD PAYMENT BRICK ---
-    const [mpBrickController, setMpBrickController] = useState(null);
-    const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
-    const [paymentError, setPaymentError] = useState(null);
-    const isInitializingBrick = useRef(false);
-    const cardPaymentBrickRef = useRef(null);
 
 
     const openManualSaleModal = (product) => {
@@ -2543,68 +2474,9 @@ function App() {
         return () => clearTimeout(autoSaveTimer);
     }, [settings, settingsLoaded]);
 
-    // --- EFFECT PARA ROTACIÓN AUTOMÁTICA DEL CARRUSEL HERO ---
-    /*
-    useEffect(() => {
-        const heroImages = settings?.heroImages?.length ? settings.heroImages :
-            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
-        const hasMultipleImages = heroImages.length > 1;
 
-        if (!hasMultipleImages) return;
 
-        const interval = setInterval(() => {
-            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
-        }, settings?.heroCarouselInterval || 5000);
 
-        return () => clearInterval(interval);
-    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
-    */
-
-    // --- EFFECT PARA INICIALIZAR MERCADO PAGO BRICK ---
-    /*
-    useEffect(() => {
-        const isCheckoutView = view === 'checkout';
-        const isMP = checkoutData.paymentChoice === 'Tarjeta';
-
-        if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
-            // Validar que el usuario tenga datos completos antes de mostrar formulario de pago
-            if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
-                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
-                setView('profile');
-                return;
-            }
-
-            // Polling inteligente para asegurar que el contenedor está listo antes de inicializar
-            let attempts = 0;
-            const maxAttempts = 20; // 2 segundos máximo
-
-            const pollContainer = setInterval(() => {
-                const container = document.getElementById('cardPaymentBrick_container');
-                if (container) {
-                    clearInterval(pollContainer);
-                    initializeCardPaymentBrick();
-                } else {
-                    attempts++;
-                    if (attempts >= maxAttempts) {
-                        clearInterval(pollContainer);
-                        console.error('❌ Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
-                        showToast('Error cargando el formulario de pago. Por favor recarga la página.', 'error');
-                    }
-                }
-            }, 100);
-
-            return () => clearInterval(pollContainer);
-        } else if (mpBrickController && (!isCheckoutView || !isMP)) {
-            // Limpiar brick si se cambia de método de pago O de vista
-            console.log('Sweep: Limpiando Brick por cambio de vista o método.');
-            try {
-                mpBrickController.unmount();
-            } catch (e) { }
-            setMpBrickController(null);
-            isInitializingBrick.current = false;
-        }
-    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
-    */
 
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
     // --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
@@ -3576,7 +3448,121 @@ function App() {
     };
 
 
-    // TODO: Este useEffect fue movido al área de hooks (línea ~2561)
+    // --- EFECTOS CONSOLIDADOS (TOP LEVEL) ---
+
+    // 1. Auto-corrección de método de pago
+    useEffect(() => {
+        if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
+            showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
+            const hasTransfer = settings?.paymentTransfer?.enabled;
+            const hasCard = settings?.paymentMercadoPago?.enabled;
+            setCheckoutData(prev => ({
+                ...prev,
+                paymentChoice: hasTransfer ? 'Transferencia' : (hasCard ? 'Tarjeta' : '')
+            }));
+        }
+    }, [checkoutData.shippingMethod, settings]);
+
+    // 2. Persistir preferencia de sonido
+    useEffect(() => {
+        localStorage.setItem('sustore_sound_enabled', JSON.stringify(soundEnabled));
+    }, [soundEnabled]);
+
+    // 3. Actualizar pedidos vistos
+    useEffect(() => {
+        if (view === 'admin' && adminTab === 'orders') {
+            const currentTotal = orders.length;
+            if (currentTotal > 0) {
+                localStorage.setItem('sustore_last_viewed_orders', currentTotal.toString());
+            }
+        }
+    }, [view, adminTab, orders.length]);
+
+    // 4. Efecto de Notificaciones y Sonido
+    useEffect(() => {
+        if (!isAdmin(currentUser?.email)) return;
+
+        const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
+        const currentCount = orders.length;
+
+        if (currentCount > lastViewedCount) {
+            if (view === 'admin' && adminTab === 'orders') {
+                localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
+                lastNotifiedCountRef.current = currentCount;
+            }
+            else if (soundEnabled && currentCount > lastNotifiedCountRef.current) {
+                try {
+                    const audio = new Audio('/notification.mp3');
+                    audio.volume = 0.4;
+                    audio.play().catch(() => { });
+                    const newOrdersCount = currentCount - lastViewedCount;
+                    showToast(`🔔 ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`, 'info');
+                    lastNotifiedCountRef.current = currentCount;
+                } catch (e) {
+                    console.error('Error playing notification sound:', e);
+                }
+            }
+        } else if (currentCount < lastViewedCount) {
+            localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
+            lastNotifiedCountRef.current = currentCount;
+        }
+    }, [orders, view, adminTab, soundEnabled, currentUser]);
+
+    // 5. Rotación Automática Carrusel Hero
+    useEffect(() => {
+        const heroImages = settings?.heroImages?.length ? settings.heroImages :
+            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
+        const hasMultipleImages = heroImages.length > 1;
+
+        if (!hasMultipleImages) return;
+
+        const interval = setInterval(() => {
+            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
+        }, settings?.heroCarouselInterval || 5000);
+
+        return () => clearInterval(interval);
+    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
+
+    // 6. Inicialización Mercado Pago Brick
+    useEffect(() => {
+        const isCheckoutView = view === 'checkout';
+        const isMP = checkoutData.paymentChoice === 'Tarjeta';
+
+        if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
+            if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
+                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
+                setView('profile');
+                return;
+            }
+
+            let attempts = 0;
+            const maxAttempts = 20;
+
+            const pollContainer = setInterval(() => {
+                const container = document.getElementById('cardPaymentBrick_container');
+                if (container) {
+                    clearInterval(pollContainer);
+                    initializeCardPaymentBrick();
+                } else {
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollContainer);
+                        console.error('❌ Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
+                        showToast('Error cargando el formulario de pago. Por favor recarga la página.', 'error');
+                    }
+                }
+            }, 100);
+
+            return () => clearInterval(pollContainer);
+        } else if (mpBrickController && (!isCheckoutView || !isMP)) {
+            console.log('Sweep: Limpiando Brick por cambio de vista o método.');
+            try {
+                mpBrickController.unmount();
+            } catch (e) { }
+            setMpBrickController(null);
+            isInitializingBrick.current = false;
+        }
+    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
