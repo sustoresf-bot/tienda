@@ -5370,7 +5370,7 @@ function App() {
                 {/* TEMPORALMENTE DESHABILITADOS - Componentes no definidos */}
                 {/* <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} /> */}
                 {/* <CouponSelectorModal /> */}
-                {/* <ProductDetailModal /> */}
+                <ProductDetailModal />
 
                 {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
                 {view !== 'admin' && (
@@ -5584,7 +5584,7 @@ function App() {
                                 };
 
                                 return (
-                                    <div className={`relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-colors duration-500 ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                                    <div className={`relative w-full aspect-video rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-colors duration-500 ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
 
                                         {/* Imágenes del Carrusel */}
@@ -6947,7 +6947,7 @@ function App() {
                                     )}
 
                                     {/* 7.1 Sidebar Admin */}
-                                    <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:sticky md:top-0 md:h-screen shadow-[10px_0_40px_rgba(0,0,0,0.5)]`}>
+                                    <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:h-screen shadow-[10px_0_40px_rgba(0,0,0,0.5)]`}>
                                         <div className="p-8 border-b border-white/5 flex items-center justify-between">
                                             <div className="group cursor-pointer">
                                                 <h2 className="text-2xl font-black text-white tracking-tighter flex items-center gap-4 group-hover:scale-105 transition-transform">
@@ -8317,9 +8317,9 @@ function App() {
                                                                     {isEditingPromo ? 'Editar Combo Promocional' : 'Diseñar Nueva Promo'}
                                                                 </h3>
 
-                                                                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                                                                <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
                                                                     {/* Lado Izquierdo: Configuración */}
-                                                                    <div className="xl:col-span-8 space-y-8">
+                                                                    <div className="xl:col-span-2 space-y-8">
                                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                                             <div className="space-y-6">
                                                                                 <div className="space-y-3">
@@ -8534,7 +8534,7 @@ function App() {
                                                                             </div>
 
                                                                             {/* Lado Derecho: Preview en Vivo */}
-                                                                            <div className="xl:col-span-4 flex flex-col items-center">
+                                                                            <div className="xl:col-span-1 flex flex-col items-center">
                                                                                 <div className="sticky top-10 w-full max-w-[340px]">
                                                                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 block text-center">Vista Previa Real-Time</label>
 
