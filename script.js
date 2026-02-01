@@ -4446,10 +4446,10 @@ function App() {
     };
     // Modal de Detalle de Producto / Promo (Versión Premium)
     const ProductDetailModal = () => {
-        if (!selectedProduct) return null;
-
         const [qty, setQty] = useState(1);
         const [added, setAdded] = useState(false);
+
+        if (!selectedProduct) return null;
 
         const isPromo = selectedProduct.isPromo || !!selectedProduct.items;
         const stockLimit = isPromo ? Number(selectedProduct.stock) : Number(selectedProduct.stock);
