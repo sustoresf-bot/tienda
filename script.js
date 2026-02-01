@@ -7069,7 +7069,7 @@ function App() {
                                     </div>
 
                                     {/* 7.2 Contenido Principal Admin */}
-                                    <div className="flex-1 bg-[#050505] relative w-full min-h-screen overflow-visible">
+                                    <div className="flex-1 bg-[#050505] relative w-full min-h-screen overflow-visible md:ml-[280px]">
                                         <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-orange-600/5 to-transparent pointer-events-none"></div>
 
                                         <div className="relative z-10 p-6 md:p-12 lg:p-16 max-w-[1700px] mx-auto">
@@ -8441,190 +8441,191 @@ function App() {
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
+                                                                            </div>
+                                                                        </div>
 
-                                                                                <div className="space-y-3">
-                                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Contenido del Combo</label>
-                                                                                    <div className="bg-[#141418] p-5 rounded-[2.5rem] border border-white/5 space-y-4 shadow-inner">
-                                                                                        <div className="flex gap-2">
-                                                                                            <div className="flex flex-col gap-3 flex-1">
-                                                                                                <div className="relative group">
-                                                                                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                                                                                        <Search className="w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
-                                                                                                    </div>
-                                                                                                    <input
-                                                                                                        type="text"
-                                                                                                        placeholder="Buscar producto..."
-                                                                                                        className="input-cyber w-full pl-12 p-3 text-sm"
-                                                                                                        onChange={(e) => setPromoSearchQuery(e.target.value.toLowerCase())}
-                                                                                                    />
-                                                                                                </div>
-                                                                                                <select
-                                                                                                    className="input-cyber w-full p-3 text-sm font-bold"
-                                                                                                    value={selectedPromoProduct}
-                                                                                                    onChange={e => setSelectedPromoProduct(e.target.value)}
-                                                                                                >
-                                                                                                    <option value="">Selecciona un producto...</option>
-                                                                                                    {products
-                                                                                                        .filter(p => p.name.toLowerCase().includes(promoSearchQuery || ''))
-                                                                                                        .map(p => (
-                                                                                                            <option key={p.id} value={p.id}>{p.name} (${Number(p.basePrice).toLocaleString()})</option>
-                                                                                                        ))}
-                                                                                                </select>
+                                                                        <div className="space-y-3">
+                                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Contenido del Combo</label>
+                                                                            <div className="bg-[#141418] p-5 rounded-[2.5rem] border border-white/5 space-y-4 shadow-inner">
+                                                                                <div className="flex gap-2">
+                                                                                    <div className="flex flex-col gap-3 flex-1">
+                                                                                        <div className="relative group">
+                                                                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                                                                <Search className="w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
                                                                                             </div>
                                                                                             <input
-                                                                                                type="number"
-                                                                                                className="input-cyber w-16 p-3 text-sm text-center font-black"
-                                                                                                value={promoProductQty}
-                                                                                                min="1"
-                                                                                                onChange={e => setPromoProductQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                                                                type="text"
+                                                                                                placeholder="Buscar producto..."
+                                                                                                className="input-cyber w-full pl-12 p-3 text-sm"
+                                                                                                onChange={(e) => setPromoSearchQuery(e.target.value.toLowerCase())}
                                                                                             />
-                                                                                            <button
-                                                                                                onClick={() => {
-                                                                                                    if (!selectedPromoProduct) return;
-                                                                                                    const exists = newPromo.items.find(i => i.productId === selectedPromoProduct);
-                                                                                                    if (exists) {
-                                                                                                        setNewPromo({
-                                                                                                            ...newPromo,
-                                                                                                            items: newPromo.items.map(i => i.productId === selectedPromoProduct ? { ...i, quantity: i.quantity + promoProductQty } : i)
-                                                                                                        });
-                                                                                                    } else {
-                                                                                                        setNewPromo({
-                                                                                                            ...newPromo,
-                                                                                                            items: [...newPromo.items, { productId: selectedPromoProduct, quantity: promoProductQty }]
-                                                                                                        });
-                                                                                                    }
-                                                                                                    setSelectedPromoProduct('');
-                                                                                                    setPromoProductQty(1);
-                                                                                                }}
-                                                                                                className="p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition shadow-lg shadow-purple-600/20 active:scale-95"
-                                                                                            >
-                                                                                                <Plus className="w-5 h-5" />
-                                                                                            </button>
                                                                                         </div>
-
-                                                                                        <div className="space-y-2 max-h-[140px] overflow-y-auto custom-scrollbar pr-2">
-                                                                                            {newPromo.items.map((item, idx) => {
-                                                                                                const p = products.find(prod => prod.id === item.productId);
-                                                                                                if (!p) return null;
-                                                                                                return (
-                                                                                                    <div key={idx} className="flex justify-between items-center bg-black/40 p-2.5 rounded-2xl border border-white/5 animate-fade-in group/item">
-                                                                                                        <div className="flex items-center gap-3">
-                                                                                                            <div className="w-10 h-10 rounded-lg bg-white p-1 shadow-inner relative overflow-hidden">
-                                                                                                                <img src={p.image} className="w-full h-full object-contain" />
-                                                                                                            </div>
-                                                                                                            <div>
-                                                                                                                <p className="text-xs font-black text-white truncate max-w-[120px] leading-tight">{p.name}</p>
-                                                                                                                <p className="text-[10px] text-slate-500 font-mono tracking-tighter">{item.quantity} x ${p.basePrice}</p>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <button onClick={() => setNewPromo({ ...newPromo, items: newPromo.items.filter((_, i) => i !== idx) })} className="text-slate-700 hover:text-red-500 p-2 transition-colors">
-                                                                                                            <X className="w-4 h-4" />
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                );
-                                                                                            })}
-                                                                                            {newPromo.items.length === 0 && (
-                                                                                                <div className="text-center py-6 text-slate-700 font-bold text-[10px] uppercase tracking-widest border border-dashed border-white/5 rounded-3xl">
-                                                                                                    Combo Vacío
-                                                                                                </div>
-                                                                                            )}
-                                                                                        </div>
+                                                                                        <select
+                                                                                            className="input-cyber w-full p-3 text-sm font-bold"
+                                                                                            value={selectedPromoProduct}
+                                                                                            onChange={e => setSelectedPromoProduct(e.target.value)}
+                                                                                        >
+                                                                                            <option value="">Selecciona un producto...</option>
+                                                                                            {products
+                                                                                                .filter(p => p.name.toLowerCase().includes(promoSearchQuery || ''))
+                                                                                                .map(p => (
+                                                                                                    <option key={p.id} value={p.id}>{p.name} (${Number(p.basePrice).toLocaleString()})</option>
+                                                                                                ))}
+                                                                                        </select>
                                                                                     </div>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        className="input-cyber w-16 p-3 text-sm text-center font-black"
+                                                                                        value={promoProductQty}
+                                                                                        min="1"
+                                                                                        onChange={e => setPromoProductQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                                                    />
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            if (!selectedPromoProduct) return;
+                                                                                            const exists = newPromo.items.find(i => i.productId === selectedPromoProduct);
+                                                                                            if (exists) {
+                                                                                                setNewPromo({
+                                                                                                    ...newPromo,
+                                                                                                    items: newPromo.items.map(i => i.productId === selectedPromoProduct ? { ...i, quantity: i.quantity + promoProductQty } : i)
+                                                                                                });
+                                                                                            } else {
+                                                                                                setNewPromo({
+                                                                                                    ...newPromo,
+                                                                                                    items: [...newPromo.items, { productId: selectedPromoProduct, quantity: promoProductQty }]
+                                                                                                });
+                                                                                            }
+                                                                                            setSelectedPromoProduct('');
+                                                                                            setPromoProductQty(1);
+                                                                                        }}
+                                                                                        className="p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition shadow-lg shadow-purple-600/20 active:scale-95"
+                                                                                    >
+                                                                                        <Plus className="w-5 h-5" />
+                                                                                    </button>
                                                                                 </div>
-                                                                            </div>
 
-                                                                            {/* Lado Derecho: Preview en Vivo */}
-                                                                            <div className="xl:col-span-1 flex flex-col items-center">
-                                                                                <div className="sticky top-10 w-full max-w-[340px]">
-                                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 block text-center">Vista Previa Real-Time</label>
-
-                                                                                    <div className="relative group perspective-1000">
-                                                                                        <div className="bg-[#0f0f12] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:rotate-y-2">
-                                                                                            <div className="aspect-[4/5] relative">
-                                                                                                <img
-                                                                                                    src={newPromo.image || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop'}
-                                                                                                    className="w-full h-full object-cover brightness-95 group-hover:scale-110 transition-transform duration-1000"
-                                                                                                />
-                                                                                                <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f12] via-[#0f0f12]/20 to-transparent"></div>
-
-                                                                                                <div className="absolute top-4 left-4">
-                                                                                                    <div className="bg-purple-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg brightness-110 uppercase tracking-widest">
-                                                                                                        OFERTA LIMITADA
+                                                                                <div className="space-y-2 max-h-[140px] overflow-y-auto custom-scrollbar pr-2">
+                                                                                    {newPromo.items.map((item, idx) => {
+                                                                                        const p = products.find(prod => prod.id === item.productId);
+                                                                                        if (!p) return null;
+                                                                                        return (
+                                                                                            <div key={idx} className="flex justify-between items-center bg-black/40 p-2.5 rounded-2xl border border-white/5 animate-fade-in group/item">
+                                                                                                <div className="flex items-center gap-3">
+                                                                                                    <div className="w-10 h-10 rounded-lg bg-white p-1 shadow-inner relative overflow-hidden">
+                                                                                                        <img src={p.image} className="w-full h-full object-contain" />
+                                                                                                    </div>
+                                                                                                    <div>
+                                                                                                        <p className="text-xs font-black text-white truncate max-w-[120px] leading-tight">{p.name}</p>
+                                                                                                        <p className="text-[10px] text-slate-500 font-mono tracking-tighter">{item.quantity} x ${p.basePrice}</p>
                                                                                                     </div>
                                                                                                 </div>
-
-                                                                                                <div className="absolute bottom-6 left-6 right-6">
-                                                                                                    <h4 className="text-2xl font-black text-white leading-tight mb-2 drop-shadow-xl">
-                                                                                                        {newPromo.name || 'Nombre Promo'}
-                                                                                                    </h4>
-                                                                                                    <div className="flex items-end gap-2">
-                                                                                                        <span className="text-4xl font-black text-purple-400 leading-none">
-                                                                                                            ${(Number(newPromo.price) || 0).toLocaleString()}
-                                                                                                        </span>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <div className="p-6 border-t border-white/5 bg-[#141418]">
-                                                                                                <button className="w-full py-4 bg-white text-black font-black rounded-2xl text-xs uppercase tracking-widest transition active:scale-95 shadow-[0_10px_20px_rgba(255,255,255,0.1)]">
-                                                                                                    Añadir al Carrito
+                                                                                                <button onClick={() => setNewPromo({ ...newPromo, items: newPromo.items.filter((_, i) => i !== idx) })} className="text-slate-700 hover:text-red-500 p-2 transition-colors">
+                                                                                                    <X className="w-4 h-4" />
                                                                                                 </button>
                                                                                             </div>
+                                                                                        );
+                                                                                    })}
+                                                                                    {newPromo.items.length === 0 && (
+                                                                                        <div className="text-center py-6 text-slate-700 font-bold text-[10px] uppercase tracking-widest border border-dashed border-white/5 rounded-3xl">
+                                                                                            Combo Vacío
                                                                                         </div>
-                                                                                    </div>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
 
-                                                                    <div className="flex gap-4 justify-end mt-6">
-                                                                        {isEditingPromo && (
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    setIsEditingPromo(false);
-                                                                                    setEditingPromoId(null);
-                                                                                    setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
-                                                                                }}
-                                                                                className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
-                                                                            >
-                                                                                Cancelar
-                                                                            </button>
-                                                                        )}
-                                                                        <button
-                                                                            onClick={async () => {
-                                                                                if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
-                                                                                    return showToast("Completa nombre, precio y agrega productos.", "warning");
-                                                                                }
+                                                                    {/* Lado Derecho: Preview en Vivo */}
+                                                                    <div className="xl:col-span-1 flex flex-col items-center">
+                                                                        <div className="sticky top-10 w-full max-w-[340px]">
+                                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 block text-center">Vista Previa Real-Time</label>
 
-                                                                                setIsLoading(true);
-                                                                                try {
-                                                                                    if (isEditingPromo && editingPromoId) {
-                                                                                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
-                                                                                        showToast("Promo actualizada", "success");
-                                                                                    } else {
-                                                                                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
-                                                                                            ...newPromo,
-                                                                                            createdAt: new Date().toISOString()
-                                                                                        });
-                                                                                        showToast("Promo creada exitosamente", "success");
-                                                                                    }
-                                                                                    setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
-                                                                                    setIsEditingPromo(false);
-                                                                                    setEditingPromoId(null);
-                                                                                } catch (e) {
-                                                                                    console.error(e);
-                                                                                    showToast("Error al guardar promo", "error");
-                                                                                } finally {
-                                                                                    setIsLoading(false);
-                                                                                }
-                                                                            }}
-                                                                            className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
-                                                                        >
-                                                                            {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
-                                                                        </button>
+                                                                            <div className="relative group perspective-1000">
+                                                                                <div className="bg-[#0f0f12] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:rotate-y-2">
+                                                                                    <div className="aspect-[4/5] relative">
+                                                                                        <img
+                                                                                            src={newPromo.image || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop'}
+                                                                                            className="w-full h-full object-cover brightness-95 group-hover:scale-110 transition-transform duration-1000"
+                                                                                        />
+                                                                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f12] via-[#0f0f12]/20 to-transparent"></div>
+
+                                                                                        <div className="absolute top-4 left-4">
+                                                                                            <div className="bg-purple-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg brightness-110 uppercase tracking-widest">
+                                                                                                OFERTA LIMITADA
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <div className="absolute bottom-6 left-6 right-6">
+                                                                                            <h4 className="text-2xl font-black text-white leading-tight mb-2 drop-shadow-xl">
+                                                                                                {newPromo.name || 'Nombre Promo'}
+                                                                                            </h4>
+                                                                                            <div className="flex items-end gap-2">
+                                                                                                <span className="text-4xl font-black text-purple-400 leading-none">
+                                                                                                    ${(Number(newPromo.price) || 0).toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="p-6 border-t border-white/5 bg-[#141418]">
+                                                                                        <button className="w-full py-4 bg-white text-black font-black rounded-2xl text-xs uppercase tracking-widest transition active:scale-95 shadow-[0_10px_20px_rgba(255,255,255,0.1)]">
+                                                                                            Añadir al Carrito
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
+
+                                                            <div className="flex gap-4 justify-end mt-6">
+                                                                {isEditingPromo && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setIsEditingPromo(false);
+                                                                            setEditingPromoId(null);
+                                                                            setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
+                                                                        }}
+                                                                        className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
+                                                                    >
+                                                                        Cancelar
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
+                                                                            return showToast("Completa nombre, precio y agrega productos.", "warning");
+                                                                        }
+
+                                                                        setIsLoading(true);
+                                                                        try {
+                                                                            if (isEditingPromo && editingPromoId) {
+                                                                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
+                                                                                showToast("Promo actualizada", "success");
+                                                                            } else {
+                                                                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
+                                                                                    ...newPromo,
+                                                                                    createdAt: new Date().toISOString()
+                                                                                });
+                                                                                showToast("Promo creada exitosamente", "success");
+                                                                            }
+                                                                            setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
+                                                                            setIsEditingPromo(false);
+                                                                            setEditingPromoId(null);
+                                                                        } catch (e) {
+                                                                            console.error(e);
+                                                                            showToast("Error al guardar promo", "error");
+                                                                        } finally {
+                                                                            setIsLoading(false);
+                                                                        }
+                                                                    }}
+                                                                    className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
+                                                                >
+                                                                    {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
+                                                                </button>
+                                                            </div>
                                                         </div>
+
                                                     ) : (
                                                         <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] mb-10 shadow-xl flex flex-col items-center justify-center text-center animate-fade-up">
                                                             <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30">
@@ -11170,7 +11171,7 @@ function App() {
                                             }
                                         </div>
                                     </div>
-                                </div>
+                                </div >
                             ) : (
                                 <AccessDenied onBack={() => setView('store')} />
                             )
@@ -11354,7 +11355,7 @@ function App() {
                             </div>
                         )
                     }
-                </main>
+                </main >
 
 
                 {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
@@ -11955,7 +11956,7 @@ function App() {
                     coupons={coupons}
                     darkMode={darkMode}
                 />
-            </div>
+            </div >
         </>
     );
 }
