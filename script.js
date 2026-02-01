@@ -5337,7 +5337,7 @@ function App() {
 
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
-        <>
+        <React.Fragment>
             <SmoothScroll enabled={view !== 'admin'} />
 
             {view === 'admin' && (
@@ -12265,7 +12265,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                 )}
             </div>
         </div>
-        </>
+        </React.Fragment >
     );
 };
 
