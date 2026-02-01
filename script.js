@@ -2544,7 +2544,7 @@ function App() {
     }, [settings, settingsLoaded]);
 
     // --- EFFECT PARA ROTACIÓN AUTOMÁTICA DEL CARRUSEL HERO ---
-    // IMPORTANTE: Debe estar con todos los useEffects, ANTES de cualquier return condicional
+    /*
     useEffect(() => {
         const heroImages = settings?.heroImages?.length ? settings.heroImages :
             (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
@@ -2558,9 +2558,10 @@ function App() {
 
         return () => clearInterval(interval);
     }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
+    */
 
     // --- EFFECT PARA INICIALIZAR MERCADO PAGO BRICK ---
-    // IMPORTANTE: Debe estar con todos los useEffects
+    /*
     useEffect(() => {
         const isCheckoutView = view === 'checkout';
         const isMP = checkoutData.paymentChoice === 'Tarjeta';
@@ -2603,6 +2604,7 @@ function App() {
             isInitializingBrick.current = false;
         }
     }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
+    */
 
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
     // --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
