@@ -11163,8 +11163,8 @@ function App() {
                                                         </div>
                                                     ) : (
                                                         <AccessDenied onBack={() => setView('store')} />
-                                                    ))
-                                                }
+                                                    )
+                                                    }
 
                                                     {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
                                                     {
