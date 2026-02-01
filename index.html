@@ -131,7 +131,7 @@
     </script>
 
     <!-- Babel - Load ASAP for JSX compilation -->
-    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" id="babel-loader"></script>
 
     <!-- Main Stylesheet (non-blocking) -->
     <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
@@ -149,7 +149,32 @@
         <div class="loading-spinner"></div>
     </div>
 
-    <script type="text/babel" data-type="module" src="script.js?v=3.3"></script>
+    <!-- Wait for Babel to be ready before loading the main script -->
+    <script>
+        // Ensure Babel is fully loaded before executing the main script
+        (function () {
+            function loadMainScript() {
+                const script = document.createElement('script');
+                script.type = 'text/babel';
+                script.setAttribute('data-type', 'module');
+                script.src = 'script.js?v=3.4';
+                document.body.appendChild(script);
+            }
+
+            // Wait for Babel to be available
+            if (window.Babel) {
+                loadMainScript();
+            } else {
+                const babelLoader = document.getElementById('babel-loader');
+                if (babelLoader) {
+                    babelLoader.onload = loadMainScript;
+                } else {
+                    // Fallback: wait a bit and try again
+                    setTimeout(loadMainScript, 100);
+                }
+            }
+        })();
+    </script>
 
     <!-- KILL SWITCH v3.0 (Tiempo Real + Contacto) -->
     <script src="https://controlador-de-paginas.vercel.app/kill-switch.js" defer></script>
