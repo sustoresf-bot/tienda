@@ -5254,6 +5254,22 @@ function App() {
         );
     }
 
+    // --- EFFECT PARA ROTACIÓN AUTOMÁTICA DEL CARRUSEL HERO ---
+    // IMPORTANTE: Esto debe estar ANTES de cualquier return condicional para cumplir las Reglas de Hooks
+    useEffect(() => {
+        const heroImages = settings?.heroImages?.length ? settings.heroImages :
+            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
+        const hasMultipleImages = heroImages.length > 1;
+
+        if (!hasMultipleImages) return;
+
+        const interval = setInterval(() => {
+            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
+        }, settings?.heroCarouselInterval || 5000);
+
+        return () => clearInterval(interval);
+    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
+
     // Modo Mantenimiento
     if (settings?.maintenanceMode && !isAdmin(currentUser?.email)) {
         return (
@@ -5272,21 +5288,6 @@ function App() {
             </div>
         );
     }
-
-    // --- EFFECT PARA ROTACIÓN AUTOMÁTICA DEL CARRUSEL HERO ---
-    useEffect(() => {
-        const heroImages = settings?.heroImages?.length ? settings.heroImages :
-            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
-        const hasMultipleImages = heroImages.length > 1;
-
-        if (!hasMultipleImages) return;
-
-        const interval = setInterval(() => {
-            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
-        }, settings?.heroCarouselInterval || 5000);
-
-        return () => clearInterval(interval);
-    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
 
     // --- LÓGICA DE FILTRADO Y ORDENAMIENTO INTELIGENTE ---
     const filteredProducts = products
