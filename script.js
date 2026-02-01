@@ -2559,6 +2559,51 @@ function App() {
         return () => clearInterval(interval);
     }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
 
+    // --- EFFECT PARA INICIALIZAR MERCADO PAGO BRICK ---
+    // IMPORTANTE: Debe estar con todos los useEffects
+    useEffect(() => {
+        const isCheckoutView = view === 'checkout';
+        const isMP = checkoutData.paymentChoice === 'Tarjeta';
+
+        if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
+            // Validar que el usuario tenga datos completos antes de mostrar formulario de pago
+            if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
+                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
+                setView('profile');
+                return;
+            }
+
+            // Polling inteligente para asegurar que el contenedor está listo antes de inicializar
+            let attempts = 0;
+            const maxAttempts = 20; // 2 segundos máximo
+
+            const pollContainer = setInterval(() => {
+                const container = document.getElementById('cardPaymentBrick_container');
+                if (container) {
+                    clearInterval(pollContainer);
+                    initializeCardPaymentBrick();
+                } else {
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollContainer);
+                        console.error('❌ Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
+                        showToast('Error cargando el formulario de pago. Por favor recarga la página.', 'error');
+                    }
+                }
+            }, 100);
+
+            return () => clearInterval(pollContainer);
+        } else if (mpBrickController && (!isCheckoutView || !isMP)) {
+            // Limpiar brick si se cambia de método de pago O de vista
+            console.log('Sweep: Limpiando Brick por cambio de vista o método.');
+            try {
+                mpBrickController.unmount();
+            } catch (e) { }
+            setMpBrickController(null);
+            isInitializingBrick.current = false;
+        }
+    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
+
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
     // --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
@@ -3528,49 +3573,8 @@ function App() {
         }
     };
 
-    // Effect para inicializar el Brick cuando se selecciona MP
-    useEffect(() => {
-        const isCheckoutView = view === 'checkout';
-        const isMP = checkoutData.paymentChoice === 'Tarjeta';
 
-        if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
-            // Validar que el usuario tenga datos completos antes de mostrar formulario de pago
-            if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
-                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
-                setView('profile');
-                return;
-            }
-
-            // Polling inteligente para asegurar que el contenedor está listo antes de inicializar
-            let attempts = 0;
-            const maxAttempts = 20; // 2 segundos máximo
-
-            const pollContainer = setInterval(() => {
-                const container = document.getElementById('cardPaymentBrick_container');
-                if (container) {
-                    clearInterval(pollContainer);
-                    initializeCardPaymentBrick();
-                } else {
-                    attempts++;
-                    if (attempts >= maxAttempts) {
-                        clearInterval(pollContainer);
-                        console.error('❌ Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
-                        showToast('Error cargando el formulario de pago. Por favor recarga la página.', 'error');
-                    }
-                }
-            }, 100);
-
-            return () => clearInterval(pollContainer);
-        } else if (mpBrickController && (!isCheckoutView || !isMP)) {
-            // Limpiar brick si se cambia de método de pago O de vista
-            console.log('Sweep: Limpiando Brick por cambio de vista o método.');
-            try {
-                mpBrickController.unmount();
-            } catch (e) { }
-            setMpBrickController(null);
-            isInitializingBrick.current = false;
-        }
-    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
+    // TODO: Este useEffect fue movido al área de hooks (línea ~2561)
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
