@@ -5341,7 +5341,14 @@ function App() {
             <SmoothScroll enabled={view !== 'admin'} />
 
             {view === 'admin' ? (
-                <div className="bg-[#050505] min-h-screen font-sans">
+                <>
+                    <style>{`
+                        body { background-color: #050505 !important; }
+                        html { background-color: #050505 !important; }
+                    `}</style>
+                    <div className="bg-[#050505] min-h-screen font-sans" style={{ transform: 'none' }}>
+                        {/* Wrapper for admin content ensuring no transforms affect fixed position */}
+                    </>
                     ) : (
                     <div className={`min-h-screen flex flex-col relative w-full bg-grid font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-white'}`}>
             )}
@@ -6954,8 +6961,8 @@ function App() {
 
                                             {/* 7.1 Sidebar Admin */}
                                             {/* 7.1 Sidebar Admin - FORCE FIXED */}
-                                            <div style={{ position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100 }} className={`w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-300 md:transition-none ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} shadow-[10px_0_40px_rgba(0,0,0,0.5)]`}>
-                                                <div className="p-8 border-b border-white/5 flex items-center justify-between">
+                                            <div style={{ position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100 }} className={`w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-300 md:transition-none ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} shadow-[10px_0_40px_rgba(0,0,0,0.5)] overflow-hidden`}>
+                                                <div className="p-8 border-b border-white/5 flex items-center justify-between flex-shrink-0">
                                                     <div className="group cursor-pointer">
                                                         <h2 className="text-2xl font-black text-white tracking-tighter flex items-center gap-4 group-hover:scale-105 transition-transform">
                                                             <div className="w-11 h-11 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] ring-1 ring-white/20">
