@@ -5292,6 +5292,21 @@ function App() {
         );
     }
 
+    // --- EFFECT PARA ROTACIÓN AUTOMÁTICA DEL CARRUSEL HERO ---
+    useEffect(() => {
+        const heroImages = settings?.heroImages?.length ? settings.heroImages :
+            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
+        const hasMultipleImages = heroImages.length > 1;
+
+        if (!hasMultipleImages) return;
+
+        const interval = setInterval(() => {
+            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
+        }, settings?.heroCarouselInterval || 5000);
+
+        return () => clearInterval(interval);
+    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
+
     // --- LÓGICA DE FILTRADO Y ORDENAMIENTO INTELIGENTE ---
     const filteredProducts = products
         .filter(p => {
@@ -5568,21 +5583,13 @@ function App() {
                             )}
 
 
+
                             {/* Banner Hero - Carrusel */}
                             {(() => {
                                 // Compatibilidad: usar heroImages o fallback a heroUrl
                                 const heroImages = settings?.heroImages?.length ? settings.heroImages :
                                     (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
                                 const hasMultipleImages = heroImages.length > 1;
-
-                                // Effect para rotación automática del carrusel
-                                React.useEffect(() => {
-                                    if (!hasMultipleImages) return;
-                                    const interval = setInterval(() => {
-                                        setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
-                                    }, settings?.heroCarouselInterval || 5000);
-                                    return () => clearInterval(interval);
-                                }, [heroImages.length, settings?.heroCarouselInterval, hasMultipleImages]);
 
                                 // Handler para click en imagen (ir a producto/promo)
                                 const handleHeroClick = (image) => {
