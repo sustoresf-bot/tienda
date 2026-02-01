@@ -12226,3 +12226,5 @@ root.render(
         <App />
     </ErrorBoundary>
 );
+
+// v3.5.1 - UI Fixes Applied
