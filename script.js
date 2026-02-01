@@ -12265,7 +12265,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                 )}
             </div>
         </div>
-
+        </>
     );
 };
 
