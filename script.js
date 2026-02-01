@@ -6949,7 +6949,7 @@ function App() {
                                         currentUser?.id &&
                                         currentUser?.id.length >= 10 &&
                                         !SecurityManager.detectManipulation()) ? (
-                                        <div className="flex items-start min-h-screen bg-[#050505] relative w-full font-sans">
+                                        <div className="min-h-screen bg-[#050505] relative w-full font-sans">
 
                                             {/* Overlay para cerrar el menú en móvil */}
                                             {isAdminMenuOpen && (
@@ -6959,8 +6959,8 @@ function App() {
                                                 />
                                             )}
 
-                                            {/* 7.1 Sidebar Admin - STICKY LAYOUT */}
-                                            <div className={`fixed inset-y-0 left-0 z-50 md:static md:sticky md:top-0 md:h-screen w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-300 md:transition-none ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} shadow-[10px_0_40px_rgba(0,0,0,0.5)] overflow-hidden shrink-0`}>
+                                            {/* 7.1 Sidebar Admin - FORCE FIXED VIEWPORT */}
+                                            <div style={{ position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100 }} className={`w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-300 md:transition-none ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:transform-none'} shadow-[10px_0_40px_rgba(0,0,0,0.5)] overflow-hidden`}>
                                                 <div className="p-8 border-b border-white/5 flex items-center justify-between flex-shrink-0">
                                                     <div className="group cursor-pointer">
                                                         <h2 className="text-2xl font-black text-white tracking-tighter flex items-center gap-4 group-hover:scale-105 transition-transform">
@@ -7083,7 +7083,8 @@ function App() {
                                             </div>
 
                                             {/* 7.2 Contenido Principal Admin */}
-                                            <div className="flex-1 bg-[#050505] relative min-h-screen overflow-x-hidden w-full">
+                                            {/* 7.2 Contenido Principal Admin */}
+                                            <div className="flex-1 bg-[#050505] relative min-h-screen overflow-x-hidden md:ml-[280px]">
                                                 <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-orange-600/5 to-transparent pointer-events-none"></div>
 
                                                 <div className="relative z-10 p-6 md:p-12 lg:p-16 max-w-[1700px] mx-auto">
