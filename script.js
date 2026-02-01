@@ -1229,7 +1229,7 @@ const SmoothScroll = ({ enabled = true }) => {
 // --- APLICACIÓN PRINCIPAL ---
 function App() {
     // Versión del Sistema para Auto-Updates
-    const APP_VERSION = '1.0.0';
+    const APP_VERSION = '3.0.0';
 
     // --- GESTIÓN DE ESTADO (EXPANDIDA) ---
 
@@ -1580,6 +1580,7 @@ function App() {
     const [promoSearch, setPromoSearch] = useState('');
     const [selectedPromoProduct, setSelectedPromoProduct] = useState('');
     const [promoProductQty, setPromoProductQty] = useState(1);
+    const [promoSearchQuery, setPromoSearchQuery] = useState('');
     const [isEditingPromo, setIsEditingPromo] = useState(false);
     const [editingPromoId, setEditingPromoId] = useState(null);
 
@@ -8329,7 +8330,7 @@ function App() {
                                                                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
                                                                     {/* Lado Izquierdo: Configuración */}
                                                                     <div className="xl:col-span-8 space-y-8">
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                                             <div className="space-y-6">
                                                                                 <div className="space-y-3">
                                                                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Nombre del Combo</label>
@@ -8358,7 +8359,7 @@ function App() {
                                                                                     </div>
                                                                                     <div className="space-y-3">
                                                                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 opacity-50">Costo Base Ref.</label>
-                                                                                        <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5 text-slate-400 font-mono flex items-center h-[58px]">
+                                                                                        <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5 text-slate-400 font-mono flex items-center h-[58px] shadow-inner">
                                                                                             <span className="text-lg font-bold text-slate-500">
                                                                                                 ${newPromo.items.reduce((acc, item) => {
                                                                                                     const p = products.find(prod => prod.id === item.productId);
@@ -8399,7 +8400,7 @@ function App() {
 
                                                                             <div className="space-y-6">
                                                                                 {/* Análisis Financiero Rediseñado */}
-                                                                                <div className="bg-gradient-to-br from-indigo-900/10 to-purple-900/10 p-6 rounded-[2rem] border border-white/5">
+                                                                                <div className="bg-white/5 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-2xl">
                                                                                     <div className="flex items-center justify-between mb-6">
                                                                                         <div className="flex items-center gap-2">
                                                                                             <div className="p-2 bg-indigo-500/20 rounded-lg">
@@ -8407,8 +8408,8 @@ function App() {
                                                                                             </div>
                                                                                             <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Análisis ROI</span>
                                                                                         </div>
-                                                                                        <span className={`text-[9px] font-black px-3 py-1 rounded-full border ${newPromo.price > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                                                                                            {newPromo.price > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'MARGEN POSITIVO' : 'PÉRDIDA'}
+                                                                                        <span className={`text-[9px] font-black px-3 py-1 rounded-full border ${Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                                                                                            {Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'MARGEN POSITIVO' : 'PÉRDIDA'}
                                                                                         </span>
                                                                                     </div>
 
@@ -8424,7 +8425,7 @@ function App() {
                                                                                         </div>
                                                                                         <div className="space-y-1">
                                                                                             <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Ganancia Neta</p>
-                                                                                            <p className={`text-2xl font-black font-mono leading-none ${newPromo.price - (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                                                            <p className={`text-2xl font-black font-mono leading-none ${Number(newPromo.price) - (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) > 0 ? 'text-green-400' : 'text-red-400'}`}>
                                                                                                 ${(Number(newPromo.price) - newPromo.items.reduce((acc, item) => {
                                                                                                     const p = products.find(prod => prod.id === item.productId);
                                                                                                     return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
@@ -8438,14 +8439,14 @@ function App() {
                                                                                             <div className="flex justify-between items-end">
                                                                                                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Retorno Estimado</span>
                                                                                                 <span className="text-lg font-black text-indigo-400 font-mono leading-none">
-                                                                                                    {newPromo.price > 0 ? (((Number(newPromo.price) - newPromo.items.reduce((acc, item) => {
+                                                                                                    {Number(newPromo.price) > 0 ? (((Number(newPromo.price) - newPromo.items.reduce((acc, item) => {
                                                                                                         const p = products.find(prod => prod.id === item.productId);
                                                                                                         return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
                                                                                                     }, 0)) / Number(newPromo.price)) * 100).toFixed(0) : 0}%
                                                                                                 </span>
                                                                                             </div>
                                                                                             <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                                                                                <div className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" style={{ width: `${Math.min(Math.max((newPromo.price > 0 ? (((Number(newPromo.price) - newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) / Number(newPromo.price)) * 100) : 0), 0), 100)}%` }}></div>
+                                                                                                <div className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" style={{ width: `${Math.min(Math.max((Number(newPromo.price) > 0 ? (((Number(newPromo.price) - newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) / Number(newPromo.price)) * 100) : 0), 0), 100)}%` }}></div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
@@ -8455,16 +8456,31 @@ function App() {
                                                                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Contenido del Combo</label>
                                                                                     <div className="bg-[#141418] p-5 rounded-[2.5rem] border border-white/5 space-y-4 shadow-inner">
                                                                                         <div className="flex gap-2">
-                                                                                            <select
-                                                                                                className="input-cyber flex-1 p-3 text-sm font-bold"
-                                                                                                value={selectedPromoProduct}
-                                                                                                onChange={e => setSelectedPromoProduct(e.target.value)}
-                                                                                            >
-                                                                                                <option value="">Añadir producto...</option>
-                                                                                                {products.map(p => (
-                                                                                                    <option key={p.id} value={p.id}>{p.name} ($ {Number(p.basePrice).toLocaleString()})</option>
-                                                                                                ))}
-                                                                                            </select>
+                                                                                            <div className="flex flex-col gap-3 flex-1">
+                                                                                                <div className="relative group">
+                                                                                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                                                                        <Search className="w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
+                                                                                                    </div>
+                                                                                                    <input
+                                                                                                        type="text"
+                                                                                                        placeholder="Buscar producto..."
+                                                                                                        className="input-cyber w-full pl-12 p-3 text-sm"
+                                                                                                        onChange={(e) => setPromoSearchQuery(e.target.value.toLowerCase())}
+                                                                                                    />
+                                                                                                </div>
+                                                                                                <select
+                                                                                                    className="input-cyber w-full p-3 text-sm font-bold"
+                                                                                                    value={selectedPromoProduct}
+                                                                                                    onChange={e => setSelectedPromoProduct(e.target.value)}
+                                                                                                >
+                                                                                                    <option value="">Selecciona un producto...</option>
+                                                                                                    {products
+                                                                                                        .filter(p => p.name.toLowerCase().includes(promoSearchQuery || ''))
+                                                                                                        .map(p => (
+                                                                                                            <option key={p.id} value={p.id}>{p.name} (${Number(p.basePrice).toLocaleString()})</option>
+                                                                                                        ))}
+                                                                                                </select>
+                                                                                            </div>
                                                                                             <input
                                                                                                 type="number"
                                                                                                 className="input-cyber w-16 p-3 text-sm text-center font-black"
@@ -8525,3090 +8541,2934 @@ function App() {
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
+                                                                            </div>
 
-                                                                                {/* Lado Derecho: Preview en Vivo */}
-                                                                                <div className="xl:col-span-4 flex flex-col items-center">
-                                                                                    <div className="sticky top-10 w-full max-w-[340px]">
-                                                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 block text-center">Vista Previa Real-Time</label>
+                                                                            {/* Lado Derecho: Preview en Vivo */}
+                                                                            <div className="xl:col-span-4 flex flex-col items-center">
+                                                                                <div className="sticky top-10 w-full max-w-[340px]">
+                                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 block text-center">Vista Previa Real-Time</label>
 
-                                                                                        <div className="relative group perspective-1000">
-                                                                                            <div className="bg-[#0f0f12] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:rotate-y-2">
-                                                                                                <div className="aspect-[4/5] relative">
-                                                                                                    <img
-                                                                                                        src={newPromo.image || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop'}
-                                                                                                        className="w-full h-full object-cover grayscale-[0.2] brightness-75 group-hover:scale-110 transition-transform duration-1000"
-                                                                                                    />
-                                                                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f12] via-[#0f0f12]/20 to-transparent"></div>
+                                                                                    <div className="relative group perspective-1000">
+                                                                                        <div className="bg-[#0f0f12] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:rotate-y-2">
+                                                                                            <div className="aspect-[4/5] relative">
+                                                                                                <img
+                                                                                                    src={newPromo.image || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop'}
+                                                                                                    className="w-full h-full object-cover brightness-95 group-hover:scale-110 transition-transform duration-1000"
+                                                                                                />
+                                                                                                <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f12] via-[#0f0f12]/20 to-transparent"></div>
 
-                                                                                                    <div className="absolute top-4 left-4">
-                                                                                                        <div className="bg-purple-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg brightness-110 uppercase tracking-widest">
-                                                                                                            OFERTA LIMITADA
-                                                                                                        </div>
-                                                                                                    </div>
-
-                                                                                                    <div className="absolute bottom-6 left-6 right-6">
-                                                                                                        <h4 className="text-2xl font-black text-white leading-tight mb-2 drop-shadow-xl">
-                                                                                                            {newPromo.name || 'Nombre Promo'}
-                                                                                                        </h4>
-                                                                                                        <div className="flex items-end gap-2">
-                                                                                                            <span className="text-4xl font-black text-purple-400 leading-none">
-                                                                                                                ${(Number(newPromo.price) || 0).toLocaleString()}
-                                                                                                            </span>
-                                                                                                        </div>
+                                                                                                <div className="absolute top-4 left-4">
+                                                                                                    <div className="bg-purple-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg brightness-110 uppercase tracking-widest">
+                                                                                                        OFERTA LIMITADA
                                                                                                     </div>
                                                                                                 </div>
-                                                                                                <div className="p-6 border-t border-white/5 bg-[#141418]">
-                                                                                                    <button className="w-full py-4 bg-white text-black font-black rounded-2xl text-xs uppercase tracking-widest transition active:scale-95 shadow-[0_10px_20px_rgba(255,255,255,0.1)]">
-                                                                                                        Añadir al Carrito
-                                                                                                    </button>
+
+                                                                                                <div className="absolute bottom-6 left-6 right-6">
+                                                                                                    <h4 className="text-2xl font-black text-white leading-tight mb-2 drop-shadow-xl">
+                                                                                                        {newPromo.name || 'Nombre Promo'}
+                                                                                                    </h4>
+                                                                                                    <div className="flex items-end gap-2">
+                                                                                                        <span className="text-4xl font-black text-purple-400 leading-none">
+                                                                                                            ${(Number(newPromo.price) || 0).toLocaleString()}
+                                                                                                        </span>
+                                                                                                    </div>
                                                                                                 </div>
+                                                                                            </div>
+                                                                                            <div className="p-6 border-t border-white/5 bg-[#141418]">
+                                                                                                <button className="w-full py-4 bg-white text-black font-black rounded-2xl text-xs uppercase tracking-widest transition active:scale-95 shadow-[0_10px_20px_rgba(255,255,255,0.1)]">
+                                                                                                    Añadir al Carrito
+                                                                                                </button>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
+                                                                    </div>
 
-                                                                        <div className="flex gap-4 justify-end mt-6">
-                                                                            {isEditingPromo && (
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        setIsEditingPromo(false);
-                                                                                        setEditingPromoId(null);
-                                                                                        setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
-                                                                                    }}
-                                                                                    className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
-                                                                                >
-                                                                                    Cancelar
-                                                                                </button>
-                                                                            )}
+                                                                    <div className="flex gap-4 justify-end mt-6">
+                                                                        {isEditingPromo && (
                                                                             <button
-                                                                                onClick={async () => {
-                                                                                    if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
-                                                                                        return showToast("Completa nombre, precio y agrega productos.", "warning");
-                                                                                    }
-
-                                                                                    setIsLoading(true);
-                                                                                    try {
-                                                                                        if (isEditingPromo && editingPromoId) {
-                                                                                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
-                                                                                            showToast("Promo actualizada", "success");
-                                                                                        } else {
-                                                                                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
-                                                                                                ...newPromo,
-                                                                                                createdAt: new Date().toISOString()
-                                                                                            });
-                                                                                            showToast("Promo creada exitosamente", "success");
-                                                                                        }
-                                                                                        setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
-                                                                                        setIsEditingPromo(false);
-                                                                                        setEditingPromoId(null);
-                                                                                    } catch (e) {
-                                                                                        console.error(e);
-                                                                                        showToast("Error al guardar promo", "error");
-                                                                                    } finally {
-                                                                                        setIsLoading(false);
-                                                                                    }
+                                                                                onClick={() => {
+                                                                                    setIsEditingPromo(false);
+                                                                                    setEditingPromoId(null);
+                                                                                    setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
                                                                                 }}
-                                                                                className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
+                                                                                className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
                                                                             >
-                                                                                {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
+                                                                                Cancelar
                                                                             </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            ) : (
-                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] mb-10 shadow-xl flex flex-col items-center justify-center text-center animate-fade-up">
-                                                                <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30">
-                                                                    <Lock className="w-10 h-10 text-purple-400" />
-                                                                </div>
-                                                                <h3 className="text-2xl font-black text-white mb-2">Límite de Promos Alcanzado</h3>
-                                                                <p className="text-slate-400 max-w-md mb-8">
-                                                                    Tu plan actual te permite tener hasta <strong className="text-white">1 promo activa</strong>.
-                                                                    Para crear más promociones ilimitadas, actualiza tu plan.
-                                                                </p>
-                                                                <button
-                                                                    onClick={() => setShowPlansModal(true)}
-                                                                    className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
-                                                                >
-                                                                    <Zap className="w-5 h-5" /> Mejorar mi Plan
-                                                                </button>
-                                                            </div>
-                                                    )}
+                                                                        )}
+                                                                        <button
+                                                                            onClick={async () => {
+                                                                                if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
+                                                                                    return showToast("Completa nombre, precio y agrega productos.", "warning");
+                                                                                }
 
-                                                            {/* Lista de Promos */}
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                                                {promos.map(promo => {
-                                                                    const totalCost = (promo.items || []).reduce((acc, item) => {
-                                                                        const p = products.find(prod => prod.id === item.productId);
-                                                                        return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
-                                                                    }, 0);
-                                                                    const price = Number(promo.price) || 0;
-                                                                    const profit = price - totalCost;
-                                                                    const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : 0;
-                                                                    const isProfitable = profit > 0;
-
-                                                                    return (
-                                                                        <div key={promo.id} className="bg-[#0f0f12] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-purple-600/50 transition-all duration-500 group flex flex-col shadow-2xl hover:shadow-purple-600/10">
-                                                                            <div className="aspect-[4/3] relative overflow-hidden">
-                                                                                <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-1000 group-hover:scale-110 brightness-90 group-hover:brightness-100" />
-                                                                                <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f12] via-transparent to-transparent"></div>
-                                                                                <div className="absolute top-4 right-4">
-                                                                                    <div className={`px-4 py-2 rounded-2xl text-xs font-black backdrop-blur-md border ${isProfitable ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} shadow-xl`}>
-                                                                                        {margin}% MARGEN
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div className="absolute bottom-6 left-6 right-6">
-                                                                                    <h4 className="text-2xl font-black text-white mb-1 drop-shadow-2xl">{promo.name}</h4>
-                                                                                    <p className="text-3xl text-purple-400 font-black tracking-tighter drop-shadow-2xl">${price.toLocaleString()}</p>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            <div className="p-8 flex-1 flex flex-col space-y-6">
-                                                                                {/* Productos Incluidos */}
-                                                                                <div className="flex-1">
-                                                                                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">Componentes del Combo:</p>
-                                                                                    <div className="space-y-3">
-                                                                                        {(promo.items || []).map((item, i) => {
-                                                                                            const p = products.find(prod => prod.id === item.productId);
-                                                                                            return (
-                                                                                                <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group/item">
-                                                                                                    <div className="w-10 h-10 bg-white rounded-xl p-1 flex-shrink-0 shadow-inner group-hover/item:scale-110 transition-transform">
-                                                                                                        <img src={p?.image || 'https://via.placeholder.com/50'} className="w-full h-full object-contain" />
-                                                                                                    </div>
-                                                                                                    <div className="flex-1 min-w-0">
-                                                                                                        <p className="text-xs font-bold text-white truncate">{p?.name || 'Producto Eliminado'}</p>
-                                                                                                        <p className="text-[10px] text-slate-500 font-mono">{item.quantity} unidades</p>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            )
-                                                                                        })}
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                {/* Análisis Visual */}
-                                                                                <div className="p-5 bg-gradient-to-br from-slate-900 to-[#141418] rounded-3xl border border-white/5 shadow-inner">
-                                                                                    <div className="flex items-center justify-between mb-3">
-                                                                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rentabilidad</span>
-                                                                                        <span className={`text-xs font-black ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
-                                                                                            {isProfitable ? '+' : ''}${profit.toLocaleString()}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    {/* Barra de progreso visual */}
-                                                                                    <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                                                                                        <div
-                                                                                            className={`h-full rounded-full transition-all duration-1000 ${isProfitable ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`}
-                                                                                            style={{ width: `${Math.min(Math.max(margin, 0), 100)}%` }}
-                                                                                        ></div>
-                                                                                    </div>
-                                                                                    <div className="flex justify-between mt-2 text-[10px] font-mono text-slate-600 uppercase">
-                                                                                        <span>Costo: ${totalCost.toLocaleString()}</span>
-                                                                                        <span>ROI: {(margin * 1.5).toFixed(0)}%</span>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div className="flex gap-3">
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            setNewPromo({
-                                                                                                name: promo.name,
-                                                                                                price: promo.price,
-                                                                                                image: promo.image,
-                                                                                                description: promo.description || '',
-                                                                                                items: promo.items || []
-                                                                                            });
-                                                                                            setEditingPromoId(promo.id);
-                                                                                            setIsEditingPromo(true);
-                                                                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                                                        }}
-                                                                                        className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border border-white/5 flex items-center justify-center gap-2 hover:border-purple-500/30"
-                                                                                    >
-                                                                                        <Edit className="w-3.5 h-3.5" /> Editar
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={() => openConfirm('Eliminar Promo', '¿Estás seguro? Esto no se puede deshacer.', async () => {
-                                                                                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', promo.id));
-                                                                                            showToast("Promo eliminada", "info");
-                                                                                        })}
-                                                                                        className="w-14 py-4 bg-red-900/10 hover:bg-red-900/30 text-red-500 rounded-2xl transition border border-red-500/20 flex items-center justify-center"
-                                                                                    >
-                                                                                        <Trash2 className="w-4 h-4" />
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* TAB: PEDIDOS (RESTAURADO) */}
-                                                    {adminTab === 'orders' && (
-                                                        <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                                            <h1 className="text-3xl font-black text-white mb-8">Gestión de Pedidos</h1>
-
-                                                            {orders.length === 0 ? (
-                                                                <div className="text-center py-20 border border-dashed border-slate-800 rounded-[3rem] bg-slate-900/20">
-                                                                    <ShoppingBag className="w-20 h-20 mx-auto mb-4 text-slate-700" />
-                                                                    <p className="text-xl text-slate-500 font-bold">No hay pedidos registrados aún.</p>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="space-y-4">
-                                                                    {orders.map((o, idx) => (
-                                                                        <div
-                                                                            key={o.id}
-                                                                            style={{ animationDelay: `${idx * 0.05}s` }}
-                                                                            className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-slate-700 transition group animate-fade-up"
-                                                                        >
-                                                                            {/* Info Principal */}
-                                                                            <div className="flex-1 w-full lg:w-auto">
-                                                                                <div className="flex items-center gap-4 mb-2">
-                                                                                    <span className="bg-slate-900 text-orange-400 px-3 py-1 rounded-lg text-sm font-black tracking-widest border border-slate-800">
-                                                                                        #{o.orderId}
-                                                                                    </span>
-                                                                                    <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold border ${o.status === 'Realizado' ? 'bg-green-900/20 text-green-400 border-green-500/30' : 'bg-yellow-900/20 text-yellow-400 border-yellow-500/30'}`}>
-                                                                                        {o.status}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <h4 className="text-white font-bold text-lg mb-1">{o.customer.name}</h4>
-                                                                                <p className="text-slate-500 text-xs flex items-center gap-2">
-                                                                                    <Clock className="w-3 h-3" /> {new Date(o.date).toLocaleString()}
-                                                                                    <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                                                                                    <span className="text-slate-400 font-mono">${o.total.toLocaleString()}</span>
-                                                                                </p>
-                                                                            </div>
-
-                                                                            {/* Items Preview */}
-                                                                            <div className="flex -space-x-2">
-                                                                                {o.items.slice(0, 4).map((i, idx) => (
-                                                                                    <div key={idx} className="w-10 h-10 rounded-full border-2 border-[#0a0a0a] bg-slate-800 flex items-center justify-center overflow-hidden" title={i.title}>
-                                                                                        {i.image ? <img src={i.image} className="w-full h-full object-cover" /> : <Package className="w-4 h-4 text-slate-500" />}
-                                                                                    </div>
-                                                                                ))}
-                                                                                {o.items.length > 4 && (
-                                                                                    <div className="w-10 h-10 rounded-full border-2 border-[#0a0a0a] bg-slate-800 flex items-center justify-center text-xs text-white font-bold">
-                                                                                        +{o.items.length - 4}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Acciones */}
-                                                                            <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
-                                                                                {/* WhatsApp Cliente */}
-                                                                                {o.customer.phone && o.customer.phone !== '-' && (
-                                                                                    <a
-                                                                                        href={(() => {
-                                                                                            let phone = o.customer.phone.replace(/\D/g, '');
-                                                                                            // Normalización para Argentina
-                                                                                            if (phone.startsWith('0')) phone = phone.substring(1);
-                                                                                            if (phone.startsWith('15')) phone = phone.substring(2); // Si el usuario puso 15... (casos raros sin area code previo, pero comunmente es area+15)
-                                                                                            // Mejor: Si empieza con 54 y no 549, agregar 9. Si no empieza con 54, agregar 549.
-
-                                                                                            // Logica robusta simplificada:
-                                                                                            if (phone.startsWith('549')) {
-                                                                                                // Ya está bien
-                                                                                            } else if (phone.startsWith('54')) {
-                                                                                                // Tiene 54 pero falta 9 (asumiendo movil)
-                                                                                                phone = '549' + phone.substring(2);
-                                                                                            } else {
-                                                                                                // No tiene pais, asumir local y agregar 549
-                                                                                                phone = '549' + phone;
-                                                                                            }
-
-                                                                                            return `https://wa.me/${phone}?text=${encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido de: ' + o.items.map(i => i.quantity + 'x ' + i.title).join(', '))}`;
-                                                                                        })()}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                        className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/30"
-                                                                                        title={'WhatsApp: +54 ' + o.customer.phone}
-                                                                                    >
-                                                                                        <MessageCircle className="w-5 h-5" />
-                                                                                    </a>
-                                                                                )}
-                                                                                <button onClick={() => setSelectedOrder(o)} className="p-3 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition border border-slate-800" title="Ver Detalles">
-                                                                                    <Eye className="w-5 h-5" />
-                                                                                </button>
-
-                                                                                {o.status !== 'Realizado' && (
-                                                                                    <button onClick={() => finalizeOrderFn(o.id)} className="p-3 bg-green-900/10 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/20" title="Marcar como Finalizado">
-                                                                                        <CheckCircle className="w-5 h-5" />
-                                                                                    </button>
-                                                                                )}
-
-                                                                                <button onClick={() => deleteOrderFn(o.id)} className="p-3 bg-red-900/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl transition border border-red-500/20" title="Eliminar Pedido">
-                                                                                    <Trash2 className="w-5 h-5" />
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {/* TAB: PRODUCTOS (LISTA Y FORMULARIO) */}
-                                                    {adminTab === 'products' && (
-                                                        <div className="max-w-7xl mx-auto animate-fade-in pb-20">
-                                                            <div className="flex justify-between items-center mb-8">
-                                                                <div>
-                                                                    <h1 className="text-3xl font-black text-white">Inventario</h1>
-                                                                    {(() => {
-                                                                        const plan = settings?.subscriptionPlan || 'entrepreneur';
-                                                                        const limit = plan === 'premium' ? '∞' : plan === 'business' ? 50 : 30;
-                                                                        const current = products.length;
-                                                                        const isNearLimit = plan !== 'premium' && current >= limit * 0.8;
-                                                                        return (
-                                                                            <p className={`text-sm font-bold mt-1 ${isNearLimit ? 'text-yellow-400' : 'text-slate-500'}`}>
-                                                                                {current} / {limit} productos
-                                                                                {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">⚠ Cerca del límite</span>}
-                                                                            </p>
-                                                                        );
-                                                                    })()}
-                                                                </div>
-                                                                <div className="flex gap-2">
-                                                                    <button onClick={() => setShowCategoryModal(true)} className="bg-slate-800 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 border border-slate-700">
-                                                                        <FolderPlus className="w-5 h-5" /> Categorías
-                                                                    </button>
-                                                                    <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-orange-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-orange-500 transition transform hover:scale-105 active:scale-95">
-                                                                        <Plus className="w-5 h-5" /> Agregar Producto
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Banner de advertencia si hay productos desactivados por límite de plan */}
-                                                            {(() => {
-                                                                const deactivatedByPlan = products.filter(p => p.isActive === false && p.deactivatedByPlan);
-                                                                const deactivatedManually = products.filter(p => p.isActive === false && !p.deactivatedByPlan);
-                                                                const totalDeactivated = products.filter(p => p.isActive === false);
-
-                                                                if (totalDeactivated.length > 0) {
-                                                                    return (
-                                                                        <div className="bg-yellow-900/20 border border-yellow-500/30 p-4 rounded-2xl mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                                                            <div className="flex items-start gap-3">
-                                                                                <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
-                                                                                <div>
-                                                                                    <p className="font-bold text-yellow-400">
-                                                                                        {totalDeactivated.length} producto(s) desactivado(s)
-                                                                                    </p>
-                                                                                    <p className="text-sm text-yellow-200/70">
-                                                                                        {deactivatedByPlan.length > 0 && `${deactivatedByPlan.length} por límite de plan. `}
-                                                                                        {deactivatedManually.length > 0 && `${deactivatedManually.length} desactivado(s) manualmente. `}
-                                                                                        Los productos desactivados no se muestran en la tienda.
-                                                                                    </p>
-                                                                                </div>
-                                                                            </div>
-                                                                            <button
-                                                                                onClick={() => showToast("Usa el botón de ojo (👁) en cada producto para activar/desactivar", "info")}
-                                                                                className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-xl font-bold text-sm hover:bg-yellow-500/30 transition border border-yellow-500/30 whitespace-nowrap"
-                                                                            >
-                                                                                Ver desactivados
-                                                                            </button>
-                                                                        </div>
-                                                                    );
-                                                                }
-                                                                return null;
-                                                            })()}
-
-                                                            {/* Formulario Productos (Expandido) */}
-                                                            {showProductForm && (
-                                                                <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] mb-10 shadow-2xl relative">
-                                                                    <h3 className="text-xl font-bold text-white mb-6">
-                                                                        {editingId ? 'Editar Producto' : 'Nuevo Producto'}
-                                                                    </h3>
-
-                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                                                        <div className="space-y-4">
-                                                                            <input className="input-cyber w-full p-4" placeholder="Nombre del Producto" value={newProduct.name || ''} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
-                                                                            <div className="flex gap-4">
-                                                                                <input className="input-cyber w-full p-4" type="number" placeholder="Precio Venta ($)" value={newProduct.basePrice || ''} onChange={e => setNewProduct({ ...newProduct, basePrice: e.target.value })} />
-                                                                                <input className="input-cyber w-full p-4" type="number" placeholder="Costo Compra ($)" value={newProduct.purchasePrice || ''} onChange={e => setNewProduct({ ...newProduct, purchasePrice: e.target.value })} />
-                                                                                <input className="input-cyber w-full p-4" type="number" placeholder="Stock" value={newProduct.stock || ''} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
-                                                                            </div>
-                                                                            <div className="space-y-2">
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
-                                                                                    Categorías (Selecciona una o más)
-                                                                                </label>
-                                                                                <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
-                                                                                    {(settings?.categories || []).length === 0 ? (
-                                                                                        <p className="text-center text-slate-600 py-4 text-sm">
-                                                                                            No hay categorías disponibles. Agrégalas abajo.
-                                                                                        </p>
-                                                                                    ) : (
-                                                                                        (settings?.categories || []).map(cat => {
-                                                                                            // Soporte retrocompatible: verificar tanto categories (array) como category (string)
-                                                                                            const isSelected = Array.isArray(newProduct.categories)
-                                                                                                ? newProduct.categories.includes(cat)
-                                                                                                : (newProduct.category === cat);
-
-                                                                                            return (
-                                                                                                <label
-                                                                                                    key={cat}
-                                                                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all group hover:bg-slate-800 mb-2 last:mb-0 ${isSelected ? 'bg-orange-900/20 border border-orange-500/30' : 'border border-transparent'
-                                                                                                        }`}
-                                                                                                >
-                                                                                                    <input
-                                                                                                        type="checkbox"
-                                                                                                        checked={isSelected}
-                                                                                                        onChange={(e) => {
-                                                                                                            if (e.target.checked) {
-                                                                                                                // Agregar categoría
-                                                                                                                const current = Array.isArray(newProduct.categories)
-                                                                                                                    ? newProduct.categories
-                                                                                                                    : (newProduct.category ? [newProduct.category] : []);
-                                                                                                                setNewProduct({
-                                                                                                                    ...newProduct,
-                                                                                                                    categories: [...current, cat],
-                                                                                                                    category: undefined // Eliminar el campo antiguo
-                                                                                                                });
-                                                                                                            } else {
-                                                                                                                // Remover categoría
-                                                                                                                const updated = Array.isArray(newProduct.categories)
-                                                                                                                    ? newProduct.categories.filter(c => c !== cat)
-                                                                                                                    : [];
-                                                                                                                setNewProduct({
-                                                                                                                    ...newProduct,
-                                                                                                                    categories: updated
-                                                                                                                });
-                                                                                                            }
-                                                                                                        }}
-                                                                                                        className="w-4 h-4 text-orange-600 bg-slate-900 border-slate-600 rounded focus:ring-orange-500 focus:ring-2"
-                                                                                                    />
-                                                                                                    <span className={`flex-1 text-sm font-medium transition-colors ${isSelected ? 'text-orange-400' : 'text-slate-300 group-hover:text-white'
-                                                                                                        }`}>
-                                                                                                        {cat}
-                                                                                                    </span>
-                                                                                                    {isSelected && (
-                                                                                                        <span className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded flex items-center gap-1">
-                                                                                                            <CheckCircle className="w-3 h-3" />
-                                                                                                        </span>
-                                                                                                    )}
-                                                                                                </label>
-                                                                                            );
-                                                                                        })
-                                                                                    )}
-                                                                                </div>
-                                                                                {/* Mostrar categorías seleccionadas como tags */}
-                                                                                {newProduct.categories && newProduct.categories.length > 0 && (
-                                                                                    <div className="flex flex-wrap gap-2 mt-3">
-                                                                                        {newProduct.categories.map(cat => (
-                                                                                            <span
-                                                                                                key={cat}
-                                                                                                className="bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-500/30 flex items-center gap-2"
-                                                                                            >
-                                                                                                {cat}
-                                                                                                <button
-                                                                                                    type="button"
-                                                                                                    onClick={() => {
-                                                                                                        setNewProduct({
-                                                                                                            ...newProduct,
-                                                                                                            categories: newProduct.categories.filter(c => c !== cat)
-                                                                                                        });
-                                                                                                    }}
-                                                                                                    className="hover:text-orange-300 transition"
-                                                                                                >
-                                                                                                    <X className="w-3 h-3" />
-                                                                                                </button>
-                                                                                            </span>
-                                                                                        ))}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => setShowCategoryModal(true)}
-                                                                                className="w-full mt-2 py-2 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-orange-800"
-                                                                            >
-                                                                                <FolderPlus className="w-4 h-4" /> Nueva Categoría
-                                                                            </button>
-                                                                        </div>
-
-                                                                        <div className="space-y-4">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                                    Imagen del Producto
-                                                                                </label>
-                                                                                <div className="space-y-3">
-                                                                                    <input
-                                                                                        type="file"
-                                                                                        accept="image/*"
-                                                                                        onChange={(e) => handleImageUpload(e, setNewProduct)}
-                                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
-                                                                                    />
-                                                                                    {newProduct.image && (
-                                                                                        <div className="bg-white rounded-xl p-3 w-32 h-32">
-                                                                                            <img src={newProduct.image} className="w-full h-full object-contain" alt="Preview" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                                    Descuento (%)
-                                                                                </label>
-                                                                                <p className="text-xs text-slate-400 mb-2">Porcentaje de descuento sobre el precio base (0-100)</p>
-                                                                                <input
-                                                                                    type="number"
-                                                                                    min="0"
-                                                                                    max="100"
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    placeholder="0"
-                                                                                    value={newProduct.discount || 0}
-                                                                                    onChange={e => setNewProduct({ ...newProduct, discount: parseFloat(e.target.value) || 0 })}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <textarea className="input-cyber w-full h-32 p-4 mb-6 resize-none" placeholder="Descripción detallada del producto..." value={newProduct.description || ''} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
-
-                                                                    <div className="flex gap-4 justify-end">
-                                                                        <button onClick={() => setShowProductForm(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition">Cancelar</button>
-                                                                        <button onClick={saveProductFn} className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition">Guardar Producto</button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Lista de Productos */}
-                                                            <div className="grid gap-3">
-                                                                {products.map((p, idx) => (
-                                                                    <div
-                                                                        key={p.id}
-                                                                        style={{ animationDelay: `${idx * 0.05}s` }}
-                                                                        className={`bg-[#0a0a0a] border p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-orange-900/50 transition animate-fade-up ${p.isActive === false ? 'border-yellow-500/30 opacity-60' : 'border-slate-800'}`}
-                                                                    >
-                                                                        <div className="flex items-center gap-6 w-full sm:w-auto">
-                                                                            <div className={`w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0 relative ${p.isActive === false ? 'grayscale' : ''}`}>
-                                                                                <img src={p.image} className="w-full h-full object-contain" />
-                                                                                {p.isFeatured && (
-                                                                                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
-                                                                                        <Star className="w-3 h-3 text-black fill-current" />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <div>
-                                                                                <p className="font-bold text-white text-lg flex items-center gap-2">
-                                                                                    {p.name}
-                                                                                    {p.isFeatured && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">DESTACADO</span>}
-                                                                                    {p.isActive === false && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">OCULTO{p.deactivatedByPlan ? ' (LÍMITE)' : ''}</span>}
-                                                                                </p>
-                                                                                <p className="text-xs text-slate-500 font-mono">
-                                                                                    Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
-                                                                                    <span className="text-orange-400 font-bold ml-2" title="Precio Venta">${Number(p.basePrice).toLocaleString()}</span> |
-                                                                                    <span className="text-slate-500 ml-2 font-mono" title="Costo Adquisición">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
-                                                                                    {Number(p.basePrice) > 0 && (
-                                                                                        <span className={`ml-2 text-[10px] font-black px-1.5 py-0.5 rounded border ${((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) < 0.3 ? 'bg-red-900/20 text-red-400 border-red-500/20' : 'bg-green-900/20 text-green-400 border-green-500/20'}`}>
-                                                                                            {(((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) * 100).toFixed(0)}%
-                                                                                        </span>
-                                                                                    )} |
-                                                                                    <span className="text-green-400 ml-2">Ventas: {(dashboardMetrics?.salesCount?.[p.id] || 0)}</span>
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex gap-2 mt-4 sm:mt-0 w-full sm:w-auto justify-end items-center">
-                                                                            {/* Toggle Featured */}
-                                                                            <button
-                                                                                onClick={async () => {
-                                                                                    try {
-                                                                                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', p.id), {
-                                                                                            isFeatured: !p.isFeatured
+                                                                                setIsLoading(true);
+                                                                                try {
+                                                                                    if (isEditingPromo && editingPromoId) {
+                                                                                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
+                                                                                        showToast("Promo actualizada", "success");
+                                                                                    } else {
+                                                                                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
+                                                                                            ...newPromo,
+                                                                                            createdAt: new Date().toISOString()
                                                                                         });
-                                                                                        showToast(p.isFeatured ? "Producto quitado de destacados" : "Producto marcado como destacado", "success");
-                                                                                    } catch (e) {
-                                                                                        console.error(e);
-                                                                                        showToast("Error al actualizar", "error");
+                                                                                        showToast("Promo creada exitosamente", "success");
                                                                                     }
-                                                                                }}
-                                                                                className={`p-3 rounded-xl transition border transform hover:scale-105 active:scale-95 ${p.isFeatured ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-yellow-400 hover:border-yellow-500/30'}`}
-                                                                                title={p.isFeatured ? "Quitar de Destacados" : "Marcar como Destacado"}
-                                                                            >
-                                                                                <Star className={`w-5 h-5 ${p.isFeatured ? 'fill-current' : ''}`} />
-                                                                            </button>
-                                                                            {/* Toggle Activar/Desactivar */}
-                                                                            <button
-                                                                                onClick={() => p.isActive === false ? reactivateProduct(p.id) : deactivateProduct(p.id)}
-                                                                                className={`p-3 rounded-xl transition border transform hover:scale-105 active:scale-95 ${p.isActive === false ? 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-green-500/20 hover:text-green-400 hover:border-green-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-red-400 hover:border-red-500/30'}`}
-                                                                                title={p.isActive === false ? "Activar Producto (hacerlo visible en tienda)" : "Desactivar Producto (ocultarlo de la tienda)"}
-                                                                            >
-                                                                                {p.isActive === false ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-                                                                            </button>
-                                                                            <button onClick={() => openManualSaleModal(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95" title="Venta Manual (Descontar 1)">
-                                                                                <DollarSign className="w-5 h-5" />
-                                                                            </button>
-                                                                            <button onClick={() => { setNewProduct(p); setEditingId(p.id); setShowProductForm(true) }} className="p-3 bg-slate-900 rounded-xl text-orange-400 hover:bg-orange-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
-                                                                                <Edit className="w-5 h-5" />
-                                                                            </button>
-                                                                            <button onClick={() => deleteProductFn(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
-                                                                                <Trash2 className="w-5 h-5" />
-                                                                            </button>
-                                                                        </div>
+                                                                                    setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
+                                                                                    setIsEditingPromo(false);
+                                                                                    setEditingPromoId(null);
+                                                                                } catch (e) {
+                                                                                    console.error(e);
+                                                                                    showToast("Error al guardar promo", "error");
+                                                                                } finally {
+                                                                                    setIsLoading(false);
+                                                                                }
+                                                                            }}
+                                                                            className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
+                                                                        >
+                                                                            {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
+                                                                        </button>
                                                                     </div>
-                                                                ))}
+                                                                </div>
                                                             </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] mb-10 shadow-xl flex flex-col items-center justify-center text-center animate-fade-up">
+                                                            <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30">
+                                                                <Lock className="w-10 h-10 text-purple-400" />
+                                                            </div>
+                                                            <h3 className="text-2xl font-black text-white mb-2">Límite de Promos Alcanzado</h3>
+                                                            <p className="text-slate-400 max-w-md mb-8">
+                                                                Tu plan actual te permite tener hasta <strong className="text-white">1 promo activa</strong>.
+                                                                Para crear más promociones ilimitadas, actualiza tu plan.
+                                                            </p>
+                                                            <button
+                                                                onClick={() => setShowPlansModal(true)}
+                                                                className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
+                                                            >
+                                                                <Zap className="w-5 h-5" /> Mejorar mi Plan
+                                                            </button>
                                                         </div>
                                                     )}
 
+                                                    {/* Lista de Promos */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                                        {promos.map(promo => {
+                                                            const totalCost = (promo.items || []).reduce((acc, item) => {
+                                                                const p = products.find(prod => prod.id === item.productId);
+                                                                return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
+                                                            }, 0);
+                                                            const price = Number(promo.price) || 0;
+                                                            const profit = price - totalCost;
+                                                            const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : 0;
+                                                            const isProfitable = profit > 0;
 
-
-                                                    {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
-                                                    {adminTab === 'settings' && (
-                                                        <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
-
-                                                            {/* Developer-Only Access Block */}
-                                                            {currentUser?.email !== SUPER_ADMIN_EMAIL && (
-                                                                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-[2.5rem]">
-                                                                    <div className="text-center p-8 max-w-lg">
-                                                                        <div className="w-24 h-24 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
-                                                                            <Shield className="w-12 h-12 text-red-400" />
+                                                            return (
+                                                                <div key={promo.id} className="bg-[#0f0f12] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-purple-600/50 transition-all duration-500 group flex flex-col shadow-2xl hover:shadow-purple-600/10">
+                                                                    <div className="aspect-[4/3] relative overflow-hidden">
+                                                                        <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-1000 group-hover:scale-110 brightness-90 group-hover:brightness-100" />
+                                                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f12] via-transparent to-transparent"></div>
+                                                                        <div className="absolute top-4 right-4">
+                                                                            <div className={`px-4 py-2 rounded-2xl text-xs font-black backdrop-blur-md border ${isProfitable ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} shadow-xl`}>
+                                                                                {margin}% MARGEN
+                                                                            </div>
                                                                         </div>
-                                                                        <h3 className="text-3xl font-black text-white mb-4">Acceso Restringido</h3>
-                                                                        <p className="text-slate-400 mb-6">Esta sección está reservada únicamente para el <span className="text-orange-400 font-bold">desarrollador</span> de la plataforma.</p>
-                                                                        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mb-6">
-                                                                            <p className="text-sm text-slate-500 mb-2">Para solicitar cambios en la configuración, contacta a:</p>
-                                                                            <p className="text-orange-400 font-bold text-lg">lautarocorazza63@gmail.com</p>
+                                                                        <div className="absolute bottom-6 left-6 right-6">
+                                                                            <h4 className="text-2xl font-black text-white mb-1 drop-shadow-2xl">{promo.name}</h4>
+                                                                            <p className="text-3xl text-purple-400 font-black tracking-tighter drop-shadow-2xl">${price.toLocaleString()}</p>
                                                                         </div>
-                                                                        <p className="text-xs text-slate-600">Si necesitas modificar tu tienda, envía un email detallando los cambios que deseas realizar.</p>
                                                                     </div>
-                                                                </div>
-                                                            )}
 
-                                                            <h1 className="text-4xl font-black text-white neon-text mb-8 flex items-center gap-3">
-                                                                <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
-                                                            </h1>
-
-                                                            {/* Sub-Navigation Tabs */}
-                                                            <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-slate-800">
-                                                                {[
-                                                                    { id: 'store', label: 'Tienda', icon: Store },
-                                                                    { id: 'appearance', label: 'Apariencia', icon: Palette },
-                                                                    { id: 'social', label: 'Redes', icon: Share2 },
-                                                                    { id: 'payments', label: 'Pagos', icon: CreditCard },
-                                                                    { id: 'shipping', label: 'Envíos', icon: Truck },
-                                                                    { id: 'seo', label: 'SEO', icon: Globe },
-                                                                    { id: 'advanced', label: 'Avanzado', icon: Cog },
-                                                                    { id: 'team', label: 'Equipo', icon: Users },
-                                                                    // Only show Subscription tab to Super Admin
-                                                                    ...(currentUser?.email === SUPER_ADMIN_EMAIL ? [{ id: 'subscription', label: 'Suscripciones', icon: Zap }] : [])
-                                                                ].map(tab => (
-                                                                    <button
-                                                                        key={tab.id}
-                                                                        onClick={() => setSettingsTab(tab.id)}
-                                                                        className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all duration-300 border ${settingsTab === tab.id ? 'bg-orange-600 text-white shadow-[0_0_20px_rgba(8,145,178,0.4)] border-orange-400 transform scale-105' : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'}`}
-                                                                    >
-                                                                        <tab.icon className={`w-4 h-4 ${settingsTab === tab.id ? 'animate-pulse' : ''}`} /> {tab.label}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-
-                                                            {/* === SUBSCRIPTION MANAGEMENT (SUPER ADMIN ONLY) === */}
-                                                            {settingsTab === 'subscription' && currentUser?.email === SUPER_ADMIN_EMAIL && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(249,115,22,0.1)]">
-                                                                        <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                                                                            <Zap className="w-6 h-6 text-yellow-500 fill-current" />
-                                                                            Modelos de Suscripción
-                                                                        </h3>
-
-                                                                        <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center gap-4">
-                                                                            <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                                                                            <div>
-                                                                                <p className="font-bold text-yellow-500">Zona de Peligro: Super Admin</p>
-                                                                                <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los límites y funcionalidades de la tienda.</p>
+                                                                    <div className="p-8 flex-1 flex flex-col space-y-6">
+                                                                        {/* Productos Incluidos */}
+                                                                        <div className="flex-1">
+                                                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">Componentes del Combo:</p>
+                                                                            <div className="space-y-3">
+                                                                                {(promo.items || []).map((item, i) => {
+                                                                                    const p = products.find(prod => prod.id === item.productId);
+                                                                                    return (
+                                                                                        <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group/item">
+                                                                                            <div className="w-10 h-10 bg-white rounded-xl p-1 flex-shrink-0 shadow-inner group-hover/item:scale-110 transition-transform">
+                                                                                                <img src={p?.image || 'https://via.placeholder.com/50'} className="w-full h-full object-contain" />
+                                                                                            </div>
+                                                                                            <div className="flex-1 min-w-0">
+                                                                                                <p className="text-xs font-bold text-white truncate">{p?.name || 'Producto Eliminado'}</p>
+                                                                                                <p className="text-[10px] text-slate-500 font-mono">{item.quantity} unidades</p>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )
+                                                                                })}
                                                                             </div>
                                                                         </div>
 
-                                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                                            {/* Plan Emprendedor */}
-                                                                            <button
-                                                                                onClick={() => handlePlanChange('entrepreneur')}
-                                                                                className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan ? 'bg-slate-900 border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
-                                                                            >
-                                                                                <div className="flex justify-between items-start mb-4">
-                                                                                    <div className="p-3 bg-slate-800 rounded-xl">
-                                                                                        <Store className="w-6 h-6 text-orange-400" />
-                                                                                    </div>
-                                                                                    {(settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan) && <div className="bg-orange-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
-                                                                                </div>
-                                                                                <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
-                                                                                <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sólido pero económico.</p>
-                                                                                <div className="text-2xl font-black text-orange-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-
-                                                                                <ul className="space-y-2 text-sm text-slate-300">
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Hasta 30 productos</li>
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Dominio Vercel</li>
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Mercado Pago Directo</li>
-                                                                                </ul>
-                                                                            </button>
-
-                                                                            {/* Plan Negocio */}
-                                                                            <button
-                                                                                onClick={() => handlePlanChange('business')}
-                                                                                className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
-                                                                            >
-                                                                                <div className="flex justify-between items-start mb-4">
-                                                                                    <div className="p-3 bg-slate-800 rounded-xl">
-                                                                                        <Briefcase className="w-6 h-6 text-purple-400" />
-                                                                                    </div>
-                                                                                    {settings.subscriptionPlan === 'business' && <div className="bg-purple-500 text-white text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
-                                                                                </div>
-                                                                                <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
-                                                                                <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
-                                                                                <div className="text-2xl font-black text-purple-400 mb-6">$14.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-
-                                                                                <ul className="space-y-2 text-sm text-slate-300">
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp</li>
-                                                                                </ul>
-                                                                            </button>
-
-                                                                            {/* Plan Premium */}
-                                                                            <button
-                                                                                onClick={() => handlePlanChange('premium')}
-                                                                                className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
-                                                                            >
-                                                                                <div className="flex justify-between items-start mb-4">
-                                                                                    <div className="p-3 bg-slate-800 rounded-xl">
-                                                                                        <Sparkles className="w-6 h-6 text-yellow-400" />
-                                                                                    </div>
-                                                                                    {settings.subscriptionPlan === 'premium' && <div className="bg-yellow-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
-                                                                                </div>
-                                                                                <h4 className="text-xl font-black text-white mb-1">Premium</h4>
-                                                                                <p className="text-sm text-slate-400 mb-4 h-10">Servicio Full con IA.</p>
-                                                                                <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-
-                                                                                <ul className="space-y-2 text-sm text-slate-300">
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Ilimitado / Full IA</li>
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga Inicial (10)</li>
-                                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
-                                                                                </ul>
-                                                                            </button>
+                                                                        {/* Análisis Visual */}
+                                                                        <div className="p-5 bg-gradient-to-br from-slate-900 to-[#141418] rounded-3xl border border-white/5 shadow-inner">
+                                                                            <div className="flex items-center justify-between mb-3">
+                                                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rentabilidad</span>
+                                                                                <span className={`text-xs font-black ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
+                                                                                    {isProfitable ? '+' : ''}${profit.toLocaleString()}
+                                                                                </span>
+                                                                            </div>
+                                                                            {/* Barra de progreso visual */}
+                                                                            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className={`h-full rounded-full transition-all duration-1000 ${isProfitable ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`}
+                                                                                    style={{ width: `${Math.min(Math.max(Number(margin), 0), 100)}%` }}
+                                                                                ></div>
+                                                                            </div>
+                                                                            <div className="flex justify-between mt-2 text-[10px] font-mono text-slate-600 uppercase">
+                                                                                <span>Inversión: ${totalCost.toLocaleString()}</span>
+                                                                                <span>ROI: {totalCost > 0 ? ((profit / totalCost) * 100).toFixed(0) : 0}%</span>
+                                                                            </div>
                                                                         </div>
 
-                                                                        {/* Billing Cycle Selection */}
-                                                                        <div className="mt-8 pt-8 border-t border-slate-800/50">
-                                                                            <h4 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
-                                                                                <Calendar className="w-5 h-5 text-green-400" /> Ciclo de Facturación
-                                                                            </h4>
-                                                                            <div className="grid grid-cols-3 gap-4">
-                                                                                {[
-                                                                                    { id: 'Semanal', label: 'Semanal' },
-                                                                                    { id: 'Mensual', label: 'Mensual' },
-                                                                                    { id: 'Anual', label: 'Anual' }
-                                                                                ].map(cycle => (
-                                                                                    <button
-                                                                                        key={cycle.id}
-                                                                                        onClick={() => setSettings({ ...settings, subscriptionBillingCycle: cycle.id })}
-                                                                                        className={`p-3 rounded-xl border transition-all font-bold ${settings?.subscriptionBillingCycle === cycle.id
-                                                                                            ? 'bg-green-500 text-black border-green-400 shadow-lg shadow-green-500/20'
-                                                                                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
-                                                                                            }`}
-                                                                                    >
-                                                                                        {cycle.label}
-                                                                                    </button>
-                                                                                ))}
-                                                                            </div>
-                                                                            <p className="text-xs text-slate-500 mt-2">Define la frecuencia de cobro para este plan.</p>
+                                                                        <div className="flex gap-3">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setNewPromo({
+                                                                                        name: promo.name,
+                                                                                        price: promo.price,
+                                                                                        image: promo.image,
+                                                                                        description: promo.description || '',
+                                                                                        items: promo.items || []
+                                                                                    });
+                                                                                    setEditingPromoId(promo.id);
+                                                                                    setIsEditingPromo(true);
+                                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                                }}
+                                                                                className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border border-white/5 flex items-center justify-center gap-2 hover:border-purple-500/30"
+                                                                            >
+                                                                                <Edit className="w-3.5 h-3.5" /> Editar
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => openConfirm('Eliminar Promo', '¿Estás seguro? Esto no se puede deshacer.', async () => {
+                                                                                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', promo.id));
+                                                                                    showToast("Promo eliminada", "info");
+                                                                                })}
+                                                                                className="w-14 py-4 bg-red-900/10 hover:bg-red-900/30 text-red-500 rounded-2xl transition border border-red-500/20 flex items-center justify-center"
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                            </button>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            )}
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                                            {settingsTab === 'store' && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Store className="w-5 h-5 text-orange-400" /> Información de la Tienda
-                                                                        </h3>
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre de la Tienda</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.storeName || ''}
-                                                                                    onChange={e => setSettings({ ...settings, storeName: e.target.value })}
-                                                                                    placeholder="Mi Tienda"
-                                                                                />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Email de Contacto</label>
-                                                                                <input
-                                                                                    type="email"
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.storeEmail || ''}
-                                                                                    onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
-                                                                                    placeholder="contacto@mitienda.com"
-                                                                                />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Teléfono</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.storePhone || ''}
-                                                                                    onChange={e => setSettings({ ...settings, storePhone: e.target.value })}
-                                                                                    placeholder="+54 11 1234-5678"
-                                                                                />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Dirección</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.storeAddress || ''}
-                                                                                    onChange={e => setSettings({ ...settings, storeAddress: e.target.value })}
-                                                                                    placeholder="Av. Corrientes 1234, CABA"
-                                                                                />
-                                                                            </div>
+                                            {/* TAB: PEDIDOS (RESTAURADO) */}
+                                            {adminTab === 'orders' && (
+                                                <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                                    <h1 className="text-3xl font-black text-white mb-8">Gestión de Pedidos</h1>
+
+                                                    {orders.length === 0 ? (
+                                                        <div className="text-center py-20 border border-dashed border-slate-800 rounded-[3rem] bg-slate-900/20">
+                                                            <ShoppingBag className="w-20 h-20 mx-auto mb-4 text-slate-700" />
+                                                            <p className="text-xl text-slate-500 font-bold">No hay pedidos registrados aún.</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-4">
+                                                            {orders.map((o, idx) => (
+                                                                <div
+                                                                    key={o.id}
+                                                                    style={{ animationDelay: `${idx * 0.05}s` }}
+                                                                    className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-slate-700 transition group animate-fade-up"
+                                                                >
+                                                                    {/* Info Principal */}
+                                                                    <div className="flex-1 w-full lg:w-auto">
+                                                                        <div className="flex items-center gap-4 mb-2">
+                                                                            <span className="bg-slate-900 text-orange-400 px-3 py-1 rounded-lg text-sm font-black tracking-widest border border-slate-800">
+                                                                                #{o.orderId}
+                                                                            </span>
+                                                                            <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold border ${o.status === 'Realizado' ? 'bg-green-900/20 text-green-400 border-green-500/30' : 'bg-yellow-900/20 text-yellow-400 border-yellow-500/30'}`}>
+                                                                                {o.status}
+                                                                            </span>
                                                                         </div>
-                                                                        <div className="mt-6">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción de la Tienda</label>
-                                                                            <textarea
-                                                                                className="input-cyber w-full p-4 h-24 resize-none"
-                                                                                value={settings?.storeDescription || ''}
-                                                                                onChange={e => setSettings({ ...settings, storeDescription: e.target.value })}
-                                                                                placeholder="Breve descripción de tu tienda..."
-                                                                            />
-                                                                        </div>
-                                                                        <div className="mt-6">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto de Nosotros</label>
-                                                                            <textarea
-                                                                                className="input-cyber w-full p-4 h-32 resize-none"
-                                                                                value={settings?.aboutUsText || ''}
-                                                                                onChange={e => setSettings({ ...settings, aboutUsText: e.target.value })}
-                                                                                placeholder="Historia de tu marca, valores, misión..."
-                                                                            />
-                                                                        </div>
+                                                                        <h4 className="text-white font-bold text-lg mb-1">{o.customer.name}</h4>
+                                                                        <p className="text-slate-500 text-xs flex items-center gap-2">
+                                                                            <Clock className="w-3 h-3" /> {new Date(o.date).toLocaleString()}
+                                                                            <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
+                                                                            <span className="text-slate-400 font-mono">${o.total.toLocaleString()}</span>
+                                                                        </p>
                                                                     </div>
 
-                                                                    {/* Copyright Configuration */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <FileText className="w-5 h-5 text-orange-400" /> Textos de Copyright
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Menú Lateral</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.menuCopyright || ''}
-                                                                                    onChange={e => setSettings({ ...settings, menuCopyright: e.target.value })}
-                                                                                    placeholder={`${settings?.storeName || 'Mi Tienda'} © ${new Date().getFullYear()}`}
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-2">Aparece al final del menú hamburguesa</p>
+                                                                    {/* Items Preview */}
+                                                                    <div className="flex -space-x-2">
+                                                                        {o.items.slice(0, 4).map((i, idx) => (
+                                                                            <div key={idx} className="w-10 h-10 rounded-full border-2 border-[#0a0a0a] bg-slate-800 flex items-center justify-center overflow-hidden" title={i.title}>
+                                                                                {i.image ? <img src={i.image} className="w-full h-full object-cover" /> : <Package className="w-4 h-4 text-slate-500" />}
                                                                             </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Footer</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.footerCopyright || ''}
-                                                                                    onChange={e => setSettings({ ...settings, footerCopyright: e.target.value })}
-                                                                                    placeholder={`© ${new Date().getFullYear()} ${settings?.storeName || 'Mi Tienda'}. All rights reserved.`}
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-2">Aparece en la barra inferior del sitio</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Guía "Cómo Comprar" Configuration */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <FileQuestion className="w-5 h-5 text-orange-400" /> Guía "Cómo Comprar"
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            {/* Toggle para mostrar la página */}
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Mostrar en Menú</p>
-                                                                                    <p className="text-xs text-slate-500">Mostrar enlace "Cómo Comprar" en el menú lateral</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showGuideLink: settings?.showGuideLink === false ? true : false })}
-                                                                                    className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showGuideLink !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideLink !== false ? 'left-8' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-
-                                                                            {/* Título de la página */}
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de la Página</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.guideTitle || ''}
-                                                                                    onChange={e => setSettings({ ...settings, guideTitle: e.target.value })}
-                                                                                    placeholder="Cómo Comprar"
-                                                                                />
-                                                                            </div>
-
-                                                                            {/* Paso 1 */}
-                                                                            <div className="border-t border-slate-800 pt-4">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">1</span>
-                                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 1</label>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showGuideStep1: settings?.showGuideStep1 === false ? true : false })}
-                                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep1 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep1 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep1 === false ? 'opacity-50' : ''}`}>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep1Title || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep1Title: e.target.value })}
-                                                                                        placeholder="Selecciona Productos"
-                                                                                        disabled={settings?.showGuideStep1 === false}
-                                                                                    />
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep1Text || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep1Text: e.target.value })}
-                                                                                        placeholder="Descripción del paso..."
-                                                                                        disabled={settings?.showGuideStep1 === false}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Paso 2 */}
-                                                                            <div className="border-t border-slate-800 pt-4">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">2</span>
-                                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 2</label>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showGuideStep2: settings?.showGuideStep2 === false ? true : false })}
-                                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep2 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep2 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep2 === false ? 'opacity-50' : ''}`}>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep2Title || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep2Title: e.target.value })}
-                                                                                        placeholder="Revisa tu Carrito"
-                                                                                        disabled={settings?.showGuideStep2 === false}
-                                                                                    />
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep2Text || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep2Text: e.target.value })}
-                                                                                        placeholder="Descripción del paso..."
-                                                                                        disabled={settings?.showGuideStep2 === false}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Paso 3 */}
-                                                                            <div className="border-t border-slate-800 pt-4">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">3</span>
-                                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 3</label>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showGuideStep3: settings?.showGuideStep3 === false ? true : false })}
-                                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep3 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep3 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep3 === false ? 'opacity-50' : ''}`}>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep3Title || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep3Title: e.target.value })}
-                                                                                        placeholder="Datos de Envío"
-                                                                                        disabled={settings?.showGuideStep3 === false}
-                                                                                    />
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep3Text || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep3Text: e.target.value })}
-                                                                                        placeholder="Descripción del paso..."
-                                                                                        disabled={settings?.showGuideStep3 === false}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Paso 4 */}
-                                                                            <div className="border-t border-slate-800 pt-4">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">4</span>
-                                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 4</label>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showGuideStep4: settings?.showGuideStep4 === false ? true : false })}
-                                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep4 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep4 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep4 === false ? 'opacity-50' : ''}`}>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep4Title || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep4Title: e.target.value })}
-                                                                                        placeholder="Pago y Confirmación"
-                                                                                        disabled={settings?.showGuideStep4 === false}
-                                                                                    />
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep4Text || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep4Text: e.target.value })}
-                                                                                        placeholder="Descripción del paso..."
-                                                                                        disabled={settings?.showGuideStep4 === false}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Paso 5 */}
-                                                                            <div className="border-t border-slate-800 pt-4">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">5</span>
-                                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 5</label>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showGuideStep5: settings?.showGuideStep5 === false ? true : false })}
-                                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep5 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep5 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep5 === false ? 'opacity-50' : ''}`}>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep5Title || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep5Title: e.target.value })}
-                                                                                        placeholder="¡Listo!"
-                                                                                        disabled={settings?.showGuideStep5 === false}
-                                                                                    />
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.guideStep5Text || ''}
-                                                                                        onChange={e => setSettings({ ...settings, guideStep5Text: e.target.value })}
-                                                                                        placeholder="Descripción del paso..."
-                                                                                        disabled={settings?.showGuideStep5 === false}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Bell className="w-5 h-5 text-yellow-400" /> Anuncios
-                                                                        </h3>
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Anuncio (Banner superior)</label>
-                                                                            <input
-                                                                                className="input-cyber w-full p-4"
-                                                                                value={settings?.announcementMessage || ''}
-                                                                                onChange={e => setSettings({ ...settings, announcementMessage: e.target.value })}
-                                                                                placeholder="🔥 ¡Envío gratis en compras mayores a $50.000!"
-                                                                            />
-                                                                            <p className="text-xs text-slate-500 mt-2">Dejar vacío para ocultar el banner.</p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Zap className="w-5 h-5 text-yellow-500" /> Pantalla de Carga
-                                                                        </h3>
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de Carga</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.loadingTitle || ''}
-                                                                                    onChange={e => setSettings({ ...settings, loadingTitle: e.target.value })}
-                                                                                    placeholder={settings?.storeName || "SUSTORE"}
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-2">Aparece en grande (ej. SUSTORE).</p>
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Carga</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.loadingText || ''}
-                                                                                    onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
-                                                                                    placeholder="Cargando sistema..."
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-2">Texto pequeño debajo del título.</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* === APPEARANCE === */}
-                                                            {settingsTab === 'appearance' && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <ImageIcon className="w-5 h-5 text-purple-400" /> Imágenes del Carrusel Hero
-                                                                        </h3>
-
-                                                                        {/* Lista de imágenes del carrusel */}
-                                                                        <div className="space-y-4 mb-6">
-                                                                            {(settings?.heroImages || []).map((image, index) => (
-                                                                                <div key={index} className="flex items-center gap-4 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                    {/* Thumbnail */}
-                                                                                    <div className="w-20 h-14 rounded-lg overflow-hidden border border-slate-700 flex-shrink-0">
-                                                                                        <img src={image.url} className="w-full h-full object-cover" alt={`Slide ${index + 1}`} />
-                                                                                    </div>
-
-                                                                                    {/* Info y controles */}
-                                                                                    <div className="flex-1 min-w-0">
-                                                                                        <p className="text-white font-medium text-sm mb-1">Slide {index + 1} {index === 0 && <span className="text-orange-400 text-xs">(Texto visible)</span>}</p>
-
-                                                                                        {/* Selector de vinculación */}
-                                                                                        <select
-                                                                                            className="input-cyber w-full p-2 text-xs"
-                                                                                            value={image.linkedProductId || image.linkedPromoId || ''}
-                                                                                            onChange={(e) => {
-                                                                                                const value = e.target.value;
-                                                                                                const newImages = [...(settings?.heroImages || [])];
-                                                                                                if (value.startsWith('promo_')) {
-                                                                                                    newImages[index] = { ...newImages[index], linkedProductId: null, linkedPromoId: value.replace('promo_', '') };
-                                                                                                } else if (value) {
-                                                                                                    newImages[index] = { ...newImages[index], linkedProductId: value, linkedPromoId: null };
-                                                                                                } else {
-                                                                                                    newImages[index] = { ...newImages[index], linkedProductId: null, linkedPromoId: null };
-                                                                                                }
-                                                                                                setSettings({ ...settings, heroImages: newImages });
-                                                                                            }}
-                                                                                        >
-                                                                                            <option value="">Sin vincular (solo decorativo)</option>
-                                                                                            <optgroup label="Productos">
-                                                                                                {products.map(p => (
-                                                                                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                                                                                ))}
-                                                                                            </optgroup>
-                                                                                            <optgroup label="Promos">
-                                                                                                {promos.map(promo => (
-                                                                                                    <option key={promo.id} value={`promo_${promo.id}`}>{promo.name || promo.title}</option>
-                                                                                                ))}
-                                                                                            </optgroup>
-                                                                                        </select>
-                                                                                    </div>
-
-                                                                                    {/* Botón eliminar */}
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            const newImages = (settings?.heroImages || []).filter((_, i) => i !== index);
-                                                                                            setSettings({ ...settings, heroImages: newImages });
-                                                                                        }}
-                                                                                        className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg transition"
-                                                                                    >
-                                                                                        <X className="w-5 h-5" />
-                                                                                    </button>
-                                                                                </div>
-                                                                            ))}
-
-                                                                            {(!settings?.heroImages || settings.heroImages.length === 0) && (
-                                                                                <div className="text-center py-8 text-slate-500 border border-dashed border-slate-700 rounded-xl">
-                                                                                    <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                                                                    <p>No hay imágenes en el carrusel</p>
-                                                                                    <p className="text-xs mt-1">Agrega hasta 5 imágenes</p>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-
-                                                                        {/* Botón agregar imagen */}
-                                                                        {(!settings?.heroImages || settings.heroImages.length < 5) && (
-                                                                            <div className="mb-6">
-                                                                                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-3 bg-purple-900/20 hover:bg-purple-900/40 text-purple-400 rounded-xl transition font-semibold text-sm">
-                                                                                    <Plus className="w-5 h-5" /> Agregar Imagen al Carrusel
-                                                                                    <input
-                                                                                        type="file"
-                                                                                        accept="image/*"
-                                                                                        className="hidden"
-                                                                                        onChange={(e) => {
-                                                                                            const file = e.target.files?.[0];
-                                                                                            if (!file) return;
-                                                                                            if (!file.type.startsWith('image/')) {
-                                                                                                return showToast("Por favor selecciona una imagen válida.", "warning");
-                                                                                            }
-                                                                                            const reader = new FileReader();
-                                                                                            reader.onload = (event) => {
-                                                                                                const img = new Image();
-                                                                                                img.onload = () => {
-                                                                                                    const canvas = document.createElement('canvas');
-                                                                                                    const MAX_WIDTH = 1920;
-                                                                                                    let width = img.width;
-                                                                                                    let height = img.height;
-                                                                                                    if (width > MAX_WIDTH) {
-                                                                                                        height *= MAX_WIDTH / width;
-                                                                                                        width = MAX_WIDTH;
-                                                                                                    }
-                                                                                                    canvas.width = width;
-                                                                                                    canvas.height = height;
-                                                                                                    const ctx = canvas.getContext('2d');
-                                                                                                    ctx.drawImage(img, 0, 0, width, height);
-                                                                                                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                                                                                                    const newImages = [...(settings?.heroImages || []), { url: dataUrl, linkedProductId: null, linkedPromoId: null }];
-                                                                                                    setSettings({ ...settings, heroImages: newImages });
-                                                                                                    showToast("Imagen agregada al carrusel.", "success");
-                                                                                                };
-                                                                                                img.src = event.target.result;
-                                                                                            };
-                                                                                            reader.readAsDataURL(file);
-                                                                                            e.target.value = ''; // Reset input
-                                                                                        }}
-                                                                                    />
-                                                                                </label>
+                                                                        ))}
+                                                                        {o.items.length > 4 && (
+                                                                            <div className="w-10 h-10 rounded-full border-2 border-[#0a0a0a] bg-slate-800 flex items-center justify-center text-xs text-white font-bold">
+                                                                                +{o.items.length - 4}
                                                                             </div>
                                                                         )}
-
-                                                                        {/* Intervalo del carrusel */}
-                                                                        <div className="pt-4 border-t border-slate-800">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Intervalo de Rotación</label>
-                                                                            <div className="flex items-center gap-4">
-                                                                                <input
-                                                                                    type="range"
-                                                                                    min="2000"
-                                                                                    max="15000"
-                                                                                    step="1000"
-                                                                                    value={settings?.heroCarouselInterval || 5000}
-                                                                                    onChange={e => setSettings({ ...settings, heroCarouselInterval: parseInt(e.target.value) })}
-                                                                                    className="flex-1"
-                                                                                />
-                                                                                <span className="text-white font-mono text-sm w-14">{((settings?.heroCarouselInterval || 5000) / 1000).toFixed(0)}s</span>
-                                                                            </div>
-                                                                            <p className="text-xs text-slate-500 mt-2">Tiempo entre cada slide (2-15 segundos)</p>
-                                                                        </div>
                                                                     </div>
 
-                                                                    {/* Logo de la Tienda */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Store className="w-5 h-5 text-orange-400" /> Logo de la Tienda
-                                                                        </h3>
+                                                                    {/* Acciones */}
+                                                                    <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
+                                                                        {/* WhatsApp Cliente */}
+                                                                        {o.customer.phone && o.customer.phone !== '-' && (
+                                                                            <a
+                                                                                href={(() => {
+                                                                                    let phone = o.customer.phone.replace(/\D/g, '');
+                                                                                    // Normalización para Argentina
+                                                                                    if (phone.startsWith('0')) phone = phone.substring(1);
+                                                                                    if (phone.startsWith('15')) phone = phone.substring(2); // Si el usuario puso 15... (casos raros sin area code previo, pero comunmente es area+15)
+                                                                                    // Mejor: Si empieza con 54 y no 549, agregar 9. Si no empieza con 54, agregar 549.
+
+                                                                                    // Logica robusta simplificada:
+                                                                                    if (phone.startsWith('549')) {
+                                                                                        // Ya está bien
+                                                                                    } else if (phone.startsWith('54')) {
+                                                                                        // Tiene 54 pero falta 9 (asumiendo movil)
+                                                                                        phone = '549' + phone.substring(2);
+                                                                                    } else {
+                                                                                        // No tiene pais, asumir local y agregar 549
+                                                                                        phone = '549' + phone;
+                                                                                    }
+
+                                                                                    return `https://wa.me/${phone}?text=${encodeURIComponent('Hola ' + o.customer.name + '! Te escribimos por tu pedido de: ' + o.items.map(i => i.quantity + 'x ' + i.title).join(', '))}`;
+                                                                                })()}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="p-3 bg-green-900/20 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/30"
+                                                                                title={'WhatsApp: +54 ' + o.customer.phone}
+                                                                            >
+                                                                                <MessageCircle className="w-5 h-5" />
+                                                                            </a>
+                                                                        )}
+                                                                        <button onClick={() => setSelectedOrder(o)} className="p-3 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition border border-slate-800" title="Ver Detalles">
+                                                                            <Eye className="w-5 h-5" />
+                                                                        </button>
+
+                                                                        {o.status !== 'Realizado' && (
+                                                                            <button onClick={() => finalizeOrderFn(o.id)} className="p-3 bg-green-900/10 hover:bg-green-600 text-green-500 hover:text-white rounded-xl transition border border-green-500/20" title="Marcar como Finalizado">
+                                                                                <CheckCircle className="w-5 h-5" />
+                                                                            </button>
+                                                                        )}
+
+                                                                        <button onClick={() => deleteOrderFn(o.id)} className="p-3 bg-red-900/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl transition border border-red-500/20" title="Eliminar Pedido">
+                                                                            <Trash2 className="w-5 h-5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* TAB: PRODUCTOS (LISTA Y FORMULARIO) */}
+                                            {adminTab === 'products' && (
+                                                <div className="max-w-7xl mx-auto animate-fade-in pb-20">
+                                                    <div className="flex justify-between items-center mb-8">
+                                                        <div>
+                                                            <h1 className="text-3xl font-black text-white">Inventario</h1>
+                                                            {(() => {
+                                                                const plan = settings?.subscriptionPlan || 'entrepreneur';
+                                                                const limit = plan === 'premium' ? '∞' : plan === 'business' ? 50 : 30;
+                                                                const current = products.length;
+                                                                const isNearLimit = plan !== 'premium' && current >= limit * 0.8;
+                                                                return (
+                                                                    <p className={`text-sm font-bold mt-1 ${isNearLimit ? 'text-yellow-400' : 'text-slate-500'}`}>
+                                                                        {current} / {limit} productos
+                                                                        {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">⚠ Cerca del límite</span>}
+                                                                    </p>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => setShowCategoryModal(true)} className="bg-slate-800 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 border border-slate-700">
+                                                                <FolderPlus className="w-5 h-5" /> Categorías
+                                                            </button>
+                                                            <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-orange-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-orange-500 transition transform hover:scale-105 active:scale-95">
+                                                                <Plus className="w-5 h-5" /> Agregar Producto
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Banner de advertencia si hay productos desactivados por límite de plan */}
+                                                    {(() => {
+                                                        const deactivatedByPlan = products.filter(p => p.isActive === false && p.deactivatedByPlan);
+                                                        const deactivatedManually = products.filter(p => p.isActive === false && !p.deactivatedByPlan);
+                                                        const totalDeactivated = products.filter(p => p.isActive === false);
+
+                                                        if (totalDeactivated.length > 0) {
+                                                            return (
+                                                                <div className="bg-yellow-900/20 border border-yellow-500/30 p-4 rounded-2xl mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                                                    <div className="flex items-start gap-3">
+                                                                        <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen del Logo</label>
+                                                                            <p className="font-bold text-yellow-400">
+                                                                                {totalDeactivated.length} producto(s) desactivado(s)
+                                                                            </p>
+                                                                            <p className="text-sm text-yellow-200/70">
+                                                                                {deactivatedByPlan.length > 0 && `${deactivatedByPlan.length} por límite de plan. `}
+                                                                                {deactivatedManually.length > 0 && `${deactivatedManually.length} desactivado(s) manualmente. `}
+                                                                                Los productos desactivados no se muestran en la tienda.
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => showToast("Usa el botón de ojo (👁) en cada producto para activar/desactivar", "info")}
+                                                                        className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-xl font-bold text-sm hover:bg-yellow-500/30 transition border border-yellow-500/30 whitespace-nowrap"
+                                                                    >
+                                                                        Ver desactivados
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
+
+                                                    {/* Formulario Productos (Expandido) */}
+                                                    {showProductForm && (
+                                                        <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] mb-10 shadow-2xl relative">
+                                                            <h3 className="text-xl font-bold text-white mb-6">
+                                                                {editingId ? 'Editar Producto' : 'Nuevo Producto'}
+                                                            </h3>
+
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                                                <div className="space-y-4">
+                                                                    <input className="input-cyber w-full p-4" placeholder="Nombre del Producto" value={newProduct.name || ''} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
+                                                                    <div className="flex gap-4">
+                                                                        <input className="input-cyber w-full p-4" type="number" placeholder="Precio Venta ($)" value={newProduct.basePrice || ''} onChange={e => setNewProduct({ ...newProduct, basePrice: e.target.value })} />
+                                                                        <input className="input-cyber w-full p-4" type="number" placeholder="Costo Compra ($)" value={newProduct.purchasePrice || ''} onChange={e => setNewProduct({ ...newProduct, purchasePrice: e.target.value })} />
+                                                                        <input className="input-cyber w-full p-4" type="number" placeholder="Stock" value={newProduct.stock || ''} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
+                                                                    </div>
+                                                                    <div className="space-y-2">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
+                                                                            Categorías (Selecciona una o más)
+                                                                        </label>
+                                                                        <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
+                                                                            {(settings?.categories || []).length === 0 ? (
+                                                                                <p className="text-center text-slate-600 py-4 text-sm">
+                                                                                    No hay categorías disponibles. Agrégalas abajo.
+                                                                                </p>
+                                                                            ) : (
+                                                                                (settings?.categories || []).map(cat => {
+                                                                                    // Soporte retrocompatible: verificar tanto categories (array) como category (string)
+                                                                                    const isSelected = Array.isArray(newProduct.categories)
+                                                                                        ? newProduct.categories.includes(cat)
+                                                                                        : (newProduct.category === cat);
+
+                                                                                    return (
+                                                                                        <label
+                                                                                            key={cat}
+                                                                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all group hover:bg-slate-800 mb-2 last:mb-0 ${isSelected ? 'bg-orange-900/20 border border-orange-500/30' : 'border border-transparent'
+                                                                                                }`}
+                                                                                        >
+                                                                                            <input
+                                                                                                type="checkbox"
+                                                                                                checked={isSelected}
+                                                                                                onChange={(e) => {
+                                                                                                    if (e.target.checked) {
+                                                                                                        // Agregar categoría
+                                                                                                        const current = Array.isArray(newProduct.categories)
+                                                                                                            ? newProduct.categories
+                                                                                                            : (newProduct.category ? [newProduct.category] : []);
+                                                                                                        setNewProduct({
+                                                                                                            ...newProduct,
+                                                                                                            categories: [...current, cat],
+                                                                                                            category: undefined // Eliminar el campo antiguo
+                                                                                                        });
+                                                                                                    } else {
+                                                                                                        // Remover categoría
+                                                                                                        const updated = Array.isArray(newProduct.categories)
+                                                                                                            ? newProduct.categories.filter(c => c !== cat)
+                                                                                                            : [];
+                                                                                                        setNewProduct({
+                                                                                                            ...newProduct,
+                                                                                                            categories: updated
+                                                                                                        });
+                                                                                                    }
+                                                                                                }}
+                                                                                                className="w-4 h-4 text-orange-600 bg-slate-900 border-slate-600 rounded focus:ring-orange-500 focus:ring-2"
+                                                                                            />
+                                                                                            <span className={`flex-1 text-sm font-medium transition-colors ${isSelected ? 'text-orange-400' : 'text-slate-300 group-hover:text-white'
+                                                                                                }`}>
+                                                                                                {cat}
+                                                                                            </span>
+                                                                                            {isSelected && (
+                                                                                                <span className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded flex items-center gap-1">
+                                                                                                    <CheckCircle className="w-3 h-3" />
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </label>
+                                                                                    );
+                                                                                })
+                                                                            )}
+                                                                        </div>
+                                                                        {/* Mostrar categorías seleccionadas como tags */}
+                                                                        {newProduct.categories && newProduct.categories.length > 0 && (
+                                                                            <div className="flex flex-wrap gap-2 mt-3">
+                                                                                {newProduct.categories.map(cat => (
+                                                                                    <span
+                                                                                        key={cat}
+                                                                                        className="bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-500/30 flex items-center gap-2"
+                                                                                    >
+                                                                                        {cat}
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                setNewProduct({
+                                                                                                    ...newProduct,
+                                                                                                    categories: newProduct.categories.filter(c => c !== cat)
+                                                                                                });
+                                                                                            }}
+                                                                                            className="hover:text-orange-300 transition"
+                                                                                        >
+                                                                                            <X className="w-3 h-3" />
+                                                                                        </button>
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setShowCategoryModal(true)}
+                                                                        className="w-full mt-2 py-2 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-orange-800"
+                                                                    >
+                                                                        <FolderPlus className="w-4 h-4" /> Nueva Categoría
+                                                                    </button>
+                                                                </div>
+
+                                                                <div className="space-y-4">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                            Imagen del Producto
+                                                                        </label>
+                                                                        <div className="space-y-3">
                                                                             <input
                                                                                 type="file"
                                                                                 accept="image/*"
-                                                                                onChange={(e) => handleImageUpload(e, setSettings, 'logoUrl')}
+                                                                                onChange={(e) => handleImageUpload(e, setNewProduct)}
                                                                                 className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
                                                                             />
-                                                                            {settings?.logoUrl && (
-                                                                                <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
-                                                                                    <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
+                                                                            {newProduct.image && (
+                                                                                <div className="bg-white rounded-xl p-3 w-32 h-32">
+                                                                                    <img src={newProduct.image} className="w-full h-full object-contain" alt="Preview" />
                                                                                 </div>
                                                                             )}
                                                                         </div>
                                                                     </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                            Descuento (%)
+                                                                        </label>
+                                                                        <p className="text-xs text-slate-400 mb-2">Porcentaje de descuento sobre el precio base (0-100)</p>
+                                                                        <input
+                                                                            type="number"
+                                                                            min="0"
+                                                                            max="100"
+                                                                            className="input-cyber w-full p-4"
+                                                                            placeholder="0"
+                                                                            value={newProduct.discount || 0}
+                                                                            onChange={e => setNewProduct({ ...newProduct, discount: parseFloat(e.target.value) || 0 })}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
 
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Palette className="w-5 h-5 text-pink-400" /> Colores del Tema
-                                                                        </h3>
-                                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Primario</label>
-                                                                                <div className="flex gap-3 items-center">
-                                                                                    <input
-                                                                                        type="color"
-                                                                                        value={settings?.primaryColor || '#f97316'}
-                                                                                        onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
-                                                                                        className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
-                                                                                    />
-                                                                                    <input
-                                                                                        type="text"
-                                                                                        value={settings?.primaryColor || '#f97316'}
-                                                                                        onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
-                                                                                        className="input-cyber flex-1 p-3 font-mono"
-                                                                                    />
-                                                                                </div>
+                                                            <textarea className="input-cyber w-full h-32 p-4 mb-6 resize-none" placeholder="Descripción detallada del producto..." value={newProduct.description || ''} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
+
+                                                            <div className="flex gap-4 justify-end">
+                                                                <button onClick={() => setShowProductForm(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition">Cancelar</button>
+                                                                <button onClick={saveProductFn} className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition">Guardar Producto</button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Lista de Productos */}
+                                                    <div className="grid gap-3">
+                                                        {products.map((p, idx) => (
+                                                            <div
+                                                                key={p.id}
+                                                                style={{ animationDelay: `${idx * 0.05}s` }}
+                                                                className={`bg-[#0a0a0a] border p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-orange-900/50 transition animate-fade-up ${p.isActive === false ? 'border-yellow-500/30 opacity-60' : 'border-slate-800'}`}
+                                                            >
+                                                                <div className="flex items-center gap-6 w-full sm:w-auto">
+                                                                    <div className={`w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0 relative ${p.isActive === false ? 'grayscale' : ''}`}>
+                                                                        <img src={p.image} className="w-full h-full object-contain" />
+                                                                        {p.isFeatured && (
+                                                                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+                                                                                <Star className="w-3 h-3 text-black fill-current" />
                                                                             </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Secundario</label>
-                                                                                <div className="flex gap-3 items-center">
-                                                                                    <input
-                                                                                        type="color"
-                                                                                        value={settings?.secondaryColor || '#8b5cf6'}
-                                                                                        onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
-                                                                                        className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
-                                                                                    />
-                                                                                    <input
-                                                                                        type="text"
-                                                                                        value={settings?.secondaryColor || '#8b5cf6'}
-                                                                                        onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
-                                                                                        className="input-cyber flex-1 p-3 font-mono"
-                                                                                    />
-                                                                                </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="font-bold text-white text-lg flex items-center gap-2">
+                                                                            {p.name}
+                                                                            {p.isFeatured && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">DESTACADO</span>}
+                                                                            {p.isActive === false && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">OCULTO{p.deactivatedByPlan ? ' (LÍMITE)' : ''}</span>}
+                                                                        </p>
+                                                                        <p className="text-xs text-slate-500 font-mono">
+                                                                            Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
+                                                                            <span className="text-orange-400 font-bold ml-2" title="Precio Venta">${Number(p.basePrice).toLocaleString()}</span> |
+                                                                            <span className="text-slate-500 ml-2 font-mono" title="Costo Adquisición">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
+                                                                            {Number(p.basePrice) > 0 && (
+                                                                                <span className={`ml-2 text-[10px] font-black px-1.5 py-0.5 rounded border ${((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) < 0.3 ? 'bg-red-900/20 text-red-400 border-red-500/20' : 'bg-green-900/20 text-green-400 border-green-500/20'}`}>
+                                                                                    {(((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) * 100).toFixed(0)}%
+                                                                                </span>
+                                                                            )} |
+                                                                            <span className="text-green-400 ml-2">Ventas: {(dashboardMetrics?.salesCount?.[p.id] || 0)}</span>
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex gap-2 mt-4 sm:mt-0 w-full sm:w-auto justify-end items-center">
+                                                                    {/* Toggle Featured */}
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', p.id), {
+                                                                                    isFeatured: !p.isFeatured
+                                                                                });
+                                                                                showToast(p.isFeatured ? "Producto quitado de destacados" : "Producto marcado como destacado", "success");
+                                                                            } catch (e) {
+                                                                                console.error(e);
+                                                                                showToast("Error al actualizar", "error");
+                                                                            }
+                                                                        }}
+                                                                        className={`p-3 rounded-xl transition border transform hover:scale-105 active:scale-95 ${p.isFeatured ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-yellow-400 hover:border-yellow-500/30'}`}
+                                                                        title={p.isFeatured ? "Quitar de Destacados" : "Marcar como Destacado"}
+                                                                    >
+                                                                        <Star className={`w-5 h-5 ${p.isFeatured ? 'fill-current' : ''}`} />
+                                                                    </button>
+                                                                    {/* Toggle Activar/Desactivar */}
+                                                                    <button
+                                                                        onClick={() => p.isActive === false ? reactivateProduct(p.id) : deactivateProduct(p.id)}
+                                                                        className={`p-3 rounded-xl transition border transform hover:scale-105 active:scale-95 ${p.isActive === false ? 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-green-500/20 hover:text-green-400 hover:border-green-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-red-400 hover:border-red-500/30'}`}
+                                                                        title={p.isActive === false ? "Activar Producto (hacerlo visible en tienda)" : "Desactivar Producto (ocultarlo de la tienda)"}
+                                                                    >
+                                                                        {p.isActive === false ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                                                    </button>
+                                                                    <button onClick={() => openManualSaleModal(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95" title="Venta Manual (Descontar 1)">
+                                                                        <DollarSign className="w-5 h-5" />
+                                                                    </button>
+                                                                    <button onClick={() => { setNewProduct(p); setEditingId(p.id); setShowProductForm(true) }} className="p-3 bg-slate-900 rounded-xl text-orange-400 hover:bg-orange-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
+                                                                        <Edit className="w-5 h-5" />
+                                                                    </button>
+                                                                    <button onClick={() => deleteProductFn(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
+                                                                        <Trash2 className="w-5 h-5" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+
+
+                                            {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
+                                            {adminTab === 'settings' && (
+                                                <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
+
+                                                    {/* Developer-Only Access Block */}
+                                                    {currentUser?.email !== SUPER_ADMIN_EMAIL && (
+                                                        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-[2.5rem]">
+                                                            <div className="text-center p-8 max-w-lg">
+                                                                <div className="w-24 h-24 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
+                                                                    <Shield className="w-12 h-12 text-red-400" />
+                                                                </div>
+                                                                <h3 className="text-3xl font-black text-white mb-4">Acceso Restringido</h3>
+                                                                <p className="text-slate-400 mb-6">Esta sección está reservada únicamente para el <span className="text-orange-400 font-bold">desarrollador</span> de la plataforma.</p>
+                                                                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mb-6">
+                                                                    <p className="text-sm text-slate-500 mb-2">Para solicitar cambios en la configuración, contacta a:</p>
+                                                                    <p className="text-orange-400 font-bold text-lg">lautarocorazza63@gmail.com</p>
+                                                                </div>
+                                                                <p className="text-xs text-slate-600">Si necesitas modificar tu tienda, envía un email detallando los cambios que deseas realizar.</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <h1 className="text-4xl font-black text-white neon-text mb-8 flex items-center gap-3">
+                                                        <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
+                                                    </h1>
+
+                                                    {/* Sub-Navigation Tabs */}
+                                                    <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-slate-800">
+                                                        {[
+                                                            { id: 'store', label: 'Tienda', icon: Store },
+                                                            { id: 'appearance', label: 'Apariencia', icon: Palette },
+                                                            { id: 'social', label: 'Redes', icon: Share2 },
+                                                            { id: 'payments', label: 'Pagos', icon: CreditCard },
+                                                            { id: 'shipping', label: 'Envíos', icon: Truck },
+                                                            { id: 'seo', label: 'SEO', icon: Globe },
+                                                            { id: 'advanced', label: 'Avanzado', icon: Cog },
+                                                            { id: 'team', label: 'Equipo', icon: Users },
+                                                            // Only show Subscription tab to Super Admin
+                                                            ...(currentUser?.email === SUPER_ADMIN_EMAIL ? [{ id: 'subscription', label: 'Suscripciones', icon: Zap }] : [])
+                                                        ].map(tab => (
+                                                            <button
+                                                                key={tab.id}
+                                                                onClick={() => setSettingsTab(tab.id)}
+                                                                className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all duration-300 border ${settingsTab === tab.id ? 'bg-orange-600 text-white shadow-[0_0_20px_rgba(8,145,178,0.4)] border-orange-400 transform scale-105' : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'}`}
+                                                            >
+                                                                <tab.icon className={`w-4 h-4 ${settingsTab === tab.id ? 'animate-pulse' : ''}`} /> {tab.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* === SUBSCRIPTION MANAGEMENT (SUPER ADMIN ONLY) === */}
+                                                    {settingsTab === 'subscription' && currentUser?.email === SUPER_ADMIN_EMAIL && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(249,115,22,0.1)]">
+                                                                <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                                                                    <Zap className="w-6 h-6 text-yellow-500 fill-current" />
+                                                                    Modelos de Suscripción
+                                                                </h3>
+
+                                                                <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center gap-4">
+                                                                    <AlertTriangle className="w-8 h-8 text-yellow-500" />
+                                                                    <div>
+                                                                        <p className="font-bold text-yellow-500">Zona de Peligro: Super Admin</p>
+                                                                        <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los límites y funcionalidades de la tienda.</p>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                                    {/* Plan Emprendedor */}
+                                                                    <button
+                                                                        onClick={() => handlePlanChange('entrepreneur')}
+                                                                        className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan ? 'bg-slate-900 border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                                    >
+                                                                        <div className="flex justify-between items-start mb-4">
+                                                                            <div className="p-3 bg-slate-800 rounded-xl">
+                                                                                <Store className="w-6 h-6 text-orange-400" />
                                                                             </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Acento</label>
-                                                                                <div className="flex gap-3 items-center">
-                                                                                    <input
-                                                                                        type="color"
-                                                                                        value={settings?.accentColor || '#22c55e'}
-                                                                                        onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
-                                                                                        className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
-                                                                                    />
-                                                                                    <input
-                                                                                        type="text"
-                                                                                        value={settings?.accentColor || '#22c55e'}
-                                                                                        onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
-                                                                                        className="input-cyber flex-1 p-3 font-mono"
-                                                                                    />
-                                                                                </div>
+                                                                            {(settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan) && <div className="bg-orange-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                                        </div>
+                                                                        <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
+                                                                        <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sólido pero económico.</p>
+                                                                        <div className="text-2xl font-black text-orange-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                                        <ul className="space-y-2 text-sm text-slate-300">
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Hasta 30 productos</li>
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Dominio Vercel</li>
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Mercado Pago Directo</li>
+                                                                        </ul>
+                                                                    </button>
+
+                                                                    {/* Plan Negocio */}
+                                                                    <button
+                                                                        onClick={() => handlePlanChange('business')}
+                                                                        className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                                    >
+                                                                        <div className="flex justify-between items-start mb-4">
+                                                                            <div className="p-3 bg-slate-800 rounded-xl">
+                                                                                <Briefcase className="w-6 h-6 text-purple-400" />
                                                                             </div>
+                                                                            {settings.subscriptionPlan === 'business' && <div className="bg-purple-500 text-white text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                                        </div>
+                                                                        <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
+                                                                        <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
+                                                                        <div className="text-2xl font-black text-purple-400 mb-6">$14.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                                        <ul className="space-y-2 text-sm text-slate-300">
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp</li>
+                                                                        </ul>
+                                                                    </button>
+
+                                                                    {/* Plan Premium */}
+                                                                    <button
+                                                                        onClick={() => handlePlanChange('premium')}
+                                                                        className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                                    >
+                                                                        <div className="flex justify-between items-start mb-4">
+                                                                            <div className="p-3 bg-slate-800 rounded-xl">
+                                                                                <Sparkles className="w-6 h-6 text-yellow-400" />
+                                                                            </div>
+                                                                            {settings.subscriptionPlan === 'premium' && <div className="bg-yellow-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                                        </div>
+                                                                        <h4 className="text-xl font-black text-white mb-1">Premium</h4>
+                                                                        <p className="text-sm text-slate-400 mb-4 h-10">Servicio Full con IA.</p>
+                                                                        <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                                        <ul className="space-y-2 text-sm text-slate-300">
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Ilimitado / Full IA</li>
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga Inicial (10)</li>
+                                                                            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
+                                                                        </ul>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Billing Cycle Selection */}
+                                                                <div className="mt-8 pt-8 border-t border-slate-800/50">
+                                                                    <h4 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
+                                                                        <Calendar className="w-5 h-5 text-green-400" /> Ciclo de Facturación
+                                                                    </h4>
+                                                                    <div className="grid grid-cols-3 gap-4">
+                                                                        {[
+                                                                            { id: 'Semanal', label: 'Semanal' },
+                                                                            { id: 'Mensual', label: 'Mensual' },
+                                                                            { id: 'Anual', label: 'Anual' }
+                                                                        ].map(cycle => (
+                                                                            <button
+                                                                                key={cycle.id}
+                                                                                onClick={() => setSettings({ ...settings, subscriptionBillingCycle: cycle.id })}
+                                                                                className={`p-3 rounded-xl border transition-all font-bold ${settings?.subscriptionBillingCycle === cycle.id
+                                                                                    ? 'bg-green-500 text-black border-green-400 shadow-lg shadow-green-500/20'
+                                                                                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                                                                                    }`}
+                                                                            >
+                                                                                {cycle.label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                    <p className="text-xs text-slate-500 mt-2">Define la frecuencia de cobro para este plan.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {settingsTab === 'store' && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Store className="w-5 h-5 text-orange-400" /> Información de la Tienda
+                                                                </h3>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre de la Tienda</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.storeName || ''}
+                                                                            onChange={e => setSettings({ ...settings, storeName: e.target.value })}
+                                                                            placeholder="Mi Tienda"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Email de Contacto</label>
+                                                                        <input
+                                                                            type="email"
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.storeEmail || ''}
+                                                                            onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
+                                                                            placeholder="contacto@mitienda.com"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Teléfono</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.storePhone || ''}
+                                                                            onChange={e => setSettings({ ...settings, storePhone: e.target.value })}
+                                                                            placeholder="+54 11 1234-5678"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Dirección</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.storeAddress || ''}
+                                                                            onChange={e => setSettings({ ...settings, storeAddress: e.target.value })}
+                                                                            placeholder="Av. Corrientes 1234, CABA"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="mt-6">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción de la Tienda</label>
+                                                                    <textarea
+                                                                        className="input-cyber w-full p-4 h-24 resize-none"
+                                                                        value={settings?.storeDescription || ''}
+                                                                        onChange={e => setSettings({ ...settings, storeDescription: e.target.value })}
+                                                                        placeholder="Breve descripción de tu tienda..."
+                                                                    />
+                                                                </div>
+                                                                <div className="mt-6">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto de Nosotros</label>
+                                                                    <textarea
+                                                                        className="input-cyber w-full p-4 h-32 resize-none"
+                                                                        value={settings?.aboutUsText || ''}
+                                                                        onChange={e => setSettings({ ...settings, aboutUsText: e.target.value })}
+                                                                        placeholder="Historia de tu marca, valores, misión..."
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Copyright Configuration */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <FileText className="w-5 h-5 text-orange-400" /> Textos de Copyright
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Menú Lateral</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.menuCopyright || ''}
+                                                                            onChange={e => setSettings({ ...settings, menuCopyright: e.target.value })}
+                                                                            placeholder={`${settings?.storeName || 'Mi Tienda'} © ${new Date().getFullYear()}`}
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-2">Aparece al final del menú hamburguesa</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Footer</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.footerCopyright || ''}
+                                                                            onChange={e => setSettings({ ...settings, footerCopyright: e.target.value })}
+                                                                            placeholder={`© ${new Date().getFullYear()} ${settings?.storeName || 'Mi Tienda'}. All rights reserved.`}
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-2">Aparece en la barra inferior del sitio</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Guía "Cómo Comprar" Configuration */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <FileQuestion className="w-5 h-5 text-orange-400" /> Guía "Cómo Comprar"
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    {/* Toggle para mostrar la página */}
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Mostrar en Menú</p>
+                                                                            <p className="text-xs text-slate-500">Mostrar enlace "Cómo Comprar" en el menú lateral</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showGuideLink: settings?.showGuideLink === false ? true : false })}
+                                                                            className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showGuideLink !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideLink !== false ? 'left-8' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Título de la página */}
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de la Página</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideTitle || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideTitle: e.target.value })}
+                                                                            placeholder="Cómo Comprar"
+                                                                        />
+                                                                    </div>
+
+                                                                    {/* Paso 1 */}
+                                                                    <div className="border-t border-slate-800 pt-4">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">1</span>
+                                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 1</label>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showGuideStep1: settings?.showGuideStep1 === false ? true : false })}
+                                                                                className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep1 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep1 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep1 === false ? 'opacity-50' : ''}`}>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep1Title || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep1Title: e.target.value })}
+                                                                                placeholder="Selecciona Productos"
+                                                                                disabled={settings?.showGuideStep1 === false}
+                                                                            />
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep1Text || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep1Text: e.target.value })}
+                                                                                placeholder="Descripción del paso..."
+                                                                                disabled={settings?.showGuideStep1 === false}
+                                                                            />
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Brand Ticker Configuration */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Sparkles className="w-5 h-5 text-orange-400" /> Ticker de Marca
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Mostrar Ticker</p>
-                                                                                    <p className="text-xs text-slate-500">Activar/desactivar la cinta de texto animada.</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
+                                                                    {/* Paso 2 */}
+                                                                    <div className="border-t border-slate-800 pt-4">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">2</span>
+                                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 2</label>
                                                                             </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Ticker</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.tickerText || ''}
-                                                                                    onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
-                                                                                    placeholder="TECNOLOGÍA • INNOVACIÓN • CALIDAD PREMIUM • FUTURO"
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-2">Este texto se repetirá en bucle.</p>
-                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showGuideStep2: settings?.showGuideStep2 === false ? true : false })}
+                                                                                className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep2 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep2 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep2 === false ? 'opacity-50' : ''}`}>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep2Title || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep2Title: e.target.value })}
+                                                                                placeholder="Revisa tu Carrito"
+                                                                                disabled={settings?.showGuideStep2 === false}
+                                                                            />
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep2Text || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep2Text: e.target.value })}
+                                                                                placeholder="Descripción del paso..."
+                                                                                disabled={settings?.showGuideStep2 === false}
+                                                                            />
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Hero Banner Configuration */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <ImageIcon className="w-5 h-5 text-purple-400" /> Banner Principal (Hero)
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Badge/Etiqueta</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.heroBadge || ''}
-                                                                                    onChange={e => setSettings({ ...settings, heroBadge: e.target.value })}
-                                                                                    placeholder="Nueva Colección 2026"
-                                                                                />
+                                                                    {/* Paso 3 */}
+                                                                    <div className="border-t border-slate-800 pt-4">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">3</span>
+                                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 3</label>
                                                                             </div>
-                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                                <div>
-                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 1</label>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.heroTitle1 || ''}
-                                                                                        onChange={e => setSettings({ ...settings, heroTitle1: e.target.value })}
-                                                                                        placeholder="TECNOLOGÍA"
-                                                                                    />
-                                                                                </div>
-                                                                                <div>
-                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 2</label>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.heroTitle2 || ''}
-                                                                                        onChange={e => setSettings({ ...settings, heroTitle2: e.target.value })}
-                                                                                        placeholder="DEL FUTURO"
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Subtítulo</label>
-                                                                                <textarea
-                                                                                    className="input-cyber w-full p-3 h-20 resize-none"
-                                                                                    value={settings?.heroSubtitle || ''}
-                                                                                    onChange={e => setSettings({ ...settings, heroSubtitle: e.target.value })}
-                                                                                    placeholder="Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado."
-                                                                                />
-                                                                            </div>
-                                                                            <div className="p-4 bg-purple-900/10 border border-purple-900/30 rounded-xl">
-                                                                                <p className="text-purple-400 text-sm flex items-center gap-2">
-                                                                                    <ImageIcon className="w-4 h-4" />
-                                                                                    Las imágenes de fondo se gestionan arriba en "Imágenes del Carrusel Hero"
-                                                                                </p>
-                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showGuideStep3: settings?.showGuideStep3 === false ? true : false })}
+                                                                                className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep3 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep3 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep3 === false ? 'opacity-50' : ''}`}>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep3Title || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep3Title: e.target.value })}
+                                                                                placeholder="Datos de Envío"
+                                                                                disabled={settings?.showGuideStep3 === false}
+                                                                            />
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep3Text || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep3Text: e.target.value })}
+                                                                                placeholder="Descripción del paso..."
+                                                                                disabled={settings?.showGuideStep3 === false}
+                                                                            />
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Features Section Configuration */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Star className="w-5 h-5 text-yellow-400" /> Beneficios Destacados
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            {/* Toggle para mostrar toda la sección */}
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Mostrar Sección de Beneficios</p>
-                                                                                    <p className="text-xs text-slate-500">Activa/desactiva toda la sección de beneficios</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showFeaturesSection: settings?.showFeaturesSection === false ? true : false })}
-                                                                                    className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showFeaturesSection !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeaturesSection !== false ? 'left-8' : 'left-1'}`}></div>
-                                                                                </button>
+                                                                    {/* Paso 4 */}
+                                                                    <div className="border-t border-slate-800 pt-4">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">4</span>
+                                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 4</label>
                                                                             </div>
-
-                                                                            {/* Feature 1 */}
-                                                                            <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <Zap className="w-4 h-4 text-orange-400" />
-                                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 1 (Rayo)</label>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showFeature1: settings?.showFeature1 === false ? true : false })}
-                                                                                        className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature1 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature1 !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature1 === false ? 'opacity-50' : ''}`}>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.feature1Title || ''}
-                                                                                        onChange={e => setSettings({ ...settings, feature1Title: e.target.value })}
-                                                                                        placeholder="Envío Ultra Rápido"
-                                                                                        disabled={settings?.showFeature1 === false}
-                                                                                    />
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.feature1Desc || ''}
-                                                                                        onChange={e => setSettings({ ...settings, feature1Desc: e.target.value })}
-                                                                                        placeholder="Subtítulo corto..."
-                                                                                        disabled={settings?.showFeature1 === false}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-                                                                            {/* Feature 2 */}
-                                                                            <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <Shield className="w-4 h-4 text-purple-400" />
-                                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 2 (Escudo)</label>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showFeature2: settings?.showFeature2 === false ? true : false })}
-                                                                                        className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature2 !== false ? 'bg-purple-600' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature2 !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature2 === false ? 'opacity-50' : ''}`}>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.feature2Title || ''}
-                                                                                        onChange={e => setSettings({ ...settings, feature2Title: e.target.value })}
-                                                                                        placeholder="Garantía Extendida"
-                                                                                        disabled={settings?.showFeature2 === false}
-                                                                                    />
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.feature2Desc || ''}
-                                                                                        onChange={e => setSettings({ ...settings, feature2Desc: e.target.value })}
-                                                                                        placeholder="Subtítulo corto..."
-                                                                                        disabled={settings?.showFeature2 === false}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
-                                                                            {/* Feature 3 */}
-                                                                            <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <Headphones className="w-4 h-4 text-green-400" />
-                                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 3 (Soporte)</label>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showFeature3: settings?.showFeature3 === false ? true : false })}
-                                                                                        className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature3 !== false ? 'bg-green-600' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature3 !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature3 === false ? 'opacity-50' : ''}`}>
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.feature3Title || ''}
-                                                                                        onChange={e => setSettings({ ...settings, feature3Title: e.target.value })}
-                                                                                        placeholder="Soporte 24/7"
-                                                                                        disabled={settings?.showFeature3 === false}
-                                                                                    />
-                                                                                    <input
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={settings?.feature3Desc || ''}
-                                                                                        onChange={e => setSettings({ ...settings, feature3Desc: e.target.value })}
-                                                                                        placeholder="Subtítulo corto..."
-                                                                                        disabled={settings?.showFeature3 === false}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showGuideStep4: settings?.showGuideStep4 === false ? true : false })}
+                                                                                className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep4 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep4 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep4 === false ? 'opacity-50' : ''}`}>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep4Title || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep4Title: e.target.value })}
+                                                                                placeholder="Pago y Confirmación"
+                                                                                disabled={settings?.showGuideStep4 === false}
+                                                                            />
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep4Text || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep4Text: e.target.value })}
+                                                                                placeholder="Descripción del paso..."
+                                                                                disabled={settings?.showGuideStep4 === false}
+                                                                            />
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Footer Contact Configuration */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <MessageCircle className="w-5 h-5 text-green-400" /> Sección Contacto (Footer)
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Mostrar Sección</p>
-                                                                                    <p className="text-xs text-slate-500">Activa/desactiva la sección de contacto en el footer</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showFooterContact: settings?.showFooterContact === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showFooterContact !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showFooterContact !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
+                                                                    {/* Paso 5 */}
+                                                                    <div className="border-t border-slate-800 pt-4">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">5</span>
+                                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 5</label>
                                                                             </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.footerContactTitle || ''}
-                                                                                    onChange={e => setSettings({ ...settings, footerContactTitle: e.target.value })}
-                                                                                    placeholder="Contacto"
-                                                                                />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.footerContactDescription || ''}
-                                                                                    onChange={e => setSettings({ ...settings, footerContactDescription: e.target.value })}
-                                                                                    placeholder="¿Tienes alguna duda? Estamos aquí para ayudarte."
-                                                                                />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Botón</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.footerContactButtonText || ''}
-                                                                                    onChange={e => setSettings({ ...settings, footerContactButtonText: e.target.value })}
-                                                                                    placeholder="Contactar Soporte"
-                                                                                />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo de Contacto</label>
-                                                                                <select
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.footerContactType || 'whatsapp'}
-                                                                                    onChange={e => setSettings({ ...settings, footerContactType: e.target.value })}
-                                                                                >
-                                                                                    <option value="whatsapp">WhatsApp</option>
-                                                                                    <option value="instagram">Instagram</option>
-                                                                                    <option value="email">Email</option>
-                                                                                </select>
-
-                                                                                {/* Conditional Input based on Type */}
-                                                                                {(!settings?.footerContactType || settings?.footerContactType === 'whatsapp') && (
-                                                                                    <div className="mt-3 animate-fade-in">
-                                                                                        <label className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1 block">Enlace de WhatsApp</label>
-                                                                                        <input
-                                                                                            className="input-cyber w-full p-3 text-sm border-green-500/30 focus:border-green-500"
-                                                                                            value={settings?.whatsappLink || ''}
-                                                                                            onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
-                                                                                            placeholder="https://wa.me/54911..."
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
-
-                                                                                {settings?.footerContactType === 'instagram' && (
-                                                                                    <div className="mt-3 animate-fade-in">
-                                                                                        <label className="text-[10px] font-bold text-pink-500 uppercase tracking-wider mb-1 block">Perfil de Instagram</label>
-                                                                                        <input
-                                                                                            className="input-cyber w-full p-3 text-sm border-pink-500/30 focus:border-pink-500"
-                                                                                            value={settings?.instagramLink || ''}
-                                                                                            onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
-                                                                                            placeholder="https://instagram.com/usuario"
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
-
-                                                                                {settings?.footerContactType === 'email' && (
-                                                                                    <div className="mt-3 animate-fade-in">
-                                                                                        <label className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1 block">Email de Soporte</label>
-                                                                                        <input
-                                                                                            className="input-cyber w-full p-3 text-sm border-blue-500/30 focus:border-blue-500"
-                                                                                            value={settings?.storeEmail || ''}
-                                                                                            onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
-                                                                                            placeholder="soporte@tienda.com"
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showGuideStep5: settings?.showGuideStep5 === false ? true : false })}
+                                                                                className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep5 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep5 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                            </button>
                                                                         </div>
-                                                                    </div>
-
-                                                                    {/* Footer Brand Configuration */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Store className="w-5 h-5 text-orange-400" /> Marca en Footer
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Sufijo del Nombre</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.footerSuffix || ''}
-                                                                                    onChange={e => setSettings({ ...settings, footerSuffix: e.target.value })}
-                                                                                    placeholder=".SF"
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-1">Aparece junto al nombre de la tienda (ej: SUSTORE.SF)</p>
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
-                                                                                <textarea
-                                                                                    className="input-cyber w-full p-3 h-24 resize-none"
-                                                                                    value={settings?.footerDescription || ''}
-                                                                                    onChange={e => setSettings({ ...settings, footerDescription: e.target.value })}
-                                                                                    placeholder="Tu destino premium para tecnología de vanguardia..."
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Legal Links Configuration */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <FileText className="w-5 h-5 text-slate-400" /> Links Legales
-                                                                        </h3>
-                                                                        <div className="space-y-4">
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Política de Privacidad</p>
-                                                                                    <p className="text-xs text-slate-500">Mostrar link en el footer</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showPrivacyPolicy: settings?.showPrivacyPolicy === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showPrivacyPolicy !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showPrivacyPolicy !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Terms of Service</p>
-                                                                                    <p className="text-xs text-slate-500">Mostrar link en el footer</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showTermsOfService: settings?.showTermsOfService === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showTermsOfService !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showTermsOfService !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
+                                                                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep5 === false ? 'opacity-50' : ''}`}>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep5Title || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep5Title: e.target.value })}
+                                                                                placeholder="¡Listo!"
+                                                                                disabled={settings?.showGuideStep5 === false}
+                                                                            />
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.guideStep5Text || ''}
+                                                                                onChange={e => setSettings({ ...settings, guideStep5Text: e.target.value })}
+                                                                                placeholder="Descripción del paso..."
+                                                                                disabled={settings?.showGuideStep5 === false}
+                                                                            />
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            )}
+                                                            </div>
 
-                                                            {/* === SOCIAL MEDIA === */}
-                                                            {settingsTab === 'social' && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Share2 className="w-5 h-5 text-blue-400" /> Redes Sociales
-                                                                        </h3>
-                                                                        <p className="text-sm text-slate-500 mb-6">Configura los enlaces y activa/desactiva la visibilidad de cada red social en el footer.</p>
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                                            {/* WhatsApp */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                                        <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
-                                                                                    </label>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="text-[10px] text-slate-500 font-mono uppercase">Footer</span>
-                                                                                        <button
-                                                                                            onClick={() => setSettings({ ...settings, showWhatsapp: !settings?.showWhatsapp })}
-                                                                                            className={`w-10 h-5 rounded-full transition relative ${settings?.showWhatsapp === true ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                        >
-                                                                                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showWhatsapp === true ? '22px' : '2px' }}></div>
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </div>
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Bell className="w-5 h-5 text-yellow-400" /> Anuncios
+                                                                </h3>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Anuncio (Banner superior)</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.announcementMessage || ''}
+                                                                        onChange={e => setSettings({ ...settings, announcementMessage: e.target.value })}
+                                                                        placeholder="🔥 ¡Envío gratis en compras mayores a $50.000!"
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-2">Dejar vacío para ocultar el banner.</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Zap className="w-5 h-5 text-yellow-500" /> Pantalla de Carga
+                                                                </h3>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de Carga</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.loadingTitle || ''}
+                                                                            onChange={e => setSettings({ ...settings, loadingTitle: e.target.value })}
+                                                                            placeholder={settings?.storeName || "SUSTORE"}
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-2">Aparece en grande (ej. SUSTORE).</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Carga</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.loadingText || ''}
+                                                                            onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
+                                                                            placeholder="Cargando sistema..."
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-2">Texto pequeño debajo del título.</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* === APPEARANCE === */}
+                                                    {settingsTab === 'appearance' && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <ImageIcon className="w-5 h-5 text-purple-400" /> Imágenes del Carrusel Hero
+                                                                </h3>
+
+                                                                {/* Lista de imágenes del carrusel */}
+                                                                <div className="space-y-4 mb-6">
+                                                                    {(settings?.heroImages || []).map((image, index) => (
+                                                                        <div key={index} className="flex items-center gap-4 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                            {/* Thumbnail */}
+                                                                            <div className="w-20 h-14 rounded-lg overflow-hidden border border-slate-700 flex-shrink-0">
+                                                                                <img src={image.url} className="w-full h-full object-cover" alt={`Slide ${index + 1}`} />
+                                                                            </div>
+
+                                                                            {/* Info y controles */}
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-white font-medium text-sm mb-1">Slide {index + 1} {index === 0 && <span className="text-orange-400 text-xs">(Texto visible)</span>}</p>
+
+                                                                                {/* Selector de vinculación */}
+                                                                                <select
+                                                                                    className="input-cyber w-full p-2 text-xs"
+                                                                                    value={image.linkedProductId || image.linkedPromoId || ''}
+                                                                                    onChange={(e) => {
+                                                                                        const value = e.target.value;
+                                                                                        const newImages = [...(settings?.heroImages || [])];
+                                                                                        if (value.startsWith('promo_')) {
+                                                                                            newImages[index] = { ...newImages[index], linkedProductId: null, linkedPromoId: value.replace('promo_', '') };
+                                                                                        } else if (value) {
+                                                                                            newImages[index] = { ...newImages[index], linkedProductId: value, linkedPromoId: null };
+                                                                                        } else {
+                                                                                            newImages[index] = { ...newImages[index], linkedProductId: null, linkedPromoId: null };
+                                                                                        }
+                                                                                        setSettings({ ...settings, heroImages: newImages });
+                                                                                    }}
+                                                                                >
+                                                                                    <option value="">Sin vincular (solo decorativo)</option>
+                                                                                    <optgroup label="Productos">
+                                                                                        {products.map(p => (
+                                                                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                                                                        ))}
+                                                                                    </optgroup>
+                                                                                    <optgroup label="Promos">
+                                                                                        {promos.map(promo => (
+                                                                                            <option key={promo.id} value={`promo_${promo.id}`}>{promo.name || promo.title}</option>
+                                                                                        ))}
+                                                                                    </optgroup>
+                                                                                </select>
+                                                                            </div>
+
+                                                                            {/* Botón eliminar */}
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    const newImages = (settings?.heroImages || []).filter((_, i) => i !== index);
+                                                                                    setSettings({ ...settings, heroImages: newImages });
+                                                                                }}
+                                                                                className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg transition"
+                                                                            >
+                                                                                <X className="w-5 h-5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+
+                                                                    {(!settings?.heroImages || settings.heroImages.length === 0) && (
+                                                                        <div className="text-center py-8 text-slate-500 border border-dashed border-slate-700 rounded-xl">
+                                                                            <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                                                            <p>No hay imágenes en el carrusel</p>
+                                                                            <p className="text-xs mt-1">Agrega hasta 5 imágenes</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Botón agregar imagen */}
+                                                                {(!settings?.heroImages || settings.heroImages.length < 5) && (
+                                                                    <div className="mb-6">
+                                                                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-3 bg-purple-900/20 hover:bg-purple-900/40 text-purple-400 rounded-xl transition font-semibold text-sm">
+                                                                            <Plus className="w-5 h-5" /> Agregar Imagen al Carrusel
+                                                                            <input
+                                                                                type="file"
+                                                                                accept="image/*"
+                                                                                className="hidden"
+                                                                                onChange={(e) => {
+                                                                                    const file = e.target.files?.[0];
+                                                                                    if (!file) return;
+                                                                                    if (!file.type.startsWith('image/')) {
+                                                                                        return showToast("Por favor selecciona una imagen válida.", "warning");
+                                                                                    }
+                                                                                    const reader = new FileReader();
+                                                                                    reader.onload = (event) => {
+                                                                                        const img = new Image();
+                                                                                        img.onload = () => {
+                                                                                            const canvas = document.createElement('canvas');
+                                                                                            const MAX_WIDTH = 1920;
+                                                                                            let width = img.width;
+                                                                                            let height = img.height;
+                                                                                            if (width > MAX_WIDTH) {
+                                                                                                height *= MAX_WIDTH / width;
+                                                                                                width = MAX_WIDTH;
+                                                                                            }
+                                                                                            canvas.width = width;
+                                                                                            canvas.height = height;
+                                                                                            const ctx = canvas.getContext('2d');
+                                                                                            ctx.drawImage(img, 0, 0, width, height);
+                                                                                            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                                                                                            const newImages = [...(settings?.heroImages || []), { url: dataUrl, linkedProductId: null, linkedPromoId: null }];
+                                                                                            setSettings({ ...settings, heroImages: newImages });
+                                                                                            showToast("Imagen agregada al carrusel.", "success");
+                                                                                        };
+                                                                                        img.src = event.target.result;
+                                                                                    };
+                                                                                    reader.readAsDataURL(file);
+                                                                                    e.target.value = ''; // Reset input
+                                                                                }}
+                                                                            />
+                                                                        </label>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Intervalo del carrusel */}
+                                                                <div className="pt-4 border-t border-slate-800">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Intervalo de Rotación</label>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <input
+                                                                            type="range"
+                                                                            min="2000"
+                                                                            max="15000"
+                                                                            step="1000"
+                                                                            value={settings?.heroCarouselInterval || 5000}
+                                                                            onChange={e => setSettings({ ...settings, heroCarouselInterval: parseInt(e.target.value) })}
+                                                                            className="flex-1"
+                                                                        />
+                                                                        <span className="text-white font-mono text-sm w-14">{((settings?.heroCarouselInterval || 5000) / 1000).toFixed(0)}s</span>
+                                                                    </div>
+                                                                    <p className="text-xs text-slate-500 mt-2">Tiempo entre cada slide (2-15 segundos)</p>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Logo de la Tienda */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Store className="w-5 h-5 text-orange-400" /> Logo de la Tienda
+                                                                </h3>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen del Logo</label>
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        onChange={(e) => handleImageUpload(e, setSettings, 'logoUrl')}
+                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
+                                                                    />
+                                                                    {settings?.logoUrl && (
+                                                                        <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
+                                                                            <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Palette className="w-5 h-5 text-pink-400" /> Colores del Tema
+                                                                </h3>
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Primario</label>
+                                                                        <div className="flex gap-3 items-center">
+                                                                            <input
+                                                                                type="color"
+                                                                                value={settings?.primaryColor || '#f97316'}
+                                                                                onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
+                                                                                className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                                            />
+                                                                            <input
+                                                                                type="text"
+                                                                                value={settings?.primaryColor || '#f97316'}
+                                                                                onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
+                                                                                className="input-cyber flex-1 p-3 font-mono"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Secundario</label>
+                                                                        <div className="flex gap-3 items-center">
+                                                                            <input
+                                                                                type="color"
+                                                                                value={settings?.secondaryColor || '#8b5cf6'}
+                                                                                onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
+                                                                                className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                                            />
+                                                                            <input
+                                                                                type="text"
+                                                                                value={settings?.secondaryColor || '#8b5cf6'}
+                                                                                onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
+                                                                                className="input-cyber flex-1 p-3 font-mono"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Acento</label>
+                                                                        <div className="flex gap-3 items-center">
+                                                                            <input
+                                                                                type="color"
+                                                                                value={settings?.accentColor || '#22c55e'}
+                                                                                onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
+                                                                                className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                                            />
+                                                                            <input
+                                                                                type="text"
+                                                                                value={settings?.accentColor || '#22c55e'}
+                                                                                onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
+                                                                                className="input-cyber flex-1 p-3 font-mono"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Brand Ticker Configuration */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Sparkles className="w-5 h-5 text-orange-400" /> Ticker de Marca
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Mostrar Ticker</p>
+                                                                            <p className="text-xs text-slate-500">Activar/desactivar la cinta de texto animada.</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Ticker</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.tickerText || ''}
+                                                                            onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
+                                                                            placeholder="TECNOLOGÍA • INNOVACIÓN • CALIDAD PREMIUM • FUTURO"
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-2">Este texto se repetirá en bucle.</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Hero Banner Configuration */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <ImageIcon className="w-5 h-5 text-purple-400" /> Banner Principal (Hero)
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Badge/Etiqueta</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.heroBadge || ''}
+                                                                            onChange={e => setSettings({ ...settings, heroBadge: e.target.value })}
+                                                                            placeholder="Nueva Colección 2026"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 1</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.heroTitle1 || ''}
+                                                                                onChange={e => setSettings({ ...settings, heroTitle1: e.target.value })}
+                                                                                placeholder="TECNOLOGÍA"
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 2</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.heroTitle2 || ''}
+                                                                                onChange={e => setSettings({ ...settings, heroTitle2: e.target.value })}
+                                                                                placeholder="DEL FUTURO"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Subtítulo</label>
+                                                                        <textarea
+                                                                            className="input-cyber w-full p-3 h-20 resize-none"
+                                                                            value={settings?.heroSubtitle || ''}
+                                                                            onChange={e => setSettings({ ...settings, heroSubtitle: e.target.value })}
+                                                                            placeholder="Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado."
+                                                                        />
+                                                                    </div>
+                                                                    <div className="p-4 bg-purple-900/10 border border-purple-900/30 rounded-xl">
+                                                                        <p className="text-purple-400 text-sm flex items-center gap-2">
+                                                                            <ImageIcon className="w-4 h-4" />
+                                                                            Las imágenes de fondo se gestionan arriba en "Imágenes del Carrusel Hero"
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Features Section Configuration */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Star className="w-5 h-5 text-yellow-400" /> Beneficios Destacados
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    {/* Toggle para mostrar toda la sección */}
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Mostrar Sección de Beneficios</p>
+                                                                            <p className="text-xs text-slate-500">Activa/desactiva toda la sección de beneficios</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showFeaturesSection: settings?.showFeaturesSection === false ? true : false })}
+                                                                            className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showFeaturesSection !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeaturesSection !== false ? 'left-8' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Feature 1 */}
+                                                                    <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Zap className="w-4 h-4 text-orange-400" />
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 1 (Rayo)</label>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showFeature1: settings?.showFeature1 === false ? true : false })}
+                                                                                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature1 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature1 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature1 === false ? 'opacity-50' : ''}`}>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.feature1Title || ''}
+                                                                                onChange={e => setSettings({ ...settings, feature1Title: e.target.value })}
+                                                                                placeholder="Envío Ultra Rápido"
+                                                                                disabled={settings?.showFeature1 === false}
+                                                                            />
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.feature1Desc || ''}
+                                                                                onChange={e => setSettings({ ...settings, feature1Desc: e.target.value })}
+                                                                                placeholder="Subtítulo corto..."
+                                                                                disabled={settings?.showFeature1 === false}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    {/* Feature 2 */}
+                                                                    <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Shield className="w-4 h-4 text-purple-400" />
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 2 (Escudo)</label>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showFeature2: settings?.showFeature2 === false ? true : false })}
+                                                                                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature2 !== false ? 'bg-purple-600' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature2 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature2 === false ? 'opacity-50' : ''}`}>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.feature2Title || ''}
+                                                                                onChange={e => setSettings({ ...settings, feature2Title: e.target.value })}
+                                                                                placeholder="Garantía Extendida"
+                                                                                disabled={settings?.showFeature2 === false}
+                                                                            />
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.feature2Desc || ''}
+                                                                                onChange={e => setSettings({ ...settings, feature2Desc: e.target.value })}
+                                                                                placeholder="Subtítulo corto..."
+                                                                                disabled={settings?.showFeature2 === false}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    {/* Feature 3 */}
+                                                                    <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Headphones className="w-4 h-4 text-green-400" />
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 3 (Soporte)</label>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showFeature3: settings?.showFeature3 === false ? true : false })}
+                                                                                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature3 !== false ? 'bg-green-600' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature3 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature3 === false ? 'opacity-50' : ''}`}>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.feature3Title || ''}
+                                                                                onChange={e => setSettings({ ...settings, feature3Title: e.target.value })}
+                                                                                placeholder="Soporte 24/7"
+                                                                                disabled={settings?.showFeature3 === false}
+                                                                            />
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.feature3Desc || ''}
+                                                                                onChange={e => setSettings({ ...settings, feature3Desc: e.target.value })}
+                                                                                placeholder="Subtítulo corto..."
+                                                                                disabled={settings?.showFeature3 === false}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Footer Contact Configuration */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <MessageCircle className="w-5 h-5 text-green-400" /> Sección Contacto (Footer)
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Mostrar Sección</p>
+                                                                            <p className="text-xs text-slate-500">Activa/desactiva la sección de contacto en el footer</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showFooterContact: settings?.showFooterContact === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showFooterContact !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showFooterContact !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.footerContactTitle || ''}
+                                                                            onChange={e => setSettings({ ...settings, footerContactTitle: e.target.value })}
+                                                                            placeholder="Contacto"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.footerContactDescription || ''}
+                                                                            onChange={e => setSettings({ ...settings, footerContactDescription: e.target.value })}
+                                                                            placeholder="¿Tienes alguna duda? Estamos aquí para ayudarte."
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Botón</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.footerContactButtonText || ''}
+                                                                            onChange={e => setSettings({ ...settings, footerContactButtonText: e.target.value })}
+                                                                            placeholder="Contactar Soporte"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo de Contacto</label>
+                                                                        <select
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.footerContactType || 'whatsapp'}
+                                                                            onChange={e => setSettings({ ...settings, footerContactType: e.target.value })}
+                                                                        >
+                                                                            <option value="whatsapp">WhatsApp</option>
+                                                                            <option value="instagram">Instagram</option>
+                                                                            <option value="email">Email</option>
+                                                                        </select>
+
+                                                                        {/* Conditional Input based on Type */}
+                                                                        {(!settings?.footerContactType || settings?.footerContactType === 'whatsapp') && (
+                                                                            <div className="mt-3 animate-fade-in">
+                                                                                <label className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1 block">Enlace de WhatsApp</label>
                                                                                 <input
-                                                                                    className="input-cyber w-full p-3 text-sm mb-3"
+                                                                                    className="input-cyber w-full p-3 text-sm border-green-500/30 focus:border-green-500"
                                                                                     value={settings?.whatsappLink || ''}
                                                                                     onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
-                                                                                    placeholder="https://wa.me/5491112345678"
+                                                                                    placeholder="https://wa.me/54911..."
                                                                                 />
-
-                                                                                {/* Floating Button Toggle */}
-                                                                                <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
-                                                                                    <div>
-                                                                                        <p className="text-xs text-slate-400 font-bold flex items-center gap-2">
-                                                                                            Botón Flotante
-                                                                                            {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
-                                                                                                <Lock className="w-3 h-3 text-yellow-500" />
-                                                                                            )}
-                                                                                        </p>
-                                                                                        {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
-                                                                                            <p className="text-[9px] text-yellow-500/80 mt-0.5">Requiere Plan Negocio</p>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            if (['business', 'premium'].includes(settings?.subscriptionPlan)) {
-                                                                                                setSettings({ ...settings, showFloatingWhatsapp: !settings?.showFloatingWhatsapp });
-                                                                                            } else {
-                                                                                                setShowPlansModal(true);
-                                                                                            }
-                                                                                        }}
-                                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showFloatingWhatsapp ? 'bg-green-500' : 'bg-slate-700'} ${(!['business', 'premium'].includes(settings?.subscriptionPlan)) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showFloatingWhatsapp ? '22px' : '2px' }}></div>
-                                                                                    </button>
-                                                                                </div>
                                                                             </div>
-                                                                            {/* Instagram */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                                        <Instagram className="w-4 h-4 text-pink-400" /> Instagram
-                                                                                    </label>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showInstagram: settings?.showInstagram === false ? true : false })}
-                                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showInstagram !== false ? 'bg-pink-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showInstagram !== false ? 'left-6' : 'left-0.5'}`}></div>
-                                                                                    </button>
-                                                                                </div>
+                                                                        )}
+
+                                                                        {settings?.footerContactType === 'instagram' && (
+                                                                            <div className="mt-3 animate-fade-in">
+                                                                                <label className="text-[10px] font-bold text-pink-500 uppercase tracking-wider mb-1 block">Perfil de Instagram</label>
                                                                                 <input
-                                                                                    className="input-cyber w-full p-3 text-sm"
+                                                                                    className="input-cyber w-full p-3 text-sm border-pink-500/30 focus:border-pink-500"
                                                                                     value={settings?.instagramLink || ''}
                                                                                     onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
-                                                                                    placeholder="https://instagram.com/mitienda"
+                                                                                    placeholder="https://instagram.com/usuario"
                                                                                 />
                                                                             </div>
-                                                                            {/* Facebook */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                                        <Facebook className="w-4 h-4 text-blue-500" /> Facebook
-                                                                                    </label>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showFacebook: !settings?.showFacebook })}
-                                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showFacebook ? 'bg-blue-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showFacebook ? 'left-6' : 'left-0.5'}`}></div>
-                                                                                    </button>
-                                                                                </div>
+                                                                        )}
+
+                                                                        {settings?.footerContactType === 'email' && (
+                                                                            <div className="mt-3 animate-fade-in">
+                                                                                <label className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1 block">Email de Soporte</label>
                                                                                 <input
-                                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                                    value={settings?.facebookLink || ''}
-                                                                                    onChange={e => setSettings({ ...settings, facebookLink: e.target.value })}
-                                                                                    placeholder="https://facebook.com/mitienda"
+                                                                                    className="input-cyber w-full p-3 text-sm border-blue-500/30 focus:border-blue-500"
+                                                                                    value={settings?.storeEmail || ''}
+                                                                                    onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
+                                                                                    placeholder="soporte@tienda.com"
                                                                                 />
                                                                             </div>
-                                                                            {/* Twitter */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                                        <Twitter className="w-4 h-4 text-sky-400" /> Twitter/X
-                                                                                    </label>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showTwitter: !settings?.showTwitter })}
-                                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showTwitter ? 'bg-sky-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTwitter ? 'left-6' : 'left-0.5'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                                    value={settings?.twitterLink || ''}
-                                                                                    onChange={e => setSettings({ ...settings, twitterLink: e.target.value })}
-                                                                                    placeholder="https://twitter.com/mitienda"
-                                                                                />
-                                                                            </div>
-                                                                            {/* TikTok */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                                        <Music className="w-4 h-4 text-rose-400" /> TikTok
-                                                                                    </label>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showTiktok: !settings?.showTiktok })}
-                                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showTiktok ? 'bg-rose-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTiktok ? 'left-6' : 'left-0.5'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                                    value={settings?.tiktokLink || ''}
-                                                                                    onChange={e => setSettings({ ...settings, tiktokLink: e.target.value })}
-                                                                                    placeholder="https://tiktok.com/@mitienda"
-                                                                                />
-                                                                            </div>
-                                                                            {/* YouTube */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                                        <Youtube className="w-4 h-4 text-red-500" /> YouTube
-                                                                                    </label>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, showYoutube: !settings?.showYoutube })}
-                                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showYoutube ? 'bg-red-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showYoutube ? 'left-6' : 'left-0.5'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                                    value={settings?.youtubeLink || ''}
-                                                                                    onChange={e => setSettings({ ...settings, youtubeLink: e.target.value })}
-                                                                                    placeholder="https://youtube.com/c/mitienda"
-                                                                                />
-                                                                            </div>
-                                                                        </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
-                                                            )}
+                                                            </div>
 
-                                                            {/* === PAYMENTS === */}
-                                                            {settingsTab === 'payments' && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <CreditCard className="w-5 h-5 text-green-400" /> Métodos de Pago
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            {/* Transfer */}
-                                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <Building className="w-6 h-6 text-orange-400" />
-                                                                                        <div>
-                                                                                            <p className="font-bold text-white">Transferencia Bancaria</p>
-                                                                                            <p className="text-xs text-slate-500">Activado / Desactivado</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, enabled: !settings?.paymentTransfer?.enabled } })}
-                                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.paymentTransfer?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentTransfer?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                {/* Campos de datos bancarios */}
-                                                                                {settings?.paymentTransfer?.enabled && (
-                                                                                    <div className="mt-4 space-y-3 pt-4 border-t border-slate-700">
-                                                                                        <div>
-                                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Alias</label>
-                                                                                            <input
-                                                                                                className="input-cyber w-full p-3 text-sm font-mono uppercase"
-                                                                                                placeholder="MI.ALIAS.MP"
-                                                                                                value={settings?.paymentTransfer?.alias || ''}
-                                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, alias: e.target.value.toUpperCase() } })}
-                                                                                            />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">CVU / CBU</label>
-                                                                                            <input
-                                                                                                className="input-cyber w-full p-3 text-sm font-mono"
-                                                                                                placeholder="0000000000000000000000"
-                                                                                                value={settings?.paymentTransfer?.cvuCbu || ''}
-                                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, cvuCbu: e.target.value.replace(/[^0-9]/g, '') } })}
-                                                                                                maxLength={22}
-                                                                                            />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Titular de la Cuenta</label>
-                                                                                            <input
-                                                                                                className="input-cyber w-full p-3 text-sm"
-                                                                                                placeholder="Nombre y Apellido del Titular"
-                                                                                                value={settings?.paymentTransfer?.titular || ''}
-                                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, titular: e.target.value } })}
-                                                                                            />
-                                                                                        </div>
-                                                                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
-                                                                                            <AlertCircle className="w-3 h-3" /> Estos datos se mostrarán al cliente al elegir pagar por transferencia
-                                                                                        </p>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Cash */}
-                                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <Banknote className="w-6 h-6 text-green-400" />
-                                                                                        <div>
-                                                                                            <p className="font-bold text-white">Efectivo</p>
-                                                                                            <p className="text-xs text-slate-500">Pago al recibir</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            // Validar que Retiro en Local esté activo
-                                                                                            if (!settings?.shippingPickup?.enabled) {
-                                                                                                showToast('Debes activar "Retiro en Local" (Envíos) para habilitar efectivo.', 'warning');
-                                                                                                return;
-                                                                                            }
-                                                                                            setSettings({ ...settings, paymentCash: !settings?.paymentCash });
-                                                                                        }}
-                                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'} ${!settings?.shippingPickup?.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                {!settings?.shippingPickup?.enabled && (
-                                                                                    <p className="text-[10px] text-orange-400/80 mt-2 flex items-center gap-1">
-                                                                                        <AlertTriangle className="w-3 h-3" /> Requiere activar Retiro en Local
-                                                                                    </p>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* MercadoPago (Tarjeta) */}
-                                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <CreditCard className="w-6 h-6 text-orange-400" />
-                                                                                        <div>
-                                                                                            <p className="font-bold text-white">Tarjeta (Mercado Pago)</p>
-                                                                                            <p className="text-xs text-slate-500">Activado / Desactivado</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, paymentMercadoPago: { ...settings?.paymentMercadoPago, enabled: !settings?.paymentMercadoPago?.enabled } })}
-                                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.paymentMercadoPago?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentMercadoPago?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-
-
-                                                                        </div>
+                                                            {/* Footer Brand Configuration */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Store className="w-5 h-5 text-orange-400" /> Marca en Footer
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Sufijo del Nombre</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.footerSuffix || ''}
+                                                                            onChange={e => setSettings({ ...settings, footerSuffix: e.target.value })}
+                                                                            placeholder=".SF"
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-1">Aparece junto al nombre de la tienda (ej: SUSTORE.SF)</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                                        <textarea
+                                                                            className="input-cyber w-full p-3 h-24 resize-none"
+                                                                            value={settings?.footerDescription || ''}
+                                                                            onChange={e => setSettings({ ...settings, footerDescription: e.target.value })}
+                                                                            placeholder="Tu destino premium para tecnología de vanguardia..."
+                                                                        />
                                                                     </div>
                                                                 </div>
-                                                            )}
+                                                            </div>
 
-                                                            {/* === SHIPPING === */}
-                                                            {settingsTab === 'shipping' && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Truck className="w-5 h-5 text-orange-400" /> Opciones de Envío
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            {/* Pickup */}
-                                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-4">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <MapPin className="w-6 h-6 text-orange-400" />
-                                                                                        <div>
-                                                                                            <p className="font-bold text-white">Retiro en Local</p>
-                                                                                            <p className="text-xs text-slate-500">El cliente pasa a buscar</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, enabled: !settings?.shippingPickup?.enabled } })}
-                                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
+                                                            {/* Legal Links Configuration */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <FileText className="w-5 h-5 text-slate-400" /> Links Legales
+                                                                </h3>
+                                                                <div className="space-y-4">
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Política de Privacidad</p>
+                                                                            <p className="text-xs text-slate-500">Mostrar link en el footer</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showPrivacyPolicy: settings?.showPrivacyPolicy === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showPrivacyPolicy !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showPrivacyPolicy !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Terms of Service</p>
+                                                                            <p className="text-xs text-slate-500">Mostrar link en el footer</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showTermsOfService: settings?.showTermsOfService === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showTermsOfService !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showTermsOfService !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* === SOCIAL MEDIA === */}
+                                                    {settingsTab === 'social' && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Share2 className="w-5 h-5 text-blue-400" /> Redes Sociales
+                                                                </h3>
+                                                                <p className="text-sm text-slate-500 mb-6">Configura los enlaces y activa/desactiva la visibilidad de cada red social en el footer.</p>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                    {/* WhatsApp */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                                <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
+                                                                            </label>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-[10px] text-slate-500 font-mono uppercase">Footer</span>
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, showWhatsapp: !settings?.showWhatsapp })}
+                                                                                    className={`w-10 h-5 rounded-full transition relative ${settings?.showWhatsapp === true ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                                >
+                                                                                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showWhatsapp === true ? '22px' : '2px' }}></div>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3 text-sm mb-3"
+                                                                            value={settings?.whatsappLink || ''}
+                                                                            onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
+                                                                            placeholder="https://wa.me/5491112345678"
+                                                                        />
+
+                                                                        {/* Floating Button Toggle */}
+                                                                        <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
+                                                                            <div>
+                                                                                <p className="text-xs text-slate-400 font-bold flex items-center gap-2">
+                                                                                    Botón Flotante
+                                                                                    {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
+                                                                                        <Lock className="w-3 h-3 text-yellow-500" />
+                                                                                    )}
+                                                                                </p>
+                                                                                {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
+                                                                                    <p className="text-[9px] text-yellow-500/80 mt-0.5">Requiere Plan Negocio</p>
+                                                                                )}
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    if (['business', 'premium'].includes(settings?.subscriptionPlan)) {
+                                                                                        setSettings({ ...settings, showFloatingWhatsapp: !settings?.showFloatingWhatsapp });
+                                                                                    } else {
+                                                                                        setShowPlansModal(true);
+                                                                                    }
+                                                                                }}
+                                                                                className={`w-10 h-5 rounded-full transition relative ${settings?.showFloatingWhatsapp ? 'bg-green-500' : 'bg-slate-700'} ${(!['business', 'premium'].includes(settings?.subscriptionPlan)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                            >
+                                                                                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showFloatingWhatsapp ? '22px' : '2px' }}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    {/* Instagram */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                                <Instagram className="w-4 h-4 text-pink-400" /> Instagram
+                                                                            </label>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showInstagram: settings?.showInstagram === false ? true : false })}
+                                                                                className={`w-12 h-6 rounded-full transition relative ${settings?.showInstagram !== false ? 'bg-pink-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showInstagram !== false ? 'left-6' : 'left-0.5'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3 text-sm"
+                                                                            value={settings?.instagramLink || ''}
+                                                                            onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
+                                                                            placeholder="https://instagram.com/mitienda"
+                                                                        />
+                                                                    </div>
+                                                                    {/* Facebook */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                                <Facebook className="w-4 h-4 text-blue-500" /> Facebook
+                                                                            </label>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showFacebook: !settings?.showFacebook })}
+                                                                                className={`w-12 h-6 rounded-full transition relative ${settings?.showFacebook ? 'bg-blue-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showFacebook ? 'left-6' : 'left-0.5'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3 text-sm"
+                                                                            value={settings?.facebookLink || ''}
+                                                                            onChange={e => setSettings({ ...settings, facebookLink: e.target.value })}
+                                                                            placeholder="https://facebook.com/mitienda"
+                                                                        />
+                                                                    </div>
+                                                                    {/* Twitter */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                                <Twitter className="w-4 h-4 text-sky-400" /> Twitter/X
+                                                                            </label>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showTwitter: !settings?.showTwitter })}
+                                                                                className={`w-12 h-6 rounded-full transition relative ${settings?.showTwitter ? 'bg-sky-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTwitter ? 'left-6' : 'left-0.5'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3 text-sm"
+                                                                            value={settings?.twitterLink || ''}
+                                                                            onChange={e => setSettings({ ...settings, twitterLink: e.target.value })}
+                                                                            placeholder="https://twitter.com/mitienda"
+                                                                        />
+                                                                    </div>
+                                                                    {/* TikTok */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                                <Music className="w-4 h-4 text-rose-400" /> TikTok
+                                                                            </label>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showTiktok: !settings?.showTiktok })}
+                                                                                className={`w-12 h-6 rounded-full transition relative ${settings?.showTiktok ? 'bg-rose-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTiktok ? 'left-6' : 'left-0.5'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3 text-sm"
+                                                                            value={settings?.tiktokLink || ''}
+                                                                            onChange={e => setSettings({ ...settings, tiktokLink: e.target.value })}
+                                                                            placeholder="https://tiktok.com/@mitienda"
+                                                                        />
+                                                                    </div>
+                                                                    {/* YouTube */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                                <Youtube className="w-4 h-4 text-red-500" /> YouTube
+                                                                            </label>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showYoutube: !settings?.showYoutube })}
+                                                                                className={`w-12 h-6 rounded-full transition relative ${settings?.showYoutube ? 'bg-red-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showYoutube ? 'left-6' : 'left-0.5'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3 text-sm"
+                                                                            value={settings?.youtubeLink || ''}
+                                                                            onChange={e => setSettings({ ...settings, youtubeLink: e.target.value })}
+                                                                            placeholder="https://youtube.com/c/mitienda"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* === PAYMENTS === */}
+                                                    {settingsTab === 'payments' && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <CreditCard className="w-5 h-5 text-green-400" /> Métodos de Pago
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    {/* Transfer */}
+                                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <Building className="w-6 h-6 text-orange-400" />
+                                                                                <div>
+                                                                                    <p className="font-bold text-white">Transferencia Bancaria</p>
+                                                                                    <p className="text-xs text-slate-500">Activado / Desactivado</p>
                                                                                 </div>
-                                                                                {settings?.shippingPickup?.enabled && (
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, enabled: !settings?.paymentTransfer?.enabled } })}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.paymentTransfer?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentTransfer?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        {/* Campos de datos bancarios */}
+                                                                        {settings?.paymentTransfer?.enabled && (
+                                                                            <div className="mt-4 space-y-3 pt-4 border-t border-slate-700">
+                                                                                <div>
+                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Alias</label>
                                                                                     <input
-                                                                                        className="input-cyber w-full p-4"
-                                                                                        value={settings?.shippingPickup?.address || ''}
-                                                                                        onChange={e => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, address: e.target.value } })}
-                                                                                        placeholder="Dirección de retiro: Av. Corrientes 1234"
+                                                                                        className="input-cyber w-full p-3 text-sm font-mono uppercase"
+                                                                                        placeholder="MI.ALIAS.MP"
+                                                                                        value={settings?.paymentTransfer?.alias || ''}
+                                                                                        onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, alias: e.target.value.toUpperCase() } })}
                                                                                     />
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Delivery */}
-                                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-4">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <Package className="w-6 h-6 text-purple-400" />
-                                                                                        <div>
-                                                                                            <p className="font-bold text-white">Envío a Domicilio</p>
-                                                                                            <p className="text-xs text-slate-500">Delivery estándar</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, enabled: !settings?.shippingDelivery?.enabled } })}
-                                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.shippingDelivery?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingDelivery?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
                                                                                 </div>
-                                                                                {settings?.shippingDelivery?.enabled && (
-                                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                                        <div>
-                                                                                            <label className="text-xs text-slate-500 mb-1 block">Costo de Envío ($)</label>
-                                                                                            <input
-                                                                                                type="number"
-                                                                                                className="input-cyber w-full p-4"
-                                                                                                value={settings?.shippingDelivery?.fee || 0}
-                                                                                                onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, fee: parseFloat(e.target.value) || 0 } })}
-                                                                                            />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label className="text-xs text-slate-500 mb-1 block">Gratis desde ($)</label>
-                                                                                            <input
-                                                                                                type="number"
-                                                                                                className="input-cyber w-full p-4"
-                                                                                                value={settings?.shippingDelivery?.freeAbove || 0}
-                                                                                                onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, freeAbove: parseFloat(e.target.value) || 0 } })}
-                                                                                                placeholder="0 = nunca gratis"
-                                                                                            />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
+                                                                                <div>
+                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">CVU / CBU</label>
+                                                                                    <input
+                                                                                        className="input-cyber w-full p-3 text-sm font-mono"
+                                                                                        placeholder="0000000000000000000000"
+                                                                                        value={settings?.paymentTransfer?.cvuCbu || ''}
+                                                                                        onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, cvuCbu: e.target.value.replace(/[^0-9]/g, '') } })}
+                                                                                        maxLength={22}
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Titular de la Cuenta</label>
+                                                                                    <input
+                                                                                        className="input-cyber w-full p-3 text-sm"
+                                                                                        placeholder="Nombre y Apellido del Titular"
+                                                                                        value={settings?.paymentTransfer?.titular || ''}
+                                                                                        onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, titular: e.target.value } })}
+                                                                                    />
+                                                                                </div>
+                                                                                <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
+                                                                                    <AlertCircle className="w-3 h-3" /> Estos datos se mostrarán al cliente al elegir pagar por transferencia
+                                                                                </p>
                                                                             </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Cash */}
+                                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <Banknote className="w-6 h-6 text-green-400" />
+                                                                                <div>
+                                                                                    <p className="font-bold text-white">Efectivo</p>
+                                                                                    <p className="text-xs text-slate-500">Pago al recibir</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    // Validar que Retiro en Local esté activo
+                                                                                    if (!settings?.shippingPickup?.enabled) {
+                                                                                        showToast('Debes activar "Retiro en Local" (Envíos) para habilitar efectivo.', 'warning');
+                                                                                        return;
+                                                                                    }
+                                                                                    setSettings({ ...settings, paymentCash: !settings?.paymentCash });
+                                                                                }}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'} ${!settings?.shippingPickup?.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
                                                                         </div>
+                                                                        {!settings?.shippingPickup?.enabled && (
+                                                                            <p className="text-[10px] text-orange-400/80 mt-2 flex items-center gap-1">
+                                                                                <AlertTriangle className="w-3 h-3" /> Requiere activar Retiro en Local
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* MercadoPago (Tarjeta) */}
+                                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <CreditCard className="w-6 h-6 text-orange-400" />
+                                                                                <div>
+                                                                                    <p className="font-bold text-white">Tarjeta (Mercado Pago)</p>
+                                                                                    <p className="text-xs text-slate-500">Activado / Desactivado</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, paymentMercadoPago: { ...settings?.paymentMercadoPago, enabled: !settings?.paymentMercadoPago?.enabled } })}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.paymentMercadoPago?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentMercadoPago?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+
+
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* === SHIPPING === */}
+                                                    {settingsTab === 'shipping' && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Truck className="w-5 h-5 text-orange-400" /> Opciones de Envío
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    {/* Pickup */}
+                                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-4">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <MapPin className="w-6 h-6 text-orange-400" />
+                                                                                <div>
+                                                                                    <p className="font-bold text-white">Retiro en Local</p>
+                                                                                    <p className="text-xs text-slate-500">El cliente pasa a buscar</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, enabled: !settings?.shippingPickup?.enabled } })}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        {settings?.shippingPickup?.enabled && (
+                                                                            <input
+                                                                                className="input-cyber w-full p-4"
+                                                                                value={settings?.shippingPickup?.address || ''}
+                                                                                onChange={e => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, address: e.target.value } })}
+                                                                                placeholder="Dirección de retiro: Av. Corrientes 1234"
+                                                                            />
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Delivery */}
+                                                                    <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-4">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <Package className="w-6 h-6 text-purple-400" />
+                                                                                <div>
+                                                                                    <p className="font-bold text-white">Envío a Domicilio</p>
+                                                                                    <p className="text-xs text-slate-500">Delivery estándar</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, enabled: !settings?.shippingDelivery?.enabled } })}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.shippingDelivery?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingDelivery?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        {settings?.shippingDelivery?.enabled && (
+                                                                            <div className="grid grid-cols-2 gap-4">
+                                                                                <div>
+                                                                                    <label className="text-xs text-slate-500 mb-1 block">Costo de Envío ($)</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        className="input-cyber w-full p-4"
+                                                                                        value={settings?.shippingDelivery?.fee || 0}
+                                                                                        onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, fee: parseFloat(e.target.value) || 0 } })}
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="text-xs text-slate-500 mb-1 block">Gratis desde ($)</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        className="input-cyber w-full p-4"
+                                                                                        value={settings?.shippingDelivery?.freeAbove || 0}
+                                                                                        onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, freeAbove: parseFloat(e.target.value) || 0 } })}
+                                                                                        placeholder="0 = nunca gratis"
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
-                                                            )}
+                                                            </div>
+                                                        </div>
+                                                    )}
 
-                                                            {/* === SEO === */}
-                                                            {settingsTab === 'seo' && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Globe className="w-5 h-5 text-green-400" /> Optimización SEO
-                                                                        </h3>
-                                                                        <div className="space-y-6">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título del Sitio</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.seoTitle || ''}
-                                                                                    onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
-                                                                                    placeholder="Mi Tienda Online | Los Mejores Productos"
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-1">Aparece en la pestaña del navegador</p>
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta Descripción</label>
-                                                                                <textarea
-                                                                                    className="input-cyber w-full p-4 h-20 resize-none"
-                                                                                    value={settings?.seoDescription || ''}
-                                                                                    onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
-                                                                                    placeholder="Tienda online de productos de alta calidad. Envíos a todo el país. ¡Visitanos!"
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-1">Descripción que aparece en Google (max 160 caracteres)</p>
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Palabras Clave</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.seoKeywords || ''}
-                                                                                    onChange={e => setSettings({ ...settings, seoKeywords: e.target.value })}
-                                                                                    placeholder="tienda online, productos, ofertas, descuentos"
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
-                                                                            </div>
-
-                                                                            {/* URL Canónica */}
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Canónica)</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.seoUrl || ''}
-                                                                                    onChange={e => setSettings({ ...settings, seoUrl: e.target.value })}
-                                                                                    placeholder="https://mitienda.vercel.app"
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-1">URL oficial de tu tienda (aparece en Google y redes sociales)</p>
-                                                                            </div>
-
-                                                                            {/* Autor */}
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Autor / Empresa</label>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.seoAuthor || ''}
-                                                                                    onChange={e => setSettings({ ...settings, seoAuthor: e.target.value })}
-                                                                                    placeholder="Mi Empresa S.A."
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-1">Nombre que aparece como autor del sitio</p>
-                                                                            </div>
-
-                                                                            {/* OG Image Upload */}
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen para Redes Sociales (OG:Image)</label>
-                                                                                <div className="flex items-center gap-4">
-                                                                                    <div className="relative group w-32 h-32 bg-slate-900 rounded-xl border-2 border-dashed border-slate-700 hover:border-orange-500 transition flex items-center justify-center overflow-hidden cursor-pointer">
-                                                                                        {settings?.seoImage ? (
-                                                                                            <img src={settings.seoImage} alt="SEO Preview" className="w-full h-full object-cover" />
-                                                                                        ) : (
-                                                                                            <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-orange-500 transition" />
-                                                                                        )}
-                                                                                        <input
-                                                                                            type="file"
-                                                                                            accept="image/*"
-                                                                                            className="absolute inset-0 opacity-0 cursor-pointer z-50"
-                                                                                            onChange={(e) => handleImageUpload(e, setSettings, 'seoImage', 1200)}
-                                                                                        />
-                                                                                        {/* Overlay al hacer hover para indicar cambio */}
-                                                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
-                                                                                            <Upload className="w-6 h-6 text-white" />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="flex-1">
-                                                                                        <p className="text-sm text-slate-400 mb-2">Sube una imagen atractiva (ej: logo con fondo, banner).</p>
-                                                                                        <p className="text-xs text-slate-600">Recomendado: 1200x630 píxeles para mejor visualización en Facebook/WhatsApp.</p>
-                                                                                        {settings?.seoImage && (
-                                                                                            <button
-                                                                                                onClick={() => setSettings({ ...settings, seoImage: '' })}
-                                                                                                className="mt-2 text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
-                                                                                            >
-                                                                                                <Trash2 className="w-3 h-3" /> Eliminar imagen
-                                                                                            </button>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Links Status */}
-                                                                            <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-4">
-                                                                                <a href="/sitemap.xml" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
-                                                                                    <div>
-                                                                                        <p className="text-sm font-bold text-white">Ver Sitemap.xml</p>
-                                                                                        <p className="text-xs text-green-500">Activo</p>
-                                                                                    </div>
-                                                                                    <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
-                                                                                </a>
-                                                                                <a href="/robots.txt" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
-                                                                                    <div>
-                                                                                        <p className="text-sm font-bold text-white">Ver Robots.txt</p>
-                                                                                        <p className="text-xs text-green-500">Activo</p>
-                                                                                    </div>
-                                                                                    <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
-                                                                                </a>
-                                                                            </div>
-                                                                        </div>
+                                                    {/* === SEO === */}
+                                                    {settingsTab === 'seo' && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Globe className="w-5 h-5 text-green-400" /> Optimización SEO
+                                                                </h3>
+                                                                <div className="space-y-6">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título del Sitio</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.seoTitle || ''}
+                                                                            onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
+                                                                            placeholder="Mi Tienda Online | Los Mejores Productos"
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-1">Aparece en la pestaña del navegador</p>
                                                                     </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* === ADVANCED === */}
-                                                            {settingsTab === 'advanced' && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Cog className="w-5 h-5 text-slate-400" /> Configuración Avanzada
-                                                                        </h3>
-                                                                        <div className="space-y-4">
-                                                                            {/* Maintenance Mode */}
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Modo Mantenimiento</p>
-                                                                                    <p className="text-xs text-slate-500">Mostrar página de "Volvemos pronto"</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, maintenanceMode: !settings?.maintenanceMode })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.maintenanceMode ? 'bg-red-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-
-                                                                            {/* PWA & Performance Controls */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 space-y-4">
-                                                                                <h4 className="text-sm font-bold text-orange-400 uppercase tracking-wider mb-2">Rendimiento & PWA</h4>
-
-                                                                                {/* Lazy Loading */}
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <div>
-                                                                                        <p className="font-bold text-white">Carga Diferida (Lazy Load)</p>
-                                                                                        <p className="text-xs text-slate-500">Mejora velocidad cargando imágenes al hacer scroll</p>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, enableLazyLoad: settings?.enableLazyLoad === false ? true : false })}
-                                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.enableLazyLoad !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enableLazyLoad !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-
-                                                                                {/* PWA Service Worker */}
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <div>
-                                                                                        <p className="font-bold text-white">Modo Offline (PWA)</p>
-                                                                                        <p className="text-xs text-slate-500">Permite instalar la app y uso sin internet</p>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, enablePWA: settings?.enablePWA === false ? true : false })}
-                                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.enablePWA !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enablePWA !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-
-                                                                                {/* Clear Cache Button */}
-                                                                                <div className="pt-2 border-t border-slate-700">
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            if ('caches' in window) {
-                                                                                                caches.keys().then(names => {
-                                                                                                    names.forEach(name => caches.delete(name));
-                                                                                                    showToast('Caché limpiada. Recargando...', 'success');
-                                                                                                    setTimeout(() => window.location.reload(), 1500);
-                                                                                                });
-                                                                                            } else {
-                                                                                                showToast('Tu navegador no soporta gestión de caché', 'warning');
-                                                                                            }
-                                                                                        }}
-                                                                                        className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
-                                                                                    >
-                                                                                        <Trash2 className="w-4 h-4" /> Forzar Limpieza de Caché y Recargar
-                                                                                    </button>
-                                                                                    <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores gráficos o versiones antiguas.</p>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Loading Text */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div className="mb-3">
-                                                                                    <p className="font-bold text-white">Texto de Carga</p>
-                                                                                    <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la página</p>
-                                                                                </div>
-                                                                                <input
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={settings?.loadingText || ''}
-                                                                                    onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
-                                                                                    placeholder="Cargando sistema..."
-                                                                                />
-                                                                            </div>
-
-                                                                            {/* Show Announcement Banner */}
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Banner de Anuncio</p>
-                                                                                    <p className="text-xs text-slate-500">Barra superior con mensaje promocional</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showAnnouncementBanner: settings?.showAnnouncementBanner === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showAnnouncementBanner !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showAnnouncementBanner !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-
-                                                                            {/* Show Brand Ticker */}
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Ticker de Marca</p>
-                                                                                    <p className="text-xs text-slate-500">Texto en movimiento debajo del anuncio</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-
-                                                                            {/* Show Stock */}
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Mostrar Stock Disponible</p>
-                                                                                    <p className="text-xs text-slate-500">Los clientes ven cuántas unidades hay</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, showStockCount: settings?.showStockCount === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showStockCount !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showStockCount !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-
-                                                                            {/* Require Phone */}
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Requerir Teléfono</p>
-                                                                                    <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, requirePhone: settings?.requirePhone === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.requirePhone !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requirePhone !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-
-                                                                            {/* Require DNI */}
-                                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Requerir DNI</p>
-                                                                                    <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setSettings({ ...settings, requireDNI: settings?.requireDNI === false ? true : false })}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.requireDNI !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requireDNI !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-
-                                                                            {/* WhatsApp Cart Button Config */}
-                                                                            <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-4">
-                                                                                    <div>
-                                                                                        <p className="font-bold text-white">Botón WhatsApp en Carrito</p>
-                                                                                        <p className="text-xs text-slate-500">Permitir enviar pedido por WhatsApp</p>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, whatsappCartEnabled: settings?.whatsappCartEnabled === false ? true : false })}
-                                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.whatsappCartEnabled !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                    >
-                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.whatsappCartEnabled !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                    </button>
-                                                                                </div>
-                                                                                {settings?.whatsappCartEnabled !== false && (
-                                                                                    <div>
-                                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Texto del Botón</label>
-                                                                                        <input
-                                                                                            className="input-cyber w-full p-3"
-                                                                                            value={settings?.whatsappCartText || 'Compra por WhatsApp'}
-                                                                                            onChange={e => setSettings({ ...settings, whatsappCartText: e.target.value })}
-                                                                                            placeholder="Ej: Compra por WhatsApp"
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Low Stock Threshold */}
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div className="flex items-center justify-between mb-3">
-                                                                                    <div>
-                                                                                        <p className="font-bold text-white">Umbral de Stock Bajo</p>
-                                                                                        <p className="text-xs text-slate-500">Alerta cuando el stock es menor a este valor</p>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <input
-                                                                                    type="number"
-                                                                                    className="input-cyber w-full p-4"
-                                                                                    value={settings?.lowStockThreshold || 5}
-                                                                                    onChange={e => setSettings({ ...settings, lowStockThreshold: parseInt(e.target.value) || 5 })}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta Descripción</label>
+                                                                        <textarea
+                                                                            className="input-cyber w-full p-4 h-20 resize-none"
+                                                                            value={settings?.seoDescription || ''}
+                                                                            onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
+                                                                            placeholder="Tienda online de productos de alta calidad. Envíos a todo el país. ¡Visitanos!"
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-1">Descripción que aparece en Google (max 160 caracteres)</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Palabras Clave</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.seoKeywords || ''}
+                                                                            onChange={e => setSettings({ ...settings, seoKeywords: e.target.value })}
+                                                                            placeholder="tienda online, productos, ofertas, descuentos"
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
                                                                     </div>
 
-                                                                    {/* AI Config Block (SustIA) */}
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Sparkles className="w-5 h-5 text-yellow-500" /> Personalización IA
-                                                                        </h3>
-                                                                        <div className="flex items-center gap-6">
-                                                                            <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-dashed border-slate-700 hover:border-yellow-500 transition flex items-center justify-center overflow-hidden cursor-pointer shrink-0 shadow-xl">
-                                                                                {settings?.botImage ? (
-                                                                                    <img src={settings.botImage} alt="Bot Preview" className="w-full h-full object-cover" />
+                                                                    {/* URL Canónica */}
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Canónica)</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.seoUrl || ''}
+                                                                            onChange={e => setSettings({ ...settings, seoUrl: e.target.value })}
+                                                                            placeholder="https://mitienda.vercel.app"
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-1">URL oficial de tu tienda (aparece en Google y redes sociales)</p>
+                                                                    </div>
+
+                                                                    {/* Autor */}
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Autor / Empresa</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.seoAuthor || ''}
+                                                                            onChange={e => setSettings({ ...settings, seoAuthor: e.target.value })}
+                                                                            placeholder="Mi Empresa S.A."
+                                                                        />
+                                                                        <p className="text-xs text-slate-500 mt-1">Nombre que aparece como autor del sitio</p>
+                                                                    </div>
+
+                                                                    {/* OG Image Upload */}
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen para Redes Sociales (OG:Image)</label>
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="relative group w-32 h-32 bg-slate-900 rounded-xl border-2 border-dashed border-slate-700 hover:border-orange-500 transition flex items-center justify-center overflow-hidden cursor-pointer">
+                                                                                {settings?.seoImage ? (
+                                                                                    <img src={settings.seoImage} alt="SEO Preview" className="w-full h-full object-cover" />
                                                                                 ) : (
-                                                                                    <Sparkles className="w-8 h-8 text-slate-600 group-hover:text-yellow-500 transition" />
+                                                                                    <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-orange-500 transition" />
                                                                                 )}
                                                                                 <input
                                                                                     type="file"
                                                                                     accept="image/*"
                                                                                     className="absolute inset-0 opacity-0 cursor-pointer z-50"
-                                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'botImage', 300)}
+                                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'seoImage', 1200)}
                                                                                 />
+                                                                                {/* Overlay al hacer hover para indicar cambio */}
                                                                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
                                                                                     <Upload className="w-6 h-6 text-white" />
                                                                                 </div>
                                                                             </div>
-                                                                            <div>
-                                                                                <p className="font-bold text-white text-base mb-1">Avatar del Asistente</p>
-                                                                                <p className="text-xs text-slate-500 mb-3 max-w-xs leading-relaxed">Sube una imagen personalizada para el bot (PNG/JPG). Se recomienda formato cuadrado.</p>
-                                                                                {settings?.botImage ? (
+                                                                            <div className="flex-1">
+                                                                                <p className="text-sm text-slate-400 mb-2">Sube una imagen atractiva (ej: logo con fondo, banner).</p>
+                                                                                <p className="text-xs text-slate-600">Recomendado: 1200x630 píxeles para mejor visualización en Facebook/WhatsApp.</p>
+                                                                                {settings?.seoImage && (
                                                                                     <button
-                                                                                        onClick={() => setSettings({ ...settings, botImage: '' })}
-                                                                                        className="text-xs bg-red-900/20 text-red-400 hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition flex items-center gap-2 border border-red-500/20"
+                                                                                        onClick={() => setSettings({ ...settings, seoImage: '' })}
+                                                                                        className="mt-2 text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
                                                                                     >
-                                                                                        <Trash2 className="w-3 h-3" /> Restaurar Default
+                                                                                        <Trash2 className="w-3 h-3" /> Eliminar imagen
                                                                                     </button>
-                                                                                ) : (
-                                                                                    <span className="text-xs text-yellow-600 bg-yellow-900/20 px-3 py-1 rounded-lg border border-yellow-700/30">
-                                                                                        Usando imagen por defecto
-                                                                                    </span>
                                                                                 )}
                                                                             </div>
                                                                         </div>
                                                                     </div>
 
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <FolderPlus className="w-5 h-5 text-orange-400" /> Categorías de Productos
-                                                                        </h3>
-                                                                        <div className="flex flex-wrap gap-2 mb-4">
-                                                                            {(settings?.categories || []).map((cat, idx) => (
-                                                                                <div key={idx} className="bg-slate-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-700">
-                                                                                    <span>{cat}</span>
-                                                                                    <button
-                                                                                        onClick={() => setSettings({ ...settings, categories: (settings?.categories || []).filter((_, i) => i !== idx) })}
-                                                                                        className="text-red-400 hover:text-red-300"
-                                                                                    >
-                                                                                        <X className="w-4 h-4" />
-                                                                                    </button>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={() => setShowCategoryModal(true)}
-                                                                            className="px-4 py-2 bg-orange-900/20 text-orange-400 rounded-lg font-bold text-sm border border-orange-500/30 hover:bg-orange-900/40 transition flex items-center gap-2"
-                                                                        >
-                                                                            <Plus className="w-4 h-4" /> Agregar Categoría
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* === TEAM === */}
-                                                            {settingsTab === 'team' && (
-                                                                <div className="space-y-6 animate-fade-up">
-                                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                            <Users className="w-5 h-5 text-purple-400" /> Equipo y Accesos
-                                                                        </h3>
-                                                                        <p className="text-slate-500 mb-6">Gestiona los miembros del equipo, sus roles de acceso y participación en ganancias.</p>
-
-                                                                        <div className="space-y-4 mb-6">
-                                                                            {(settings?.team || []).map((member, idx) => (
-                                                                                <div key={idx} className="flex flex-col md:flex-row md:items-center gap-4 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                                                                                        {member.name?.charAt(0)?.toUpperCase() || '?'}
-                                                                                    </div>
-                                                                                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                                                        <div>
-                                                                                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Nombre</label>
-                                                                                            <input
-                                                                                                className="input-cyber w-full p-2 text-sm"
-                                                                                                value={member.name || ''}
-                                                                                                onChange={e => {
-                                                                                                    const updated = [...(settings?.team || [])];
-                                                                                                    updated[idx] = { ...updated[idx], name: e.target.value };
-                                                                                                    setSettings({ ...settings, team: updated });
-                                                                                                }}
-                                                                                                placeholder="Nombre"
-                                                                                            />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Email (Acceso)</label>
-                                                                                            <input
-                                                                                                type="email"
-                                                                                                className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                                                value={member.email || ''}
-                                                                                                onChange={e => {
-                                                                                                    const updated = [...(settings?.team || [])];
-                                                                                                    updated[idx] = { ...updated[idx], email: e.target.value };
-                                                                                                    setSettings({ ...settings, team: updated });
-                                                                                                }}
-                                                                                                placeholder="usuario@email.com"
-                                                                                                disabled={member.email === SUPER_ADMIN_EMAIL}
-                                                                                            />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Rol</label>
-                                                                                            <select
-                                                                                                className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                                                value={member.role || 'employee'}
-                                                                                                onChange={e => {
-                                                                                                    const updated = [...(settings?.team || [])];
-                                                                                                    updated[idx] = { ...updated[idx], role: e.target.value };
-                                                                                                    setSettings({ ...settings, team: updated });
-                                                                                                }}
-                                                                                                disabled={member.email === SUPER_ADMIN_EMAIL}
-                                                                                            >
-                                                                                                <option value="employee">Empleado</option>
-                                                                                                <option value="admin">Admin</option>
-                                                                                            </select>
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Total Invertido</label>
-                                                                                            <div className="input-cyber w-full p-2 text-sm bg-slate-900/50 text-slate-400 flex items-center cursor-not-allowed">
-                                                                                                $ {investments.filter(inv => inv.investor === member.name || inv.investor === member.email).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toLocaleString()}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    {member.email !== SUPER_ADMIN_EMAIL && (
-                                                                                        <button
-                                                                                            onClick={() => setSettings({ ...settings, team: (settings?.team || []).filter((_, i) => i !== idx) })}
-                                                                                            className="p-3 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition flex-shrink-0"
-                                                                                            title="Eliminar Miembro"
-                                                                                        >
-                                                                                            <Trash2 className="w-5 h-5" />
-                                                                                        </button>
-                                                                                    )}
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-
-                                                                        <button
-                                                                            onClick={() => setSettings({ ...settings, team: [...(settings?.team || []), { name: '', email: '', role: 'employee', investment: 0 }] })}
-                                                                            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-600/30 flex items-center gap-2 transition"
-                                                                        >
-                                                                            <UserPlus className="w-5 h-5" /> Agregar Nuevo Miembro
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Save Button */}
-                                                            <div className="fixed bottom-8 right-8 z-50">
-                                                                <button
-                                                                    onClick={async () => {
-                                                                        try {
-                                                                            setIsLoading(true);
-                                                                            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
-                                                                            await setDoc(settingsRef, settings, { merge: true });
-                                                                            showToast("Configuración guardada exitosamente", "success");
-                                                                        } catch (e) {
-                                                                            console.error(e);
-                                                                            showToast("Error al guardar", "error");
-                                                                        } finally {
-                                                                            setIsLoading(false);
-                                                                        }
-                                                                    }}
-                                                                    className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
-                                                                >
-                                                                    <Save className="w-5 h-5" /> Guardar Cambios
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                    }
-
-                                                    {/* 7.3 Modal Proveedores (Selector Visual) */}
-                                                    {
-                                                        showSupplierModal && (
-                                                            <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in-scale">
-                                                                <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]" data-lenis-prevent>
-                                                                    <div className="overflow-y-auto custom-scrollbar pr-2 pb-20">
-                                                                        <h3 className="text-2xl font-black text-white mb-6 sticky top-0 bg-[#0a0a0a] py-2 z-10">
-                                                                            {editingSupplierId ? 'Editar' : 'Nuevo'} Proveedor
-                                                                        </h3>
-
-                                                                        <div className="space-y-4 mb-6">
-                                                                            <input className="input-cyber w-full p-4" placeholder="Nombre de la Empresa" value={newSupplier.name} onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })} />
-                                                                            <input className="input-cyber w-full p-4" placeholder="Nombre del Contacto" value={newSupplier.contact} onChange={e => setNewSupplier({ ...newSupplier, contact: e.target.value })} />
-
-                                                                            <div className="grid grid-cols-2 gap-4">
-                                                                                <input className="input-cyber w-full p-4" placeholder="Teléfono" value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} />
-                                                                                <input className="input-cyber w-full p-4" placeholder="Instagram (sin @)" value={newSupplier.ig} onChange={e => setNewSupplier({ ...newSupplier, ig: e.target.value })} />
+                                                                    {/* Links Status */}
+                                                                    <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-4">
+                                                                        <a href="/sitemap.xml" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
+                                                                            <div>
+                                                                                <p className="text-sm font-bold text-white">Ver Sitemap.xml</p>
+                                                                                <p className="text-xs text-green-500">Activo</p>
                                                                             </div>
-
-                                                                            {/* Selector Visual de Productos */}
-                                                                            <div className="border-t border-slate-800 pt-6 mt-6">
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">
-                                                                                    Asignar Productos Suministrados
-                                                                                </label>
-                                                                                <div className="h-48 overflow-y-auto bg-slate-900/50 rounded-xl p-2 border border-slate-800 custom-scrollbar" data-lenis-prevent>
-                                                                                    {products.length === 0 ? (
-                                                                                        <p className="text-center text-slate-600 text-xs py-4">Carga productos primero.</p>
-                                                                                    ) : products.map(p => (
-                                                                                        <div
-                                                                                            key={p.id}
-                                                                                            onClick={() => {
-                                                                                                const prev = newSupplier.associatedProducts || [];
-                                                                                                const exists = prev.includes(p.id);
-                                                                                                setNewSupplier({
-                                                                                                    ...newSupplier,
-                                                                                                    associatedProducts: exists ? prev.filter(x => x !== p.id) : [...prev, p.id]
-                                                                                                });
-                                                                                            }}
-                                                                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer mb-1 transition ${newSupplier.associatedProducts?.includes(p.id) ? 'bg-orange-900/30 border border-orange-500/30' : 'hover:bg-slate-800 border border-transparent'}`}
-                                                                                        >
-                                                                                            <div className="w-8 h-8 bg-white rounded p-0.5 flex-shrink-0">
-                                                                                                <img src={p.image} className="w-full h-full object-contain" />
-                                                                                            </div>
-                                                                                            <span className="text-xs text-white truncate flex-1 font-medium">{p.name}</span>
-                                                                                            {newSupplier.associatedProducts?.includes(p.id) && <CheckCircle className="w-4 h-4 text-orange-400" />}
-                                                                                        </div>
-                                                                                    ))}
-                                                                                </div>
+                                                                            <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
+                                                                        </a>
+                                                                        <a href="/robots.txt" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
+                                                                            <div>
+                                                                                <p className="text-sm font-bold text-white">Ver Robots.txt</p>
+                                                                                <p className="text-xs text-green-500">Activo</p>
                                                                             </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Footer Botones Fixed */}
-                                                                    <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent flex gap-4">
-                                                                        <button onClick={() => setShowSupplierModal(false)} className="flex-1 py-4 text-slate-400 font-bold hover:text-white transition bg-slate-900 rounded-xl">Cancelar</button>
-                                                                        <button onClick={saveSupplierFn} className="flex-1 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold shadow-lg transition">Guardar</button>
+                                                                            <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
+                                                                        </a>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        )
-                                                    }
-                                                </div>
-                                            </div>
-                                        ) : (
-                                        <AccessDenied onBack={() => setView('store')} />
-                                        )
-                                    )}
-
-                                        {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
-                                        {
-                                            view === 'privacy' && (
-                                                <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
-                                                    <div className="glass p-12 rounded-[3rem] border border-slate-800">
-                                                        <div className="prose prose-invert max-w-none">
-                                                            <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                                                Política de <span className="text-orange-500 text-6xl">Privacidad</span>
-                                                            </h1>
-                                                            <p className="text-slate-400 text-lg leading-relaxed">
-                                                                En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cómo recolectamos, usamos y resguardamos tu información.
-                                                            </p>
-                                                            <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
-                                                            <p className="text-slate-500 leadind-relaxed">
-                                                                Recolectamos datos básicos como nombre, correo electrónico y número de teléfono únicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
-                                                            </p>
-                                                            <h2 className="text-2xl font-bold text-white mt-12 mb-6">2. Uso de los Datos</h2>
-                                                            <p className="text-slate-500 leadind-relaxed">
-                                                                Tu información se utiliza exclusivamente para:
-                                                            </p>
-                                                            <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                                                <li>Gestionar tus pedidos y entregas.</li>
-                                                                <li>Enviar actualizaciones sobre el estado de tu compra.</li>
-                                                                <li>Mejorar nuestros servicios y experiencia de usuario.</li>
-                                                            </ul>
-                                                            <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
-                                                            <p className="text-slate-500 leadind-relaxed">
-                                                                Implementamos medidas de seguridad robustas y encriptación de datos para asegurar que tu información esté protegida contra accesos no autorizados.
-                                                            </p>
-                                                            <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
-                                                            <p className="text-slate-500 leadind-relaxed mb-12">
-                                                                Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
-                                                            </p>
-                                                            <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
-                                                                <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        }
-                                        {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
-                                        {
-                                            view === 'terms' && (
-                                                <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
-                                                    <div className="glass p-12 rounded-[3rem] border border-slate-800">
-                                                        <div className="prose prose-invert max-w-none">
-                                                            <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                                                Condiciones de <span className="text-orange-500 text-6xl">Uso</span>
-                                                            </h1>
-                                                            <p className="text-slate-400 font-bold mb-8">Última actualización: 07 de enero de 2026</p>
-
-                                                            <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÉRMINOS LEGALES</h3>
-                                                            <p className="text-slate-500 leading-relaxed mb-4">
-                                                                Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
-                                                            </p>
-                                                            <p className="text-slate-500 leading-relaxed mb-4">
-                                                                Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
-                                                            </p>
-                                                            <p className="text-slate-500 leading-relaxed mb-4">
-                                                                Puede contactarnos por correo electrónico a la dirección proporcionada al final de este documento.
-                                                            </p>
-                                                            <p className="text-slate-500 leading-relaxed mb-4">
-                                                                Estos Términos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relación con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leído, comprendido y aceptado estar sujeto a todos estos Términos Legales. <strong className="text-red-400">SI NO ESTÁ DE ACUERDO CON TODOS ESTOS TÉRMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
-                                                            </p>
-
-                                                            <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 my-10">
-                                                                <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">ÍNDICE</h3>
-                                                                <ul className="space-y-2 text-sm text-orange-400 font-medium">
-                                                                    <li><a href="#section1" className="hover:text-orange-300 transition">1. NUESTROS SERVICIOS</a></li>
-                                                                    <li><a href="#section2" className="hover:text-orange-300 transition">2. DERECHOS DE PROPIEDAD INTELECTUAL</a></li>
-                                                                    <li><a href="#section3" className="hover:text-orange-300 transition">3. REPRESENTACIONES DE USUARIOS</a></li>
-                                                                    <li><a href="#section4" className="hover:text-orange-300 transition">4. ACTIVIDADES PROHIBIDAS</a></li>
-                                                                    <li><a href="#section5" className="hover:text-orange-300 transition">5. CONTRIBUCIONES GENERADAS POR EL USUARIO</a></li>
-                                                                    <li><a href="#section6" className="hover:text-orange-300 transition">6. LICENCIA DE CONTRIBUCIÓN</a></li>
-                                                                    <li><a href="#section7" className="hover:text-orange-300 transition">7. GESTIÓN DE SERVICIOS</a></li>
-                                                                    <li><a href="#section8" className="hover:text-orange-300 transition">8. PLAZO Y TERMINACIÓN</a></li>
-                                                                    <li><a href="#section9" className="hover:text-orange-300 transition">9. MODIFICACIONES E INTERRUPCIONES</a></li>
-                                                                    <li><a href="#section10" className="hover:text-orange-300 transition">10. LEY APLICABLE</a></li>
-                                                                    <li><a href="#section11" className="hover:text-orange-300 transition">11. RESOLUCIÓN DE DISPUTAS</a></li>
-                                                                    <li><a href="#section12" className="hover:text-orange-300 transition">12. CORRECCIONES</a></li>
-                                                                    <li><a href="#section13" className="hover:text-orange-300 transition">13. DESCARGO DE RESPONSABILIDAD</a></li>
-                                                                    <li><a href="#section14" className="hover:text-orange-300 transition">14. LIMITACIONES DE RESPONSABILIDAD</a></li>
-                                                                    <li><a href="#section15" className="hover:text-orange-300 transition">15. INDEMNIZACIÓN</a></li>
-                                                                    <li><a href="#section16" className="hover:text-orange-300 transition">16. DATOS DEL USUARIO</a></li>
-                                                                    <li><a href="#section17" className="hover:text-orange-300 transition">17. COMUNICACIONES ELECTRÓNICAS</a></li>
-                                                                    <li><a href="#section18" className="hover:text-orange-300 transition">18. VARIOS</a></li>
-                                                                    <li><a href="#section19" className="hover:text-orange-300 transition">19. CONTÁCTENOS</a></li>
-                                                                </ul>
-                                                            </div>
-
-                                                            <section id="section1" className="mb-12">
-                                                                <h2 className="text-2xl font-bold text-white mb-4">1. NUESTROS SERVICIOS</h2>
-                                                                <p className="text-slate-500 leading-relaxed">
-                                                                    La información proporcionada al utilizar los Servicios no está destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicción o país donde dicha distribución o uso sería contrario a la ley o regulación o que nos sometería a cualquier requisito de registro dentro de dicha jurisdicción o país. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las únicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
-                                                                </p>
-                                                            </section>
-
-                                                            <section id="section2" className="mb-12">
-                                                                <h2 className="text-2xl font-bold text-white mb-4">2. DERECHOS DE PROPIEDAD INTELECTUAL</h2>
-                                                                <h3 className="text-lg font-bold text-white mt-6 mb-2">Nuestra propiedad intelectual</h3>
-                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                    Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el código fuente, bases de datos, funcionalidad, software, diseños de sitios web, audio, video, texto, fotografías y gráficos de los Servicios (colectivamente, el "Contenido"), así como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
-                                                                </p>
-                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                    Nuestro Contenido y Marcas están protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
-                                                                </p>
-                                                                <p className="text-slate-500 leading-relaxed">
-                                                                    El Contenido y las Marcas se proporcionan en o a través de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
-                                                                </p>
-
-                                                                <h3 className="text-lg font-bold text-white mt-6 mb-2">Su uso de nuestros Servicios</h3>
-                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                    Sujeto a su cumplimiento de estos Términos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la sección siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
-                                                                </p>
-                                                                <ul className="list-disc pl-6 text-slate-500 space-y-2 mb-4">
-                                                                    <li>acceder a los Servicios; y</li>
-                                                                    <li>descargar o imprimir una copia de cualquier parte del Contenido al que haya obtenido acceso correctamente,</li>
-                                                                </ul>
-                                                                <p className="text-slate-500 leading-relaxed mb-4">únicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
-                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                    Salvo lo establecido en esta sección o en otra parte de nuestros Términos Legales, ninguna parte de los Servicios ni ningún Contenido o Marca podrán copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado públicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
-                                                                </p>
-                                                                <p className="text-slate-500 leading-relaxed">
-                                                                    Si desea hacer algún uso de los Servicios, Contenido o Marcas que no sea el establecido en esta sección o en otra parte de nuestros Términos Legales, dirija su solicitud a nuestro correo de contacto.
-                                                                </p>
-                                                            </section>
-
-                                                            <section id="section3" className="mb-12">
-                                                                <h2 className="text-2xl font-bold text-white mb-4">3. REPRESENTACIONES DE USUARIOS</h2>
-                                                                <p className="text-slate-500 leading-relaxed">
-                                                                    Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos Términos Legales; (2) no eres un menor de edad en la jurisdicción en la que usted reside; (3) no accederás a los Servicios a través de medios automatizados o no humanos, ya sea a través de un bot, script o de otro modo; (4) no utilizará los Servicios para ninguna actividad ilegal o no autorizado propósito; y (5) su uso de los Servicios no violará ninguna ley o regulación aplicable.
-                                                                </p>
-                                                            </section>
-
-                                                            <section id="section4" className="mb-12">
-                                                                <h2 className="text-2xl font-bold text-white mb-4">4. ACTIVIDADES PROHIBIDAS</h2>
-                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                    No puede acceder ni utilizar los Servicios para ningún otro propósito que no sea aquel para el cual los ponemos a disposición. Los Servicios no podrán utilizarse en relación con ningún negocio comercial esfuerzo excepto aquellos que estén específicamente respaldados o aprobados por nosotros.
-                                                                </p>
-                                                                <p className="text-slate-500 leading-relaxed mb-4">Como usuario de los Servicios, usted acepta no:</p>
-                                                                <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                                                    <li>Recuperar sistemáticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colección, compilación, base de datos o directorio sin nuestro permiso por escrito.</li>
-                                                                    <li>Engañarnos, defraudarnos o engañarnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener información confidencial de la cuenta, como las contraseñas de los usuarios.</li>
-                                                                    <li>Eludir, deshabilitar o interferir de otro modo con las características relacionadas con la seguridad de los Servicios.</li>
-                                                                    <li>Menospreciar, empañar o dañar de otro modo, en nuestra opinión, a nosotros y/o a los Servicios.</li>
-                                                                    <li>Utilizar cualquier información obtenida de los Servicios para acosar, abusar o dañar a otra persona.</li>
-                                                                    <li>Hacer un uso indebido de nuestros servicios de soporte o presentar informes falsos de abuso o mala conducta.</li>
-                                                                    <li>Utilice los Servicios de una manera incompatible con las leyes o regulaciones aplicables.</li>
-                                                                </ul>
-                                                            </section>
-
-                                                            <section id="section13" className="mb-12">
-                                                                <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
-                                                                <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
-                                                                    LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÉ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
-                                                                </p>
-                                                            </section>
-
-                                                            <section id="section19" className="mb-12">
-                                                                <h2 className="text-2xl font-bold text-white mb-4">19. CONTÁCTENOS</h2>
-                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                    Para resolver una queja con respecto a los Servicios o para recibir más información sobre el uso de los Servicios, contáctenos en:
-                                                                </p>
-                                                                <p className="text-2xl font-black text-orange-400">
-                                                                    {settings?.storeEmail || 'soporte@tuempresa.com'}
-                                                                </p>
-                                                            </section>
-
-                                                            <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700 mt-12">
-                                                                <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        }
-                                    </main >
-
-
-                                    {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
-                                    {
-                                        view !== 'admin' && view !== 'login' && view !== 'register' && (
-                                            <footer
-                                                className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}
-                                                style={{ backgroundColor: darkMode ? '#050505' : '#ffffff' }}
-                                            >
-                                                {/* Decoración de Fondo */}
-                                                <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
-                                                <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
-
-                                                <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-8 relative z-10">
-                                                    {/* Columna 1: Marca */}
-                                                    <div className="md:col-span-2 space-y-6">
-                                                        <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-black'} tracking-tighter italic`}>
-                                                            {settingsLoaded ? (settings?.storeName || '') : ''}
-                                                            <span className="text-orange-500">{settings?.footerSuffix || '.SF'}</span>
-                                                        </h2>
-                                                        <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
-                                                            {settings?.footerDescription || 'Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.'}
-                                                        </p>
-                                                        <div className="flex gap-3 pt-2 flex-wrap">
-                                                            {settings?.showInstagram !== false && settings?.instagramLink && (
-                                                                <button onClick={() => window.open(settings?.instagramLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-pink-400 hover:bg-pink-900/10 hover:border-pink-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-pink-500 hover:bg-pink-50 hover:border-pink-300'}`}>
-                                                                    <Instagram className="w-5 h-5" />
-                                                                </button>
-                                                            )}
-                                                            {settings?.showWhatsapp === true && settings?.whatsappLink && (
-                                                                <button onClick={() => {
-                                                                    let phone = settings.whatsappLink;
-                                                                    const match = phone.match(/\d+/g);
-                                                                    let cleanPhone = match ? match.join('') : '';
-                                                                    if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
-                                                                    if (!cleanPhone.startsWith('54')) {
-                                                                        if (cleanPhone.length === 10) cleanPhone = '549' + cleanPhone;
-                                                                        else cleanPhone = '54' + cleanPhone;
-                                                                    } else {
-                                                                        if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
-                                                                    }
-                                                                    window.open(`https://wa.me/${cleanPhone}`, '_blank');
-                                                                }} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-green-400 hover:bg-green-900/10 hover:border-green-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-green-500 hover:bg-green-50 hover:border-green-300'}`}>
-                                                                    <MessageCircle className="w-5 h-5" />
-                                                                </button>
-                                                            )}
-                                                            {settings?.showFacebook && settings?.facebookLink && (
-                                                                <button onClick={() => window.open(settings?.facebookLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-blue-400 hover:bg-blue-900/10 hover:border-blue-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-blue-500 hover:bg-blue-50 hover:border-blue-300'}`}>
-                                                                    <Facebook className="w-5 h-5" />
-                                                                </button>
-                                                            )}
-                                                            {settings?.showTwitter && settings?.twitterLink && (
-                                                                <button onClick={() => window.open(settings?.twitterLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-sky-400 hover:bg-sky-900/10 hover:border-sky-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-sky-500 hover:bg-sky-50 hover:border-sky-300'}`}>
-                                                                    <Twitter className="w-5 h-5" />
-                                                                </button>
-                                                            )}
-                                                            {settings?.showTiktok && settings?.tiktokLink && (
-                                                                <button onClick={() => window.open(settings?.tiktokLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-rose-400 hover:bg-rose-900/10 hover:border-rose-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-300'}`}>
-                                                                    <Music className="w-5 h-5" />
-                                                                </button>
-                                                            )}
-                                                            {settings?.showYoutube && settings?.youtubeLink && (
-                                                                <button onClick={() => window.open(settings?.youtubeLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-red-400 hover:bg-red-900/10 hover:border-red-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-red-500 hover:bg-red-50 hover:border-red-300'}`}>
-                                                                    <Youtube className="w-5 h-5" />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Columna 2: Quick Links */}
-                                                    <div className="space-y-6">
-                                                        <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>Enlaces Rápidos</h3>
-                                                        <ul className="space-y-3 text-sm text-slate-500 font-medium">
-                                                            <li>
-                                                                <button onClick={() => setView('store')} className="hover:text-orange-400 transition flex items-center gap-2 group">
-                                                                    <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Inicio
-                                                                </button>
-                                                            </li>
-                                                            <li>
-                                                                <button onClick={() => setView('profile')} className="hover:text-orange-400 transition flex items-center gap-2 group">
-                                                                    <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Mi Cuenta
-                                                                </button>
-                                                            </li>
-                                                            <li>
-                                                                <button onClick={() => setView('guide')} className="hover:text-orange-400 transition flex items-center gap-2 group">
-                                                                    <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Ayuda & Soporte
-                                                                </button>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-
-                                                    {/* Columna 3: Soporte */}
-                                                    {settings?.showFooterContact !== false && (
-                                                        <div className="space-y-6">
-                                                            <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>
-                                                                {settings?.footerContactTitle || 'Contacto'}
-                                                            </h3>
-                                                            <p className="text-slate-500 text-sm leading-relaxed mb-4">
-                                                                {settings?.footerContactDescription || '¿Tienes alguna duda? Estamos aquí para ayudarte.'}
-                                                            </p>
-                                                            <button
-                                                                onClick={() => {
-                                                                    const type = settings?.footerContactType || 'whatsapp';
-                                                                    if (type === 'whatsapp' && settings?.whatsappLink) {
-                                                                        let phone = settings.whatsappLink;
-                                                                        const match = phone.match(/\d+/g);
-                                                                        let cleanPhone = match ? match.join('') : '';
-                                                                        if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
-                                                                        if (!cleanPhone.startsWith('54')) {
-                                                                            if (cleanPhone.length === 10) cleanPhone = '549' + cleanPhone;
-                                                                            else cleanPhone = '54' + cleanPhone;
-                                                                        } else {
-                                                                            if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
-                                                                        }
-                                                                        window.open(`https://wa.me/${cleanPhone}`, '_blank');
-                                                                    } else if (type === 'instagram' && settings?.instagramLink) {
-                                                                        window.open(settings.instagramLink, '_blank');
-                                                                    } else if (type === 'email' && settings?.storeEmail) {
-                                                                        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${settings.storeEmail}`, '_blank');
-                                                                    }
-                                                                }}
-                                                                className={`px-6 py-3 rounded-xl text-sm font-bold border transition w-full md:w-auto ${darkMode ? 'bg-orange-900/10 text-orange-400 border-orange-500/20 hover:bg-orange-500 hover:text-white' : 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-500 hover:text-white'}`}
-                                                            >
-                                                                {settings?.footerContactButtonText || 'Contactar Soporte'}
-                                                            </button>
                                                         </div>
                                                     )}
-                                                </div>
 
-                                                {/* Copyright Bar */}
-                                                <div className={`border-t ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-white'}`}>
-                                                    <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                                                        <p className="text-slate-600 text-xs font-mono">
-                                                            © 2026 Sustore. Todos los derechos reservados.
-                                                        </p>
-                                                        <div className="flex gap-6">
-                                                            {settings?.showPrivacyPolicy !== false && (
-                                                                <span onClick={() => setView('privacy')} className={`text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline ${darkMode ? 'text-slate-700 decoration-slate-900' : 'text-slate-500 decoration-slate-200'} underline-offset-4`}>Privacy Policy</span>
-                                                            )}
-                                                            {settings?.showTermsOfService !== false && (
-                                                                <span onClick={() => setView('terms')} className={`text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline ${darkMode ? 'text-slate-700 decoration-slate-900' : 'text-slate-500 decoration-slate-200'} underline-offset-4`}>Terms of Service</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </footer>
-                                        )
-                                    }
+                                                    {/* === ADVANCED === */}
+                                                    {settingsTab === 'advanced' && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Cog className="w-5 h-5 text-slate-400" /> Configuración Avanzada
+                                                                </h3>
+                                                                <div className="space-y-4">
+                                                                    {/* Maintenance Mode */}
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Modo Mantenimiento</p>
+                                                                            <p className="text-xs text-slate-500">Mostrar página de "Volvemos pronto"</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, maintenanceMode: !settings?.maintenanceMode })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.maintenanceMode ? 'bg-red-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
 
-                                    {/* MODAL: CREAR CATEGORÍA */}
-                                    {
-                                        showCategoryModal && (
-                                            <div className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in-scale ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
-                                                <div className={`p-8 rounded-[2rem] max-w-md w-full border shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-orange-800' : 'bg-white border-orange-200'}`}>
-                                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${darkMode ? 'bg-orange-900/20 text-orange-500' : 'bg-orange-100 text-orange-600'}`}>
-                                                        <FolderPlus className="w-8 h-8" />
-                                                    </div>
-                                                    <h3 className={`text-2xl font-black text-center mb-6 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Nueva Categoría</h3>
-                                                    <input
-                                                        type="text"
-                                                        value={newCategory}
-                                                        onChange={(e) => setNewCategory(e.target.value)}
-                                                        className={`w-full p-4 mb-6 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`}
-                                                        placeholder="Nombre de la categoría"
-                                                        autoFocus
-                                                    />
-                                                    <div className="flex gap-3">
-                                                        <button
-                                                            onClick={() => { setNewCategory(''); setShowCategoryModal(false); }}
-                                                            className={`flex-1 py-3 rounded-xl font-bold transition ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
-                                                        >
-                                                            Cancelar
-                                                        </button>
-                                                        <button
-                                                            onClick={createCategoryFn}
-                                                            className="flex-1 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold transition shadow-lg shadow-orange-600/30"
-                                                        >
-                                                            Crear
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    }
+                                                                    {/* PWA & Performance Controls */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 space-y-4">
+                                                                        <h4 className="text-sm font-bold text-orange-400 uppercase tracking-wider mb-2">Rendimiento & PWA</h4>
 
-                                    {/* MODAL: VENTA MANUAL */}
-                                    {
-                                        showManualSaleModal && (
-                                            <div className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in-scale ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
-                                                <div className={`p-8 rounded-[2rem] max-w-md w-full border shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-green-900' : 'bg-white border-green-200'}`}>
-                                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${darkMode ? 'bg-green-900/20 text-green-500' : 'bg-green-100 text-green-600'}`}>
-                                                        <DollarSign className="w-8 h-8" />
-                                                    </div>
-                                                    <h3 className={`text-2xl font-black text-center mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Venta Manual</h3>
-                                                    <p className="text-center text-slate-400 mb-6">
-                                                        {products.find(p => p.id === saleData.productId)?.name}
-                                                    </p>
+                                                                        {/* Lazy Loading */}
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Carga Diferida (Lazy Load)</p>
+                                                                                <p className="text-xs text-slate-500">Mejora velocidad cargando imágenes al hacer scroll</p>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, enableLazyLoad: settings?.enableLazyLoad === false ? true : false })}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.enableLazyLoad !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enableLazyLoad !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
 
-                                                    <div className="space-y-4 mb-8">
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div>
-                                                                <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Cantidad</label>
-                                                                <input
-                                                                    type="number"
-                                                                    className={`w-full p-3 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white focus:border-green-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-green-500'}`}
-                                                                    value={saleData.quantity}
-                                                                    onChange={(e) => setSaleData({ ...saleData, quantity: parseInt(e.target.value) || 1 })}
-                                                                    min="1"
-                                                                />
+                                                                        {/* PWA Service Worker */}
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Modo Offline (PWA)</p>
+                                                                                <p className="text-xs text-slate-500">Permite instalar la app y uso sin internet</p>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, enablePWA: settings?.enablePWA === false ? true : false })}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.enablePWA !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enablePWA !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+
+                                                                        {/* Clear Cache Button */}
+                                                                        <div className="pt-2 border-t border-slate-700">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    if ('caches' in window) {
+                                                                                        caches.keys().then(names => {
+                                                                                            names.forEach(name => caches.delete(name));
+                                                                                            showToast('Caché limpiada. Recargando...', 'success');
+                                                                                            setTimeout(() => window.location.reload(), 1500);
+                                                                                        });
+                                                                                    } else {
+                                                                                        showToast('Tu navegador no soporta gestión de caché', 'warning');
+                                                                                    }
+                                                                                }}
+                                                                                className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" /> Forzar Limpieza de Caché y Recargar
+                                                                            </button>
+                                                                            <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores gráficos o versiones antiguas.</p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Loading Text */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div className="mb-3">
+                                                                            <p className="font-bold text-white">Texto de Carga</p>
+                                                                            <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la página</p>
+                                                                        </div>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.loadingText || ''}
+                                                                            onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
+                                                                            placeholder="Cargando sistema..."
+                                                                        />
+                                                                    </div>
+
+                                                                    {/* Show Announcement Banner */}
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Banner de Anuncio</p>
+                                                                            <p className="text-xs text-slate-500">Barra superior con mensaje promocional</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showAnnouncementBanner: settings?.showAnnouncementBanner === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showAnnouncementBanner !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showAnnouncementBanner !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Show Brand Ticker */}
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Ticker de Marca</p>
+                                                                            <p className="text-xs text-slate-500">Texto en movimiento debajo del anuncio</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Show Stock */}
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Mostrar Stock Disponible</p>
+                                                                            <p className="text-xs text-slate-500">Los clientes ven cuántas unidades hay</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showStockCount: settings?.showStockCount === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showStockCount !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showStockCount !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Require Phone */}
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Requerir Teléfono</p>
+                                                                            <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, requirePhone: settings?.requirePhone === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.requirePhone !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requirePhone !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Require DNI */}
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Requerir DNI</p>
+                                                                            <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, requireDNI: settings?.requireDNI === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.requireDNI !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requireDNI !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* WhatsApp Cart Button Config */}
+                                                                    <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-4">
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Botón WhatsApp en Carrito</p>
+                                                                                <p className="text-xs text-slate-500">Permitir enviar pedido por WhatsApp</p>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, whatsappCartEnabled: settings?.whatsappCartEnabled === false ? true : false })}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.whatsappCartEnabled !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.whatsappCartEnabled !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        {settings?.whatsappCartEnabled !== false && (
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Texto del Botón</label>
+                                                                                <input
+                                                                                    className="input-cyber w-full p-3"
+                                                                                    value={settings?.whatsappCartText || 'Compra por WhatsApp'}
+                                                                                    onChange={e => setSettings({ ...settings, whatsappCartText: e.target.value })}
+                                                                                    placeholder="Ej: Compra por WhatsApp"
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Low Stock Threshold */}
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Umbral de Stock Bajo</p>
+                                                                                <p className="text-xs text-slate-500">Alerta cuando el stock es menor a este valor</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <input
+                                                                            type="number"
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.lowStockThreshold || 5}
+                                                                            onChange={e => setSettings({ ...settings, lowStockThreshold: parseInt(e.target.value) || 5 })}
+                                                                        />
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Precio Unit.</label>
-                                                                <input
-                                                                    type="number"
-                                                                    className={`w-full p-3 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white focus:border-green-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-green-500'}`}
-                                                                    value={saleData.price}
-                                                                    onChange={(e) => setSaleData({ ...saleData, price: parseFloat(e.target.value) || 0 })}
-                                                                />
+
+                                                            {/* AI Config Block (SustIA) */}
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Sparkles className="w-5 h-5 text-yellow-500" /> Personalización IA
+                                                                </h3>
+                                                                <div className="flex items-center gap-6">
+                                                                    <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-dashed border-slate-700 hover:border-yellow-500 transition flex items-center justify-center overflow-hidden cursor-pointer shrink-0 shadow-xl">
+                                                                        {settings?.botImage ? (
+                                                                            <img src={settings.botImage} alt="Bot Preview" className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <Sparkles className="w-8 h-8 text-slate-600 group-hover:text-yellow-500 transition" />
+                                                                        )}
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="image/*"
+                                                                            className="absolute inset-0 opacity-0 cursor-pointer z-50"
+                                                                            onChange={(e) => handleImageUpload(e, setSettings, 'botImage', 300)}
+                                                                        />
+                                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
+                                                                            <Upload className="w-6 h-6 text-white" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="font-bold text-white text-base mb-1">Avatar del Asistente</p>
+                                                                        <p className="text-xs text-slate-500 mb-3 max-w-xs leading-relaxed">Sube una imagen personalizada para el bot (PNG/JPG). Se recomienda formato cuadrado.</p>
+                                                                        {settings?.botImage ? (
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, botImage: '' })}
+                                                                                className="text-xs bg-red-900/20 text-red-400 hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition flex items-center gap-2 border border-red-500/20"
+                                                                            >
+                                                                                <Trash2 className="w-3 h-3" /> Restaurar Default
+                                                                            </button>
+                                                                        ) : (
+                                                                            <span className="text-xs text-yellow-600 bg-yellow-900/20 px-3 py-1 rounded-lg border border-yellow-700/30">
+                                                                                Usando imagen por defecto
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <FolderPlus className="w-5 h-5 text-orange-400" /> Categorías de Productos
+                                                                </h3>
+                                                                <div className="flex flex-wrap gap-2 mb-4">
+                                                                    {(settings?.categories || []).map((cat, idx) => (
+                                                                        <div key={idx} className="bg-slate-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-700">
+                                                                            <span>{cat}</span>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, categories: (settings?.categories || []).filter((_, i) => i !== idx) })}
+                                                                                className="text-red-400 hover:text-red-300"
+                                                                            >
+                                                                                <X className="w-4 h-4" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setShowCategoryModal(true)}
+                                                                    className="px-4 py-2 bg-orange-900/20 text-orange-400 rounded-lg font-bold text-sm border border-orange-500/30 hover:bg-orange-900/40 transition flex items-center gap-2"
+                                                                >
+                                                                    <Plus className="w-4 h-4" /> Agregar Categoría
+                                                                </button>
                                                             </div>
                                                         </div>
-                                                        <div>
-                                                            <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Método de Pago</label>
-                                                            <select
-                                                                className={`w-full p-3 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white focus:border-green-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-green-500'}`}
-                                                                value={saleData.paymentMethod}
-                                                                onChange={(e) => setSaleData({ ...saleData, paymentMethod: e.target.value })}
-                                                            >
-                                                                <option value="Efectivo">Efectivo</option>
-                                                                <option value="Transferencia">Transferencia</option>
-                                                                <option value="Tarjeta">Tarjeta</option>
-                                                            </select>
-                                                        </div>
-                                                        <div className={`p-4 rounded-xl flex justify-between items-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-                                                            <span className={darkMode ? 'text-slate-400 font-bold' : 'text-slate-500 font-bold'}>Total:</span>
-                                                            <span className="text-2xl font-black text-green-400 min-w-[100px] text-right">${(saleData.quantity * saleData.price).toLocaleString()}</span>
-                                                        </div>
-                                                    </div>
+                                                    )}
 
-                                                    <div className="flex gap-3">
+                                                    {/* === TEAM === */}
+                                                    {settingsTab === 'team' && (
+                                                        <div className="space-y-6 animate-fade-up">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Users className="w-5 h-5 text-purple-400" /> Equipo y Accesos
+                                                                </h3>
+                                                                <p className="text-slate-500 mb-6">Gestiona los miembros del equipo, sus roles de acceso y participación en ganancias.</p>
+
+                                                                <div className="space-y-4 mb-6">
+                                                                    {(settings?.team || []).map((member, idx) => (
+                                                                        <div key={idx} className="flex flex-col md:flex-row md:items-center gap-4 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                                                                {member.name?.charAt(0)?.toUpperCase() || '?'}
+                                                                            </div>
+                                                                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                                                <div>
+                                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Nombre</label>
+                                                                                    <input
+                                                                                        className="input-cyber w-full p-2 text-sm"
+                                                                                        value={member.name || ''}
+                                                                                        onChange={e => {
+                                                                                            const updated = [...(settings?.team || [])];
+                                                                                            updated[idx] = { ...updated[idx], name: e.target.value };
+                                                                                            setSettings({ ...settings, team: updated });
+                                                                                        }}
+                                                                                        placeholder="Nombre"
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Email (Acceso)</label>
+                                                                                    <input
+                                                                                        type="email"
+                                                                                        className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                                        value={member.email || ''}
+                                                                                        onChange={e => {
+                                                                                            const updated = [...(settings?.team || [])];
+                                                                                            updated[idx] = { ...updated[idx], email: e.target.value };
+                                                                                            setSettings({ ...settings, team: updated });
+                                                                                        }}
+                                                                                        placeholder="usuario@email.com"
+                                                                                        disabled={member.email === SUPER_ADMIN_EMAIL}
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Rol</label>
+                                                                                    <select
+                                                                                        className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                                        value={member.role || 'employee'}
+                                                                                        onChange={e => {
+                                                                                            const updated = [...(settings?.team || [])];
+                                                                                            updated[idx] = { ...updated[idx], role: e.target.value };
+                                                                                            setSettings({ ...settings, team: updated });
+                                                                                        }}
+                                                                                        disabled={member.email === SUPER_ADMIN_EMAIL}
+                                                                                    >
+                                                                                        <option value="employee">Empleado</option>
+                                                                                        <option value="admin">Admin</option>
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Total Invertido</label>
+                                                                                    <div className="input-cyber w-full p-2 text-sm bg-slate-900/50 text-slate-400 flex items-center cursor-not-allowed">
+                                                                                        $ {investments.filter(inv => inv.investor === member.name || inv.investor === member.email).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toLocaleString()}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            {member.email !== SUPER_ADMIN_EMAIL && (
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, team: (settings?.team || []).filter((_, i) => i !== idx) })}
+                                                                                    className="p-3 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition flex-shrink-0"
+                                                                                    title="Eliminar Miembro"
+                                                                                >
+                                                                                    <Trash2 className="w-5 h-5" />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+
+                                                                <button
+                                                                    onClick={() => setSettings({ ...settings, team: [...(settings?.team || []), { name: '', email: '', role: 'employee', investment: 0 }] })}
+                                                                    className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-600/30 flex items-center gap-2 transition"
+                                                                >
+                                                                    <UserPlus className="w-5 h-5" /> Agregar Nuevo Miembro
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Save Button */}
+                                                    <div className="fixed bottom-8 right-8 z-50">
                                                         <button
-                                                            onClick={() => setShowManualSaleModal(false)}
-                                                            className={`flex-1 py-3 rounded-xl font-bold transition ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                                                            onClick={async () => {
+                                                                try {
+                                                                    setIsLoading(true);
+                                                                    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                                                                    await setDoc(settingsRef, settings, { merge: true });
+                                                                    showToast("Configuración guardada exitosamente", "success");
+                                                                } catch (e) {
+                                                                    console.error(e);
+                                                                    showToast("Error al guardar", "error");
+                                                                } finally {
+                                                                    setIsLoading(false);
+                                                                }
+                                                            }}
+                                                            className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
                                                         >
-                                                            Cancelar
-                                                        </button>
-                                                        <button
-                                                            onClick={confirmManualSale}
-                                                            disabled={isProcessingOrder}
-                                                            className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
-                                                        >
-                                                            {isProcessingOrder ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-                                                            Confirmar
+                                                            <Save className="w-5 h-5" /> Guardar Cambios
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )
-                                    }
-                                    {/* BOTÓN FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
-                                    {
-                                        settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
-                                            <button
-                                                onClick={() => {
+                                            )
+                                            }
+
+                                            {/* 7.3 Modal Proveedores (Selector Visual) */}
+                                            {
+                                                showSupplierModal && (
+                                                    <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in-scale">
+                                                        <div className="bg-[#0a0a0a] border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]" data-lenis-prevent>
+                                                            <div className="overflow-y-auto custom-scrollbar pr-2 pb-20">
+                                                                <h3 className="text-2xl font-black text-white mb-6 sticky top-0 bg-[#0a0a0a] py-2 z-10">
+                                                                    {editingSupplierId ? 'Editar' : 'Nuevo'} Proveedor
+                                                                </h3>
+
+                                                                <div className="space-y-4 mb-6">
+                                                                    <input className="input-cyber w-full p-4" placeholder="Nombre de la Empresa" value={newSupplier.name} onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })} />
+                                                                    <input className="input-cyber w-full p-4" placeholder="Nombre del Contacto" value={newSupplier.contact} onChange={e => setNewSupplier({ ...newSupplier, contact: e.target.value })} />
+
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <input className="input-cyber w-full p-4" placeholder="Teléfono" value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} />
+                                                                        <input className="input-cyber w-full p-4" placeholder="Instagram (sin @)" value={newSupplier.ig} onChange={e => setNewSupplier({ ...newSupplier, ig: e.target.value })} />
+                                                                    </div>
+
+                                                                    {/* Selector Visual de Productos */}
+                                                                    <div className="border-t border-slate-800 pt-6 mt-6">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">
+                                                                            Asignar Productos Suministrados
+                                                                        </label>
+                                                                        <div className="h-48 overflow-y-auto bg-slate-900/50 rounded-xl p-2 border border-slate-800 custom-scrollbar" data-lenis-prevent>
+                                                                            {products.length === 0 ? (
+                                                                                <p className="text-center text-slate-600 text-xs py-4">Carga productos primero.</p>
+                                                                            ) : products.map(p => (
+                                                                                <div
+                                                                                    key={p.id}
+                                                                                    onClick={() => {
+                                                                                        const prev = newSupplier.associatedProducts || [];
+                                                                                        const exists = prev.includes(p.id);
+                                                                                        setNewSupplier({
+                                                                                            ...newSupplier,
+                                                                                            associatedProducts: exists ? prev.filter(x => x !== p.id) : [...prev, p.id]
+                                                                                        });
+                                                                                    }}
+                                                                                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer mb-1 transition ${newSupplier.associatedProducts?.includes(p.id) ? 'bg-orange-900/30 border border-orange-500/30' : 'hover:bg-slate-800 border border-transparent'}`}
+                                                                                >
+                                                                                    <div className="w-8 h-8 bg-white rounded p-0.5 flex-shrink-0">
+                                                                                        <img src={p.image} className="w-full h-full object-contain" />
+                                                                                    </div>
+                                                                                    <span className="text-xs text-white truncate flex-1 font-medium">{p.name}</span>
+                                                                                    {newSupplier.associatedProducts?.includes(p.id) && <CheckCircle className="w-4 h-4 text-orange-400" />}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Footer Botones Fixed */}
+                                                            <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent flex gap-4">
+                                                                <button onClick={() => setShowSupplierModal(false)} className="flex-1 py-4 text-slate-400 font-bold hover:text-white transition bg-slate-900 rounded-xl">Cancelar</button>
+                                                                <button onClick={saveSupplierFn} className="flex-1 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold shadow-lg transition">Guardar</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <AccessDenied onBack={() => setView('store')} />
+                            )
+                    )
+                        )}
+
+                    {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
+                    {
+                        view === 'privacy' && (
+                            <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
+                                <div className="glass p-12 rounded-[3rem] border border-slate-800">
+                                    <div className="prose prose-invert max-w-none">
+                                        <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
+                                            Política de <span className="text-orange-500 text-6xl">Privacidad</span>
+                                        </h1>
+                                        <p className="text-slate-400 text-lg leading-relaxed">
+                                            En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cómo recolectamos, usamos y resguardamos tu información.
+                                        </p>
+                                        <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
+                                        <p className="text-slate-500 leadind-relaxed">
+                                            Recolectamos datos básicos como nombre, correo electrónico y número de teléfono únicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
+                                        </p>
+                                        <h2 className="text-2xl font-bold text-white mt-12 mb-6">2. Uso de los Datos</h2>
+                                        <p className="text-slate-500 leadind-relaxed">
+                                            Tu información se utiliza exclusivamente para:
+                                        </p>
+                                        <ul className="list-disc pl-6 text-slate-500 space-y-2">
+                                            <li>Gestionar tus pedidos y entregas.</li>
+                                            <li>Enviar actualizaciones sobre el estado de tu compra.</li>
+                                            <li>Mejorar nuestros servicios y experiencia de usuario.</li>
+                                        </ul>
+                                        <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
+                                        <p className="text-slate-500 leadind-relaxed">
+                                            Implementamos medidas de seguridad robustas y encriptación de datos para asegurar que tu información esté protegida contra accesos no autorizados.
+                                        </p>
+                                        <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
+                                        <p className="text-slate-500 leadind-relaxed mb-12">
+                                            Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
+                                        </p>
+                                        <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
+                                            <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+                    {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
+                    {
+                        view === 'terms' && (
+                            <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
+                                <div className="glass p-12 rounded-[3rem] border border-slate-800">
+                                    <div className="prose prose-invert max-w-none">
+                                        <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
+                                            Condiciones de <span className="text-orange-500 text-6xl">Uso</span>
+                                        </h1>
+                                        <p className="text-slate-400 font-bold mb-8">Última actualización: 07 de enero de 2026</p>
+
+                                        <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÉRMINOS LEGALES</h3>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
+                                        </p>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
+                                        </p>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Puede contactarnos por correo electrónico a la dirección proporcionada al final de este documento.
+                                        </p>
+                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                            Estos Términos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relación con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leído, comprendido y aceptado estar sujeto a todos estos Términos Legales. <strong className="text-red-400">SI NO ESTÁ DE ACUERDO CON TODOS ESTOS TÉRMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
+                                        </p>
+
+                                        <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 my-10">
+                                            <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">ÍNDICE</h3>
+                                            <ul className="space-y-2 text-sm text-orange-400 font-medium">
+                                                <li><a href="#section1" className="hover:text-orange-300 transition">1. NUESTROS SERVICIOS</a></li>
+                                                <li><a href="#section2" className="hover:text-orange-300 transition">2. DERECHOS DE PROPIEDAD INTELECTUAL</a></li>
+                                                <li><a href="#section3" className="hover:text-orange-300 transition">3. REPRESENTACIONES DE USUARIOS</a></li>
+                                                <li><a href="#section4" className="hover:text-orange-300 transition">4. ACTIVIDADES PROHIBIDAS</a></li>
+                                                <li><a href="#section5" className="hover:text-orange-300 transition">5. CONTRIBUCIONES GENERADAS POR EL USUARIO</a></li>
+                                                <li><a href="#section6" className="hover:text-orange-300 transition">6. LICENCIA DE CONTRIBUCIÓN</a></li>
+                                                <li><a href="#section7" className="hover:text-orange-300 transition">7. GESTIÓN DE SERVICIOS</a></li>
+                                                <li><a href="#section8" className="hover:text-orange-300 transition">8. PLAZO Y TERMINACIÓN</a></li>
+                                                <li><a href="#section9" className="hover:text-orange-300 transition">9. MODIFICACIONES E INTERRUPCIONES</a></li>
+                                                <li><a href="#section10" className="hover:text-orange-300 transition">10. LEY APLICABLE</a></li>
+                                                <li><a href="#section11" className="hover:text-orange-300 transition">11. RESOLUCIÓN DE DISPUTAS</a></li>
+                                                <li><a href="#section12" className="hover:text-orange-300 transition">12. CORRECCIONES</a></li>
+                                                <li><a href="#section13" className="hover:text-orange-300 transition">13. DESCARGO DE RESPONSABILIDAD</a></li>
+                                                <li><a href="#section14" className="hover:text-orange-300 transition">14. LIMITACIONES DE RESPONSABILIDAD</a></li>
+                                                <li><a href="#section15" className="hover:text-orange-300 transition">15. INDEMNIZACIÓN</a></li>
+                                                <li><a href="#section16" className="hover:text-orange-300 transition">16. DATOS DEL USUARIO</a></li>
+                                                <li><a href="#section17" className="hover:text-orange-300 transition">17. COMUNICACIONES ELECTRÓNICAS</a></li>
+                                                <li><a href="#section18" className="hover:text-orange-300 transition">18. VARIOS</a></li>
+                                                <li><a href="#section19" className="hover:text-orange-300 transition">19. CONTÁCTENOS</a></li>
+                                            </ul>
+                                        </div>
+
+                                        <section id="section1" className="mb-12">
+                                            <h2 className="text-2xl font-bold text-white mb-4">1. NUESTROS SERVICIOS</h2>
+                                            <p className="text-slate-500 leading-relaxed">
+                                                La información proporcionada al utilizar los Servicios no está destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicción o país donde dicha distribución o uso sería contrario a la ley o regulación o que nos sometería a cualquier requisito de registro dentro de dicha jurisdicción o país. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las únicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
+                                            </p>
+                                        </section>
+
+                                        <section id="section2" className="mb-12">
+                                            <h2 className="text-2xl font-bold text-white mb-4">2. DERECHOS DE PROPIEDAD INTELECTUAL</h2>
+                                            <h3 className="text-lg font-bold text-white mt-6 mb-2">Nuestra propiedad intelectual</h3>
+                                            <p className="text-slate-500 leading-relaxed mb-4">
+                                                Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el código fuente, bases de datos, funcionalidad, software, diseños de sitios web, audio, video, texto, fotografías y gráficos de los Servicios (colectivamente, el "Contenido"), así como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
+                                            </p>
+                                            <p className="text-slate-500 leading-relaxed mb-4">
+                                                Nuestro Contenido y Marcas están protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
+                                            </p>
+                                            <p className="text-slate-500 leading-relaxed">
+                                                El Contenido y las Marcas se proporcionan en o a través de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
+                                            </p>
+
+                                            <h3 className="text-lg font-bold text-white mt-6 mb-2">Su uso de nuestros Servicios</h3>
+                                            <p className="text-slate-500 leading-relaxed mb-4">
+                                                Sujeto a su cumplimiento de estos Términos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la sección siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
+                                            </p>
+                                            <ul className="list-disc pl-6 text-slate-500 space-y-2 mb-4">
+                                                <li>acceder a los Servicios; y</li>
+                                                <li>descargar o imprimir una copia de cualquier parte del Contenido al que haya obtenido acceso correctamente,</li>
+                                            </ul>
+                                            <p className="text-slate-500 leading-relaxed mb-4">únicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
+                                            <p className="text-slate-500 leading-relaxed mb-4">
+                                                Salvo lo establecido en esta sección o en otra parte de nuestros Términos Legales, ninguna parte de los Servicios ni ningún Contenido o Marca podrán copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado públicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
+                                            </p>
+                                            <p className="text-slate-500 leading-relaxed">
+                                                Si desea hacer algún uso de los Servicios, Contenido o Marcas que no sea el establecido en esta sección o en otra parte de nuestros Términos Legales, dirija su solicitud a nuestro correo de contacto.
+                                            </p>
+                                        </section>
+
+                                        <section id="section3" className="mb-12">
+                                            <h2 className="text-2xl font-bold text-white mb-4">3. REPRESENTACIONES DE USUARIOS</h2>
+                                            <p className="text-slate-500 leading-relaxed">
+                                                Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos Términos Legales; (2) no eres un menor de edad en la jurisdicción en la que usted reside; (3) no accederás a los Servicios a través de medios automatizados o no humanos, ya sea a través de un bot, script o de otro modo; (4) no utilizará los Servicios para ninguna actividad ilegal o no autorizado propósito; y (5) su uso de los Servicios no violará ninguna ley o regulación aplicable.
+                                            </p>
+                                        </section>
+
+                                        <section id="section4" className="mb-12">
+                                            <h2 className="text-2xl font-bold text-white mb-4">4. ACTIVIDADES PROHIBIDAS</h2>
+                                            <p className="text-slate-500 leading-relaxed mb-4">
+                                                No puede acceder ni utilizar los Servicios para ningún otro propósito que no sea aquel para el cual los ponemos a disposición. Los Servicios no podrán utilizarse en relación con ningún negocio comercial esfuerzo excepto aquellos que estén específicamente respaldados o aprobados por nosotros.
+                                            </p>
+                                            <p className="text-slate-500 leading-relaxed mb-4">Como usuario de los Servicios, usted acepta no:</p>
+                                            <ul className="list-disc pl-6 text-slate-500 space-y-2">
+                                                <li>Recuperar sistemáticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colección, compilación, base de datos o directorio sin nuestro permiso por escrito.</li>
+                                                <li>Engañarnos, defraudarnos o engañarnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener información confidencial de la cuenta, como las contraseñas de los usuarios.</li>
+                                                <li>Eludir, deshabilitar o interferir de otro modo con las características relacionadas con la seguridad de los Servicios.</li>
+                                                <li>Menospreciar, empañar o dañar de otro modo, en nuestra opinión, a nosotros y/o a los Servicios.</li>
+                                                <li>Utilizar cualquier información obtenida de los Servicios para acosar, abusar o dañar a otra persona.</li>
+                                                <li>Hacer un uso indebido de nuestros servicios de soporte o presentar informes falsos de abuso o mala conducta.</li>
+                                                <li>Utilice los Servicios de una manera incompatible con las leyes o regulaciones aplicables.</li>
+                                            </ul>
+                                        </section>
+
+                                        <section id="section13" className="mb-12">
+                                            <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
+                                            <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
+                                                LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÉ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
+                                            </p>
+                                        </section>
+
+                                        <section id="section19" className="mb-12">
+                                            <h2 className="text-2xl font-bold text-white mb-4">19. CONTÁCTENOS</h2>
+                                            <p className="text-slate-500 leading-relaxed mb-4">
+                                                Para resolver una queja con respecto a los Servicios o para recibir más información sobre el uso de los Servicios, contáctenos en:
+                                            </p>
+                                            <p className="text-2xl font-black text-orange-400">
+                                                {settings?.storeEmail || 'soporte@tuempresa.com'}
+                                            </p>
+                                        </section>
+
+                                        <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700 mt-12">
+                                            <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+                </main>
+
+
+                {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
+                {
+                    view !== 'admin' && view !== 'login' && view !== 'register' && (
+                        <footer
+                            className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}
+                            style={{ backgroundColor: darkMode ? '#050505' : '#ffffff' }}
+                        >
+                            {/* Decoración de Fondo */}
+                            <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
+                            <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
+
+                            <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-8 relative z-10">
+                                {/* Columna 1: Marca */}
+                                <div className="md:col-span-2 space-y-6">
+                                    <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-black'} tracking-tighter italic`}>
+                                        {settingsLoaded ? (settings?.storeName || '') : ''}
+                                        <span className="text-orange-500">{settings?.footerSuffix || '.SF'}</span>
+                                    </h2>
+                                    <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
+                                        {settings?.footerDescription || 'Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.'}
+                                    </p>
+                                    <div className="flex gap-3 pt-2 flex-wrap">
+                                        {settings?.showInstagram !== false && settings?.instagramLink && (
+                                            <button onClick={() => window.open(settings?.instagramLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-pink-400 hover:bg-pink-900/10 hover:border-pink-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-pink-500 hover:bg-pink-50 hover:border-pink-300'}`}>
+                                                <Instagram className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        {settings?.showWhatsapp === true && settings?.whatsappLink && (
+                                            <button onClick={() => {
+                                                let phone = settings.whatsappLink;
+                                                const match = phone.match(/\d+/g);
+                                                let cleanPhone = match ? match.join('') : '';
+                                                if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+                                                if (!cleanPhone.startsWith('54')) {
+                                                    if (cleanPhone.length === 10) cleanPhone = '549' + cleanPhone;
+                                                    else cleanPhone = '54' + cleanPhone;
+                                                } else {
+                                                    if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
+                                                }
+                                                window.open(`https://wa.me/${cleanPhone}`, '_blank');
+                                            }} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-green-400 hover:bg-green-900/10 hover:border-green-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-green-500 hover:bg-green-50 hover:border-green-300'}`}>
+                                                <MessageCircle className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        {settings?.showFacebook && settings?.facebookLink && (
+                                            <button onClick={() => window.open(settings?.facebookLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-blue-400 hover:bg-blue-900/10 hover:border-blue-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-blue-500 hover:bg-blue-50 hover:border-blue-300'}`}>
+                                                <Facebook className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        {settings?.showTwitter && settings?.twitterLink && (
+                                            <button onClick={() => window.open(settings?.twitterLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-sky-400 hover:bg-sky-900/10 hover:border-sky-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-sky-500 hover:bg-sky-50 hover:border-sky-300'}`}>
+                                                <Twitter className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        {settings?.showTiktok && settings?.tiktokLink && (
+                                            <button onClick={() => window.open(settings?.tiktokLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-rose-400 hover:bg-rose-900/10 hover:border-rose-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-300'}`}>
+                                                <Music className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        {settings?.showYoutube && settings?.youtubeLink && (
+                                            <button onClick={() => window.open(settings?.youtubeLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-red-400 hover:bg-red-900/10 hover:border-red-500/30' : 'bg-white text-slate-600 border-slate-200 hover:text-red-500 hover:bg-red-50 hover:border-red-300'}`}>
+                                                <Youtube className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Columna 2: Quick Links */}
+                                <div className="space-y-6">
+                                    <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>Enlaces Rápidos</h3>
+                                    <ul className="space-y-3 text-sm text-slate-500 font-medium">
+                                        <li>
+                                            <button onClick={() => setView('store')} className="hover:text-orange-400 transition flex items-center gap-2 group">
+                                                <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Inicio
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button onClick={() => setView('profile')} className="hover:text-orange-400 transition flex items-center gap-2 group">
+                                                <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Mi Cuenta
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button onClick={() => setView('guide')} className="hover:text-orange-400 transition flex items-center gap-2 group">
+                                                <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Ayuda & Soporte
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                {/* Columna 3: Soporte */}
+                                {settings?.showFooterContact !== false && (
+                                    <div className="space-y-6">
+                                        <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>
+                                            {settings?.footerContactTitle || 'Contacto'}
+                                        </h3>
+                                        <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                            {settings?.footerContactDescription || '¿Tienes alguna duda? Estamos aquí para ayudarte.'}
+                                        </p>
+                                        <button
+                                            onClick={() => {
+                                                const type = settings?.footerContactType || 'whatsapp';
+                                                if (type === 'whatsapp' && settings?.whatsappLink) {
                                                     let phone = settings.whatsappLink;
                                                     const match = phone.match(/\d+/g);
                                                     let cleanPhone = match ? match.join('') : '';
@@ -11620,599 +11480,758 @@ function App() {
                                                         if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
                                                     }
                                                     window.open(`https://wa.me/${cleanPhone}`, '_blank');
-                                                }}
-                                                className="fixed bottom-24 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
-                                                title="Chatea con nosotros"
-                                            >
-                                                <MessageCircle className="w-8 h-8 text-white fill-white" />
-                                            </button>
-                                        )
-                                    }
+                                                } else if (type === 'instagram' && settings?.instagramLink) {
+                                                    window.open(settings.instagramLink, '_blank');
+                                                } else if (type === 'email' && settings?.storeEmail) {
+                                                    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${settings.storeEmail}`, '_blank');
+                                                }
+                                            }}
+                                            className={`px-6 py-3 rounded-xl text-sm font-bold border transition w-full md:w-auto ${darkMode ? 'bg-orange-900/10 text-orange-400 border-orange-500/20 hover:bg-orange-500 hover:text-white' : 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-500 hover:text-white'}`}
+                                        >
+                                            {settings?.footerContactButtonText || 'Contactar Soporte'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
-                                    <AdminUserDrawer />
-                                    {/* MODAL: VER PLANES DE SUSCRIPCIÓN */}
-                                    {
-                                        showPlansModal && (
-                                            <PlansModalContent settings={settings} onClose={() => setShowPlansModal(false)} darkMode={darkMode} />
-                                        )
-                                    }
-                                    {
-                                        false && (
-                                            <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in-scale p-0 md:p-4 overflow-hidden">
-                                                <div className="bg-gradient-to-b from-[#0d0d0d] to-[#050505] relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-6xl md:rounded-[2.5rem] border-0 md:border md:border-slate-800/50 shadow-2xl flex flex-col overflow-hidden">
-                                                    {/* Scrollable Content */}
-                                                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-20">
-                                                        {/* Header */}
-                                                        <div className="flex justify-between items-start mb-6">
-                                                            <div>
-                                                                <h2 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 mb-2">
-                                                                    <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl">
-                                                                        <Zap className="w-6 h-6 md:w-8 md:h-8 text-white fill-current" />
-                                                                    </div>
-                                                                    Planes Disponibles
-                                                                </h2>
-                                                                <p className="text-slate-500">Tu plan actual: <span className="text-orange-400 font-bold uppercase bg-orange-500/10 px-3 py-1 rounded-full text-sm">{settings?.subscriptionPlan === 'business' ? '🚀 Negocio' : settings?.subscriptionPlan === 'premium' ? '💎 Premium' : '🏪 Emprendedor'}</span></p>
-                                                            </div>
-                                                            <button onClick={() => setShowPlansModal(false)} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all duration-300 hover:rotate-90">
-                                                                <X className="w-6 h-6" />
-                                                            </button>
-                                                        </div>
+                            {/* Copyright Bar */}
+                            <div className={`border-t ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-white'}`}>
+                                <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                                    <p className="text-slate-600 text-xs font-mono">
+                                        © 2026 Sustore. Todos los derechos reservados.
+                                    </p>
+                                    <div className="flex gap-6">
+                                        {settings?.showPrivacyPolicy !== false && (
+                                            <span onClick={() => setView('privacy')} className={`text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline ${darkMode ? 'text-slate-700 decoration-slate-900' : 'text-slate-500 decoration-slate-200'} underline-offset-4`}>Privacy Policy</span>
+                                        )}
+                                        {settings?.showTermsOfService !== false && (
+                                            <span onClick={() => setView('terms')} className={`text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline ${darkMode ? 'text-slate-700 decoration-slate-900' : 'text-slate-500 decoration-slate-200'} underline-offset-4`}>Terms of Service</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </footer>
+                    )
+                }
 
-                                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+                {/* MODAL: CREAR CATEGORÍA */}
+                {
+                    showCategoryModal && (
+                        <div className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in-scale ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
+                            <div className={`p-8 rounded-[2rem] max-w-md w-full border shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-orange-800' : 'bg-white border-orange-200'}`}>
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${darkMode ? 'bg-orange-900/20 text-orange-500' : 'bg-orange-100 text-orange-600'}`}>
+                                    <FolderPlus className="w-8 h-8" />
+                                </div>
+                                <h3 className={`text-2xl font-black text-center mb-6 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Nueva Categoría</h3>
+                                <input
+                                    type="text"
+                                    value={newCategory}
+                                    onChange={(e) => setNewCategory(e.target.value)}
+                                    className={`w-full p-4 mb-6 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`}
+                                    placeholder="Nombre de la categoría"
+                                    autoFocus
+                                />
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setNewCategory(''); setShowCategoryModal(false); }}
+                                        className={`flex-1 py-3 rounded-xl font-bold transition ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={createCategoryFn}
+                                        className="flex-1 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold transition shadow-lg shadow-orange-600/30"
+                                    >
+                                        Crear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
 
-                                                            {/* ═══════════════════════════════════════════════════════════════════ */}
-                                                            {/* PLAN EMPRENDEDOR */}
-                                                            {/* ═══════════════════════════════════════════════════════════════════ */}
-                                                            <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan
-                                                                ? 'bg-gradient-to-b from-orange-950/40 to-slate-950 border-orange-500 shadow-[0_0_40px_rgba(249,115,22,0.25)]'
-                                                                : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-orange-500/50'
-                                                                }`}>
-                                                                <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                {/* MODAL: VENTA MANUAL */}
+                {
+                    showManualSaleModal && (
+                        <div className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in-scale ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
+                            <div className={`p-8 rounded-[2rem] max-w-md w-full border shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-green-900' : 'bg-white border-green-200'}`}>
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${darkMode ? 'bg-green-900/20 text-green-500' : 'bg-green-100 text-green-600'}`}>
+                                    <DollarSign className="w-8 h-8" />
+                                </div>
+                                <h3 className={`text-2xl font-black text-center mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Venta Manual</h3>
+                                <p className="text-center text-slate-400 mb-6">
+                                    {products.find(p => p.id === saleData.productId)?.name}
+                                </p>
 
-                                                                {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
-                                                                    <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-orange-400 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
-                                                                )}
+                                <div className="space-y-4 mb-8">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Cantidad</label>
+                                            <input
+                                                type="number"
+                                                className={`w-full p-3 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white focus:border-green-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-green-500'}`}
+                                                value={saleData.quantity}
+                                                onChange={(e) => setSaleData({ ...saleData, quantity: parseInt(e.target.value) || 1 })}
+                                                min="1"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Precio Unit.</label>
+                                            <input
+                                                type="number"
+                                                className={`w-full p-3 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white focus:border-green-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-green-500'}`}
+                                                value={saleData.price}
+                                                onChange={(e) => setSaleData({ ...saleData, price: parseFloat(e.target.value) || 0 })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Método de Pago</label>
+                                        <select
+                                            className={`w-full p-3 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white focus:border-green-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-green-500'}`}
+                                            value={saleData.paymentMethod}
+                                            onChange={(e) => setSaleData({ ...saleData, paymentMethod: e.target.value })}
+                                        >
+                                            <option value="Efectivo">Efectivo</option>
+                                            <option value="Transferencia">Transferencia</option>
+                                            <option value="Tarjeta">Tarjeta</option>
+                                        </select>
+                                    </div>
+                                    <div className={`p-4 rounded-xl flex justify-between items-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                                        <span className={darkMode ? 'text-slate-400 font-bold' : 'text-slate-500 font-bold'}>Total:</span>
+                                        <span className="text-2xl font-black text-green-400 min-w-[100px] text-right">${(saleData.quantity * saleData.price).toLocaleString()}</span>
+                                    </div>
+                                </div>
 
-                                                                <div className="relative z-10 p-6 flex-1 flex flex-col">
-                                                                    <div className="flex items-center gap-4 mb-4">
-                                                                        <div className="p-4 bg-gradient-to-br from-orange-600 to-orange-500 rounded-2xl shadow-lg shadow-orange-500/30">
-                                                                            <Store className="w-7 h-7 text-white" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="text-2xl font-black text-white">🚀 Emprendedor</h4>
-                                                                            <p className="text-sm text-orange-400 font-medium leading-tight">Impulso inicial</p>
-                                                                        </div>
-                                                                    </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowManualSaleModal(false)}
+                                        className={`flex-1 py-3 rounded-xl font-bold transition ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={confirmManualSale}
+                                        disabled={isProcessingOrder}
+                                        className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
+                                    >
+                                        {isProcessingOrder ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                                        Confirmar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+                {/* BOTÓN FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
+                {
+                    settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
+                        <button
+                            onClick={() => {
+                                let phone = settings.whatsappLink;
+                                const match = phone.match(/\d+/g);
+                                let cleanPhone = match ? match.join('') : '';
+                                if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+                                if (!cleanPhone.startsWith('54')) {
+                                    if (cleanPhone.length === 10) cleanPhone = '549' + cleanPhone;
+                                    else cleanPhone = '54' + cleanPhone;
+                                } else {
+                                    if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
+                                }
+                                window.open(`https://wa.me/${cleanPhone}`, '_blank');
+                            }}
+                            className="fixed bottom-24 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
+                            title="Chatea con nosotros"
+                        >
+                            <MessageCircle className="w-8 h-8 text-white fill-white" />
+                        </button>
+                    )
+                }
 
-                                                                    <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
-                                                                        <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
-                                                                        <div className="text-4xl font-black text-white">$7.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
-                                                                    </div>
+                <AdminUserDrawer />
+                {/* MODAL: VER PLANES DE SUSCRIPCIÓN */}
+                {
+                    showPlansModal && (
+                        <PlansModalContent settings={settings} onClose={() => setShowPlansModal(false)} darkMode={darkMode} />
+                    )
+                }
+                {
+                    false && (
+                        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in-scale p-0 md:p-4 overflow-hidden">
+                            <div className="bg-gradient-to-b from-[#0d0d0d] to-[#050505] relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-6xl md:rounded-[2.5rem] border-0 md:border md:border-slate-800/50 shadow-2xl flex flex-col overflow-hidden">
+                                {/* Scrollable Content */}
+                                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-20">
+                                    {/* Header */}
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <h2 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 mb-2">
+                                                <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl">
+                                                    <Zap className="w-6 h-6 md:w-8 md:h-8 text-white fill-current" />
+                                                </div>
+                                                Planes Disponibles
+                                            </h2>
+                                            <p className="text-slate-500">Tu plan actual: <span className="text-orange-400 font-bold uppercase bg-orange-500/10 px-3 py-1 rounded-full text-sm">{settings?.subscriptionPlan === 'business' ? '🚀 Negocio' : settings?.subscriptionPlan === 'premium' ? '💎 Premium' : '🏪 Emprendedor'}</span></p>
+                                        </div>
+                                        <button onClick={() => setShowPlansModal(false)} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all duration-300 hover:rotate-90">
+                                            <X className="w-6 h-6" />
+                                        </button>
+                                    </div>
 
-                                                                    <div className="space-y-3 mb-6 flex-1">
-                                                                        <div className="space-y-2 text-sm text-slate-300">
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Carga de hasta <strong className="text-white">30 productos</strong></span></div>
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Integración <strong className="text-white">Mercado Pago</strong></span></div>
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">1 promoción</strong> activa</span></div>
-                                                                        </div>
-                                                                    </div>
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
 
-                                                                    <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-orange-500/50 open:shadow-[0_0_20px_rgba(249,115,22,0.15)]">
-                                                                        <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                                            <span className="flex items-center gap-2 text-orange-400">👇 Elegí tu plan de pago</span>
-                                                                            <ChevronDown className="w-5 h-5 text-orange-400 transition-transform duration-300 group-open/payment:rotate-180" />
-                                                                        </summary>
-                                                                        <div className="px-3 pb-3 space-y-2 animate-fade-in">
-                                                                            {[
-                                                                                { cycle: 'Semanal', price: '$2.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                                                { cycle: 'Mensual', price: '$7.000', label: 'Pago Mensual', sub: 'Más equilibrado' },
-                                                                                { cycle: 'Anual', price: '$70.000', label: 'Pago Anual', sub: 'Ahorrás $14.000 🎁' }
-                                                                            ].map((opt) => (
-                                                                                <div
-                                                                                    key={opt.cycle}
-                                                                                    onClick={() => setSelectedPlanOption({ plan: 'Emprendedor', cycle: opt.cycle, price: opt.price })}
-                                                                                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Emprendedor' && selectedPlanOption?.cycle === opt.cycle
-                                                                                        ? 'bg-orange-500 text-black border-orange-400 shadow-lg ring-2 ring-orange-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
-                                                                                        : 'bg-black/40 text-slate-300 border-slate-800 hover:border-orange-500/50 hover:bg-slate-800'
-                                                                                        }`}
-                                                                                >
-                                                                                    <div>
-                                                                                        <div className="font-bold text-sm">{opt.label}</div>
-                                                                                        <div className={`text-[10px] ${selectedPlanOption?.plan === 'Emprendedor' && selectedPlanOption?.cycle === opt.cycle ? 'text-black/70' : 'text-slate-500'}`}>{opt.sub}</div>
-                                                                                    </div>
-                                                                                    <div className="font-black text-lg">{opt.price}</div>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    </details>
-                                                                </div>
-                                                            </div>
+                                        {/* ═══════════════════════════════════════════════════════════════════ */}
+                                        {/* PLAN EMPRENDEDOR */}
+                                        {/* ═══════════════════════════════════════════════════════════════════ */}
+                                        <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan
+                                            ? 'bg-gradient-to-b from-orange-950/40 to-slate-950 border-orange-500 shadow-[0_0_40px_rgba(249,115,22,0.25)]'
+                                            : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-orange-500/50'
+                                            }`}>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                                                            {/* ═══════════════════════════════════════════════════════════════════ */}
-                                                            {/* PLAN NEGOCIO */}
-                                                            {/* ═══════════════════════════════════════════════════════════════════ */}
-                                                            <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'business'
-                                                                ? 'bg-gradient-to-b from-purple-950/40 to-slate-950 border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.25)]'
-                                                                : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-purple-500/50'
-                                                                }`}>
-                                                                <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">⭐ MÁS POPULAR</div>
-                                                                <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                            {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
+                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-orange-400 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
+                                            )}
 
-                                                                {settings?.subscriptionPlan === 'business' && (
-                                                                    <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-400 text-white text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
-                                                                )}
-
-                                                                <div className="relative z-10 p-6 flex-1 flex flex-col">
-                                                                    <div className="flex items-center gap-4 mb-4">
-                                                                        <div className="p-4 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-2xl shadow-lg shadow-purple-500/30">
-                                                                            <Briefcase className="w-7 h-7 text-white" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="text-2xl font-black text-white">🚀 Negocio</h4>
-                                                                            <p className="text-sm text-purple-400 font-medium leading-tight">Escala tu marca</p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
-                                                                        <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
-                                                                        <div className="text-4xl font-black text-white">$13.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
-                                                                    </div>
-
-                                                                    <div className="space-y-3 mb-6 flex-1">
-                                                                        <div className="space-y-2 text-sm text-slate-300">
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span>Hasta <strong className="text-white">50 productos</strong></span></div>
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">5 promociones</strong> simultáneas</span></div>
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Cupones</strong> de descuento</span></div>
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Analítica</strong> de clientes</span></div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-purple-500/50 open:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
-                                                                        <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                                            <span className="flex items-center gap-2 text-purple-400">👇 Elegí tu plan de pago</span>
-                                                                            <ChevronDown className="w-5 h-5 text-purple-400 transition-transform duration-300 group-open/payment:rotate-180" />
-                                                                        </summary>
-                                                                        <div className="px-3 pb-3 space-y-2 animate-fade-in">
-                                                                            {[
-                                                                                { cycle: 'Semanal', price: '$4.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                                                { cycle: 'Mensual', price: '$13.000', label: 'Pago Mensual', sub: 'Ideal gestión mensual' },
-                                                                                { cycle: 'Anual', price: '$117.000', label: 'Pago Anual', sub: '3 MESES GRATIS 🎉' }
-                                                                            ].map((opt) => (
-                                                                                <div
-                                                                                    key={opt.cycle}
-                                                                                    onClick={() => setSelectedPlanOption({ plan: 'Negocio', cycle: opt.cycle, price: opt.price })}
-                                                                                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Negocio' && selectedPlanOption?.cycle === opt.cycle
-                                                                                        ? 'bg-purple-600 text-white border-purple-500 shadow-lg ring-2 ring-purple-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
-                                                                                        : 'bg-black/40 text-slate-300 border-slate-800 hover:border-purple-500/50 hover:bg-slate-800'
-                                                                                        }`}
-                                                                                >
-                                                                                    <div>
-                                                                                        <div className="font-bold text-sm">{opt.label}</div>
-                                                                                        <div className={`text-[10px] ${selectedPlanOption?.plan === 'Negocio' && selectedPlanOption?.cycle === opt.cycle ? 'text-white/80' : 'text-slate-500'}`}>{opt.sub}</div>
-                                                                                    </div>
-                                                                                    <div className="font-black text-lg">{opt.price}</div>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    </details>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* ═══════════════════════════════════════════════════════════════════ */}
-                                                            {/* PLAN PREMIUM */}
-                                                            {/* ═══════════════════════════════════════════════════════════════════ */}
-                                                            <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'premium'
-                                                                ? 'bg-gradient-to-b from-yellow-950/40 to-slate-950 border-yellow-500 shadow-[0_0_40px_rgba(234,179,8,0.25)]'
-                                                                : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-yellow-500/50'
-                                                                }`}>
-                                                                <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20">💎 VIP</div>
-                                                                <div className="absolute inset-0 bg-gradient-to-t from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                                                                {settings?.subscriptionPlan === 'premium' && (
-                                                                    <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
-                                                                )}
-
-                                                                <div className="relative z-10 p-6 flex-1 flex flex-col">
-                                                                    <div className="flex items-center gap-4 mb-4">
-                                                                        <div className="p-4 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl shadow-lg shadow-yellow-500/30">
-                                                                            <Sparkles className="w-7 h-7 text-white" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="text-2xl font-black text-white">💎 Premium</h4>
-                                                                            <p className="text-sm text-yellow-400 font-medium leading-tight">Liderazgo total</p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
-                                                                        <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
-                                                                        <div className="text-4xl font-black text-white">$22.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
-                                                                    </div>
-
-                                                                    <div className="space-y-3 mb-6 flex-1">
-                                                                        <div className="space-y-2 text-sm text-slate-300">
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Ilimitados</strong> productos y promos</span></div>
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Asistente IA</strong> 24/7</span></div>
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Carga VIP</strong> 10 productos</span></div>
-                                                                            <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Mantenimiento</strong> Full Mensual</span></div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-yellow-500/50 open:shadow-[0_0_20px_rgba(234,179,8,0.15)]">
-                                                                        <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                                            <span className="flex items-center gap-2 text-yellow-400">👇 Elegí tu plan de pago</span>
-                                                                            <ChevronDown className="w-5 h-5 text-yellow-400 transition-transform duration-300 group-open/payment:rotate-180" />
-                                                                        </summary>
-                                                                        <div className="px-3 pb-3 space-y-2 animate-fade-in">
-                                                                            {[
-                                                                                { cycle: 'Semanal', price: '$6.500', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                                                { cycle: 'Mensual', price: '$22.000', label: 'Pago Mensual', sub: 'Equilibrio perfecto' },
-                                                                                { cycle: 'Anual', price: '$198.000', label: 'Pago Anual', sub: '3 MESES GRATIS 🎁' }
-                                                                            ].map((opt) => (
-                                                                                <div
-                                                                                    key={opt.cycle}
-                                                                                    onClick={() => setSelectedPlanOption({ plan: 'Premium', cycle: opt.cycle, price: opt.price })}
-                                                                                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Premium' && selectedPlanOption?.cycle === opt.cycle
-                                                                                        ? 'bg-yellow-500 text-black border-yellow-400 shadow-lg ring-2 ring-yellow-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
-                                                                                        : 'bg-black/40 text-slate-300 border-slate-800 hover:border-yellow-500/50 hover:bg-slate-800'
-                                                                                        }`}
-                                                                                >
-                                                                                    <div>
-                                                                                        <div className="font-bold text-sm">{opt.label}</div>
-                                                                                        <div className={`text-[10px] ${selectedPlanOption?.plan === 'Premium' && selectedPlanOption?.cycle === opt.cycle ? 'text-black/70' : 'text-slate-500'}`}>{opt.sub}</div>
-                                                                                    </div>
-                                                                                    <div className="font-black text-lg">{opt.price}</div>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    </details>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
+                                            <div className="relative z-10 p-6 flex-1 flex flex-col">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="p-4 bg-gradient-to-br from-orange-600 to-orange-500 rounded-2xl shadow-lg shadow-orange-500/30">
+                                                        <Store className="w-7 h-7 text-white" />
                                                     </div>
-
-                                                    {/* Sticky Footer */}
-                                                    <div className="border-t border-slate-800 bg-[#0a0a0a] p-6 z-20 shrink-0">
-                                                        <div className={`p-4 md:p-6 rounded-2xl border transition-all duration-500 relative overflow-hidden group ${selectedPlanOption
-                                                            ? 'bg-gradient-to-r from-green-900/80 to-emerald-900/80 border-green-500 shadow-[0_0_40px_rgba(34,197,94,0.3)]'
-                                                            : 'bg-slate-900 border-slate-700 opacity-90'
-                                                            }`}>
-                                                            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-
-                                                            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                                                                <div className="flex items-center gap-4 text-left">
-                                                                    <div className={`p-3 rounded-full shadow-lg transition-colors duration-300 ${selectedPlanOption ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-400'}`}>
-                                                                        {selectedPlanOption ? <CheckCircle className="w-8 h-8" /> : <Zap className="w-8 h-8" />}
-                                                                    </div>
-                                                                    <div>
-                                                                        <h3 className="text-xl font-bold text-white mb-1">
-                                                                            {selectedPlanOption
-                                                                                ? `¡Excelente elección! 🚀`
-                                                                                : 'Seleccioná una opción para continuar'}
-                                                                        </h3>
-                                                                        <p className={`text-sm ${selectedPlanOption ? 'text-green-300' : 'text-slate-400'}`}>
-                                                                            {selectedPlanOption
-                                                                                ? <span>Estás a un paso de activar tu <strong>Plan {selectedPlanOption.plan}</strong> con pago <strong>{selectedPlanOption.cycle}</strong>.</span>
-                                                                                : 'Hacé clic en una de las opciones de arriba para ver los detalles.'}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-
-                                                                {selectedPlanOption && (
-                                                                    <a
-                                                                        href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero suscribirme al *Plan ${selectedPlanOption.plan}* con pago *${selectedPlanOption.cycle}* de ${selectedPlanOption.price}. ¿Cómo seguimos?`)}`}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="w-full md:w-auto px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-black text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30 flex items-center justify-center gap-2 animate-bounce-subtle"
-                                                                    >
-                                                                        <MessageCircle className="w-6 h-6 fill-current" />
-                                                                        Confirmar por WhatsApp
-                                                                        <ArrowRight className="w-5 h-5" />
-                                                                    </a>
-                                                                )}
-                                                            </div>
-                                                        </div>
+                                                    <div>
+                                                        <h4 className="text-2xl font-black text-white">🚀 Emprendedor</h4>
+                                                        <p className="text-sm text-orange-400 font-medium leading-tight">Impulso inicial</p>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )
-                                    }
 
-                                    <ConfirmModal
-                                        isOpen={confirmModal.isOpen}
-                                        title={confirmModal.title}
-                                        message={confirmModal.message}
-                                        onConfirm={confirmModal.onConfirm}
-                                        onCancel={confirmModal.onCancel || (() => setConfirmModal(prev => ({ ...prev, isOpen: false })))}
-                                        isDangerous={confirmModal.isDangerous}
-                                        darkMode={darkMode}
-                                    />
-                                    {/* --- SUSTIA CHATBOT (AI) --- */}
-                                    <CategoryModal
-                                        isOpen={showCategoryModal}
-                                        onClose={() => setShowCategoryModal(false)}
-                                        categories={settings?.categories || []}
-                                        onAdd={(newCat) => setSettings({ ...settings, categories: [...(settings?.categories || []), newCat] })}
-                                        onRemove={(cat) => setSettings({ ...settings, categories: (settings?.categories || []).filter(c => c !== cat) })}
-                                    />
-                                    <SustIABot
-                                        settings={settings}
-                                        products={products}
-                                        addToCart={(p, q = 1) => manageCart(p, q)}
-                                        controlPanel={{
-                                            setDarkMode: setDarkMode,
-                                            openCart: () => setView('cart')
-                                        }}
-                                        coupons={coupons}
-                                        darkMode={darkMode}
-                                    />
-                                </div >
-                                </>
-                );
+                                                <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
+                                                    <div className="text-4xl font-black text-white">$7.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                                </div>
+
+                                                <div className="space-y-3 mb-6 flex-1">
+                                                    <div className="space-y-2 text-sm text-slate-300">
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Carga de hasta <strong className="text-white">30 productos</strong></span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Integración <strong className="text-white">Mercado Pago</strong></span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">1 promoción</strong> activa</span></div>
+                                                    </div>
+                                                </div>
+
+                                                <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-orange-500/50 open:shadow-[0_0_20px_rgba(249,115,22,0.15)]">
+                                                    <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
+                                                        <span className="flex items-center gap-2 text-orange-400">👇 Elegí tu plan de pago</span>
+                                                        <ChevronDown className="w-5 h-5 text-orange-400 transition-transform duration-300 group-open/payment:rotate-180" />
+                                                    </summary>
+                                                    <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                                        {[
+                                                            { cycle: 'Semanal', price: '$2.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                            { cycle: 'Mensual', price: '$7.000', label: 'Pago Mensual', sub: 'Más equilibrado' },
+                                                            { cycle: 'Anual', price: '$70.000', label: 'Pago Anual', sub: 'Ahorrás $14.000 🎁' }
+                                                        ].map((opt) => (
+                                                            <div
+                                                                key={opt.cycle}
+                                                                onClick={() => setSelectedPlanOption({ plan: 'Emprendedor', cycle: opt.cycle, price: opt.price })}
+                                                                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Emprendedor' && selectedPlanOption?.cycle === opt.cycle
+                                                                    ? 'bg-orange-500 text-black border-orange-400 shadow-lg ring-2 ring-orange-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
+                                                                    : 'bg-black/40 text-slate-300 border-slate-800 hover:border-orange-500/50 hover:bg-slate-800'
+                                                                    }`}
+                                                            >
+                                                                <div>
+                                                                    <div className="font-bold text-sm">{opt.label}</div>
+                                                                    <div className={`text-[10px] ${selectedPlanOption?.plan === 'Emprendedor' && selectedPlanOption?.cycle === opt.cycle ? 'text-black/70' : 'text-slate-500'}`}>{opt.sub}</div>
+                                                                </div>
+                                                                <div className="font-black text-lg">{opt.price}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </details>
+                                            </div>
+                                        </div>
+
+                                        {/* ═══════════════════════════════════════════════════════════════════ */}
+                                        {/* PLAN NEGOCIO */}
+                                        {/* ═══════════════════════════════════════════════════════════════════ */}
+                                        <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'business'
+                                            ? 'bg-gradient-to-b from-purple-950/40 to-slate-950 border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.25)]'
+                                            : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-purple-500/50'
+                                            }`}>
+                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">⭐ MÁS POPULAR</div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                                            {settings?.subscriptionPlan === 'business' && (
+                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-400 text-white text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
+                                            )}
+
+                                            <div className="relative z-10 p-6 flex-1 flex flex-col">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="p-4 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-2xl shadow-lg shadow-purple-500/30">
+                                                        <Briefcase className="w-7 h-7 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-2xl font-black text-white">🚀 Negocio</h4>
+                                                        <p className="text-sm text-purple-400 font-medium leading-tight">Escala tu marca</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
+                                                    <div className="text-4xl font-black text-white">$13.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                                </div>
+
+                                                <div className="space-y-3 mb-6 flex-1">
+                                                    <div className="space-y-2 text-sm text-slate-300">
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span>Hasta <strong className="text-white">50 productos</strong></span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">5 promociones</strong> simultáneas</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Cupones</strong> de descuento</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Analítica</strong> de clientes</span></div>
+                                                    </div>
+                                                </div>
+
+                                                <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-purple-500/50 open:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+                                                    <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
+                                                        <span className="flex items-center gap-2 text-purple-400">👇 Elegí tu plan de pago</span>
+                                                        <ChevronDown className="w-5 h-5 text-purple-400 transition-transform duration-300 group-open/payment:rotate-180" />
+                                                    </summary>
+                                                    <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                                        {[
+                                                            { cycle: 'Semanal', price: '$4.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                            { cycle: 'Mensual', price: '$13.000', label: 'Pago Mensual', sub: 'Ideal gestión mensual' },
+                                                            { cycle: 'Anual', price: '$117.000', label: 'Pago Anual', sub: '3 MESES GRATIS 🎉' }
+                                                        ].map((opt) => (
+                                                            <div
+                                                                key={opt.cycle}
+                                                                onClick={() => setSelectedPlanOption({ plan: 'Negocio', cycle: opt.cycle, price: opt.price })}
+                                                                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Negocio' && selectedPlanOption?.cycle === opt.cycle
+                                                                    ? 'bg-purple-600 text-white border-purple-500 shadow-lg ring-2 ring-purple-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
+                                                                    : 'bg-black/40 text-slate-300 border-slate-800 hover:border-purple-500/50 hover:bg-slate-800'
+                                                                    }`}
+                                                            >
+                                                                <div>
+                                                                    <div className="font-bold text-sm">{opt.label}</div>
+                                                                    <div className={`text-[10px] ${selectedPlanOption?.plan === 'Negocio' && selectedPlanOption?.cycle === opt.cycle ? 'text-white/80' : 'text-slate-500'}`}>{opt.sub}</div>
+                                                                </div>
+                                                                <div className="font-black text-lg">{opt.price}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </details>
+                                            </div>
+                                        </div>
+
+                                        {/* ═══════════════════════════════════════════════════════════════════ */}
+                                        {/* PLAN PREMIUM */}
+                                        {/* ═══════════════════════════════════════════════════════════════════ */}
+                                        <div className={`group relative rounded-[2rem] border-2 transition-all duration-500 hover:scale-[1.01] overflow-hidden flex flex-col ${settings?.subscriptionPlan === 'premium'
+                                            ? 'bg-gradient-to-b from-yellow-950/40 to-slate-950 border-yellow-500 shadow-[0_0_40px_rgba(234,179,8,0.25)]'
+                                            : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-yellow-500/50'
+                                            }`}>
+                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20">💎 VIP</div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                                            {settings?.subscriptionPlan === 'premium' && (
+                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">✓ TU PLAN ACTUAL</div>
+                                            )}
+
+                                            <div className="relative z-10 p-6 flex-1 flex flex-col">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="p-4 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl shadow-lg shadow-yellow-500/30">
+                                                        <Sparkles className="w-7 h-7 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-2xl font-black text-white">💎 Premium</h4>
+                                                        <p className="text-sm text-yellow-400 font-medium leading-tight">Liderazgo total</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
+                                                    <div className="text-4xl font-black text-white">$22.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                                </div>
+
+                                                <div className="space-y-3 mb-6 flex-1">
+                                                    <div className="space-y-2 text-sm text-slate-300">
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Ilimitados</strong> productos y promos</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Asistente IA</strong> 24/7</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Carga VIP</strong> 10 productos</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Mantenimiento</strong> Full Mensual</span></div>
+                                                    </div>
+                                                </div>
+
+                                                <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-yellow-500/50 open:shadow-[0_0_20px_rgba(234,179,8,0.15)]">
+                                                    <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
+                                                        <span className="flex items-center gap-2 text-yellow-400">👇 Elegí tu plan de pago</span>
+                                                        <ChevronDown className="w-5 h-5 text-yellow-400 transition-transform duration-300 group-open/payment:rotate-180" />
+                                                    </summary>
+                                                    <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                                        {[
+                                                            { cycle: 'Semanal', price: '$6.500', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                            { cycle: 'Mensual', price: '$22.000', label: 'Pago Mensual', sub: 'Equilibrio perfecto' },
+                                                            { cycle: 'Anual', price: '$198.000', label: 'Pago Anual', sub: '3 MESES GRATIS 🎁' }
+                                                        ].map((opt) => (
+                                                            <div
+                                                                key={opt.cycle}
+                                                                onClick={() => setSelectedPlanOption({ plan: 'Premium', cycle: opt.cycle, price: opt.price })}
+                                                                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${selectedPlanOption?.plan === 'Premium' && selectedPlanOption?.cycle === opt.cycle
+                                                                    ? 'bg-yellow-500 text-black border-yellow-400 shadow-lg ring-2 ring-yellow-500/50 ring-offset-2 ring-offset-[#0a0a0a]'
+                                                                    : 'bg-black/40 text-slate-300 border-slate-800 hover:border-yellow-500/50 hover:bg-slate-800'
+                                                                    }`}
+                                                            >
+                                                                <div>
+                                                                    <div className="font-bold text-sm">{opt.label}</div>
+                                                                    <div className={`text-[10px] ${selectedPlanOption?.plan === 'Premium' && selectedPlanOption?.cycle === opt.cycle ? 'text-black/70' : 'text-slate-500'}`}>{opt.sub}</div>
+                                                                </div>
+                                                                <div className="font-black text-lg">{opt.price}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </details>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                {/* Sticky Footer */}
+                                <div className="border-t border-slate-800 bg-[#0a0a0a] p-6 z-20 shrink-0">
+                                    <div className={`p-4 md:p-6 rounded-2xl border transition-all duration-500 relative overflow-hidden group ${selectedPlanOption
+                                        ? 'bg-gradient-to-r from-green-900/80 to-emerald-900/80 border-green-500 shadow-[0_0_40px_rgba(34,197,94,0.3)]'
+                                        : 'bg-slate-900 border-slate-700 opacity-90'
+                                        }`}>
+                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+
+                                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                                            <div className="flex items-center gap-4 text-left">
+                                                <div className={`p-3 rounded-full shadow-lg transition-colors duration-300 ${selectedPlanOption ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                                                    {selectedPlanOption ? <CheckCircle className="w-8 h-8" /> : <Zap className="w-8 h-8" />}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white mb-1">
+                                                        {selectedPlanOption
+                                                            ? `¡Excelente elección! 🚀`
+                                                            : 'Seleccioná una opción para continuar'}
+                                                    </h3>
+                                                    <p className={`text-sm ${selectedPlanOption ? 'text-green-300' : 'text-slate-400'}`}>
+                                                        {selectedPlanOption
+                                                            ? <span>Estás a un paso de activar tu <strong>Plan {selectedPlanOption.plan}</strong> con pago <strong>{selectedPlanOption.cycle}</strong>.</span>
+                                                            : 'Hacé clic en una de las opciones de arriba para ver los detalles.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {selectedPlanOption && (
+                                                <a
+                                                    href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero suscribirme al *Plan ${selectedPlanOption.plan}* con pago *${selectedPlanOption.cycle}* de ${selectedPlanOption.price}. ¿Cómo seguimos?`)}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="w-full md:w-auto px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-black text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30 flex items-center justify-center gap-2 animate-bounce-subtle"
+                                                >
+                                                    <MessageCircle className="w-6 h-6 fill-current" />
+                                                    Confirmar por WhatsApp
+                                                    <ArrowRight className="w-5 h-5" />
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+
+                <ConfirmModal
+                    isOpen={confirmModal.isOpen}
+                    title={confirmModal.title}
+                    message={confirmModal.message}
+                    onConfirm={confirmModal.onConfirm}
+                    onCancel={confirmModal.onCancel || (() => setConfirmModal(prev => ({ ...prev, isOpen: false })))}
+                    isDangerous={confirmModal.isDangerous}
+                    darkMode={darkMode}
+                />
+                {/* --- SUSTIA CHATBOT (AI) --- */}
+                <CategoryModal
+                    isOpen={showCategoryModal}
+                    onClose={() => setShowCategoryModal(false)}
+                    categories={settings?.categories || []}
+                    onAdd={(newCat) => setSettings({ ...settings, categories: [...(settings?.categories || []), newCat] })}
+                    onRemove={(cat) => setSettings({ ...settings, categories: (settings?.categories || []).filter(c => c !== cat) })}
+                />
+                <SustIABot
+                    settings={settings}
+                    products={products}
+                    addToCart={(p, q = 1) => manageCart(p, q)}
+                    controlPanel={{
+                        setDarkMode: setDarkMode,
+                        openCart: () => setView('cart')
+                    }}
+                    coupons={coupons}
+                    darkMode={darkMode}
+                />
+            </div>
+        </>
+    );
 }
 
-                // === COMPONENTE MODAL DE PLANES REFACTORIZADO ===
-                const PlansModalContent = ({settings, onClose, darkMode}) => {
+// === COMPONENTE MODAL DE PLANES REFACTORIZADO ===
+const PlansModalContent = ({ settings, onClose, darkMode }) => {
     const [activePlanId, setActivePlanId] = React.useState(null);
-                const [selectedOption, setSelectedOption] = React.useState(null);
+    const [selectedOption, setSelectedOption] = React.useState(null);
 
-                // Clases de color estáticas para Tailwind (no interpolar)
-                const colorClasses = {
-                    purple: {
-                    iconBg: 'bg-purple-600',
-                iconText: 'text-purple-400',
-                price: 'text-purple-400',
-                check: 'text-purple-500',
-                activeBg: 'bg-purple-500',
-                activeBorder: 'border-purple-400',
-                gradient: 'from-purple-900/40 to-slate-900',
-                border: 'border-purple-500/50'
+    // Clases de color estáticas para Tailwind (no interpolar)
+    const colorClasses = {
+        purple: {
+            iconBg: 'bg-purple-600',
+            iconText: 'text-purple-400',
+            price: 'text-purple-400',
+            check: 'text-purple-500',
+            activeBg: 'bg-purple-500',
+            activeBorder: 'border-purple-400',
+            gradient: 'from-purple-900/40 to-slate-900',
+            border: 'border-purple-500/50'
         },
-                orange: {
-                    iconBg: 'bg-orange-600',
-                iconText: 'text-orange-400',
-                price: 'text-orange-400',
-                check: 'text-orange-500',
-                activeBg: 'bg-orange-500',
-                activeBorder: 'border-orange-400',
-                gradient: 'from-orange-900/40 to-slate-900',
-                border: 'border-orange-500/50'
+        orange: {
+            iconBg: 'bg-orange-600',
+            iconText: 'text-orange-400',
+            price: 'text-orange-400',
+            check: 'text-orange-500',
+            activeBg: 'bg-orange-500',
+            activeBorder: 'border-orange-400',
+            gradient: 'from-orange-900/40 to-slate-900',
+            border: 'border-orange-500/50'
         },
-                yellow: {
-                    iconBg: 'bg-yellow-500',
-                iconText: 'text-yellow-400',
-                price: 'text-yellow-400',
-                check: 'text-yellow-500',
-                activeBg: 'bg-yellow-500',
-                activeBorder: 'border-yellow-400',
-                gradient: 'from-yellow-900/40 to-slate-900',
-                border: 'border-yellow-500/50'
+        yellow: {
+            iconBg: 'bg-yellow-500',
+            iconText: 'text-yellow-400',
+            price: 'text-yellow-400',
+            check: 'text-yellow-500',
+            activeBg: 'bg-yellow-500',
+            activeBorder: 'border-yellow-400',
+            gradient: 'from-yellow-900/40 to-slate-900',
+            border: 'border-yellow-500/50'
         }
     };
 
-                const PLANS = [
-                {
-                    id: 'entrepreneur',
-                name: 'Plan Emprendedor',
-                emoji: '🏪',
-                subtitle: 'El impulso que tu negocio necesita para despegar.',
-                price: '$7.000',
-                features: [
+    const PLANS = [
+        {
+            id: 'entrepreneur',
+            name: 'Plan Emprendedor',
+            emoji: '🏪',
+            subtitle: 'El impulso que tu negocio necesita para despegar.',
+            price: '$7.000',
+            features: [
                 '📦 Carga de hasta 30 productos',
                 '💳 Integración con Mercado Pago',
                 '🔥 1 Promoción activa',
                 '📊 Panel de Control completo',
                 '📧 Soporte técnico vía Gmail'
-                ],
-                cycles: [
-                {id: 'weekly', label: 'Semanal', price: '$2.000', sub: 'Flexibilidad total' },
-                {id: 'monthly', label: 'Mensual', price: '$7.000', sub: 'Opción equilibrada' },
-                {id: 'annual', label: 'Anual', price: '$70.000', sub: '🎁 2 MESES GRATIS' }
-                ],
-                color: 'orange',
-                icon: Store
+            ],
+            cycles: [
+                { id: 'weekly', label: 'Semanal', price: '$2.000', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: '$7.000', sub: 'Opción equilibrada' },
+                { id: 'annual', label: 'Anual', price: '$70.000', sub: '🎁 2 MESES GRATIS' }
+            ],
+            color: 'orange',
+            icon: Store
         },
-                {
-                    id: 'business',
-                name: 'Plan Negocio',
-                emoji: '🚀',
-                subtitle: 'Para marcas con identidad que buscan escalar.',
-                price: '$13.000',
-                popular: true,
-                features: [
+        {
+            id: 'business',
+            name: 'Plan Negocio',
+            emoji: '🚀',
+            subtitle: 'Para marcas con identidad que buscan escalar.',
+            price: '$13.000',
+            popular: true,
+            features: [
                 '📦 Hasta 50 productos',
                 '🔥 5 Promociones simultáneas',
                 '🎫 Sistema de cupones',
                 '📊 Analítica de clientes',
                 '📲 Botón WhatsApp flotante'
-                ],
-                cycles: [
-                {id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },
-                {id: 'monthly', label: 'Mensual', price: '$13.000', sub: 'Equilibrio perfecto' },
-                {id: 'annual', label: 'Anual', price: '$117.000', sub: '🎁 3 MESES GRATIS' }
-                ],
-                color: 'purple',
-                icon: Briefcase
+            ],
+            cycles: [
+                { id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: '$13.000', sub: 'Equilibrio perfecto' },
+                { id: 'annual', label: 'Anual', price: '$117.000', sub: '🎁 3 MESES GRATIS' }
+            ],
+            color: 'purple',
+            icon: Briefcase
         },
-                {
-                    id: 'premium',
-                name: 'Plan Premium',
-                emoji: '💎',
-                subtitle: 'Automatización total y cero preocupaciones.',
-                price: '$22.000',
-                features: [
+        {
+            id: 'premium',
+            name: 'Plan Premium',
+            emoji: '💎',
+            subtitle: 'Automatización total y cero preocupaciones.',
+            price: '$22.000',
+            features: [
                 '🚀 Productos ilimitados',
                 '🤖 Asistente IA 24/7',
                 '✨ Carga VIP (10 productos)',
                 '🛠️ Mantenimiento mensual',
                 '📲 Omnicanalidad total'
-                ],
-                cycles: [
-                {id: 'weekly', label: 'Semanal', price: '$6.500', sub: 'Flexibilidad total' },
-                {id: 'monthly', label: 'Mensual', price: '$22.000', sub: 'Equilibrio perfecto' },
-                {id: 'annual', label: 'Anual', price: '$198.000', sub: '🎁 3 MESES GRATIS' }
-                ],
-                color: 'yellow',
-                icon: Sparkles
+            ],
+            cycles: [
+                { id: 'weekly', label: 'Semanal', price: '$6.500', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: '$22.000', sub: 'Equilibrio perfecto' },
+                { id: 'annual', label: 'Anual', price: '$198.000', sub: '🎁 3 MESES GRATIS' }
+            ],
+            color: 'yellow',
+            icon: Sparkles
         }
-                ];
+    ];
 
-                return (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in-scale p-2 sm:p-4 overflow-hidden">
-                    <div className={`relative w-full h-full sm:h-auto sm:max-h-[95vh] sm:max-w-5xl sm:rounded-3xl border-0 sm:border shadow-2xl flex flex-col overflow-hidden ${darkMode ? 'bg-gradient-to-b from-[#0d0d0d] to-[#050505] border-slate-800/50' : 'bg-white border-slate-200'}`} data-lenis-prevent>
+    return (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in-scale p-2 sm:p-4 overflow-hidden">
+            <div className={`relative w-full h-full sm:h-auto sm:max-h-[95vh] sm:max-w-5xl sm:rounded-3xl border-0 sm:border shadow-2xl flex flex-col overflow-hidden ${darkMode ? 'bg-gradient-to-b from-[#0d0d0d] to-[#050505] border-slate-800/50' : 'bg-white border-slate-200'}`} data-lenis-prevent>
 
-                        {/* Header */}
-                        <div className={`flex justify-between items-center p-4 sm:p-6 border-b shrink-0 ${darkMode ? 'border-slate-800/50' : 'border-slate-100'}`}>
-                            <div>
-                                <h2 className={`text-xl sm:text-3xl font-black flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                    <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-current" /> Planes Disponibles
-                                </h2>
-                                <p className={`text-xs sm:text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>Elegí un plan y seleccioná tu forma de pago</p>
-                            </div>
-                            <button onClick={onClose} className={`p-2 sm:p-3 rounded-full transition-all hover:rotate-90 ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>
-                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                            </button>
-                        </div>
+                {/* Header */}
+                <div className={`flex justify-between items-center p-4 sm:p-6 border-b shrink-0 ${darkMode ? 'border-slate-800/50' : 'border-slate-100'}`}>
+                    <div>
+                        <h2 className={`text-xl sm:text-3xl font-black flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                            <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-current" /> Planes Disponibles
+                        </h2>
+                        <p className={`text-xs sm:text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>Elegí un plan y seleccioná tu forma de pago</p>
+                    </div>
+                    <button onClick={onClose} className={`p-2 sm:p-3 rounded-full transition-all hover:rotate-90 ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>
+                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
+                </div>
 
-                        {/* Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-                                {PLANS.map(plan => {
-                                    const isActive = activePlanId === plan.id;
-                                    const isCurrentPlan = settings?.subscriptionPlan === plan.id || (!settings?.subscriptionPlan && plan.id === 'entrepreneur');
-                                    const Icon = plan.icon;
-                                    const colors = colorClasses[plan.color];
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                        {PLANS.map(plan => {
+                            const isActive = activePlanId === plan.id;
+                            const isCurrentPlan = settings?.subscriptionPlan === plan.id || (!settings?.subscriptionPlan && plan.id === 'entrepreneur');
+                            const Icon = plan.icon;
+                            const colors = colorClasses[plan.color];
 
-                                    return (
-                                        <div
-                                            key={plan.id}
-                                            onClick={() => setActivePlanId(isActive ? null : plan.id)}
-                                            className={`relative rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col
+                            return (
+                                <div
+                                    key={plan.id}
+                                    onClick={() => setActivePlanId(isActive ? null : plan.id)}
+                                    className={`relative rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col
                                         ${isActive
-                                                    ? `bg-gradient-to-b ${colors.gradient} ${colors.border} shadow-xl scale-[1.01]`
-                                                    : (darkMode ? 'bg-[#111] border-slate-800 hover:border-slate-600' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm')
-                                                }`}
-                                        >
-                                            {/* Popular Badge */}
-                                            {plan.popular && (
-                                                <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl">
-                                                    POPULAR
-                                                </div>
-                                            )}
+                                            ? `bg-gradient-to-b ${colors.gradient} ${colors.border} shadow-xl scale-[1.01]`
+                                            : (darkMode ? 'bg-[#111] border-slate-800 hover:border-slate-600' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm')
+                                        }`}
+                                >
+                                    {/* Popular Badge */}
+                                    {plan.popular && (
+                                        <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl">
+                                            POPULAR
+                                        </div>
+                                    )}
 
-                                            {/* Current Plan Badge */}
-                                            {isCurrentPlan && (
-                                                <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur text-white text-[10px] font-bold px-3 py-1 rounded-b-lg border border-white/20">
-                                                    ✓ TU PLAN
-                                                </div>
-                                            )}
+                                    {/* Current Plan Badge */}
+                                    {isCurrentPlan && (
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur text-white text-[10px] font-bold px-3 py-1 rounded-b-lg border border-white/20">
+                                            ✓ TU PLAN
+                                        </div>
+                                    )}
 
-                                            <div className="p-4 sm:p-5 flex-1 flex flex-col">
-                                                {/* Header */}
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className={`p-2.5 sm:p-3 rounded-xl ${colors.iconBg} shadow-lg`}>
-                                                        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className={`text-lg sm:text-xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
-                                                        <p className={`text-[11px] sm:text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{plan.subtitle}</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Price */}
-                                                <div className={`text-2xl sm:text-3xl font-black ${colors.price} mb-4`}>
-                                                    {plan.price} <span className="text-sm text-slate-500 font-normal">/mes</span>
-                                                </div>
-
-                                                {/* Features */}
-                                                <div className="space-y-2 mb-4 flex-1">
-                                                    {plan.features.map((feat, i) => (
-                                                        <div key={i} className={`flex items-start gap-2 text-xs sm:text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                                                            <CheckCircle className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${colors.check} shrink-0 mt-0.5`} />
-                                                            <span>{feat}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-
-                                                {/* Expand/Collapse Indicator */}
-                                                <button
-                                                    className={`w-full py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2
-                                                ${isActive ? 'bg-white/5 text-white' : (darkMode ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50' : 'bg-slate-100 text-slate-500 hover:bg-slate-200')}`}
-                                                >
-                                                    {isActive ? 'Elegí tu forma de pago' : 'Ver opciones de pago'}
-                                                    <ChevronDown className={`w-4 h-4 transition-transform ${isActive ? 'rotate-180' : ''}`} />
-                                                </button>
-
-                                                {/* Payment Options (Expandable) */}
-                                                <div className={`transition-all duration-300 overflow-hidden ${isActive ? 'max-h-[400px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
-                                                    <div className="space-y-2 pt-4 border-t border-white/10">
-                                                        {plan.cycles.map(cycle => {
-                                                            const isSelected = selectedOption?.price === cycle.price && selectedOption?.plan === plan.name;
-                                                            return (
-                                                                <button
-                                                                    key={cycle.id}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setSelectedOption({ plan: plan.name, cycle: cycle.label, price: cycle.price, sub: cycle.sub, emoji: plan.emoji });
-                                                                    }}
-                                                                    className={`w-full text-left p-3 rounded-xl border-2 transition-all flex justify-between items-center
-                                                                ${isSelected
-                                                                            ? `${colors.activeBg} text-black ${colors.activeBorder} shadow-lg`
-                                                                            : (darkMode ? 'bg-slate-900/50 border-slate-700 hover:bg-slate-800 text-slate-300 hover:border-slate-500' : 'bg-slate-50 border-slate-200 hover:bg-white text-slate-600 hover:border-slate-300')
-                                                                        }`}
-                                                                >
-                                                                    <div>
-                                                                        <div className="font-bold text-sm">{cycle.label}</div>
-                                                                        <div className={`text-[10px] ${isSelected ? 'text-black/70' : 'text-slate-500'}`}>{cycle.sub}</div>
-                                                                    </div>
-                                                                    <div className="font-black text-base sm:text-lg">{cycle.price}</div>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
+                                    <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                                        {/* Header */}
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className={`p-2.5 sm:p-3 rounded-xl ${colors.iconBg} shadow-lg`}>
+                                                <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className={`text-lg sm:text-xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
+                                                <p className={`text-[11px] sm:text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{plan.subtitle}</p>
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
 
-                        {/* Sticky Footer CTA */}
-                        {selectedOption && (
-                            <div className="border-t border-slate-800 bg-gradient-to-r from-green-900/30 to-emerald-900/30 p-3 sm:p-5 shrink-0 animate-slide-up">
-                                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
-                                    <div className="text-center sm:text-left">
-                                        <p className="text-white text-sm sm:text-base font-bold">
-                                            {selectedOption.emoji} {selectedOption.plan} • <span className="text-green-400">{selectedOption.cycle}</span>
-                                        </p>
-                                        <p className="text-slate-400 text-xs">{selectedOption.sub} • {selectedOption.price}</p>
+                                        {/* Price */}
+                                        <div className={`text-2xl sm:text-3xl font-black ${colors.price} mb-4`}>
+                                            {plan.price} <span className="text-sm text-slate-500 font-normal">/mes</span>
+                                        </div>
+
+                                        {/* Features */}
+                                        <div className="space-y-2 mb-4 flex-1">
+                                            {plan.features.map((feat, i) => (
+                                                <div key={i} className={`flex items-start gap-2 text-xs sm:text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                                                    <CheckCircle className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${colors.check} shrink-0 mt-0.5`} />
+                                                    <span>{feat}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Expand/Collapse Indicator */}
+                                        <button
+                                            className={`w-full py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2
+                                                ${isActive ? 'bg-white/5 text-white' : (darkMode ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50' : 'bg-slate-100 text-slate-500 hover:bg-slate-200')}`}
+                                        >
+                                            {isActive ? 'Elegí tu forma de pago' : 'Ver opciones de pago'}
+                                            <ChevronDown className={`w-4 h-4 transition-transform ${isActive ? 'rotate-180' : ''}`} />
+                                        </button>
+
+                                        {/* Payment Options (Expandable) */}
+                                        <div className={`transition-all duration-300 overflow-hidden ${isActive ? 'max-h-[400px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                                            <div className="space-y-2 pt-4 border-t border-white/10">
+                                                {plan.cycles.map(cycle => {
+                                                    const isSelected = selectedOption?.price === cycle.price && selectedOption?.plan === plan.name;
+                                                    return (
+                                                        <button
+                                                            key={cycle.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedOption({ plan: plan.name, cycle: cycle.label, price: cycle.price, sub: cycle.sub, emoji: plan.emoji });
+                                                            }}
+                                                            className={`w-full text-left p-3 rounded-xl border-2 transition-all flex justify-between items-center
+                                                                ${isSelected
+                                                                    ? `${colors.activeBg} text-black ${colors.activeBorder} shadow-lg`
+                                                                    : (darkMode ? 'bg-slate-900/50 border-slate-700 hover:bg-slate-800 text-slate-300 hover:border-slate-500' : 'bg-slate-50 border-slate-200 hover:bg-white text-slate-600 hover:border-slate-300')
+                                                                }`}
+                                                        >
+                                                            <div>
+                                                                <div className="font-bold text-sm">{cycle.label}</div>
+                                                                <div className={`text-[10px] ${isSelected ? 'text-black/70' : 'text-slate-500'}`}>{cycle.sub}</div>
+                                                            </div>
+                                                            <div className="font-black text-base sm:text-lg">{cycle.price}</div>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <a
-                                        href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero contratar el *${selectedOption.plan}* con pago *${selectedOption.cycle}* (${selectedOption.price}). ¿Cómo sigo?`)}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-full sm:w-auto px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-black text-sm sm:text-base rounded-xl transition shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
-                                    >
-                                        <MessageCircle className="w-5 h-5 fill-current" /> Confirmar por WhatsApp
-                                    </a>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })}
                     </div>
                 </div>
 
-                );
+                {/* Sticky Footer CTA */}
+                {selectedOption && (
+                    <div className="border-t border-slate-800 bg-gradient-to-r from-green-900/30 to-emerald-900/30 p-3 sm:p-5 shrink-0 animate-slide-up">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
+                            <div className="text-center sm:text-left">
+                                <p className="text-white text-sm sm:text-base font-bold">
+                                    {selectedOption.emoji} {selectedOption.plan} • <span className="text-green-400">{selectedOption.cycle}</span>
+                                </p>
+                                <p className="text-slate-400 text-xs">{selectedOption.sub} • {selectedOption.price}</p>
+                            </div>
+                            <a
+                                href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero contratar el *${selectedOption.plan}* con pago *${selectedOption.cycle}* (${selectedOption.price}). ¿Cómo sigo?`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full sm:w-auto px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-black text-sm sm:text-base rounded-xl transition shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
+                            >
+                                <MessageCircle className="w-5 h-5 fill-current" /> Confirmar por WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+
+    );
 };
 
 
 
 
-                // Renderizado Final
-                const root = createRoot(document.getElementById('root'));
-                root.render(
-                <ErrorBoundary>
+// Renderizado Final
+const root = createRoot(document.getElementById('root'));
+root.render(
+    <ErrorBoundary>
 
-                    <App />
-                </ErrorBoundary>
-                );
+        <App />
+    </ErrorBoundary>
+);
