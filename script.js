@@ -2533,6 +2533,22 @@ function App() {
         return () => clearTimeout(autoSaveTimer);
     }, [settings, settingsLoaded]);
 
+    // --- EFFECT PARA ROTACIÓN AUTOMÁTICA DEL CARRUSEL HERO ---
+    // IMPORTANTE: Debe estar con todos los useEffects, ANTES de cualquier return condicional
+    useEffect(() => {
+        const heroImages = settings?.heroImages?.length ? settings.heroImages :
+            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
+        const hasMultipleImages = heroImages.length > 1;
+
+        if (!hasMultipleImages) return;
+
+        const interval = setInterval(() => {
+            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
+        }, settings?.heroCarouselInterval || 5000);
+
+        return () => clearInterval(interval);
+    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
+
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
     // --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
@@ -5253,22 +5269,6 @@ function App() {
             </div>
         );
     }
-
-    // --- EFFECT PARA ROTACIÓN AUTOMÁTICA DEL CARRUSEL HERO ---
-    // IMPORTANTE: Esto debe estar ANTES de cualquier return condicional para cumplir las Reglas de Hooks
-    useEffect(() => {
-        const heroImages = settings?.heroImages?.length ? settings.heroImages :
-            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
-        const hasMultipleImages = heroImages.length > 1;
-
-        if (!hasMultipleImages) return;
-
-        const interval = setInterval(() => {
-            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
-        }, settings?.heroCarouselInterval || 5000);
-
-        return () => clearInterval(interval);
-    }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
 
     // Modo Mantenimiento
     if (settings?.maintenanceMode && !isAdmin(currentUser?.email)) {
