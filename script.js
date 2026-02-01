@@ -12011,7 +12011,7 @@ function App() {
                     darkMode={darkMode}
                 />
             </div >
-        </>
+        </React.Fragment>
     );
 }
 
@@ -12265,7 +12265,6 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                 )}
             </div>
         </div>
-        </React.Fragment >
     );
 };
 
