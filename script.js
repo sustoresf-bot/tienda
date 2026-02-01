@@ -5370,9 +5370,10 @@ function App() {
 
 
 
-                <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
-                <CouponSelectorModal />
-                <ProductDetailModal />
+                {/* TEMPORALMENTE DESHABILITADOS - Componentes no definidos */}
+                {/* <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} /> */}
+                {/* <CouponSelectorModal /> */}
+                {/* <ProductDetailModal /> */}
 
                 {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
                 {view !== 'admin' && (
