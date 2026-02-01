@@ -6947,7 +6947,7 @@ function App() {
                                     )}
 
                                     {/* 7.1 Sidebar Admin */}
-                                    <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:h-screen shadow-[10px_0_40px_rgba(0,0,0,0.5)]`}>
+                                    <div className={`fixed inset-y-0 left-0 z-50 w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} h-screen shadow-[10px_0_40px_rgba(0,0,0,0.5)]`}>
                                         <div className="p-8 border-b border-white/5 flex items-center justify-between">
                                             <div className="group cursor-pointer">
                                                 <h2 className="text-2xl font-black text-white tracking-tighter flex items-center gap-4 group-hover:scale-105 transition-transform">
@@ -6969,8 +6969,8 @@ function App() {
                                         <nav className="flex-1 p-5 space-y-2 overflow-y-auto custom-scrollbar">
                                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-3 mb-1 opacity-50">Menú Principal</p>
 
-                                            <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'dashboard' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
-                                                <LayoutDashboard className={`w-5 h-5 ${adminTab === 'dashboard' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Inicio
+                                            <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-4 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'dashboard' ? 'bg-orange-600 text-white shadow-[0_10px_30px_rgba(249,115,22,0.3)] border border-orange-400/50 scale-[1.02]' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                                                <LayoutDashboard className={`w-6 h-6 ${adminTab === 'dashboard' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Inicio
                                             </button>
 
                                             <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 relative group ${adminTab === 'orders' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
@@ -7057,19 +7057,19 @@ function App() {
                                                         showToast("Sonido desactivado 🔕", "info");
                                                     }
                                                 }}
-                                                className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border ${soundEnabled
-                                                    ? 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20'
+                                                className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all border ${soundEnabled
+                                                    ? 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.1)]'
                                                     : 'bg-slate-800/50 text-slate-500 border-slate-700 hover:bg-slate-800 hover:text-slate-300'
                                                     }`}
                                             >
-                                                {soundEnabled ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
-                                                {soundEnabled ? 'Alertas ON' : 'Alertas OFF'}
+                                                {soundEnabled ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+                                                {soundEnabled ? 'ALERTAS ON' : 'ALERTAS OFF'}
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* 7.2 Contenido Principal Admin */}
-                                    <div className="flex-1 bg-[#050505] relative w-full min-h-screen overflow-visible md:ml-[280px]">
+                                    <div className="flex-1 bg-[#050505] relative min-h-screen overflow-x-hidden md:ml-[280px]">
                                         <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-orange-600/5 to-transparent pointer-events-none"></div>
 
                                         <div className="relative z-10 p-6 md:p-12 lg:p-16 max-w-[1700px] mx-auto">
@@ -7102,15 +7102,22 @@ function App() {
                                                             <p className="text-slate-400 font-medium max-w-md">Bienvenido de nuevo. Aquí tienes el rendimiento de tu tienda en tiempo real.</p>
                                                         </div>
                                                         <div className="flex items-center gap-4">
-                                                            <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-[1.5rem] backdrop-blur-md">
-                                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Fecha Actual</p>
-                                                                <p className="text-white font-bold text-sm">
-                                                                    {new Date().toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                                                                </p>
+                                                            <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-[1.5rem] backdrop-blur-md flex items-center gap-6">
+                                                                <div>
+                                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 leading-none">Fecha Actual</p>
+                                                                    <p className="text-white font-bold text-sm leading-none">
+                                                                        {new Date().toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="w-px h-8 bg-white/10"></div>
+                                                                <button
+                                                                    onClick={() => window.location.reload()}
+                                                                    className="p-2.5 bg-orange-600/20 hover:bg-orange-600 text-orange-400 hover:text-white rounded-xl transition-all hover:rotate-180 duration-700 active:scale-95 group"
+                                                                    title="Sincronizar Datos"
+                                                                >
+                                                                    <RefreshCw className="w-5 h-5 group-active:animate-spin" />
+                                                                </button>
                                                             </div>
-                                                            <button onClick={() => window.location.reload()} className="p-4 bg-orange-600 hover:bg-orange-500 text-white rounded-[1.5rem] shadow-lg shadow-orange-600/20 transition-all hover:rotate-180 duration-700 active:scale-90">
-                                                                <RefreshCw className="w-6 h-6" />
-                                                            </button>
                                                         </div>
                                                     </div>
 
@@ -7123,7 +7130,7 @@ function App() {
                                                                     <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-1">Ingresos Brutos</p>
                                                                     <h2 className="text-4xl font-black text-white tracking-tighter">${dashboardMetrics.revenue.toLocaleString()}</h2>
                                                                 </div>
-                                                                <div className="p-4 bg-green-900/20 text-green-400 rounded-2xl">
+                                                                <div className="p-4 bg-green-900/20 text-green-400 rounded-2xl w-16 h-16 flex items-center justify-center shadow-lg shadow-green-500/5">
                                                                     <DollarSign className="w-8 h-8" />
                                                                 </div>
                                                             </div>
@@ -7163,7 +7170,7 @@ function App() {
                                                                         ${dashboardMetrics.netIncome.toLocaleString()}
                                                                     </h2>
                                                                 </div>
-                                                                <div className={`p-4 rounded-2xl ${dashboardMetrics.netIncome >= 0 ? 'bg-orange-900/20 text-orange-400' : 'bg-red-900/20 text-red-500'}`}>
+                                                                <div className={`p-4 rounded-2xl w-16 h-16 flex items-center justify-center shadow-lg ${dashboardMetrics.netIncome >= 0 ? 'bg-orange-900/20 text-orange-400 shadow-orange-500/5' : 'bg-red-900/20 text-red-500 shadow-red-500/5'}`}>
                                                                     {dashboardMetrics.netIncome >= 0 ? <TrendingUp className="w-8 h-8" /> : <TrendingDown className="w-8 h-8" />}
                                                                 </div>
                                                             </div>
