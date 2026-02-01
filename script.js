@@ -6936,7 +6936,7 @@ function App() {
                                 currentUser?.id &&
                                 currentUser?.id.length >= 10 &&
                                 !SecurityManager.detectManipulation()) ? (
-                                <div className="flex min-h-screen bg-[#050505] animate-fade-up relative w-full font-sans">
+                                <div className="flex min-h-screen bg-[#050505] relative w-full font-sans">
 
                                     {/* Overlay para cerrar el menú en móvil */}
                                     {isAdminMenuOpen && (
