@@ -4481,10 +4481,10 @@ function App() {
 
         return (
             <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-4" onClick={() => setSelectedProduct(null)}>
-                <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative h-full md:h-auto overflow-y-auto md:overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="bg-[#0f0f12] border border-slate-800/60 rounded-[2rem] max-w-3xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative h-full md:h-auto overflow-y-auto md:overflow-hidden" onClick={e => e.stopPropagation()}>
 
                     {/* Imagen con Zoom y Efectos */}
-                    <div className="md:w-1/2 h-72 md:h-[550px] bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 md:p-12 flex items-center justify-center relative overflow-hidden group">
+                    <div className="md:w-1/2 h-64 md:h-auto aspect-[4/5] bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden group">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
                         <img
                             src={selectedProduct.image}
@@ -4501,7 +4501,7 @@ function App() {
                     </div>
 
                     {/* Panel de Información y Acción */}
-                    <div className="md:w-1/2 p-8 md:p-12 flex flex-col bg-[#080808]">
+                    <div className="md:w-1/2 p-6 md:p-8 flex flex-col bg-[#080808]">
                         <div className="mb-8">
                             <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-4 border border-orange-500/20">
                                 {isPromo ? 'COMBOS & PROMOCIONES' : selectedProduct.category}
