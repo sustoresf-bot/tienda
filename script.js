@@ -3449,7 +3449,7 @@ function App() {
 
 
     // --- EFECTOS CONSOLIDADOS (TOP LEVEL) ---
-
+    /*
     // 1. Auto-corrección de método de pago
     useEffect(() => {
         if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
@@ -3471,7 +3471,7 @@ function App() {
     // 3. Actualizar pedidos vistos
     useEffect(() => {
         if (view === 'admin' && adminTab === 'orders') {
-            const currentTotal = orders.length;
+            const currentTotal = orders.length; 
             if (currentTotal > 0) {
                 localStorage.setItem('sustore_last_viewed_orders', currentTotal.toString());
             }
@@ -3503,8 +3503,8 @@ function App() {
                 }
             }
         } else if (currentCount < lastViewedCount) {
-            localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
-            lastNotifiedCountRef.current = currentCount;
+             localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
+             lastNotifiedCountRef.current = currentCount;
         }
     }, [orders, view, adminTab, soundEnabled, currentUser]);
 
@@ -3563,6 +3563,7 @@ function App() {
             isInitializingBrick.current = false;
         }
     }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
+    */
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
