@@ -13,7 +13,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import {
     getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc,
-    where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter
+    where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter,
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 } from 'firebase/firestore';
 import Lenis from 'lenis';
 
@@ -31,7 +32,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+    })
+});
 // ID interno de la app (no es el appId de Firebase). Puedes cambiarlo si quieres diferenciar entornos.
 const appId = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
@@ -1923,7 +1928,11 @@ function App() {
                             }
                         }
                     } catch (err) {
-                        console.warn("No se pudo refrescar usuario al inicio:", err);
+                        if (err.message && err.message.includes('offline')) {
+                            console.log("Modo offline: Usuario cargado desde caché local.");
+                        } else {
+                            console.warn("No se pudo refrescar usuario al inicio:", err);
+                        }
                     }
                 }
             } catch (e) {
@@ -5597,7 +5606,7 @@ function App() {
                                 };
 
                                 return (
-                                    <div className={`relative w-full aspect-video rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-colors duration-500 ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                                    <div className={`relative w-full h-[300px] sm:h-[400px] lg:h-[480px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-colors duration-500 ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
 
                                         {/* Imágenes del Carrusel */}
