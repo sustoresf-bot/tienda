@@ -6969,7 +6969,7 @@ function App() {
                                                     </div>
                                                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">ADMIN</span>
                                                 </h2>
-                                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em] ml-1 opacity-60">Control Center v3.5</p>
+                                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em] ml-1 opacity-60">Control Center v3.9</p>
                                             </div>
                                             <button
                                                 onClick={() => setIsAdminMenuOpen(false)}
@@ -7109,7 +7109,7 @@ function App() {
                                                         <div>
                                                             <div className="flex items-center gap-3 text-orange-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4 bg-orange-500/5 px-4 py-2 rounded-full w-fit border border-orange-500/10">
                                                                 <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                                                                Live Metrics • Apps v3.5
+                                                                Live Metrics • Apps v3.9
                                                             </div>
                                                             <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 drop-shadow-sm">
                                                                 Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 animate-gradient-x">Control</span>
