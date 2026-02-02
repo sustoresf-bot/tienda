@@ -5381,7 +5381,7 @@ function App() {
 
 
                 {/* TEMPORALMENTE DESHABILITADOS - Componentes no definidos */}
-                {/* <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} /> */}
+                <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} darkMode={darkMode} />
                 {/* <CouponSelectorModal /> */}
                 <ProductDetailModal />
 
@@ -6969,7 +6969,7 @@ function App() {
                                                     </div>
                                                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">ADMIN</span>
                                                 </h2>
-                                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em] ml-1 opacity-60">Control Center v4.1</p>
+                                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em] ml-1 opacity-60">Control Center v4.2</p>
                                             </div>
                                             <button
                                                 onClick={() => setIsAdminMenuOpen(false)}
@@ -7109,7 +7109,7 @@ function App() {
                                                         <div>
                                                             <div className="flex items-center gap-3 text-orange-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4 bg-orange-500/5 px-4 py-2 rounded-full w-fit border border-orange-500/10">
                                                                 <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                                                                Live Metrics • Apps v4.1
+                                                                Live Metrics • Apps v4.2
                                                             </div>
                                                             <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 drop-shadow-sm">
                                                                 Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 animate-gradient-x">Control</span>
@@ -12209,6 +12209,117 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
 };
 
 
+
+
+// Componente Modal de Detalle de Pedido (Fuera de App para evitar errores de renderizado)
+const OrderDetailsModal = ({ order, onClose, darkMode }) => {
+    if (!order) return null;
+
+    return (
+        <div className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in ${darkMode ? 'bg-black/80' : 'bg-black/50'}`}>
+            <div className={`w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl relative flex flex-col ${darkMode ? 'bg-[#0a0a0a] border border-slate-800' : 'bg-white border border-slate-200'}`}>
+
+                {/* Header */}
+                <div className={`p-6 border-b flex justify-between items-start sticky top-0 z-10 backdrop-blur-xl ${darkMode ? 'border-slate-800 bg-[#0a0a0a]/90' : 'border-slate-100 bg-white/90'}`}>
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <span className="bg-orange-500 text-white text-xs font-black px-2 py-1 rounded-md">#{order.orderId}</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${order.status === 'Realizado' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'}`}>
+                                {order.status}
+                            </span>
+                        </div>
+                        <h3 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.name}</h3>
+                        <p className={`text-xs font-mono ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{new Date(order.date).toLocaleString()}</p>
+                    </div>
+                    <button onClick={onClose} className={`p-2 rounded-full transition hover:rotate-90 ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-900'}`}>
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 space-y-8">
+                    {/* Items */}
+                    <div>
+                        <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Productos ({order.items.length})</h4>
+                        <div className="space-y-3">
+                            {order.items.map((item, idx) => (
+                                <div key={idx} className={`flex items-center gap-4 p-3 rounded-xl border ${darkMode ? 'bg-slate-900/30 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                                    <div className="w-12 h-12 rounded-lg bg-white overflow-hidden p-1 flex-shrink-0">
+                                        <img src={item.image} className="w-full h-full object-contain" alt={item.title} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`font-bold text-sm truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</p>
+                                        <p className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>x{item.quantity} u.</p>
+                                    </div>
+                                    <div className={`font-mono font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        ${(item.price * item.quantity).toLocaleString()}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Customer & Delivery */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-slate-900/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                            <h4 className={`text-xs font-black uppercase tracking-widest mb-3 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Cliente</h4>
+                            <div className="space-y-2 text-sm">
+                                <p className={`flex items-center gap-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                                    <User className="w-4 h-4 text-orange-500" /> {order.customer.name}
+                                </p>
+                                {order.customer.phone && (
+                                    <a href={`https://wa.me/549${order.customer.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-green-500 hover:underline">
+                                        <MessageCircle className="w-4 h-4" /> {order.customer.phone}
+                                    </a>
+                                )}
+                                {order.customer.email && (
+                                    <p className={`flex items-center gap-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        <Mail className="w-4 h-4 text-slate-500" /> {order.customer.email}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-slate-900/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                            <h4 className={`text-xs font-black uppercase tracking-widest mb-3 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Envío / Entrega</h4>
+                            <div className="space-y-2 text-sm">
+                                <p className={`flex items-center gap-2 font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                    <Truck className="w-4 h-4 text-purple-500" /> {order.delivery?.method || 'Retiro en Tienda'}
+                                </p>
+                                {order.delivery?.address && (
+                                    <p className={`text-xs leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        {order.delivery.address} <br />
+                                        {order.delivery.city}, {order.delivery.zip}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Totals */}
+                    <div className={`border-t pt-6 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                        <div className="flex justify-between items-end">
+                            <span className={`font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Total</span>
+                            <span className={`text-4xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                ${order.total.toLocaleString()}
+                            </span>
+                        </div>
+                        <p className={`text-right text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                            Pago: <span className="font-bold text-orange-500">{order.paymentMethod || 'Efectivo'}</span>
+                        </p>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className={`p-4 border-t ${darkMode ? 'border-slate-800 bg-[#050505]' : 'border-slate-100 bg-slate-50'} rounded-b-[2rem]`}>
+                    <button onClick={onClose} className={`w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 shadow-sm'}`}>
+                        Cerrar Detalle
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 
 // Renderizado Final
