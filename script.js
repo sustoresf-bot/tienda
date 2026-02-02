@@ -6960,20 +6960,20 @@ function App() {
                                     )}
 
                                     {/* 7.1 Sidebar Admin - FORCE FIXED VIEWPORT */}
-                                    <div style={{ position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100 }} className={`w-[280px] bg-[#0d0d0f]/95 backdrop-blur-xl border-r border-white/5 flex flex-col transition-transform duration-300 md:transition-none ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:transform-none'} shadow-[10px_0_40px_rgba(0,0,0,0.5)] overflow-hidden`}>
+                                    <div style={{ position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100 }} className={`w-[280px] bg-white/95 backdrop-blur-xl border-r border-slate-200 flex flex-col transition-transform duration-300 md:transition-none ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:transform-none'} shadow-[10px_0_40px_rgba(0,0,0,0.05)] overflow-hidden`}>
                                         <div className="p-8 border-b border-white/5 flex items-center justify-between flex-shrink-0">
                                             <div className="group cursor-pointer">
-                                                <h2 className="text-2xl font-black text-white tracking-tighter flex items-center gap-4 group-hover:scale-105 transition-transform">
-                                                    <div className="w-11 h-11 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] ring-1 ring-white/20">
+                                                <h2 className="text-2xl font-black text-slate-900 tracking-tighter flex items-center gap-4 group-hover:scale-105 transition-transform">
+                                                    <div className="w-11 h-11 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] ring-1 ring-orange-500/20">
                                                         <Shield className="w-6 h-6 animate-pulse" />
                                                     </div>
-                                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">ADMIN</span>
+                                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">ADMIN</span>
                                                 </h2>
-                                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em] ml-1 opacity-60">Control Center v3.9</p>
+                                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em] ml-1 opacity-60">Control Center v4.0</p>
                                             </div>
                                             <button
                                                 onClick={() => setIsAdminMenuOpen(false)}
-                                                className="md:hidden p-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all border border-white/10"
+                                                className="md:hidden p-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-500 hover:text-slate-900 transition-all border border-slate-200"
                                             >
                                                 <X className="w-5 h-5" />
                                             </button>
@@ -6982,11 +6982,11 @@ function App() {
                                         <nav className="flex-1 p-5 space-y-2 overflow-y-auto custom-scrollbar">
                                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-3 mb-1 opacity-50">Menú Principal</p>
 
-                                            <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-4 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'dashboard' ? 'bg-orange-600 text-white shadow-[0_10px_30px_rgba(249,115,22,0.3)] border border-orange-400/50 scale-[1.02]' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                                            <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-4 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'dashboard' ? 'bg-orange-600 text-white shadow-[0_10px_30px_rgba(249,115,22,0.3)] border border-orange-400/50 scale-[1.02]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'}`}>
                                                 <LayoutDashboard className={`w-6 h-6 ${adminTab === 'dashboard' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Inicio
                                             </button>
 
-                                            <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 relative group ${adminTab === 'orders' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                                            <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 relative group ${adminTab === 'orders' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'}`}>
                                                 <ShoppingBag className={`w-5 h-5 ${adminTab === 'orders' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Pedidos
                                                 {orders.filter(o => o.status === 'Pendiente').length > 0 && (
                                                     <span className="absolute right-4 top-1/2 -translate-y-1/2 min-w-[22px] h-[22px] bg-white text-orange-600 text-[10px] font-black rounded-full flex items-center justify-center px-1.5 shadow-lg animate-bounce">
@@ -6995,7 +6995,7 @@ function App() {
                                                 )}
                                             </button>
 
-                                            <button onClick={() => { setAdminTab('products'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'products' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                                            <button onClick={() => { setAdminTab('products'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'products' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'}`}>
                                                 <Package className={`w-5 h-5 ${adminTab === 'products' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Productos
                                             </button>
 
@@ -7109,7 +7109,7 @@ function App() {
                                                         <div>
                                                             <div className="flex items-center gap-3 text-orange-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4 bg-orange-500/5 px-4 py-2 rounded-full w-fit border border-orange-500/10">
                                                                 <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                                                                Live Metrics • Apps v3.9
+                                                                Live Metrics • Apps v4.0
                                                             </div>
                                                             <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 drop-shadow-sm">
                                                                 Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 animate-gradient-x">Control</span>
