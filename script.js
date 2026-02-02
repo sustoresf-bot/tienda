@@ -321,7 +321,7 @@ const defaultSettings = {
     logoUrl: "",
     heroImages: [], // Array de { url, linkedProductId?, linkedPromoId? }
     heroCarouselInterval: 5000, // Intervalo en ms
-    carouselHeight: "small", // default to small as requested by user ("mucho mas chico")
+    carouselHeight: "slim", // default to slim as requested by user ("mucho mas chico")
 
     // --- Configuración de Tienda ---
     markupPercentage: 0,
@@ -4220,897 +4220,10 @@ function App() {
 
     // Modal de Detalles de Pedido (Visor Completo)
 
-    // Modal Selector de Cupones (Visualmente Rico)
-    const CouponSelectorModal = () => {
-        if (!showCouponModal) return null;
-
-        // Filtrado de cupones válidos
-        const availableCoupons = coupons.filter(c => {
-            const isNotExpired = !c.expirationDate || new Date(c.expirationDate) > new Date();
-            const isUserTarget = !c.targetUser || (currentUser && c.targetUser === currentUser.email);
-            const isGlobal = c.targetType === 'global';
-            const usedCount = c.usedBy ? c.usedBy.length : 0;
-            const notExhausted = !c.usageLimit || usedCount < c.usageLimit;
-            const userNotUsed = currentUser && c.usedBy && !c.usedBy.includes(currentUser.id);
-
-            return isNotExpired && (isUserTarget || isGlobal) && notExhausted && userNotUsed;
-        });
-
-        return (
-            <div className={`fixed inset-0 z-[150] flex items-center justify-center backdrop-blur-md p-4 animate-fade-up ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
-                <div className={`glass rounded-[2rem] w-full max-w-lg overflow-hidden relative shadow-2xl border ${darkMode ? 'border-purple-500/20 bg-[#050505]' : 'border-purple-200 bg-white'}`}>
-                    <button onClick={() => setShowCouponModal(false)} className={`absolute top-6 right-6 p-2 rounded-full transition z-10 ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}>
-                        <X className="w-5 h-5" />
-                    </button>
-
-                    <div className={`p-8 border-b ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-gradient-to-br from-slate-50 via-white to-slate-50 border-slate-100'}`}>
-                        <h3 className={`text-2xl font-black mb-2 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                            <div className="bg-purple-900/20 p-2 rounded-lg border border-purple-500/30">
-                                <Gift className="w-6 h-6 text-purple-400" />
-                            </div>
-                            Mis Beneficios
-                        </h3>
-                        <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Selecciona un cupón para aplicar el descuento a tu compra.</p>
-                    </div>
-
-                    <div className={`p-8 space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar ${darkMode ? 'bg-[#050505]' : 'bg-white'}`}>
-                        {availableCoupons.length === 0 ? (
-                            <div className={`text-center py-12 border-2 border-dashed rounded-2xl ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                                <Ticket className={`w-16 h-16 mx-auto mb-4 ${darkMode ? 'text-slate-700' : 'text-slate-300'}`} />
-                                <p className={`font-bold text-lg ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>No tienes cupones disponibles.</p>
-                                <p className="text-slate-600 text-sm mt-2">Mantente atento a nuestras redes sociales.</p>
-                            </div>
-                        ) : availableCoupons.map(c => {
-                            const canApply = cartSubtotal >= (c.minPurchase || 0);
-                            return (
-                                <div key={c.id} onClick={() => canApply && selectCoupon(c)} className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group ${canApply ? (darkMode ? 'bg-slate-900 border-slate-700 hover:border-purple-500' : 'bg-slate-50 border-slate-200 hover:border-purple-400 shadow-sm') + ' cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:scale-[1.02]' : (darkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-50/50 border-slate-100') + ' opacity-50 cursor-not-allowed grayscale'}`}>
-                                    {/* Decoración lateral */}
-                                    <div className={`absolute top-0 left-0 w-2 h-full ${canApply ? 'bg-purple-500' : (darkMode ? 'bg-slate-700' : 'bg-slate-300')}`}></div>
-
-                                    <div className="p-5 pl-8 flex justify-between items-center">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className={`font-black text-xl tracking-widest font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{c.code}</span>
-                                                <span className="text-[10px] bg-purple-900/30 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30 uppercase font-bold">
-                                                    {c.type === 'fixed' ? 'DESCUENTO FIJO' : 'PORCENTAJE'}
-                                                </span>
-                                            </div>
-                                            <p className="text-purple-400 font-bold text-sm">
-                                                {c.type === 'fixed' ? `Ahorra $${c.value}` : `${c.value}% de Descuento`}
-                                                {c.maxDiscount > 0 && <span className="text-slate-500 text-xs ml-1 font-normal">(Tope ${c.maxDiscount})</span>}
-                                            </p>
-
-                                            {/* Validación visual de mínimo de compra */}
-                                            {c.minPurchase > 0 && (
-                                                <p className={`text-xs mt-3 font-bold flex items-center gap-1 ${canApply ? 'text-slate-500' : 'text-red-400'}`}>
-                                                    {canApply ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                                                    Compra mínima: ${c.minPurchase}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Botón de acción */}
-                                        {canApply && (
-                                            <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white shadow-lg transform group-hover:scale-110 transition ml-4">
-                                                <Plus className="w-6 h-6" />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-        );
-    };
     // Modal de Detalle de Producto / Promo (Versión Premium)
-    const ProductDetailModal = () => {
-        const [qty, setQty] = useState(1);
-        const [added, setAdded] = useState(false);
 
-        if (!selectedProduct) return null;
 
-        const isPromo = selectedProduct.isPromo || !!selectedProduct.items;
-        const stockLimit = isPromo ? Number(selectedProduct.stock) : Number(selectedProduct.stock);
 
-        // Calcular stock real disponible restando lo que ya está en carrito
-        const cartItem = cart.find(item => item.product.id === selectedProduct.id);
-        const inCartQty = cartItem ? cartItem.quantity : 0;
-        const availableToAdd = Math.max(0, stockLimit - inCartQty);
-
-        const hasStock = stockLimit > 0;
-        const isMaxInCart = availableToAdd === 0 && hasStock;
-        const displayPrice = isPromo ? Number(selectedProduct.price || selectedProduct.basePrice) : calculateItemPrice(selectedProduct.basePrice, selectedProduct.discount);
-
-        const handleAdd = (e) => {
-            e.stopPropagation();
-            if (!hasStock) return;
-
-            const itemToAdd = isPromo ? {
-                id: selectedProduct.id,
-                name: selectedProduct.name,
-                basePrice: selectedProduct.price || selectedProduct.basePrice,
-                image: selectedProduct.image,
-                isPromo: true,
-                items: selectedProduct.items,
-                stock: selectedProduct.stock
-            } : selectedProduct;
-
-            manageCart(itemToAdd, qty);
-            setAdded(true);
-            setTimeout(() => setAdded(false), 2000);
-        };
-
-        return (
-            <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-4" onClick={() => setSelectedProduct(null)}>
-                <div className="bg-[#0f0f12] border border-slate-800/60 rounded-[2rem] max-w-3xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative h-full md:h-auto overflow-y-auto md:overflow-hidden" onClick={e => e.stopPropagation()}>
-
-                    {/* Imagen con Zoom y Efectos */}
-                    <div className="md:w-1/2 h-64 md:h-auto aspect-[4/5] bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
-                        <img
-                            src={selectedProduct.image}
-                            className="w-full h-full object-contain drop-shadow-[0_0_50px_rgba(255,255,255,0.15)] z-10 transition-transform duration-700 hover:scale-110"
-                        />
-                        {/* Badges de Estado */}
-                        {!hasStock && (
-                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-                                <div className="border-4 border-red-500 p-4 -rotate-12 bg-black shadow-2xl">
-                                    <span className="text-red-500 font-black text-2xl tracking-widest uppercase">AGOTADO</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Panel de Información y Acción */}
-                    <div className="md:w-1/2 p-6 md:p-8 flex flex-col bg-[#080808]">
-                        <div className="mb-8">
-                            <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-4 border border-orange-500/20">
-                                {isPromo ? 'COMBOS & PROMOCIONES' : selectedProduct.category}
-                            </span>
-                            <h2 className="text-3xl md:text-4xl font-black text-white leading-[1.1] mb-6 neon-text-small">{selectedProduct.name}</h2>
-                            <p className="text-slate-400 text-sm md:text-base leading-relaxed line-clamp-4">
-                                {selectedProduct.description || ''}
-                            </p>
-                        </div>
-
-                        {/* Lista de productos para Promos */}
-                        {isPromo && selectedProduct.items && (
-                            <div className="mb-8 space-y-3 bg-purple-500/5 p-6 rounded-2xl border border-purple-500/20 shadow-inner">
-                                <p className="text-[10px] uppercase font-black text-purple-400 tracking-[0.2em] flex items-center gap-2">
-                                    <Sparkles className="w-3 h-3" /> Este pack incluye:
-                                </p>
-                                <div className="space-y-2">
-                                    {selectedProduct.items.map((item, idx) => {
-                                        const p = products.find(prod => prod.id === item.productId);
-                                        return (
-                                            <div key={idx} className="flex items-center gap-3 text-sm text-slate-300 group/item">
-                                                <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-[10px] font-black text-purple-400 group-hover/item:bg-purple-500 group-hover/item:text-white transition">
-                                                    {item.quantity}x
-                                                </div>
-                                                <span className="font-bold group-hover/item:text-white transition">{p?.name || 'Producto del Packs'}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Footer con Precio y Carrito */}
-                        <div className="mt-auto pt-8 border-t border-white/5 flex flex-col gap-6">
-                            <div className="flex items-end justify-between">
-                                <div className="flex flex-col">
-                                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Inversión Total</span>
-                                    <div className="flex items-center gap-3">
-                                        {selectedProduct.discount > 0 && !isPromo && (
-                                            <span className="text-sm text-slate-600 line-through font-bold">${(selectedProduct.basePrice * qty).toLocaleString()}</span>
-                                        )}
-                                        <span className="text-4xl font-black text-white tracking-tighter">
-                                            ${(displayPrice * qty).toLocaleString()}
-                                        </span>
-                                    </div>
-                                </div>
-                                {selectedProduct.discount > 0 && !isPromo && (
-                                    <div className="px-3 py-1 bg-red-500 text-white rounded-lg text-[10px] font-black animate-pulse">
-                                        -{selectedProduct.discount}% OFF
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex gap-3">
-                                {/* Selector de Cantidad */}
-                                <div className="flex items-center gap-3 bg-slate-900 rounded-2xl p-2 border border-slate-800">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
-                                        disabled={qty <= 1}
-                                        className="w-12 h-12 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
-                                    >
-                                        <Minus className="w-5 h-5" />
-                                    </button>
-                                    <span className="text-xl font-bold w-8 text-center text-white font-mono">{qty}</span>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setQty(Math.min(availableToAdd, qty + 1)); }}
-                                        disabled={qty >= availableToAdd}
-                                        className="w-12 h-12 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
-                                    >
-                                        <Plus className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <button
-                                    onClick={handleAdd}
-                                    disabled={!hasStock || isMaxInCart}
-                                    className={`flex-1 py-5 rounded-2xl font-black transition flex items-center justify-center gap-3 shadow-2xl ${added
-                                        ? 'bg-green-500 text-white'
-                                        : (hasStock && !isMaxInCart)
-                                            ? 'bg-white text-black hover:bg-orange-400 hover:text-white hover:scale-[1.02] active:scale-[0.98]'
-                                            : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
-                                        }`}
-                                >
-                                    {added ? (
-                                        <><CheckCircle className="w-6 h-6" /> LISTO</>
-                                    ) : isMaxInCart ? (
-                                        <><AlertCircle className="w-6 h-6" /> MAX EN CARRITO</>
-                                    ) : hasStock ? (
-                                        <><ShoppingCart className="w-6 h-6" /> AGREGAR</>
-                                    ) : (
-                                        <><AlertCircle className="w-6 h-6" /> AGOTADO</>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-
-                        {/* Botón Cerrar */}
-                        <button
-                            onClick={() => setSelectedProduct(null)}
-                            className="absolute top-4 right-4 md:top-6 md:right-6 p-4 bg-black/60 md:bg-white/5 hover:bg-white/10 text-white md:text-slate-400 hover:text-white rounded-full transition-all border border-white/20 md:border-white/5 z-[30] shadow-2xl backdrop-blur-md"
-                            title="Cerrar detalle"
-                        >
-                            <X className="w-6 h-6 md:w-5 md:h-5" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // Modal de Venta Manual (Offline / "En Casa")
-    const ManualSaleModal = () => {
-        // State is now hoisted to App (saleData, setSaleData)
-
-        if (!showManualSaleModal) return null;
-
-        const product = products.find(p => p.id === saleData.productId);
-
-        const handleProductChange = (e) => {
-            const pid = e.target.value;
-            const prod = products.find(p => p.id === pid);
-            setSaleData({
-                ...saleData,
-                productId: pid,
-                price: prod ? Number(prod.basePrice) : 0
-            });
-        };
-
-        const handleSubmit = async (e) => {
-            e.preventDefault();
-            if (!product) return showToast("Selecciona un producto.", "warning");
-            if (saleData.quantity <= 0) return showToast("Cantidad inválida.", "warning");
-
-            try {
-                // Verificar Stock
-                const currentStock = Number(product.stock) || 0;
-                if (saleData.quantity > currentStock) {
-                    return showToast(`Stock insuficiente (Disponible: ${currentStock}).`, "error");
-                }
-
-                // Crear Orden "Offline"
-                const orderId = `man-${Date.now().toString().slice(-6)}`;
-                const total = saleData.quantity * saleData.price;
-
-                const newOrder = {
-                    orderId: orderId,
-                    userId: 'manual_admin', // Usuario sistema
-                    customer: {
-                        name: saleData.customerName || 'Cliente Mostrador',
-                        email: 'offline@store.com',
-                        phone: '-',
-                        dni: '-'
-                    },
-                    items: [{
-                        productId: product.id,
-                        title: product.name,
-                        quantity: Number(saleData.quantity),
-                        unit_price: Number(saleData.price),
-                        image: product.image
-                    }],
-                    subtotal: total,
-                    discount: 0,
-                    total: total,
-                    status: 'Realizado', // Ya entregado
-                    date: new Date().toISOString(),
-                    shippingAddress: 'Entrega Presencial (Offline)',
-                    paymentMethod: saleData.paymentMethod,
-                    source: 'manual_sale',
-                    notes: saleData.notes
-                };
-
-                // 1. Guardar Pedido
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
-
-                // 2. Descontar Stock
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
-                    stock: increment(-Number(saleData.quantity))
-                });
-
-                showToast("Venta registrada correctamente.", "success");
-                setShowManualSaleModal(false);
-            } catch (err) {
-                console.error(err);
-                showToast("Error al registrar venta manual.", "error");
-            }
-        };
-
-        return (
-            <div className={`fixed inset-0 z-[160] flex items-center justify-center backdrop-blur-md p-4 animate-fade-up ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
-                <div className={`rounded-[2rem] w-full max-w-lg border shadow-2xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
-                    <button onClick={() => setShowManualSaleModal(false)} className={`absolute top-6 right-6 p-2 rounded-full transition z-10 ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-500 hover:text-slate-900'}`}>
-                        <X className="w-5 h-5" />
-                    </button>
-
-                    <div className={`p-8 border-b ${darkMode ? 'border-slate-800' : 'border-slate-100'}`}>
-                        <h3 className={`text-2xl font-black flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                            <Store className="w-6 h-6 text-green-400" /> Registrar Venta Manual
-                        </h3>
-                        <p className={`text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Para ventas fuera de la plataforma web.</p>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="p-8 space-y-4">
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Producto</label>
-                            <select
-                                className={`w-full border rounded-xl p-3 focus:border-green-500 outline-none ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                value={saleData.productId}
-                                onChange={handleProductChange}
-                            >
-                                <option value="">-- Seleccionar Producto --</option>
-                                {products.map(p => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.name} (Stock: {p.stock})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Cantidad</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    className={`w-full border rounded-xl p-3 focus:border-green-500 outline-none ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                    value={saleData.quantity}
-                                    onChange={e => setSaleData({ ...saleData, quantity: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Precio Unit. ($)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
-                                    value={saleData.price}
-                                    onChange={e => setSaleData({ ...saleData, price: Number(e.target.value) })}
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Cliente / Notas</label>
-                            <input
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
-                                value={saleData.customerName}
-                                onChange={e => setSaleData({ ...saleData, customerName: e.target.value })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Método de Pago</label>
-                            <select
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
-                                value={saleData.paymentMethod}
-                                onChange={e => setSaleData({ ...saleData, paymentMethod: e.target.value })}
-                            >
-                                <option value="Efectivo">Efectivo</option>
-                                <option value="Transferencia">Transferencia</option>
-                                <option value="Tarjeta">Tarjeta (POS)</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/20 transition transform hover:-translate-y-1 mt-4">
-                            REGISTRAR VENTA
-                        </button>
-                    </form>
-                </div>
-            </div>
-        );
-    };
-
-    // Modal de Analíticas Detalladas (Drill-down)
-    const MetricsDetailModal = () => {
-        const [timeframe, setTimeframe] = useState('monthly'); // daily, monthly, yearly
-        if (!metricsDetail) return null;
-
-        const data = dashboardMetrics.analytics[timeframe] || [];
-        const title = metricsDetail.type === 'revenue' ? 'Ingresos Brutos' : 'Beneficio Neto';
-        const colorClass = metricsDetail.type === 'revenue' ? 'text-green-400' : 'text-orange-400';
-
-        // Calcular mejores/peores
-        const sortedByVal = [...data].sort((a, b) => b.revenue - a.revenue);
-        const bestPeriod = sortedByVal[0];
-        const worstPeriod = sortedByVal[sortedByVal.length - 1];
-
-        return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
-                <div className="bg-[#050505] rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col border border-slate-800 shadow-2xl relative overflow-hidden">
-                    {/* Header */}
-                    <div className="p-8 border-b border-slate-800 bg-slate-900/20 flex justify-between items-center">
-                        <div>
-                            <h3 className={`text-3xl font-black ${colorClass} flex items-center gap-3`}>
-                                <BarChart className="w-8 h-8" /> {title} - Analítica
-                            </h3>
-                            <p className="text-slate-500 text-sm mt-1">Desglose detallado de tu rendimiento.</p>
-                        </div>
-                        <button onClick={() => setMetricsDetail(null)} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition border border-slate-700">
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    {/* Controls */}
-                    <div className="p-6 flex gap-4 bg-slate-900/10 border-b border-slate-800/50 justify-center">
-                        {['daily', 'monthly', 'yearly'].map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setTimeframe(t)}
-                                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition ${timeframe === t ? 'bg-slate-100 text-black' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
-                            >
-                                {t === 'daily' ? 'Diario' : t === 'monthly' ? 'Mensual' : 'Anual'}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Stats Highlights */}
-                    <div className="grid grid-cols-2 gap-4 p-6 bg-slate-900/5">
-                        <div className="bg-green-900/10 border border-green-500/20 p-4 rounded-2xl flex items-center gap-4">
-                            <div className="p-3 bg-green-500/20 rounded-xl text-green-400">
-                                <TrendingUp className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Mejor Periodo</p>
-                                <p className="text-green-400 font-black text-lg">
-                                    {bestPeriod ? `$${bestPeriod.revenue.toLocaleString()}` : '-'}
-                                </p>
-                                <p className="text-[10px] text-slate-500 font-mono">{bestPeriod?.date || '-'}</p>
-                            </div>
-                        </div>
-                        <div className="bg-red-900/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-4">
-                            <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
-                                <TrendingDown className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Peor Periodo</p>
-                                <p className="text-red-400 font-black text-lg">
-                                    {worstPeriod ? `$${worstPeriod.revenue.toLocaleString()}` : '-'}
-                                </p>
-                                <p className="text-[10px] text-slate-500 font-mono">{worstPeriod?.date || '-'}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* CSS Bar Chart */}
-                    <div className="flex-1 p-6 relative flex items-end justify-between gap-2 overflow-x-auto custom-scrollbar">
-                        {data.length === 0 ? (
-                            <div className="w-full text-center text-slate-500 my-auto">No hay datos para mostrar el gráfico.</div>
-                        ) : (
-                            (() => {
-                                const maxVal = Math.max(...data.map(d => d.revenue), 1); // Avoid div/0
-                                return data.slice().map((item, idx) => {
-                                    const heightPct = (item.revenue / maxVal) * 100;
-                                    const isPositive = metricsDetail.type !== 'net_income' || item.revenue >= 0;
-                                    // For net income, handle negative later if needed, assuming revenue is always positive here
-
-                                    return (
-                                        <div key={idx} className="flex flex-col items-center justify-end h-full gap-2 group min-w-[60px] cursor-pointer hover:bg-slate-900/30 rounded-xl p-1 transition-all">
-                                            {/* Tooltip on Hover */}
-                                            <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl pointer-events-none transition z-50 shadow-xl whitespace-nowrap">
-                                                <p className="text-white font-bold">{item.date}</p>
-                                                <p className={`font-black ${colorClass}`}>${item.revenue.toLocaleString()}</p>
-                                                <p className="text-[10px] text-slate-500">{item.orders} Pedidos</p>
-                                            </div>
-
-                                            {/* Bar */}
-                                            <div
-                                                className={`w-4 bg-gradient-to-t ${metricsDetail.type === 'revenue' ? 'from-green-900/50 to-green-500' : 'from-orange-900/50 to-orange-500'} rounded-t-full relative transition-all duration-500 group-hover:w-6 group-hover:brightness-125`}
-                                                style={{ height: `${Math.max(heightPct, 5)}%` }} // Min height 5%
-                                            >
-                                                {/* Glow alignment */}
-                                                <div className={`absolute top-0 left-0 right-0 h-4 rounded-full ${metricsDetail.type === 'revenue' ? 'bg-green-400' : 'bg-orange-400'} blur-md opacity-20`}></div>
-                                            </div>
-
-                                            {/* Label */}
-                                            <p className="text-[10px] text-slate-600 font-bold -rotate-45 group-hover:rotate-0 group-hover:text-white transition origin-center mt-2 truncate w-full text-center">
-                                                {timeframe === 'monthly' ? item.date.slice(5) : timeframe === 'daily' ? item.date.slice(5) : item.date}
-                                            </p>
-                                        </div>
-                                    );
-                                })
-                            })()
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-
-    // --- SUB-COMPONENTS FOR ADMIN DRAWER ---
-
-    const UserCartView = ({ cartItems, isLoading }) => {
-        if (isLoading) {
-            return (
-                <div className="py-20 flex flex-col items-center gap-4 opacity-50">
-                    <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-                    <p className="text-xs font-black tracking-widest text-slate-500">SINCRONIZANDO DATOS...</p>
-                </div>
-            );
-        }
-        if (cartItems.length === 0) {
-            return (
-                <div className="py-20 text-center flex flex-col items-center gap-6">
-                    <div className="p-6 rounded-full bg-white/5 border border-white/5">
-                        <ShoppingCart className="w-12 h-12 text-slate-700" />
-                    </div>
-                    <p className="text-sm font-black uppercase tracking-widest text-slate-500 italic">No hay productos activos</p>
-                </div>
-            );
-        }
-        return (
-            <>
-                <div className="flex justify-between items-center px-2">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contenido del Carrito</p>
-                    <p className="text-xs font-bold text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full">{cartItems.length} ITEMS</p>
-                </div>
-                <div className="space-y-3">
-                    {cartItems.map((item, idx) => (
-                        <div key={idx} className="bg-white/[0.03] border border-white/10 p-4 rounded-2xl flex gap-4 transition hover:bg-white/[0.05] hover:border-orange-500/20 group animate-fade-up" style={{ animationDelay: `${idx * 0.05}s` }}>
-                            <div className="w-16 h-16 bg-[#0a0a0a] rounded-xl overflow-hidden shadow-inner border border-white/5 flex-shrink-0">
-                                <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center">
-                                <p className="font-bold text-white text-sm leading-tight mb-1">{item.name}</p>
-                                <div className="flex justify-between items-center">
-                                    <p className="text-xs text-slate-500">Cant: <span className="text-white font-mono font-bold">{item.quantity}</span></p>
-                                    <p className="text-orange-400 font-black font-mono text-xs">${Number(item.price).toLocaleString()}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <div className="pt-6 border-t border-white/5">
-                    <div className="flex justify-between items-center bg-orange-500/5 p-6 rounded-2xl border border-orange-500/20">
-                        <p className="text-slate-400 font-bold">Valor Total</p>
-                        <p className="text-2xl font-black text-white font-mono">${cartItems.reduce((acc, i) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}</p>
-                    </div>
-                </div>
-            </>
-        );
-    };
-
-    const UserEditForm = ({ user, currentUser, initialData, onSubmit, onDelete, isSaving }) => {
-        const [formData, setFormData] = useState(initialData);
-        const SUPER_ADMIN_EMAIL = 'lautarocorazza63@gmail.com';
-        const isSuperAdminProfile = user.email === SUPER_ADMIN_EMAIL;
-
-        // Update local state when initialData changes
-        useEffect(() => {
-            setFormData(initialData);
-        }, [initialData]);
-
-        const handleSubmit = (e) => {
-            e.preventDefault();
-            onSubmit(formData);
-        };
-
-        return (
-            <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-                {/* Datos de Identidad */}
-                <div className="space-y-6">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        <User className="w-3 h-3" /> Datos Identidad
-                    </p>
-                    <div className="grid grid-cols-1 gap-6">
-                        <div>
-                            <input
-                                className="input-cyber w-full p-4 text-sm"
-                                placeholder="Nombre Completo"
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <input
-                                className="input-cyber w-full p-4 text-sm font-mono"
-                                placeholder="Username / Alias"
-                                value={formData.username}
-                                onChange={e => setFormData({ ...formData, username: e.target.value })}
-                            />
-                        </div>
-                        <div>
-                            <input
-                                className={`input-cyber w-full p-4 text-sm font-mono ${isSuperAdminProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                placeholder="Email de la cuenta (Principal)"
-                                value={formData.email}
-                                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                required
-                                disabled={isSuperAdminProfile}
-                                title={isSuperAdminProfile ? "No se puede modificar el email del Super Admin" : ""}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <input
-                                className="input-cyber w-full p-4 text-sm font-mono"
-                                placeholder="DNI"
-                                value={formData.dni}
-                                onChange={e => setFormData({ ...formData, dni: e.target.value })}
-                            />
-                            <input
-                                className="input-cyber w-full p-4 text-sm font-mono"
-                                placeholder="Teléfono"
-                                value={formData.phone}
-                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Seguridad y Rol */}
-                <div className="space-y-6 pt-4">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        <Lock className="w-3 h-3" /> Seguridad & Rol
-                    </p>
-                    <div className="space-y-4">
-                        <div>
-                            <div className="relative group">
-                                <input
-                                    type="password"
-                                    className="input-cyber w-full p-4 text-sm font-mono"
-                                    placeholder="Nueva Contraseña (Dejar vacío para no cambiar)"
-                                    value={formData.newPassword}
-                                    onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
-                                />
-                            </div>
-                            <p className="text-[9px] text-slate-600 mt-2 ml-1 italic">Mínimo 6 caracteres para actualizar.</p>
-                        </div>
-
-                        <div className={`flex bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 ${isSuperAdminProfile ? 'opacity-50 pointer-events-none' : ''}`}>
-                            {['user', 'editor', 'admin'].map(r => (
-                                <button
-                                    key={r}
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, role: r })}
-                                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.role === r ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'
-                                        }`}
-                                >
-                                    {r}
-                                </button>
-                            ))}
-                        </div>
-                        {isSuperAdminProfile && <p className="text-[9px] text-orange-400 mt-1 ml-1">Rol de Super Admin inmutable.</p>}
-                    </div>
-                </div>
-
-                <div className="space-y-4 pt-6">
-                    <button
-                        type="submit"
-                        disabled={isSaving}
-                        className="w-full py-5 bg-gradient-to-r from-indigo-600 to-orange-600 hover:from-indigo-500 hover:to-orange-500 text-white font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
-                    >
-                        {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-                        SINCRONIZAR CAMBIOS
-                    </button>
-
-                    {!isSuperAdminProfile && (
-                        <button
-                            type="button"
-                            onClick={onDelete}
-                            className="w-full py-4 border border-red-500/30 bg-red-500/5 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/10 transition flex items-center justify-center gap-2"
-                        >
-                            <Trash2 className="w-4 h-4" /> Eliminar Cuenta Permanente
-                        </button>
-                    )}
-                </div>
-            </form>
-        );
-    };
-
-    // Unified Right Sidebar Drawer (Admin)
-    const AdminUserDrawer = () => {
-        const [userCartItems, setUserCartItems] = useState([]);
-        const [isLoadingCart, setIsLoadingCart] = useState(false);
-        const [isSaving, setIsSaving] = useState(false);
-        const active = viewUserCart || userPassModal || viewUserEdit;
-
-        // Determinamos el tipo basado en qué activó el drawer: 'cart', 'edit', o 'password'
-        const type = viewUserCart ? 'cart' : (userPassModal ? 'password' : 'edit');
-        const user = viewUserCart || userPassModal || viewUserEdit;
-
-        const [initialFormState, setInitialFormState] = useState({
-            name: '',
-            username: '',
-            email: '',
-            phone: '',
-            dni: '',
-            role: 'user',
-            newPassword: ''
-        });
-
-        // Effect to update initial form state and fetch cart
-        useEffect(() => {
-            if (active && user) {
-                if (type === 'cart') {
-                    const fetchCart = async () => {
-                        setIsLoadingCart(true);
-                        try {
-                            const cartDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', user.id));
-                            setUserCartItems(cartDoc.exists() ? (cartDoc.data().items || []) : []);
-                        } catch (e) { setUserCartItems([]); }
-                        setIsLoadingCart(false);
-                    };
-                    fetchCart();
-                }
-
-                setInitialFormState({
-                    name: user.name || '',
-                    username: user.username || '',
-                    email: user.email || '',
-                    phone: user.phone || '',
-                    dni: user.dni || '',
-                    role: user.role || 'user',
-                    newPassword: ''
-                });
-            }
-        }, [active, user, type]);
-
-
-        const closeDrawer = () => {
-            setViewUserCart(null);
-            setUserPassModal(null);
-            setViewUserEdit(null);
-        };
-
-        const handleEditSubmit = async (formData) => {
-            setIsSaving(true);
-            try {
-                // 1. Actualización Crítica (Auth) vía API si cambió email o password
-                const authUpdate = {};
-                if (formData.email !== user.email) authUpdate.email = formData.email;
-                if (formData.newPassword) authUpdate.password = formData.newPassword;
-
-                if (Object.keys(authUpdate).length > 0) {
-                    const res = await fetch('/api/admin/update-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ uid: user.id, ...authUpdate })
-                    });
-                    const result = await res.json();
-                    if (!res.ok) throw new Error(result.error);
-                }
-
-                // 2. Actualización de Perfil (Firestore)
-                const firestoreUpdate = {
-                    name: formData.name,
-                    username: formData.username,
-                    email: formData.email,
-                    emailLower: formData.email.toLowerCase(),
-                    phone: formData.phone,
-                    dni: formData.dni,
-                    role: formData.role,
-                    lastModifiedBy: currentUser.email,
-                    updatedAt: new Date().toISOString()
-                };
-
-                // Si cambió la contraseña, también actualizarla en Firestore
-                if (formData.newPassword && formData.newPassword.length >= 6) {
-                    firestoreUpdate.password = formData.newPassword;
-                }
-
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), firestoreUpdate);
-
-                // Si estamos editando nuestro propio usuario, actualizar el estado global inmediatamente
-                if (currentUser && currentUser.id === user.id) {
-                    setCurrentUser(prev => ({ ...prev, ...firestoreUpdate }));
-                }
-
-                showToast("Perfil de usuario actualizado correctamente.", "success");
-                closeDrawer();
-
-            } catch (e) {
-                console.error(e);
-                showToast(e.message || "Error al actualizar perfil.", "error");
-            }
-            setIsSaving(false);
-        };
-
-        const handleDeleteUser = async () => {
-            if (user.email === currentUser.email) {
-                return showToast("Autoprotección activa: No puedes eliminar tu propia cuenta.", "warning");
-            }
-
-            openConfirm("ELIMINAR USUARIO", `¿Estás seguro de eliminar a ${user.name}? Esta acción es irreversible y borrará su acceso y datos.`, async () => {
-                setIsSaving(true);
-                try {
-                    const res = await fetch('/api/admin/delete-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ uid: user.id })
-                    });
-                    if (!res.ok) throw new Error("Error eliminando acceso de Auth");
-
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id));
-
-                    showToast("Usuario eliminado definitivamente.", "success");
-                    closeDrawer();
-                } catch (e) {
-                    console.error(e);
-                    showToast("Fallo al eliminar usuario.", "error");
-                }
-                setIsSaving(false);
-            });
-        };
-
-        if (!active) return null;
-
-        return (
-            <div className="fixed inset-0 z-[1000] flex justify-end animate-fade-in pointer-events-none">
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity pointer-events-auto" onClick={closeDrawer} />
-                <div className={`fixed inset-y-0 right-0 w-full md:w-[500px] transform transition-transform duration-500 z-[101] flex flex-col shadow-2xl ${active ? 'translate-x-0' : 'translate-x-full'} ${darkMode ? 'bg-[#0a0a0a] border-l border-white/10' : 'bg-white border-l border-slate-200'} pointer-events-auto relative overflow-hidden`}>
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-600 via-orange-500 to-pink-600"></div>
-
-                    <div className={`p-8 border-b flex justify-between items-center ${darkMode ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50'}`}>
-                        <div>
-                            <h2 className={`text-xl font-black tracking-widest uppercase ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                {type === 'cart' ? 'Auditoría de Carrito' : 'Configurar Cuenta'}
-                            </h2>
-                            <p className="text-[10px] font-bold text-slate-500 mt-1 tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
-                                ID: {user.id.slice(-8).toUpperCase()} • {user.email}
-                            </p>
-                        </div>
-                        <button onClick={closeDrawer} className={`p-3 rounded-2xl transition-all border group ${darkMode ? 'bg-white/5 hover:bg-white/10 border-white/5' : 'bg-slate-100 hover:bg-slate-200 border-slate-200'}`}>
-                            <X className={`w-5 h-5 group-hover:text-current ${darkMode ? 'text-slate-400 group-hover:text-white' : 'text-slate-500 group-hover:text-slate-900'}`} />
-                        </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8">
-                        {type === 'cart' && <UserCartView cartItems={userCartItems} isLoading={isLoadingCart} />}
-                        {(type === 'edit' || type === 'password') && (
-                            <UserEditForm
-                                user={user}
-                                currentUser={currentUser}
-                                initialData={initialFormState}
-                                onSubmit={handleEditSubmit}
-                                onDelete={handleDeleteUser}
-                                isSaving={isSaving}
-                            />
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    };
 
     // Estado de Carga Inicial
     if (isLoading && view === 'store') {
@@ -5245,8 +4358,27 @@ function App() {
 
                 {/* TEMPORALMENTE DESHABILITADOS - Componentes no definidos */}
                 <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} darkMode={darkMode} />
-                {/* <CouponSelectorModal /> */}
-                <ProductDetailModal />
+                <CouponSelectorModal
+                    isOpen={showCouponModal}
+                    onClose={() => setShowCouponModal(false)}
+                    coupons={coupons}
+                    currentUser={currentUser}
+                    cartSubtotal={cartSubtotal}
+                    selectCoupon={selectCoupon}
+                    darkMode={darkMode}
+                />
+                <ProductDetailModal
+                    selectedProduct={selectedProduct}
+                    setSelectedProduct={setSelectedProduct}
+                    darkMode={darkMode}
+                    calculateItemPrice={calculateItemPrice}
+                    settings={settings}
+                    manageCart={manageCart}
+                    cart={cart}
+                    showToast={showToast}
+                    toggleFavorite={toggleFavorite}
+                    currentUser={currentUser}
+                />
 
                 {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
                 {view !== 'admin' && (
@@ -5460,9 +4592,10 @@ function App() {
                                 };
 
                                 return (
-                                    <div className={`relative w-full rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-all duration-500 ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'h-[120px] sm:h-[180px] lg:h-[220px]' :
-                                        settings?.carouselHeight === 'medium' ? 'h-[200px] sm:h-[300px] lg:h-[380px]' :
-                                            'h-[350px] sm:h-[500px] lg:h-[600px]'} ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                                    <div className={`relative w-full rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-all duration-500 ${settings?.carouselHeight === 'slim' ? 'h-[80px] sm:h-[120px] lg:h-[140px]' :
+                                        (!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'h-[120px] sm:h-[160px] lg:h-[180px]' :
+                                            settings?.carouselHeight === 'medium' ? 'h-[200px] sm:h-[280px] lg:h-[350px]' :
+                                                'h-[350px] sm:h-[500px] lg:h-[600px]'} ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
 
                                         {/* Imágenes del Carrusel */}
@@ -5514,7 +4647,9 @@ function App() {
                                                             {settings?.heroBadge || ''}
                                                         </span>
                                                         <h1 className={`text-tv-huge font-black leading-[0.9] drop-shadow-2xl transition-all duration-300 
-                                                            ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'text-lg md:text-2xl lg:text-3xl mb-1' : 'text-3xl md:text-5xl lg:text-6xl mb-4'}
+                                                            ${settings?.carouselHeight === 'slim' ? 'text-xs md:text-sm lg:text-base mb-0' :
+                                                                (!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'text-lg md:text-2xl lg:text-3xl mb-1' :
+                                                                    'text-3xl md:text-5xl lg:text-6xl mb-4'}
                                                             ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
                                                             {settings?.heroTitle1 || ''} <br />
                                                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-blue-600">
@@ -9030,23 +8165,8 @@ function App() {
                                             {adminTab === 'settings' && (
                                                 <div className="max-w-[1600px] mx-auto animate-fade-up pb-20 relative">
 
-                                                    {/* Developer-Only Access Block */}
-                                                    {currentUser?.email !== SUPER_ADMIN_EMAIL && (
-                                                        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-[2.5rem]">
-                                                            <div className="text-center p-8 max-w-lg">
-                                                                <div className="w-24 h-24 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
-                                                                    <Shield className="w-12 h-12 text-red-400" />
-                                                                </div>
-                                                                <h3 className="text-3xl font-black text-white mb-4">Acceso Restringido</h3>
-                                                                <p className="text-slate-400 mb-6">Esta sección está reservada únicamente para el <span className="text-orange-400 font-bold">desarrollador</span> de la plataforma.</p>
-                                                                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mb-6">
-                                                                    <p className="text-sm text-slate-500 mb-2">Para solicitar cambios en la configuración, contacta a:</p>
-                                                                    <p className="text-orange-400 font-bold text-lg">lautarocorazza63@gmail.com</p>
-                                                                </div>
-                                                                <p className="text-xs text-slate-600">Si necesitas modificar tu tienda, envía un email detallando los cambios que deseas realizar.</p>
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                                    {/* Developer-Only Access Block REMOVED to allow store owner access */}
+                                                    {/* Only restricted sections like 'subscription' will remain restricted */}
 
                                                     <h1 className="text-4xl font-black text-slate-900 neon-text mb-8 flex items-center gap-3">
                                                         <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
@@ -9547,7 +8667,7 @@ function App() {
                                                                                 {/* Selector de vinculación */}
                                                                                 <select
                                                                                     className="input-cyber w-full p-2 text-xs"
-                                                                                    value={image.linkedProductId || image.linkedPromoId || ''}
+                                                                                    value={image.linkedProductId || (image.linkedPromoId ? `promo_${image.linkedPromoId}` : '')}
                                                                                     onChange={(e) => {
                                                                                         const value = e.target.value;
                                                                                         const newImages = [...(settings?.heroImages || [])];
@@ -9664,8 +8784,9 @@ function App() {
                                                                 {/* Altura del Carrusel */}
                                                                 <div className="pt-4 border-t border-slate-800 mt-4">
                                                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Altura del Carrusel</label>
-                                                                    <div className="flex gap-2">
+                                                                    <div className="flex flex-wrap gap-2">
                                                                         {[
+                                                                            { id: 'slim', label: 'Extra Chico (Slim)' },
                                                                             { id: 'small', label: 'Compacto (Pequeño)' },
                                                                             { id: 'medium', label: 'Normal (Mediano)' },
                                                                             { id: 'large', label: 'Grande (Cinemático)' }
@@ -9673,8 +8794,8 @@ function App() {
                                                                             <button
                                                                                 key={size.id}
                                                                                 onClick={() => setSettings({ ...settings, carouselHeight: size.id })}
-                                                                                className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold border transition ${settings?.carouselHeight === size.id
-                                                                                    ? 'bg-orange-500 text-white border-orange-500 shadow-md'
+                                                                                className={`flex-1 min-w-[120px] py-3 px-3 rounded-lg text-xs font-bold border transition ${settings?.carouselHeight === size.id || (!settings?.carouselHeight && size.id === 'small')
+                                                                                    ? 'bg-orange-600 text-white border-orange-500 shadow-lg scale-105 z-10'
                                                                                     : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'
                                                                                     }`}
                                                                             >
@@ -11538,7 +10659,7 @@ function App() {
                     )
                 }
 
-                <AdminUserDrawer />
+
                 {/* MODAL: VER PLANES DE SUSCRIPCIÓN */}
                 {
                     showPlansModal && (
@@ -11835,6 +10956,64 @@ function App() {
                     onCancel={confirmModal.onCancel || (() => setConfirmModal(prev => ({ ...prev, isOpen: false })))}
                     isDangerous={confirmModal.isDangerous}
                     darkMode={darkMode}
+                />
+                {/* --- SUSTIA CHATBOT (AI) --- */}
+                <CouponSelectorModal
+                    isOpen={showCouponModal}
+                    onClose={() => setShowCouponModal(false)}
+                    coupons={coupons}
+                    currentUser={currentUser}
+                    cartSubtotal={cartSubtotal}
+                    selectCoupon={selectCoupon}
+                    darkMode={darkMode}
+                />
+                <ProductDetailModal
+                    selectedProduct={selectedProduct}
+                    setSelectedProduct={setSelectedProduct}
+                    cart={cart}
+                    manageCart={manageCart}
+                    products={products}
+                    calculateItemPrice={calculateItemPrice}
+                    darkMode={darkMode}
+                    showToast={showToast}
+                    toggleFavorite={toggleFavorite}
+                    currentUser={currentUser}
+                    settings={settings}
+                />
+                <OrderDetailsModal
+                    order={selectedOrder}
+                    onClose={() => setSelectedOrder(null)}
+                    darkMode={darkMode}
+                />
+                <ManualSaleModal
+                    showManualSaleModal={showManualSaleModal}
+                    setShowManualSaleModal={setShowManualSaleModal}
+                    saleData={saleData}
+                    setSaleData={setSaleData}
+                    products={products}
+                    showToast={showToast}
+                    db={db}
+                    appId={appId}
+                    darkMode={darkMode}
+                />
+                <MetricsDetailModal
+                    metricsDetail={metricsDetail}
+                    setMetricsDetail={setMetricsDetail}
+                    dashboardMetrics={dashboardMetrics}
+                    darkMode={darkMode}
+                />
+                <AdminUserDrawer
+                    viewUserCart={viewUserCart}
+                    setViewUserCart={setViewUserCart}
+                    viewUserEdit={viewUserEdit}
+                    setViewUserEdit={setViewUserEdit}
+                    currentUser={currentUser}
+                    setCurrentUser={setCurrentUser}
+                    db={db}
+                    appId={appId}
+                    darkMode={darkMode}
+                    showToast={showToast}
+                    openConfirm={openConfirm}
                 />
                 {/* --- SUSTIA CHATBOT (AI) --- */}
                 <CategoryModal
@@ -12277,6 +11456,329 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
 };
 
 
+
+// Componente Modal de Selección de Cupones
+const CouponSelectorModal = ({ isOpen, onClose, coupons, currentUser, cartSubtotal, selectCoupon, darkMode }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
+            <div className={`w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-scale-up ${darkMode ? 'bg-[#0a0a0a] border border-slate-800' : 'bg-white border border-slate-200'}`}>
+                <div className={`p-6 border-b flex justify-between items-center ${darkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Tus Cupones</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    {coupons.filter(c => c.isActive && (!c.onlyFor || c.onlyFor === currentUser?.email)).map((coupon, idx) => {
+                        const isExpired = coupon.expiryDate && new Date(coupon.expiryDate) < new Date();
+                        const isSpent = coupon.usageLimit && coupon.usageCount >= coupon.usageLimit;
+                        const minNotMet = cartSubtotal < (coupon.minPurchase || 0);
+                        const isDisabled = isExpired || isSpent || minNotMet;
+
+                        return (
+                            <button
+                                key={idx}
+                                onClick={() => !isDisabled && selectCoupon(coupon)}
+                                disabled={isDisabled}
+                                className={`w-full p-4 rounded-2xl border-2 text-left transition relative group ${isDisabled ? 'bg-slate-100 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-50' : 'bg-white dark:bg-slate-900 border-dashed border-orange-500/30 hover:border-orange-500 hover:shadow-lg'}`}
+                            >
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className={`text-lg font-black ${isDisabled ? 'text-slate-400' : 'text-orange-500'}`}>{coupon.code}</span>
+                                    <span className="text-xs font-bold px-2 py-1 bg-orange-500/10 text-orange-500 rounded-lg">-{coupon.discount}%</span>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium">{coupon.description || 'Válido para toda la tienda.'}</p>
+                                {minNotMet && <p className="text-[10px] text-red-400 mt-2 font-bold uppercase tracking-wider">Mínimo: ${coupon.minPurchase.toLocaleString()}</p>}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Modal de Detalle de Producto / Promo (Versión Premium)
+const ProductDetailModal = ({ selectedProduct, setSelectedProduct, cart, manageCart, products, calculateItemPrice, darkMode, showToast, toggleFavorite, currentUser, settings }) => {
+    const [qty, setQty] = useState(1);
+    const [added, setAdded] = useState(false);
+
+    if (!selectedProduct) return null;
+
+    const isPromo = selectedProduct.isPromo || !!selectedProduct.items;
+    const stockLimit = isPromo ? Number(selectedProduct.stock) : Number(selectedProduct.stock);
+
+    const cartItem = cart.find(item => item.product.id === selectedProduct.id);
+    const inCartQty = cartItem ? cartItem.quantity : 0;
+    const availableToAdd = Math.max(0, stockLimit - inCartQty);
+
+    const hasStock = stockLimit > 0;
+    const isMaxInCart = (availableToAdd <= 0) && hasStock;
+    const displayPrice = isPromo ? Number(selectedProduct.price || selectedProduct.basePrice) : calculateItemPrice(selectedProduct.basePrice, selectedProduct.discount);
+
+    const handleAdd = (e) => {
+        e.stopPropagation();
+        if (!hasStock || availableToAdd <= 0) return;
+
+        const itemToAdd = isPromo ? {
+            id: selectedProduct.id,
+            name: selectedProduct.name,
+            basePrice: selectedProduct.price || selectedProduct.basePrice,
+            image: selectedProduct.image,
+            isPromo: true,
+            items: selectedProduct.items,
+            stock: selectedProduct.stock
+        } : selectedProduct;
+
+        manageCart(itemToAdd, qty);
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-4" onClick={() => setSelectedProduct(null)}>
+            <div className={`bg-[#0f0f12] border border-slate-800/60 rounded-[2rem] max-w-3xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative h-full md:h-auto overflow-y-auto md:overflow-hidden`} onClick={e => e.stopPropagation()}>
+
+                {/* Imagen */}
+                <div className="md:w-1/2 h-64 md:h-auto aspect-[4/5] bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 flex items-center justify-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
+                    <img src={selectedProduct.image} className="w-full h-full object-contain drop-shadow-[0_0_50px_rgba(255,255,255,0.15)] z-10 transition-transform duration-700 hover:scale-110" />
+                    {!hasStock && (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                            <div className="border-4 border-red-500 p-4 -rotate-12 bg-black shadow-2xl">
+                                <span className="text-red-500 font-black text-2xl tracking-widest uppercase">AGOTADO</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Info */}
+                <div className="md:w-1/2 p-6 md:p-8 flex flex-col bg-[#080808]">
+                    <div className="mb-8">
+                        <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-4 border border-orange-500/20">
+                            {isPromo ? 'COMBOS & PROMOCIONES' : selectedProduct.category}
+                        </span>
+                        <h2 className="text-3xl md:text-4xl font-black text-white leading-[1.1] mb-6 neon-text-small">{selectedProduct.name}</h2>
+                        <p className="text-slate-400 text-sm md:text-base leading-relaxed line-clamp-4">{selectedProduct.description || ''}</p>
+                    </div>
+
+                    {isPromo && selectedProduct.items && (
+                        <div className="mb-8 space-y-3 bg-purple-500/5 p-6 rounded-2xl border border-purple-500/20 shadow-inner">
+                            <p className="text-[10px] uppercase font-black text-purple-400 tracking-[0.2em]">Incluye:</p>
+                            <div className="space-y-2">
+                                {selectedProduct.items.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center text-xs text-slate-300">
+                                        <span className="font-bold">{item.name}</span>
+                                        <span className="text-purple-400 font-black">x{item.qty}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-auto space-y-6">
+                        <div className="flex items-end justify-between border-b border-white/5 pb-4">
+                            <div>
+                                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Precio Final</p>
+                                <p className="text-4xl font-black text-white font-mono">${displayPrice.toLocaleString()}</p>
+                            </div>
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-bold ${hasStock ? (isMaxInCart ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400') : 'bg-red-500/20 text-red-500'}`}>
+                                {hasStock ? (isMaxInCart ? 'LÍMITE ALCANZADO' : `DISPONIBLES: ${availableToAdd}`) : 'SIN STOCK'}
+                            </div>
+                        </div>
+
+                        {hasStock && availableToAdd > 0 && (
+                            <div className="flex gap-4">
+                                <div className="flex items-center bg-slate-900 rounded-2xl p-1 border border-slate-800">
+                                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white"><Minus className="w-4 h-4" /></button>
+                                    <span className="w-10 text-center text-white font-black font-mono">{qty}</span>
+                                    <button onClick={() => setQty(Math.min(availableToAdd, qty + 1))} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white"><Plus className="w-4 h-4" /></button>
+                                </div>
+                                <button onClick={handleAdd} disabled={added} className={`flex-1 h-12 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${added ? 'bg-green-600' : 'bg-orange-600 hover:bg-orange-500 text-white'}`}>
+                                    {added ? 'AGREGADO!' : 'Agregar al Carrito'}
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-6 pt-2">
+                            <button onClick={() => toggleFavorite(selectedProduct)} className={`flex items-center gap-2 text-xs font-bold ${currentUser?.favorites?.includes(selectedProduct.id) ? 'text-orange-500' : 'text-slate-500'}`}>
+                                <Heart className={`w-4 h-4 ${currentUser?.favorites?.includes(selectedProduct.id) ? 'fill-current' : ''}`} /> Favoritos
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onClick={() => setSelectedProduct(null)} className="absolute top-6 right-6 p-2 bg-black/50 rounded-full text-white backdrop-blur-md border border-white/10"><X className="w-6 h-6" /></button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Modal de Venta Manual
+const ManualSaleModal = ({ showManualSaleModal, setShowManualSaleModal, saleData, setSaleData, products, showToast, db, appId, darkMode }) => {
+    if (!showManualSaleModal) return null;
+
+    const product = products.find(p => p.id === saleData.productId);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!product) return showToast("Selecciona un producto.", "warning");
+        try {
+            const total = saleData.quantity * saleData.price;
+            const newOrder = {
+                orderId: `man-${Date.now().toString().slice(-6)}`,
+                userId: 'manual_admin',
+                customer: { name: saleData.customerName || 'Cliente Mostrador', email: 'offline@store.com' },
+                items: [{ productId: product.id, title: product.name, quantity: Number(saleData.quantity), unit_price: Number(saleData.price), image: product.image }],
+                total: total,
+                status: 'Realizado',
+                date: new Date().toISOString(),
+                paymentMethod: saleData.paymentMethod,
+                isManual: true
+            };
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), { stock: increment(-Number(saleData.quantity)) });
+            showToast("Venta registrada!", "success");
+            setShowManualSaleModal(false);
+        } catch (err) { showToast("Error!", "error"); }
+    };
+
+    return (
+        <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-md ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
+            <div className={`w-full max-w-lg rounded-3xl shadow-2xl p-8 ${darkMode ? 'bg-[#0a0a0a] border border-slate-800' : 'bg-white border border-slate-200'}`}>
+                <h3 className="text-xl font-bold mb-6 text-white uppercase tracking-widest">Venta Mostrador</h3>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <select className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" value={saleData.productId} onChange={e => setSaleData({ ...saleData, productId: e.target.value, price: products.find(p => p.id === e.target.value)?.basePrice || 0 })}>
+                        <option value="">Producto...</option>
+                        {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <div className="grid grid-cols-2 gap-4">
+                        <input type="number" className="bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" value={saleData.quantity} onChange={e => setSaleData({ ...saleData, quantity: e.target.value })} placeholder="Cant" />
+                        <input type="number" className="bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" value={saleData.price} onChange={e => setSaleData({ ...saleData, price: e.target.value })} placeholder="Precio" />
+                    </div>
+                    <input className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" value={saleData.customerName} onChange={e => setSaleData({ ...saleData, customerName: e.target.value })} placeholder="Cliente" />
+                    <button type="submit" className="w-full bg-green-600 py-4 rounded-xl font-bold text-white uppercase">Registrar</button>
+                    <button type="button" onClick={() => setShowManualSaleModal(false)} className="w-full text-slate-500 font-bold uppercase text-xs mt-2">Cerrar</button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+// Modal de Analíticas
+const MetricsDetailModal = ({ metricsDetail, setMetricsDetail, dashboardMetrics, darkMode }) => {
+    const [timeframe, setTimeframe] = useState('monthly');
+    if (!metricsDetail) return null;
+    const data = dashboardMetrics?.analytics?.[timeframe] || [];
+    return (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
+            <div className={`rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col border p-8 ${darkMode ? 'bg-[#050505] border-slate-800' : 'bg-white'}`}>
+                <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-2xl font-black text-white uppercase tracking-widest">Estadísticas Detalladas</h3>
+                    <button onClick={() => setMetricsDetail(null)}><X className="text-white" /></button>
+                </div>
+                <div className="flex gap-4 mb-8">
+                    {['daily', 'monthly', 'yearly'].map(t => (
+                        <button key={t} onClick={() => setTimeframe(t)} className={`px-6 py-2 rounded-full text-xs font-black uppercase ${timeframe === t ? 'bg-white text-black' : 'bg-slate-900 text-slate-500'}`}>{t}</button>
+                    ))}
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-4">
+                    {data.map((item, idx) => (
+                        <div key={idx} className="flex justify-between p-4 bg-white/5 rounded-2xl">
+                            <span className="text-white font-mono">{item.date}</span>
+                            <span className="text-orange-400 font-black">${item.revenue.toLocaleString()}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Drawer de Administración de Usuarios
+const AdminUserDrawer = ({ viewUserCart, setViewUserCart, viewUserEdit, setViewUserEdit, currentUser, setCurrentUser, db, appId, darkMode, showToast, openConfirm }) => {
+    const [active, setActive] = useState(false);
+    const [type, setType] = useState('cart');
+    const [user, setUser] = useState(null);
+    const [cartData, setCartData] = useState([]);
+    const [loadingCart, setLoadingCart] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [formData, setFormData] = useState({});
+
+    useEffect(() => {
+        const u = viewUserCart || viewUserEdit;
+        if (u) {
+            setUser(u);
+            setType(viewUserCart ? 'cart' : 'edit');
+            setFormData({ ...u, newPassword: '' });
+            setActive(true);
+            if (viewUserCart) fetchCart(u.id);
+        } else {
+            setActive(false);
+        }
+    }, [viewUserCart, viewUserEdit]);
+
+    const fetchCart = async (uid) => {
+        setLoadingCart(true);
+        try {
+            const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', uid));
+            setCartData(snap.exists() ? (snap.data().items || []) : []);
+        } catch (e) { setCartData([]); }
+        setLoadingCart(false);
+    };
+
+    if (!active || !user) return null;
+
+    const close = () => { setViewUserCart(null); setViewUserEdit(null); };
+
+    const handleEdit = async (e) => {
+        e.preventDefault();
+        setIsSaving(true);
+        try {
+            const update = { ...formData, updatedAt: new Date().toISOString(), lastModifiedBy: currentUser.email };
+            delete update.newPassword;
+            if (formData.newPassword) update.password = formData.newPassword;
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), update);
+            showToast("Actualizado!", "success");
+            close();
+        } catch (e) { showToast("Error!", "error"); }
+        setIsSaving(false);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[1000] flex justify-end animate-fade-in pointer-events-none">
+            <div className="fixed inset-0 bg-black/60 pointer-events-auto" onClick={close} />
+            <div className={`fixed inset-y-0 right-0 w-full md:w-[500px] flex flex-col shadow-2xl pointer-events-auto ${darkMode ? 'bg-[#0a0a0a]' : 'bg-white'}`}>
+                <div className="p-8 border-b flex justify-between items-center">
+                    <h2 className="text-xl font-black uppercase text-white">{type === 'cart' ? 'Carrito' : 'Editar Usuario'}</h2>
+                    <button onClick={close}><X className="text-white" /></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-8">
+                    {type === 'cart' ? (
+                        <div className="space-y-4">
+                            {loadingCart ? <p>Cargando...</p> : cartData.map((item, i) => (
+                                <div key={i} className="flex justify-between p-4 bg-white/5 rounded-xl">
+                                    <span className="text-white">{item.name} x{item.quantity}</span>
+                                    <span className="text-orange-400 font-bold">${item.price}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <form onSubmit={handleEdit} className="space-y-6">
+                            <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Nombre" />
+                            <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="Email" />
+                            <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" type="password" onChange={e => setFormData({ ...formData, newPassword: e.target.value })} placeholder="Nueva Contraseña" />
+                            <button className="w-full bg-orange-600 py-4 rounded-xl font-bold uppercase text-white">Guardar</button>
+                        </form>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 // Renderizado Final
 const root = createRoot(document.getElementById('root'));
 root.render(
@@ -12286,4 +11788,4 @@ root.render(
     </ErrorBoundary>
 );
 
-// v3.5.1 - UI Fixes Applied
+// v3.5.2 - Externalized Components Refactored
