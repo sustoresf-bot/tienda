@@ -320,7 +320,9 @@ const defaultSettings = {
     // --- Imágenes ---
     logoUrl: "",
     heroImages: [], // Array de { url, linkedProductId?, linkedPromoId? }
-    heroCarouselInterval: 5000, // Intervalo en ms para rotación del carrusel
+    heroImages: [], // Array de { url, linkedProductId?, linkedPromoId? }
+    heroCarouselInterval: 5000, // Intervalo en ms
+    carouselHeight: "small", // default to small as requested by user ("mucho mas chico")
 
     // --- Configuración de Tienda ---
     markupPercentage: 0,
@@ -5602,7 +5604,9 @@ function App() {
                                 };
 
                                 return (
-                                    <div className={`relative w-full h-[300px] sm:h-[400px] lg:h-[480px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-colors duration-500 ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                                    <div className={`relative w-full rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-all duration-500 ${settings?.carouselHeight === 'large' ? 'h-[500px] sm:h-[600px] lg:h-[700px]' :
+                                        settings?.carouselHeight === 'medium' ? 'h-[300px] sm:h-[400px] lg:h-[480px]' :
+                                            'h-[150px] sm:h-[200px] lg:h-[240px]'} ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
 
                                         {/* Imágenes del Carrusel */}
@@ -9783,6 +9787,30 @@ function App() {
                                                                         <span className="text-white font-mono text-sm w-14">{((settings?.heroCarouselInterval || 5000) / 1000).toFixed(0)}s</span>
                                                                     </div>
                                                                     <p className="text-xs text-slate-500 mt-2">Tiempo entre cada slide (2-15 segundos)</p>
+                                                                </div>
+
+                                                                {/* Altura del Carrusel */}
+                                                                <div className="pt-4 border-t border-slate-800 mt-4">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Altura del Carrusel</label>
+                                                                    <div className="flex gap-2">
+                                                                        {[
+                                                                            { id: 'small', label: 'Compacto (Pequeño)' },
+                                                                            { id: 'medium', label: 'Normal (Mediano)' },
+                                                                            { id: 'large', label: 'Grande (Cinemático)' }
+                                                                        ].map(size => (
+                                                                            <button
+                                                                                key={size.id}
+                                                                                onClick={() => setSettings({ ...settings, carouselHeight: size.id })}
+                                                                                className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold border transition ${settings?.carouselHeight === size.id
+                                                                                    ? 'bg-orange-500 text-white border-orange-500 shadow-md'
+                                                                                    : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'
+                                                                                    }`}
+                                                                            >
+                                                                                {size.label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                    <p className="text-xs text-slate-500 mt-2">Compacto es ideal para móviles. Grande para impacto visual.</p>
                                                                 </div>
                                                             </div>
 
