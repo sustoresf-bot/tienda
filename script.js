@@ -5342,13 +5342,13 @@ function App() {
 
             {view === 'admin' && (
                 <style>{`
-                    body { background-color: #050505 !important; }
-                    html { background-color: #050505 !important; }
+                    body { background-color: #f8fafc !important; }
+                    html { background-color: #f8fafc !important; }
                 `}</style>
             )}
 
             <div
-                className={view === 'admin' ? "bg-[#050505] min-h-screen font-sans" : `min-h-screen flex flex-col relative w-full bg-grid font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-white'}`}
+                className={view === 'admin' ? "bg-slate-50 min-h-screen font-sans" : `min-h-screen flex flex-col relative w-full bg-grid font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-white'}`}
                 style={view === 'admin' ? { transform: 'none' } : {}}
             >
                 {/* Wrapper for admin content ensuring no transforms affect fixed position */}
@@ -6949,7 +6949,7 @@ function App() {
                                 currentUser?.id &&
                                 currentUser?.id.length >= 10 &&
                                 !SecurityManager.detectManipulation()) ? (
-                                <div className="min-h-screen bg-[#050505] relative w-full font-sans">
+                                <div className="min-h-screen bg-slate-50 relative w-full font-sans">
 
                                     {/* Overlay para cerrar el menú en móvil */}
                                     {isAdminMenuOpen && (
@@ -7084,7 +7084,7 @@ function App() {
 
                                     {/* 7.2 Contenido Principal Admin */}
                                     {/* 7.2 Contenido Principal Admin */}
-                                    <div className="flex-1 bg-[#050505] relative min-h-screen overflow-x-hidden md:ml-[280px]">
+                                    <div className="flex-1 bg-slate-50 relative min-h-screen overflow-x-hidden md:ml-[280px]">
                                         <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-orange-600/5 to-transparent pointer-events-none"></div>
 
                                         <div className="relative z-10 p-6 md:p-12 lg:p-16 max-w-[1700px] mx-auto">
@@ -7111,8 +7111,8 @@ function App() {
                                                                 <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
                                                                 Live Metrics • Apps v3.5
                                                             </div>
-                                                            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-4 drop-shadow-2xl">
-                                                                Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-200 to-orange-600 animate-gradient-x">Control</span>
+                                                            <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 drop-shadow-sm">
+                                                                Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 animate-gradient-x">Control</span>
                                                             </h1>
                                                             <p className="text-slate-400 font-medium max-w-md">Bienvenido de nuevo. Aquí tienes el rendimiento de tu tienda en tiempo real.</p>
                                                         </div>
@@ -7139,22 +7139,22 @@ function App() {
                                                     {/* SECCIÓN 1: TARJETAS PRINCIPALES (PREMIUM) */}
                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                                                         {/* INGRESOS BRUTOS */}
-                                                        <div className="bg-gradient-to-br from-[#0a0a0a] to-[#111] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/20 transition-all duration-500 shadow-2xl shadow-black/50">
+                                                        <div className="bg-white border border-slate-200 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/20 transition-all duration-500 shadow-xl">
                                                             {/* Background Glow */}
                                                             <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-green-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-green-500/10 transition-colors duration-1000"></div>
                                                             <div className="flex justify-between items-center mb-6">
                                                                 <div>
                                                                     <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-1">Ingresos Brutos</p>
-                                                                    <h2 className="text-4xl font-black text-white tracking-tighter">${dashboardMetrics.revenue.toLocaleString()}</h2>
+                                                                    <h2 className="text-4xl font-black text-slate-900 tracking-tighter">${dashboardMetrics.revenue.toLocaleString()}</h2>
                                                                 </div>
-                                                                <div className="p-4 bg-green-900/20 text-green-400 rounded-2xl w-16 h-16 flex items-center justify-center shadow-lg shadow-green-500/5">
+                                                                <div className="p-4 bg-green-100 text-green-600 rounded-2xl w-16 h-16 flex items-center justify-center shadow-sm">
                                                                     <DollarSign className="w-8 h-8" />
                                                                 </div>
                                                             </div>
 
                                                             {/* Lista Gráfica (Ultimos 6 meses) */}
-                                                            <div className="space-y-4 mt-8 border-t border-slate-800 pt-6">
-                                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Rendimiento Mensual</p>
+                                                            <div className="space-y-4 mt-8 border-t border-slate-100 pt-6">
+                                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Rendimiento Mensual</p>
                                                                 {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
                                                                     const maxRev = Math.max(...dashboardMetrics.analytics.monthly.map(x => x.revenue));
                                                                     const percentage = maxRev > 0 ? (m.revenue / maxRev) * 100 : 0;
@@ -7162,8 +7162,8 @@ function App() {
                                                                     return (
                                                                         <div key={i} className="group/item">
                                                                             <div className="flex justify-between text-xs mb-1">
-                                                                                <span className="text-slate-400 font-mono">{m.date}</span>
-                                                                                <span className="text-white font-bold">${m.revenue.toLocaleString()}</span>
+                                                                                <span className="text-slate-500 font-mono">{m.date}</span>
+                                                                                <span className="text-slate-900 font-bold">${m.revenue.toLocaleString()}</span>
                                                                             </div>
                                                                             <div className="h-2 bg-slate-800 rounded-full overflow-hidden w-full">
                                                                                 <div
@@ -7179,24 +7179,24 @@ function App() {
                                                         </div>
 
                                                         {/* BENEFICIO NETO */}
-                                                        <div className="bg-gradient-to-br from-[#0a0a0a] to-[#111] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-blue-500/20 transition-all duration-500 shadow-2xl shadow-black/50">
+                                                        <div className="bg-white border border-slate-200 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-blue-500/20 transition-all duration-500 shadow-xl">
                                                             {/* Background Glow */}
                                                             <div className={`absolute top-0 right-0 w-[300px] h-[300px] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 transition-colors duration-1000 ${dashboardMetrics.netIncome >= 0 ? 'bg-orange-500/5 group-hover:bg-orange-500/10' : 'bg-red-500/5 group-hover:bg-red-500/10'}`}></div>
                                                             <div className="flex justify-between items-center mb-6">
                                                                 <div>
                                                                     <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-1">Beneficio Neto (Estimado)</p>
-                                                                    <h2 className={`text-4xl font-black tracking-tighter ${dashboardMetrics.netIncome >= 0 ? 'text-orange-400' : 'text-red-500'}`}>
+                                                                    <h2 className={`text-4xl font-black tracking-tighter ${dashboardMetrics.netIncome >= 0 ? 'text-orange-600' : 'text-red-500'}`}>
                                                                         ${dashboardMetrics.netIncome.toLocaleString()}
                                                                     </h2>
                                                                 </div>
-                                                                <div className={`p-4 rounded-2xl w-16 h-16 flex items-center justify-center shadow-lg ${dashboardMetrics.netIncome >= 0 ? 'bg-orange-900/20 text-orange-400 shadow-orange-500/5' : 'bg-red-900/20 text-red-500 shadow-red-500/5'}`}>
+                                                                <div className={`p-4 rounded-2xl w-16 h-16 flex items-center justify-center shadow-sm ${dashboardMetrics.netIncome >= 0 ? 'bg-orange-100 text-orange-600' : 'bg-red-100 text-red-600'}`}>
                                                                     {dashboardMetrics.netIncome >= 0 ? <TrendingUp className="w-8 h-8" /> : <TrendingDown className="w-8 h-8" />}
                                                                 </div>
                                                             </div>
 
                                                             {/* Lista Gráfica (Comparativa Ingreso vs Gasto) */}
-                                                            <div className="space-y-4 mt-8 border-t border-slate-800 pt-6">
-                                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Ingresos vs Gastos (Últimos Meses)</p>
+                                                            <div className="space-y-4 mt-8 border-t border-slate-100 pt-6">
+                                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ingresos vs Gastos (Últimos Meses)</p>
                                                                 {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
                                                                     // Estimación simplificada de gastos mensuales (proporcional solo para visualización si no hay data exacta mensual de gastos guardada historica)
                                                                     // En una real app, se calcularía real desde expenses.
@@ -7211,7 +7211,7 @@ function App() {
                                                                         <div key={i} className="group/item">
                                                                             <div className="flex justify-between text-xs mb-1">
                                                                                 <span className="text-slate-400 font-mono">{m.date}</span>
-                                                                                <span className="text-orange-400 font-bold">+${(m.revenue - monthExpenses).toLocaleString()}</span>
+                                                                                <span className="text-orange-600 font-bold">+${(m.revenue - monthExpenses).toLocaleString()}</span>
                                                                             </div>
                                                                             <div className="flex h-2 bg-slate-800 rounded-full overflow-hidden w-full">
                                                                                 <div title={`Ingresos: $${m.revenue}`} className="h-full bg-orange-500 transition-all duration-1000" style={{ width: `${revPct}%` }}></div>
@@ -7227,35 +7227,35 @@ function App() {
 
                                                     {/* SECCIÓN 2: KPIs RÁPIDOS (PREMIUM) */}
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                        <div className="bg-gradient-to-br from-slate-900/50 to-slate-900/80 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors group">
-                                                            <div className="flex justify-center mb-3 text-slate-600 group-hover:text-blue-400 transition-colors">
+                                                        <div className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-orange-500/30 transition-colors group shadow-sm">
+                                                            <div className="flex justify-center mb-3 text-slate-400 group-hover:text-blue-500 transition-colors">
                                                                 <Users className="w-6 h-6" />
                                                             </div>
                                                             <p className="text-slate-500 text-[10px] uppercase font-bold text-center tracking-widest">Usuarios</p>
-                                                            <p className="text-white font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300">{dashboardMetrics.totalUsers}</p>
+                                                            <p className="text-slate-900 font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300">{dashboardMetrics.totalUsers}</p>
                                                         </div>
-                                                        <div className="bg-gradient-to-br from-slate-900/50 to-slate-900/80 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors group">
-                                                            <div className="flex justify-center mb-3 text-slate-600 group-hover:text-purple-400 transition-colors">
+                                                        <div className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-purple-500/30 transition-colors group shadow-sm">
+                                                            <div className="flex justify-center mb-3 text-slate-400 group-hover:text-purple-500 transition-colors">
                                                                 <ShoppingBag className="w-6 h-6" />
                                                             </div>
                                                             <p className="text-slate-500 text-[10px] uppercase font-bold text-center tracking-widest">Pedidos</p>
-                                                            <p className="text-white font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300">{dashboardMetrics.totalOrders}</p>
+                                                            <p className="text-slate-900 font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300">{dashboardMetrics.totalOrders}</p>
                                                         </div>
-                                                        <div className="bg-gradient-to-br from-slate-900/50 to-slate-900/80 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors group">
-                                                            <div className="flex justify-center mb-3 text-slate-600 group-hover:text-green-400 transition-colors">
+                                                        <div className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-green-500/30 transition-colors group shadow-sm">
+                                                            <div className="flex justify-center mb-3 text-slate-400 group-hover:text-green-500 transition-colors">
                                                                 <DollarSign className="w-6 h-6" />
                                                             </div>
                                                             <p className="text-slate-500 text-[10px] uppercase font-bold text-center tracking-widest">Ticket Promedio</p>
-                                                            <p className="text-white font-black text-2xl text-center mt-2 group-hover:scale-110 transition-transform duration-300 font-mono text-green-400">
+                                                            <p className="text-slate-900 font-black text-2xl text-center mt-2 group-hover:scale-110 transition-transform duration-300 font-mono text-green-600">
                                                                 ${dashboardMetrics.totalOrders > 0 ? Math.round(dashboardMetrics.revenue / dashboardMetrics.totalOrders).toLocaleString() : 0}
                                                             </p>
                                                         </div>
-                                                        <div className="bg-gradient-to-br from-slate-900/50 to-slate-900/80 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors group">
-                                                            <div className={`flex justify-center mb-3 transition-colors ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500 animate-pulse' : 'text-slate-600 group-hover:text-white'}`}>
+                                                        <div className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-red-500/30 transition-colors group shadow-sm">
+                                                            <div className={`flex justify-center mb-3 transition-colors ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500 animate-pulse' : 'text-slate-400 group-hover:text-red-500'}`}>
                                                                 <AlertCircle className="w-6 h-6" />
                                                             </div>
                                                             <p className="text-slate-500 text-[10px] uppercase font-bold text-center tracking-widest">Stock Bajo</p>
-                                                            <p className={`font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300 ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500' : 'text-white'}`}>
+                                                            <p className={`font-black text-3xl text-center mt-1 group-hover:scale-110 transition-transform duration-300 ${dashboardMetrics.lowStockProducts.length > 0 ? 'text-red-500' : 'text-slate-900'}`}>
                                                                 {dashboardMetrics.lowStockProducts.length}
                                                             </p>
                                                         </div>
@@ -7378,7 +7378,7 @@ function App() {
                                             {adminTab === 'suppliers' && (
                                                 <div className="max-w-6xl mx-auto space-y-8 animate-fade-up pb-20">
                                                     <div className="flex justify-between items-center">
-                                                        <h1 className="text-3xl font-black text-white">Proveedores</h1>
+                                                        <h1 className="text-3xl font-black text-slate-900">Proveedores</h1>
                                                         <button onClick={() => { setNewSupplier({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] }); setEditingSupplierId(null); setShowSupplierModal(true); }} className="bg-orange-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-orange-500 transition transform hover:-translate-y-1">
                                                             <Plus className="w-5 h-5" /> Nuevo Proveedor
                                                         </button>
@@ -7454,7 +7454,7 @@ function App() {
                                             {/* TAB: COMPRAS (STOCK) */}
                                             {adminTab === 'purchases' && (
                                                 <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                                    <h1 className="text-3xl font-black text-white mb-8">Gestión de Stock y Compras</h1>
+                                                    <h1 className="text-3xl font-black text-slate-900 mb-8">Gestión de Stock y Compras</h1>
 
                                                     {/* Formulario de Compra Unificado */}
                                                     <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] mb-10 shadow-xl overflow-hidden relative">
@@ -7706,8 +7706,8 @@ function App() {
 
                                             {/* TAB: FINANZAS (GASTOS E INVERSIONES) */}
                                             {adminTab === 'finance' && (
-                                                <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                                    <h1 className="text-4xl font-black text-white mb-8 neon-text">Finanzas y Capital</h1>
+                                                <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
+                                                    <h1 className="text-4xl font-black text-slate-900 mb-8">Finanzas y Capital</h1>
 
                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                                                         {/* SECCIÓN: REGISTRAR INVERSIÓN (NUEVO) */}
@@ -7996,7 +7996,7 @@ function App() {
 
                                             {/* TAB: CUPONES (GESTIÓN AVANZADA) */}
                                             {adminTab === 'coupons' && (
-                                                <div className="max-w-5xl mx-auto animate-fade-up pb-20 relative">
+                                                <div className="max-w-[1600px] mx-auto animate-fade-up pb-20 relative">
 
                                                     {/* Overlay for Entrepreneur Plan */}
                                                     {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
@@ -8015,7 +8015,7 @@ function App() {
                                                         </button>
                                                     )}
 
-                                                    <h1 className="text-3xl font-black text-white mb-8">Gestión de Cupones</h1>
+                                                    <h1 className="text-3xl font-black text-slate-900 mb-8">Gestión de Cupones</h1>
 
                                                     {/* Formulario de Creación */}
                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
@@ -8171,10 +8171,10 @@ function App() {
                                                 });
 
                                                 return (
-                                                    <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                                    <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
                                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
                                                             <div>
-                                                                <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-4">
+                                                                <h1 className="text-4xl font-black text-slate-900 tracking-tighter flex items-center gap-4">
                                                                     <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
                                                                         <Users className="w-6 h-6 text-pink-400" />
                                                                     </div>
@@ -8327,13 +8327,13 @@ function App() {
 
                                             {/* TAB: PROMOS (NUEVO) */}
                                             {adminTab === 'promos' && (
-                                                <div className="max-w-7xl mx-auto animate-fade-in pb-20 px-4 sm:px-6">
+                                                <div className="max-w-[1700px] mx-auto animate-fade-in pb-20 px-4 sm:px-6">
                                                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                                                         <div>
                                                             <div className="flex items-center gap-2 text-purple-500 font-black text-xs uppercase tracking-[0.3em] mb-2">
                                                                 <Zap className="w-3.5 h-3.5 animate-pulse" /> Growth Engine
                                                             </div>
-                                                            <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tighter flex items-center gap-4 mb-2">
+                                                            <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter flex items-center gap-4 mb-2">
                                                                 <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl shadow-[0_0_30px_rgba(147,51,234,0.3)]">
                                                                     <Tag className="w-8 h-8 text-white" />
                                                                 </div>
@@ -8800,8 +8800,8 @@ function App() {
 
                                             {/* TAB: PEDIDOS (RESTAURADO) */}
                                             {adminTab === 'orders' && (
-                                                <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                                    <h1 className="text-3xl font-black text-white mb-8">Gestión de Pedidos</h1>
+                                                <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
+                                                    <h1 className="text-3xl font-black text-slate-900 mb-8">Gestión de Pedidos</h1>
 
                                                     {orders.length === 0 ? (
                                                         <div className="text-center py-20 border border-dashed border-slate-800 rounded-[3rem] bg-slate-900/20">
@@ -8814,23 +8814,23 @@ function App() {
                                                                 <div
                                                                     key={o.id}
                                                                     style={{ animationDelay: `${idx * 0.05}s` }}
-                                                                    className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-slate-700 transition group animate-fade-up"
+                                                                    className="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col lg:flex-row justify-between items-center gap-6 hover:border-orange-500/20 transition group animate-fade-up shadow-sm"
                                                                 >
                                                                     {/* Info Principal */}
                                                                     <div className="flex-1 w-full lg:w-auto">
                                                                         <div className="flex items-center gap-4 mb-2">
-                                                                            <span className="bg-slate-900 text-orange-400 px-3 py-1 rounded-lg text-sm font-black tracking-widest border border-slate-800">
+                                                                            <span className="bg-slate-50 text-orange-600 px-3 py-1 rounded-lg text-sm font-black tracking-widest border border-slate-200">
                                                                                 #{o.orderId}
                                                                             </span>
-                                                                            <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold border ${o.status === 'Realizado' ? 'bg-green-900/20 text-green-400 border-green-500/30' : 'bg-yellow-900/20 text-yellow-400 border-yellow-500/30'}`}>
+                                                                            <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold border ${o.status === 'Realizado' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-yellow-50 text-yellow-600 border-yellow-200'}`}>
                                                                                 {o.status}
                                                                             </span>
                                                                         </div>
-                                                                        <h4 className="text-white font-bold text-lg mb-1">{o.customer.name}</h4>
+                                                                        <h4 className="text-slate-900 font-bold text-lg mb-1">{o.customer.name}</h4>
                                                                         <p className="text-slate-500 text-xs flex items-center gap-2">
                                                                             <Clock className="w-3 h-3" /> {new Date(o.date).toLocaleString()}
-                                                                            <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                                                                            <span className="text-slate-400 font-mono">${o.total.toLocaleString()}</span>
+                                                                            <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                                                                            <span className="text-slate-900 font-mono font-bold">${o.total.toLocaleString()}</span>
                                                                         </p>
                                                                     </div>
 
@@ -8907,7 +8907,7 @@ function App() {
                                                 <div className="max-w-7xl mx-auto animate-fade-in pb-20">
                                                     <div className="flex justify-between items-center mb-8">
                                                         <div>
-                                                            <h1 className="text-3xl font-black text-white">Inventario</h1>
+                                                            <h1 className="text-3xl font-black text-slate-900">Inventario</h1>
                                                             {(() => {
                                                                 const plan = settings?.subscriptionPlan || 'entrepreneur';
                                                                 const limit = plan === 'premium' ? '∞' : plan === 'business' ? 50 : 30;
@@ -8994,7 +8994,7 @@ function App() {
                                                                                     // Soporte retrocompatible: verificar tanto categories (array) como category (string)
                                                                                     const isSelected = Array.isArray(newProduct.categories)
                                                                                         ? newProduct.categories.includes(cat)
-                                                                                        : (newProduct.category === cat);
+                                                                                        : (newProduct.category ? [newProduct.category] : []);
 
                                                                                     return (
                                                                                         <label
@@ -9207,7 +9207,7 @@ function App() {
 
                                             {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
                                             {adminTab === 'settings' && (
-                                                <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
+                                                <div className="max-w-[1600px] mx-auto animate-fade-up pb-20 relative">
 
                                                     {/* Developer-Only Access Block */}
                                                     {currentUser?.email !== SUPER_ADMIN_EMAIL && (
@@ -9227,7 +9227,7 @@ function App() {
                                                         </div>
                                                     )}
 
-                                                    <h1 className="text-4xl font-black text-white neon-text mb-8 flex items-center gap-3">
+                                                    <h1 className="text-4xl font-black text-slate-900 neon-text mb-8 flex items-center gap-3">
                                                         <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
                                                     </h1>
 
