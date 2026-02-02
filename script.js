@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
     ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
@@ -18,8 +18,8 @@ import {
 } from 'firebase/firestore';
 import Lenis from 'lenis';
 
-// --- CONFIGURACI�N FIREBASE (PROYECTO: sustore-63266) ---
-// Nota: esta es la configuraci�n p�blica del SDK web. NO incluyas aqu� el JSON de service account.
+// --- CONFIGURACIÃ¯Â¿Â½N FIREBASE (PROYECTO: sustore-63266) ---
+// Nota: esta es la configuraciÃ¯Â¿Â½n pÃ¯Â¿Â½blica del SDK web. NO incluyas aquÃ¯Â¿Â½ el JSON de service account.
 const firebaseConfig = {
     apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
     authDomain: "sustore-63266.firebaseapp.com",
@@ -37,11 +37,11 @@ const db = getFirestore(app);
 const appId = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
 
-// === SEGURIDAD: Email de Super Admin ofuscado (m�ltiples capaís) ===
+// === SEGURIDAD: Email de Super Admin ofuscado (mÃ¯Â¿Â½ltiples capaÃƒÂ­s) ===
 const _sa = ['bGF1dGFyb2NvcmF6emE2M0BnbWFpbC5jb20=']; // Base64
 const SUPER_ADMIN_EMAIL = (() => { try { return atob(_sa[0]); } catch (e) { return ''; } })();
 
-// === SEGURIDAD: Sistema Anti-Manipulaci�n Avanzado ===
+// === SEGURIDAD: Sistema Anti-ManipulaciÃ¯Â¿Â½n Avanzado ===
 const SecurityManager = {
     sessionToken: null,
     loginAttempts: {},
@@ -49,26 +49,26 @@ const SecurityManager = {
     lockoutTime: 300000, // 5 minutos
     integrityChecks: {},
 
-    // Salt din�mico basado en timestamp (m�s seguro que salt fijo)
+    // Salt dinÃ¯Â¿Â½mico basado en timestamp (mÃ¯Â¿Â½s seguro que salt fijo)
     _generateSalt() {
         const base = 'tienda_secure_2024';
-        const timestamp = Math.floor(Date.now() / 86400000); // Cambia cada d�a
+        const timestamp = Math.floor(Date.now() / 86400000); // Cambia cada dÃ¯Â¿Â½a
         return base + '_' + timestamp;
     },
 
-    // Hash seguro para contrase�as (SHA-256 con salt din�mico)
-    async hashPassword(paíssword) {
+    // Hash seguro para contraseñas (SHA-256 con salt dinÃ¯Â¿Â½mico)
+    async hashPassword(password) {
         const encoder = new TextEncoder();
         const salt = this._generateSalt();
-        const data = encoder.encode(paíssword + salt);
+        const data = encoder.encode(password + salt);
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     },
 
-    // Verificar contrase�a hasheada
-    async verifyPassword(paíssword, hash) {
-        const inputHash = await this.hashPassword(paíssword);
+    // Verificar contraseña hasheada
+    async verifyPassword(password, hash) {
+        const inputHash = await this.hashPassword(password);
         return inputHash === hash;
     },
 
@@ -115,13 +115,13 @@ const SecurityManager = {
         }
     },
 
-    // Limpiar intentos despu�s de login exitoso
+    // Limpiar intentos despuÃ¯Â¿Â½s de login exitoso
     clearAttempts(email) {
         const key = this._hashKey(email.toLowerCase());
         delete this.loginAttempts[key];
     },
 
-    // Generar token de sesi�n con firma criptogr�fica
+    // Generar token de sesiÃ¯Â¿Â½n con firma criptogrÃ¯Â¿Â½fica
     generateSessionToken(userId) {
         const payload = {
             uid: userId,
@@ -149,7 +149,7 @@ const SecurityManager = {
         return Math.abs(hash).toString(36);
     },
 
-    // Verificar token de sesi�n con validaci�n de expiraci�n
+    // Verificar token de sesiÃ¯Â¿Â½n con validaciÃ¯Â¿Â½n de expiraciÃ¯Â¿Â½n
     verifySession() {
         const stored = sessionStorage.getItem('_st');
         if (!stored || stored !== this.sessionToken) return false;
@@ -157,7 +157,7 @@ const SecurityManager = {
         try {
             const [payloadB64] = stored.split('.');
             const payload = JSON.parse(atob(payloadB64));
-            // Verificar expiraci�n
+            // Verificar expiraciÃ¯Â¿Â½n
             if (payload.exp && payload.exp < Date.now()) {
                 this.invalidateSession();
                 return false;
@@ -168,20 +168,20 @@ const SecurityManager = {
         }
     },
 
-    // Invalidar sesi�n
+    // Invalidar sesiÃ¯Â¿Â½n
     invalidateSession() {
         this.sessionToken = null;
         sessionStorage.removeItem('_st');
         localStorage.removeItem('sustore_user_data');
     },
 
-    // Detectar manipulaci�n de React DevTools
+    // Detectar manipulaciÃ¯Â¿Â½n de React DevTools
     detectManipulation() {
         const stored = localStorage.getItem('sustore_user_data');
         if (stored) {
             try {
                 const userData = JSON.parse(stored);
-                // Verificar estructura v�lida
+                // Verificar estructura vÃ¯Â¿Â½lida
                 if (!userData.id || userData.id.length < 10 ||
                     !userData.email || !userData.email.includes('@')) {
                     console.warn('[Security] Invalid session data detected');
@@ -203,12 +203,12 @@ const SecurityManager = {
         return false;
     },
 
-    // Validar claim de admin (requiere verificaci�n del servidor)
+    // Validar claim de admin (requiere verificaciÃ¯Â¿Â½n del servidor)
     _validateAdminClaim(userData) {
         // 1. Permitir siempre al Super Admin (Hardcoded)
         if (userData.email === SUPER_ADMIN_EMAIL) return true;
 
-        // 2. Permitir si tiene la flag de verificaci�n (seteada al loguear/cargar desde DB)
+        // 2. Permitir si tiene la flag de verificaciÃ¯Â¿Â½n (seteada al loguear/cargar desde DB)
         return userData._adminVerified === true;
     },
 
@@ -231,15 +231,15 @@ const SecurityManager = {
         return emailRegex.test(email) && email.length <= 254;
     },
 
-    // Validar fortaleza de contrase�a
-    isStrongPassword(paíssword) {
-        return paíssword.length >= 8 &&
-            /[A-Z]/.test(paíssword) &&
-            /[a-z]/.test(paíssword) &&
-            /[0-9]/.test(paíssword);
+    // Validar fortaleza de contraseña
+    isStrongPassword(password) {
+        return password.length >= 8 &&
+            /[A-Z]/.test(password) &&
+            /[a-z]/.test(password) &&
+            /[0-9]/.test(password);
     },
 
-    // Protecci�n contra ataques de timing
+    // ProtecciÃ¯Â¿Â½n contra ataques de timing
     async secureCompare(a, b) {
         if (typeof a !== 'string' || typeof b !== 'string') return false;
         const encoder = new TextEncoder();
@@ -254,15 +254,15 @@ const SecurityManager = {
         return result === 0;
     },
 
-    // Bloquear acceso a consola en producci�n (anti-debugging)
+    // Bloquear acceso a consola en producciÃ¯Â¿Â½n (anti-debugging)
     protectConsole() {
         if (window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
-            // Desactivar console.log en producci�n para no exponer info
+            // Desactivar console.log en producciÃ¯Â¿Â½n para no exponer info
             const noop = () => { };
             ['log', 'debug', 'info', 'table', 'dir'].forEach(method => {
                 console[method] = noop;
             });
-            // Mantener warn y error para debugging cr�tico
+            // Mantener warn y error para debugging crÃ¯Â¿Â½tico
         }
     },
 
@@ -277,7 +277,7 @@ const SecurityManager = {
                 // console.warn('[Security] DevTools detected');
             }
         };
-        // Verificar peri�dicamente
+        // Verificar periÃ¯Â¿Â½dicamente
         setInterval(check, 5000);
     },
 
@@ -298,14 +298,14 @@ const SecurityManager = {
 // Inicializar protecciones de seguridad
 SecurityManager.init();
 
-// Configuración por defecto
+// ConfiguraciÃƒÂ³n por defecto
 const defaultSettings = {
     // --- Identidad de la Tienda ---
     storeName: "Tienda Online",
     primaryColor: "#f97316",
     currency: "$",
 
-    // --- Administraci�n ---
+    // --- AdministraciÃ¯Â¿Â½n ---
     admins: SUPER_ADMIN_EMAIL,
     team: [{ email: SUPER_ADMIN_EMAIL, role: "admin", name: "Administrador" }],
 
@@ -318,22 +318,22 @@ const defaultSettings = {
     showFloatingWhatsapp: false,
     showInstagram: false,
 
-    // --- Im�genes ---
+    // --- ImÃ¯Â¿Â½genes ---
     logoUrl: "",
     heroImages: [], // Array de { url, linkedProductId?, linkedPromoId? }
     heroCarouselInterval: 5000, // Intervalo en ms
     carouselHeight: "slim", // default to slim as requested by user ("mucho mas chico")
 
-    // --- Configuración de Tienda ---
+    // --- ConfiguraciÃƒÂ³n de Tienda ---
     markupPercentage: 0,
     announcementMessage: "",
     categories: ["General"],
-    aboutUsText: "Bienvenido a nuestra tienda. Ofrecemos productos de calidad con env�o a todo el pa�s.",
+    aboutUsText: "Bienvenido a nuestra tienda. Ofrecemos productos de calidad con envÃ¯Â¿Â½o a todo el paÃ¯Â¿Â½s.",
 
     // --- SEO (Search Engine Optimization) ---
     seoTitle: "",
-    seoDescription: "Tu tienda online de confianza. Calidad y vanguardia en cada producto. Env�os a todo el pa�s.",
-    seoKeywords: "tienda online, productos, comprar, env�os",
+    seoDescription: "Tu tienda online de confianza. Calidad y vanguardia en cada producto. EnvÃ¯Â¿Â½os a todo el paÃ¯Â¿Â½s.",
+    seoKeywords: "tienda online, productos, comprar, envÃ¯Â¿Â½os",
     seoAuthor: "",
     seoUrl: "",
     seoImage: "",
@@ -362,7 +362,7 @@ const LazyImage = ({ src, alt, className, placeholder = 'data:image/svg+xml;base
     );
 };
 
-// Componente de Notificaci�n (Toast)
+// Componente de NotificaciÃ¯Â¿Â½n (Toast)
 const Toast = ({ message, type, onClose }) => {
     let containerClass = "fixed top-24 right-4 z-[9999] flex items-center gap-4 p-5 rounded-2xl border-l-4 backdrop-blur-xl animate-fade-up shadow-2xl transition-all duration-300";
     let iconContainerClass = "p-2 rounded-full";
@@ -406,7 +406,7 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-// Componente Modal de Confirmaci�n
+// Componente Modal de ConfirmaciÃ¯Â¿Â½n
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDangerous = false, darkMode }) => {
     if (!isOpen) return null;
     return (
@@ -454,7 +454,7 @@ class ErrorBoundary extends React.Component {
     }
 }
 
-// Componente Auxiliar para Bot�n de Agregar R�pido
+// Componente Auxiliar para BotÃ¯Â¿Â½n de Agregar RÃ¯Â¿Â½pido
 const QuickAddButton = ({ product, onAdd, darkMode }) => {
     const [qty, setQty] = useState(1);
     const [added, setAdded] = useState(false);
@@ -517,7 +517,7 @@ const AccessDenied = ({ onBack, darkMode }) => (
                 <Shield className="w-10 h-10" />
             </div>
             <h1 className={`text-3xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>ACCESO DENEGADO</h1>
-            <p className={`mb-8 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>No tienes los permisos necesarios para acceder al Panel de Administraci�n.</p>
+            <p className={`mb-8 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>No tienes los permisos necesarios para acceder al Panel de AdministraciÃ¯Â¿Â½n.</p>
             <button onClick={onBack} className={`px-8 py-3 rounded-xl font-bold transition flex items-center gap-2 mx-auto border ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'}`}>
                 <ArrowLeft className="w-4 h-4" /> Volver a la Tienda
             </button>
@@ -527,7 +527,7 @@ const AccessDenied = ({ onBack, darkMode }) => (
 
 // --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
 const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode }) => {
-    // Clases din�micas basadas en el tema
+    // Clases dinÃ¯Â¿Â½micas basadas en el tema
     const cardBg = darkMode ? 'bg-[#0a0a0a]' : 'bg-white';
     const cardBorder = darkMode ? 'border-slate-800/50' : 'border-slate-200';
     const cardHoverBorder = darkMode ? 'hover:border-orange-500/50' : 'hover:border-orange-400';
@@ -559,7 +559,7 @@ const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProd
                 ) : null}
 
 
-                {/* Bot�n Ver (Visible en Mobile/Touch) */}
+                {/* BotÃ¯Â¿Â½n Ver (Visible en Mobile/Touch) */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
@@ -608,7 +608,7 @@ const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProd
                     </span>
                 )}
 
-                {/* Bot�n Favorito (Funcional) */}
+                {/* BotÃ¯Â¿Â½n Favorito (Funcional) */}
                 <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
                     className={`absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'}`}
@@ -619,16 +619,16 @@ const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProd
 
             </div>
 
-            {/* Información */}
+            {/* InformaciÃƒÂ³n */}
             <div className={`p-3 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
                 <div className="flex justify-between items-start mb-2 sm:mb-3">
                     <p className={`text-[9px] sm:text-[10px] text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
-                        {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categor�a') : (p.category || 'Sin categor�a')}
+                        {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categorÃ¯Â¿Â½a') : (p.category || 'Sin categorÃ¯Â¿Â½a')}
                     </p>
                     {/* Estado de Stock */}
                     {settings?.showStockCount !== false && p.stock > 0 && p.stock <= (settings?.lowStockThreshold || 5) ? (
                         <span className="text-[9px] sm:text-[10px] text-red-500 font-bold flex items-center gap-1">
-                            <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> �ltimos {p.stock}
+                            <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Ã¯Â¿Â½ltimos {p.stock}
                         </span>
                     ) : null}
                 </div>
@@ -727,7 +727,7 @@ const BotProductCard = ({ product, onAdd, darkMode }) => {
 
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
 const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, coupons, darkMode }) => {
-    // 1. Verificaci�n de Plan - Solo disponible en Plan Premium
+    // 1. VerificaciÃ¯Â¿Â½n de Plan - Solo disponible en Plan Premium
     if (settings?.subscriptionPlan !== 'premium') return null;
 
     const [isOpen, setIsOpen] = useState(false);
@@ -736,19 +736,19 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     const botImage = settings?.botImage || "sustia-ai-v2.jpg";
 
     const [messages, setMessages] = useState([
-        { role: 'model', text: '�Hola! Soy SustIA ??, tu asistente personal. �Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' }
+        { role: 'model', text: 'Ã¯Â¿Â½Hola! Soy SustIA ??, tu asistente personal. Ã¯Â¿Â½Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' }
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [lastContext, setLastContext] = useState(null); // Para manejar contexto (S�/No)
+    const [lastContext, setLastContext] = useState(null); // Para manejar contexto (SÃ¯Â¿Â½/No)
     const messagesEndRef = useRef(null);
 
-    // Auto-scroll al �ltimo mensaje
+    // Auto-scroll al Ã¯Â¿Â½ltimo mensaje
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
-    // --- HERRAMIENTA DE B�SQUEDA INTELIGENTE (FUZZY) ---
+    // --- HERRAMIENTA DE BÃ¯Â¿Â½SQUEDA INTELIGENTE (FUZZY) ---
     const fuzzySearch = (text, query) => {
         if (!query || typeof query !== 'string') return false;
         if (!text || typeof text !== 'string') return false;
@@ -759,7 +759,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         if (str.includes(patt)) return true; // Coincidencia exacta parcial
 
         // Coincidencia aproximada simple (para Typos)
-        // Si m�s del 70% de los caracteres est�n presentes en orden relativo
+        // Si mÃ¯Â¿Â½s del 70% de los caracteres estÃ¯Â¿Â½n presentes en orden relativo
         let matches = 0;
         let lastIndex = -1;
         for (let char of patt) {
@@ -779,31 +779,31 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
         // 0. Detectar Saludos
         if (text.match(/\b(hola|holas|buen dia|buenos dias|buenas tardes|buenas noches|buenas|hello|hi|hey|que tal|como estas|como va|todo bien)\b/)) {
-            return { text: "�Hola! ?? �En qu� puedo ayudarte hoy? Puedes pedirme buscar productos o ver ofertas." };
+            return { text: "\u00A1Hola! \uD83D\uDC4B \u00BFEn qu\u00E9 puedo ayudarte hoy? Puedes pedirme buscar productos o ver ofertas." };
         }
 
         // 0.1 Comandos de Sistema (Universal)
         if (controlPanel) {
             if (text.match(/modo\s*(?:oscuro|noche|dark)/)) {
                 controlPanel.setDarkMode(true);
-                return { text: "He activado el modo oscuro ??. �Mejor para tus ojos?" };
+                return { text: "He activado el modo oscuro \uD83C\uDF19. \u00BFMejor para tus ojos?" };
             }
             if (text.match(/modo\s*(?:claro|dia|light)/)) {
                 controlPanel.setDarkMode(false);
-                return { text: "He activado el modo claro ??." };
+                return { text: "He activado el modo claro \u2600\uFE0F." };
             }
             if (text.match(/(?:ver|abrir|ir al)\s*(?:carrito|bolsa|cesta)/)) {
                 controlPanel.openCart();
-                return { text: "Abriendo tu carrito de compras... ??" };
+                return { text: "Abriendo tu carrito de compras... \uD83D\uDED2" };
             }
         }
 
         // 0.2 Detectar Ayuda/Contacto
         if (text.match(/\b(ayuda|soporte|contacto|human|persona|asesor)\b/)) {
             if (settings?.whatsappLink) {
-                return { text: `Claro. Si necesitas asistencia personalizada con un humano ?????, escr�benos a nuestro WhatsApp: ${settings.whatsappLink} ??` };
+                return { text: `Claro. Si necesitas asistencia personalizada con un humano \uD83D\uDC64, escr\u00EDbenos a nuestro WhatsApp: ${settings.whatsappLink} \uD83D\uDCAC` };
             }
-            return { text: "Estoy dise�ado para ayudarte a encontrar productos las 24hs. ?? �Buscas algo en espec�fico?" };
+            return { text: "Estoy dise\u00F1ado para ayudarte a encontrar productos las 24hs. \uD83E\uDD16 \u00BFBuscas algo en espec\u00EDfico?" };
         }
 
         // 0.3 Detectar Promociones/Cupones
@@ -813,11 +813,11 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
             if (activeCoupons.length > 0) {
                 const couponText = activeCoupons.map(c => `?? **${c.code}** (${c.discountType === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`).join("\n");
-                return { text: `�S�! Tenemos estos cupones disponibles para ti:\n\n${couponText}\n\n��salos al finalizar tu compra! ??` };
+                return { text: `Ã¯Â¿Â½SÃ¯Â¿Â½! Tenemos estos cupones disponibles para ti:\n\n${couponText}\n\nÃ¯Â¿Â½Ã¯Â¿Â½salos al finalizar tu compra! ??` };
             } else if (productsWithDiscount > 0) {
-                return { text: `No tengo c�digos de cup�n activos ahora, �pero tenemos ${productsWithDiscount} productos con descuento especial en la tienda! ??? �Quieres verlos?` };
+                return { text: `No tengo cÃ¯Â¿Â½digos de cupÃ¯Â¿Â½n activos ahora, Ã¯Â¿Â½pero tenemos ${productsWithDiscount} productos con descuento especial en la tienda! ??? Ã¯Â¿Â½Quieres verlos?` };
             } else {
-                return { text: "Por el momento no tengo c�digos promocionales activos, pero nuestros precios son los mejores del mercado. ??" };
+                return { text: "Por el momento no tengo cÃ¯Â¿Â½digos promocionales activos, pero nuestros precios son los mejores del mercado. ??" };
             }
         }
 
@@ -828,13 +828,13 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 setLastContext(null);
                 if (ctx.type === 'suggest_cross_sell') {
                     return {
-                        text: "�Excelente! Mira estas oportunidades que seleccion� para ti: ??",
+                        text: "Ã¯Â¿Â½Excelente! Mira estas oportunidades que seleccionÃ¯Â¿Â½ para ti: ??",
                         products: ctx.data
                     };
                 }
-            } else if (text.match(/\b(no|gracias|paíso|cancelar|asi esta bien)\b/)) {
+            } else if (text.match(/\b(no|gracias|paÃƒÂ­so|cancelar|asi esta bien)\b/)) {
                 setLastContext(null);
-                return { text: "Entendido. �Necesitas ayuda con algo m�s? ??" };
+                return { text: "Entendido. Ã¯Â¿Â½Necesitas ayuda con algo mÃ¯Â¿Â½s? ??" };
             }
         }
 
@@ -866,12 +866,12 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             if (text.includes(betweenMatch[2] + ' mil') || text.includes(betweenMatch[2] + 'k')) maxPrice *= 1000;
         }
 
-        // 3. Detectar Categoría (Fuzzy)
+        // 3. Detectar CategorÃƒÂ­a (Fuzzy)
         const availableCategories = [...new Set(products.filter(p => p.category && typeof p.category === 'string').map(p => p.category))];
         const detectedCategoryVal = availableCategories.find(c => fuzzySearch(c, text) || fuzzySearch(text, c));
         const targetCategory = detectedCategoryVal ? detectedCategoryVal.toLowerCase() : null;
 
-        // 4. B�squeda y Scoring de Productos
+        // 4. BÃ¯Â¿Â½squeda y Scoring de Productos
         const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale', 'quiero', 'necesito', 'hay', 'donde', 'mas', 'menos', 'agregalo', 'agrega', 'compralo'];
         const keywords = text.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w) && isNaN(w));
 
@@ -880,7 +880,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         // Aplicar filtros de precio
         candidates = candidates.filter(p => p.basePrice >= minPrice && p.basePrice <= maxPrice);
 
-        // Filtro por categor�a detectada
+        // Filtro por categorÃ¯Â¿Â½a detectada
         if (targetCategory) {
             candidates = candidates.filter(p => p.category && p.category.toLowerCase() === targetCategory);
         }
@@ -906,14 +906,14 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             candidates.sort((a, b) => b.score - a.score);
         }
 
-        // 4.1 Recuperaci�n Contextual (Si el usuario dice "agregalo" y no hay keywords de producto)
+        // 4.1 RecuperaciÃ¯Â¿Â½n Contextual (Si el usuario dice "agregalo" y no hay keywords de producto)
         // Buscamos en el historial previo si se mostraron productos
         if (candidates.length === 0 && isBuying) {
-            // Buscar el �ltimo mensaje del modelo que tuviera productos
+            // Buscar el Ã¯Â¿Â½ltimo mensaje del modelo que tuviera productos
             // currentMessages incluye el mensaje actual del usuario al final.
             const history = [...currentMessages].reverse();
             // history[0] es el mensaje del usuario actual
-            // history[1] deber�a ser el �ltimo del modelo
+            // history[1] deberÃ¯Â¿Â½a ser el Ã¯Â¿Â½ltimo del modelo
             const lastModelMsg = history.find(m => m.role === 'model' && m.products && m.products.length > 0);
 
             if (lastModelMsg) {
@@ -932,26 +932,26 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             const deals = products.filter(p => p.discount > 0 && p.stock > 0).slice(0, 3);
             if (deals.length > 0) {
                 setLastContext({ type: 'suggest_cross_sell', data: deals });
-                return { text: "Mmm, no encontr� exactamente eso ??. �Pero te gustar�a ver nuestras ofertas del d�a? ???" };
+                return { text: "Mmm, no encontrÃ¯Â¿Â½ exactamente eso ??. Ã¯Â¿Â½Pero te gustarÃ¯Â¿Â½a ver nuestras ofertas del dÃ¯Â¿Â½a? ???" };
             }
-            // Dynamic "Smart" Suggestions
-            let suggestionText = "No encontr� nada parecido. ??";
+            // Dynamic "Smart" SugGestións
+            let sugGestiónText = "No encontrÃ¯Â¿Â½ nada parecido. ??";
 
             if (availableCategories.length > 0) {
                 // Get 3 random unique categories
                 const shuffled = availableCategories.sort(() => 0.5 - Math.random());
                 const topCats = shuffled.slice(0, 3).join(", ");
-                suggestionText = `No tengo eso por ahora. Pero mira, en esta tienda tenemos cosas de: **${topCats}**. �Te sirve algo de eso?`;
+                sugGestiónText = `No tengo eso por ahora. Pero mira, en esta tienda tenemos cosas de: **${topCats}**. Ã¯Â¿Â½Te sirve algo de eso?`;
             } else {
-                suggestionText = "No encontr� nada con ese nombre. �Quiz�s probando con otra palabra m�s simple?";
+                sugGestiónText = "No encontrÃ¯Â¿Â½ nada con ese nombre. Ã¯Â¿Â½QuizÃ¯Â¿Â½s probando con otra palabra mÃ¯Â¿Â½s simple?";
             }
 
-            return { text: suggestionText };
+            return { text: sugGestiónText };
         }
 
         const topMatches = candidates.slice(0, 5);
 
-        // Acci�n de Compra
+        // AcciÃ¯Â¿Â½n de Compra
         if (isBuying && topMatches.length > 0) {
             const best = topMatches[0];
             addToCart(best);
@@ -959,28 +959,28 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             // --- CROSS-SELLING UNIVERSAL ---
             // Buscar productos complementarios (Destacados o con Descuento que NO sean el que acaba de comprar)
             // Esto funciona para cualquier tienda
-            const suggestions = products
+            const sugGestións = products
                 .filter(p => (p.isFeatured || p.discount > 0) && p.id !== best.id && p.stock > 0)
                 .sort(() => 0.5 - Math.random()) // Mezclar
                 .slice(0, 3);
 
-            if (suggestions.length > 0) {
-                setLastContext({ type: 'suggest_cross_sell', data: suggestions });
+            if (sugGestións.length > 0) {
+                setLastContext({ type: 'suggest_cross_sell', data: sugGestións });
                 return {
-                    text: `�Listo! Agregu� **${best.name}** a tu carrito. ??\n\n�Te gustar�a ver algunos productos destacados para complementar tu compra? ??`,
+                    text: `Ã¯Â¿Â½Listo! AgreguÃ¯Â¿Â½ **${best.name}** a tu carrito. ??\n\nÃ¯Â¿Â½Te gustarÃ¯Â¿Â½a ver algunos productos destacados para complementar tu compra? ??`,
                     products: [best]
                 };
             }
 
             return {
-                text: `�Listo! Agregu� **${best.name}** a tu carrito. ?? �Algo m�s?`,
+                text: `Ã¯Â¿Â½Listo! AgreguÃ¯Â¿Â½ **${best.name}** a tu carrito. ?? Ã¯Â¿Â½Algo mÃ¯Â¿Â½s?`,
                 products: [best]
             };
         }
 
-        let msg = "Aqu� tienes algunas opciones:";
-        if (targetCategory) msg = `Encontr� esto en la categor�a ${targetCategory}:`;
-        if (isCheaper) msg = "Las opciones m�s econ�micas:";
+        let msg = "AquÃ¯Â¿Â½ tienes algunas opciones:";
+        if (targetCategory) msg = `EncontrÃ¯Â¿Â½ esto en la categorÃ¯Â¿Â½a ${targetCategory}:`;
+        if (isCheaper) msg = "Las opciones mÃ¯Â¿Â½s econÃ¯Â¿Â½micas:";
 
         return {
             text: msg,
@@ -1076,7 +1076,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                         <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
                             <input
                                 className={`flex-1 border rounded-full px-4 py-2.5 text-sm focus:border-yellow-500/50 outline-none transition ${darkMode ? 'bg-[#1a1a1a] border-white/10 text-white placeholder:text-slate-600' : 'bg-slate-100 border-slate-200 text-slate-900 placeholder:text-slate-400'}`}
-                                placeholder="Escribe aqu�..."
+                                placeholder="Escribe aquÃ¯Â¿Â½..."
                                 value={inputValue}
                                 onChange={e => setInputValue(e.target.value)}
                             />
@@ -1132,13 +1132,13 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
                     <X className="w-6 h-6" />
                 </button>
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                    <FolderPlus className="w-6 h-6 text-orange-400" /> Gestionar Categorías
+                    <FolderPlus className="w-6 h-6 text-orange-400" /> Gestiónar CategorÃƒÂ­as
                 </h3>
 
                 <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
                     <input
                         className="input-cyber flex-1 p-3"
-                        placeholder="Nueva categor�a..."
+                        placeholder="Nueva categorÃ¯Â¿Â½a..."
                         value={catName}
                         onChange={(e) => setCatName(e.target.value)}
                         autoFocus
@@ -1161,7 +1161,7 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
                         </div>
                     ))}
                     {categories.length === 0 && (
-                        <p className="text-center text-slate-600 italic py-4">No hay categor�as definidas</p>
+                        <p className="text-center text-slate-600 italic py-4">No hay categorÃ¯Â¿Â½as definidas</p>
                     )}
                 </div>
             </div>
@@ -1200,14 +1200,14 @@ const SmoothScroll = ({ enabled = true }) => {
     return null;
 };
 
-// --- APLICACI�N PRINCIPAL ---
+// --- APLICACIÃ¯Â¿Â½N PRINCIPAL ---
 function App() {
-    // Versi�n del Sistema para Auto-Updates
+    // VersiÃ¯Â¿Â½n del Sistema para Auto-Updates
     const APP_VERSION = '3.0.0';
 
-    // --- GESTI�N DE ESTADO (EXPANDIDA) ---
+    // --- GESTIÃ¯Â¿Â½N DE ESTADO (EXPANDIDA) ---
 
-    // Navegaci�n y UI
+    // NavegaciÃ¯Â¿Â½n y UI
     const [view, setView] = useState('store'); // store, cart, checkout, profile, login, register, admin, about, guide
     const [adminTab, setAdminTab] = useState('dashboard');
     const [expenses, setExpenses] = useState([]);
@@ -1223,7 +1223,7 @@ function App() {
         } catch (e) { return false; }
     });
 
-    // Usuarios y Autenticaci�n
+    // Usuarios y Autenticación
     const [currentUser, setCurrentUser] = useState(() => {
         try {
             const saved = localStorage.getItem('sustore_user_data');
@@ -1231,8 +1231,8 @@ function App() {
 
             const userData = JSON.parse(saved);
 
-            // Validar que el usuario tenga los campos m�nimos requeridos
-            // Si no tiene id, email o name, es un usuario inv�lido o corrupto
+            // Validar que el usuario tenga los campos mínimos requeridos
+            // Si no tiene id, email o name, es un usuario invÃ¯Â¿Â½lido o corrupto
             if (!userData || !userData.id || !userData.email || !userData.name) {
                 // Limpiar datos corruptos o incompletos
                 localStorage.removeItem('sustore_user_data');
@@ -1275,7 +1275,7 @@ function App() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
 
-    // --- DRAG TO SCROLL (Categorías) ---
+    // --- DRAG TO SCROLL (CategorÃƒÂ­as) ---
     const categoriesScrollRef = useRef(null);
     const [isDraggingCategories, setIsDraggingCategories] = useState(false);
     const [startXCategories, setStartXCategories] = useState(0);
@@ -1321,10 +1321,10 @@ function App() {
     };
 
 
-    // Formularios de Autenticaci�n
+    // Formularios de Autenticación
     const [authData, setAuthData] = useState({
         email: '',
-        paíssword: '',
+        password: '',
         name: '',
         username: '',
         dni: '',
@@ -1345,7 +1345,7 @@ function App() {
     // Estado para Carrito de Compras (Pedidos Mayoristas)
     const [purchaseCart, setPurchaseCart] = useState([]);
 
-    // Estado para Modal de Crear Categoría
+    // Estado para Modal de Crear CategorÃƒÂ­a
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
     // Estado para Detalle de Producto / Promo (Zoom)
@@ -1366,7 +1366,7 @@ function App() {
         });
     };
 
-    // --- FUNCI�N PARA MANEJAR CAMBIO DE PLAN (DOWNGRADE) ---
+    // --- FUNCIÃ¯Â¿Â½N PARA MANEJAR CAMBIO DE PLAN (DOWNGRADE) ---
     const getPlanLimit = (plan) => {
         switch (plan) {
             case 'premium': return Infinity;
@@ -1385,29 +1385,29 @@ function App() {
         const currentLimit = getPlanLimit(currentPlan);
         const newLimit = getPlanLimit(newPlan);
 
-        // Si es upgrade (m�s productos permitidos), simplemente cambiar
+        // Si es upgrade (mÃ¯Â¿Â½s productos permitidos), simplemente cambiar
         if (newLimit >= currentLimit) {
             setSettings({ ...settings, subscriptionPlan: newPlan });
-            showToast(`�Plan actualizado a ${newPlan === 'premium' ? 'Premium' : newPlan === 'business' ? 'Negocio' : 'Emprendedor'}!`, 'success');
+            showToast(`Ã¯Â¿Â½Plan actualizado a ${newPlan === 'premium' ? 'Premium' : newPlan === 'business' ? 'Negocio' : 'Emprendedor'}!`, 'success');
             return;
         }
 
-        // Es un DOWNGRADE - verificar l�mites
+        // Es un DOWNGRADE - verificar lÃ¯Â¿Â½mites
         const activeProducts = products.filter(p => p.isActive !== false);
         const productsToDeactivate = [];
         const couponsToDeactivate = [];
 
-        // Si hay m�s productos activos que el nuevo l�mite
+        // Si hay mÃ¯Â¿Â½s productos activos que el nuevo lÃ¯Â¿Â½mite
         if (activeProducts.length > newLimit) {
-            // Ordenar por ventas (m�s vendidos quedan activos) o por fecha de creaci�n
+            // Ordenar por ventas (mÃ¯Â¿Â½s vendidos quedan activos) o por fecha de creaciÃ¯Â¿Â½n
             const sortedProducts = [...activeProducts].sort((a, b) => {
-                // Priorizar productos m�s vendidos
+                // Priorizar productos mÃ¯Â¿Â½s vendidos
                 const salesA = orders.filter(o => o.items?.some(i => i.productId === a.id)).length;
                 const salesB = orders.filter(o => o.items?.some(i => i.productId === b.id)).length;
-                return salesB - salesA; // M�s vendidos primero
+                return salesB - salesA; // MÃ¯Â¿Â½s vendidos primero
             });
 
-            // Los productos despu�s del l�mite se desactivan
+            // Los productos despuÃ¯Â¿Â½s del lÃ¯Â¿Â½mite se desactivan
             for (let i = newLimit; i < sortedProducts.length; i++) {
                 productsToDeactivate.push(sortedProducts[i]);
             }
@@ -1419,17 +1419,17 @@ function App() {
             couponsToDeactivate.push(...activeCoupons);
         }
 
-        // Si hay productos/cupones a desactivar, mostrar confirmaci�n
+        // Si hay productos/cupones a desactivar, mostrar confirmaciÃ¯Â¿Â½n
         if (productsToDeactivate.length > 0 || couponsToDeactivate.length > 0) {
             const message = `
-                ${productsToDeactivate.length > 0 ? `� ${productsToDeactivate.length} producto(s) ser�n desactivados (se conservan los ${newLimit} m�s vendidos)\n` : ''}
-                ${couponsToDeactivate.length > 0 ? `� ${couponsToDeactivate.length} cup�n(es) ser�n desactivados (el plan ${newPlan === 'entrepreneur' ? 'Emprendedor' : ''} no incluye cupones)\n` : ''}
+                ${productsToDeactivate.length > 0 ? `Ã¯Â¿Â½ ${productsToDeactivate.length} producto(s) serÃ¯Â¿Â½n desactivados (se conservan los ${newLimit} mÃ¯Â¿Â½s vendidos)\n` : ''}
+                ${couponsToDeactivate.length > 0 ? `Ã¯Â¿Â½ ${couponsToDeactivate.length} cupÃ¯Â¿Â½n(es) serÃ¯Â¿Â½n desactivados (el plan ${newPlan === 'entrepreneur' ? 'Emprendedor' : ''} no incluye cupones)\n` : ''}
                 
-                Los productos y cupones NO se eliminar�n, solo se desactivar�n. Podr�s reactivarlos manualmente si mejoras tu plan.
+                Los productos y cupones NO se eliminarÃ¯Â¿Â½n, solo se desactivarÃ¯Â¿Â½n. PodrÃ¯Â¿Â½s reactivarlos manualmente si mejoras tu plan.
             `;
 
             openConfirm(
-                '?? Cambio de Plan - Atenci�n',
+                '?? Cambio de Plan - AtenciÃ¯Â¿Â½n',
                 message,
                 async () => {
                     try {
@@ -1463,7 +1463,7 @@ function App() {
                             newPlan: newPlan
                         });
 
-                        showToast(`Plan cambiado. ${productsToDeactivate.length} producto(s) y ${couponsToDeactivate.length} cup�n(es) fueron desactivados.`, 'warning');
+                        showToast(`Plan cambiado. ${productsToDeactivate.length} producto(s) y ${couponsToDeactivate.length} cupÃ¯Â¿Â½n(es) fueron desactivados.`, 'warning');
                     } catch (error) {
                         console.error('Error al cambiar de plan:', error);
                         showToast('Error al cambiar de plan', 'error');
@@ -1477,14 +1477,14 @@ function App() {
         }
     };
 
-    // Funci�n para reactivar un producto manualmente (si mejora el plan)
+    // FunciÃ¯Â¿Â½n para reactivar un producto manualmente (si mejora el plan)
     const reactivateProduct = async (productId) => {
         const currentPlan = settings?.subscriptionPlan || 'entrepreneur';
         const limit = getPlanLimit(currentPlan);
         const activeCount = products.filter(p => p.isActive !== false).length;
 
         if (activeCount >= limit) {
-            showToast(`Has alcanzado el l�mite de ${limit} productos de tu plan. Mejora tu plan o desactiva otro producto primero.`, 'warning');
+            showToast(`Has alcanzado el lÃ¯Â¿Â½mite de ${limit} productos de tu plan. Mejora tu plan o desactiva otro producto primero.`, 'warning');
             return;
         }
 
@@ -1501,7 +1501,7 @@ function App() {
         }
     };
 
-    // Funci�n para desactivar un producto manualmente
+    // FunciÃ¯Â¿Â½n para desactivar un producto manualmente
     const deactivateProduct = async (productId) => {
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', productId), {
@@ -1531,14 +1531,14 @@ function App() {
 
 
 
-    // --- ESTADOS DE ADMINISTRACI�N (DETALLADOS) ---
+    // --- ESTADOS DE ADMINISTRACIÃ¯Â¿Â½N (DETALLADOS) ---
 
-    // Gesti�n de Productos
+    // GestiÃ¯Â¿Â½n de Productos
     const [newProduct, setNewProduct] = useState({
         name: '',
         basePrice: '',
         stock: '',
-        categories: [], // Cambio: Ahora es un array para m�ltiples categor�as
+        categories: [], // Cambio: Ahora es un array para mÃ¯Â¿Â½ltiples categorÃ¯Â¿Â½as
         image: '',
         description: '',
         discount: 0,
@@ -1548,7 +1548,7 @@ function App() {
     const [showProductForm, setShowProductForm] = useState(false);
     const [settingsTab, setSettingsTab] = useState('identity'); // identity, features, legal, advanced, subscription
 
-    // Gesti�n de Promos
+    // GestiÃ¯Â¿Â½n de Promos
     const [newPromo, setNewPromo] = useState({
         name: '',
         price: '',
@@ -1563,7 +1563,7 @@ function App() {
     const [isEditingPromo, setIsEditingPromo] = useState(false);
     const [editingPromoId, setEditingPromoId] = useState(null);
 
-    // Gesti�n Avanzada de Cupones (Restaurada la complejidad)
+    // GestiÃ¯Â¿Â½n Avanzada de Cupones (Restaurada la complejidad)
     const [newCoupon, setNewCoupon] = useState({
         code: '',
         type: 'percentage', // percentage, fixed
@@ -1572,7 +1572,7 @@ function App() {
         maxDiscount: 0,
         expirationDate: '',
         targetType: 'global', // global, specific_user, specific_email
-        targetUser: '', // username o email espec�fico
+        targetUser: '', // username o email especÃ¯Â¿Â½fico
         usageLimit: '', // Limite total de usos
         perUserLimit: 1, // Limite por usuario
         isActive: true
@@ -1581,10 +1581,10 @@ function App() {
 
 
 
-    // Estado para EDICI�N DE COMPRAS
+    // Estado para EDICIÃ¯Â¿Â½N DE COMPRAS
     const [editingPurchase, setEditingPurchase] = useState(null);
 
-    // Configuración y Equipo
+    // ConfiguraciÃƒÂ³n y Equipo
     const [aboutText, setAboutText] = useState('');
 
     const [newCategory, setNewCategory] = useState('');
@@ -1593,7 +1593,7 @@ function App() {
     // Estado para Detalle de Pedido (Modal)
     const [selectedOrder, setSelectedOrder] = useState(null);
 
-    // Estados para Dashboard Avanzado (Venta Manual, Anal�ticas, Producto Menos Vendido)
+    // Estados para Dashboard Avanzado (Venta Manual, AnalÃ¯Â¿Â½ticas, Producto Menos Vendido)
     const [showManualSaleModal, setShowManualSaleModal] = useState(false);
     const [metricsDetail, setMetricsDetail] = useState(null); // { type: 'revenue' | 'net_income' }
     const [showLeastSold, setShowLeastSold] = useState(false);
@@ -1608,23 +1608,23 @@ function App() {
         notes: 'Venta presencial'
     });
 
-    // --- NUEVOS ESTADOS PARA GESTI�N DE USUARIOS (CARRITO, PASS Y EDICI�N) ---
+    // --- NUEVOS ESTADOS PARA GESTIÃ¯Â¿Â½N DE USUARIOS (CARRITO, PASS Y EDICIÃ¯Â¿Â½N) ---
     const [viewUserCart, setViewUserCart] = useState(null); // Usuario seleccionado para ver carrito
-    const [userPassModal, setUserPassModal] = useState(null); // Usuario a cambiar contrase�a
+    const [userPassModal, setUserPassModal] = useState(null); // Usuario a cambiar contraseña
     const [viewUserEdit, setViewUserEdit] = useState(null); // Usuario a editar perfil
     const [newAdminPassword, setNewAdminPassword] = useState('');
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('all');
 
-    // Estado para Modal de Planes (cuando hacen clic en el overlay de restricci�n)
+    // Estado para Modal de Planes (cuando hacen clic en el overlay de restricciÃ¯Â¿Â½n)
     const [showPlansModal, setShowPlansModal] = useState(false);
     const [selectedPlanOption, setSelectedPlanOption] = useState(null); // { plan: 'Emprendedor', cycle: 'Mensual', price: '$7.000' }
 
-    // Estado para Plan Downgrade - Productos/Cupones desactivados por l�mite
+    // Estado para Plan Downgrade - Productos/Cupones desactivados por lÃ¯Â¿Â½mite
     const [planDowngradeInfo, setPlanDowngradeInfo] = useState({
         showWarning: false,
-        deactivatedProducts: [], // IDs de productos desactivados por l�mite
-        deactivatedCoupons: [], // IDs de cupones desactivados por l�mite
+        deactivatedProducts: [], // IDs de productos desactivados por lÃ¯Â¿Â½mite
+        deactivatedCoupons: [], // IDs de cupones desactivados por lÃ¯Â¿Â½mite
         previousPlan: null,
         newPlan: null
     });
@@ -1721,7 +1721,7 @@ function App() {
     const showToast = (msg, type = 'info') => {
         const id = Date.now();
         setToasts(prev => {
-            // Limitar a 3 toasts simult�neos
+            // Limitar a 3 toasts simultÃ¯Â¿Â½neos
             const filtered = prev.filter(t => Date.now() - t.id < 3000);
             return [...filtered, { id, message: msg, type }];
         });
@@ -1734,18 +1734,18 @@ function App() {
         if (!email) return 'user';
         const cleanEmail = email.trim().toLowerCase();
 
-        // Super Admin Hardcodeado (Prioridad M�xima) - No depende de settings
+        // Super Admin Hardcodeado (Prioridad MÃ¯Â¿Â½xima) - No depende de settings
         if (cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) return 'admin';
 
-        // 1. Verificar currentUser.role (Prioridad sobre equipo est�tico)
+        // 1. Verificar currentUser.role (Prioridad sobre equipo estÃ¯Â¿Â½tico)
         // Esto permite promover usuarios desde el panel sin depender de settings.team
-        // Esta verificaci�n no depende de settings, solo de currentUser
+        // Esta verificaciÃ¯Â¿Â½n no depende de settings, solo de currentUser
         if (currentUser && currentUser.email && currentUser.email.trim().toLowerCase() === cleanEmail && currentUser.role && currentUser.role !== 'user') {
             return currentUser.role;
         }
 
-        // Si settings a�n no est� cargado, no podemos verificar team ni users
-        // Devolvemos 'loading' para indicar que no sabemos a�n el rol real
+        // Si settings aÃ¯Â¿Â½n no estÃ¯Â¿Â½ cargado, no podemos verificar team ni users
+        // Devolvemos 'loading' para indicar que no sabemos aÃ¯Â¿Â½n el rol real
         if (!settings || !settingsLoaded) return 'loading';
 
         // 2. Buscar en el equipo (settings.team - Fallback/Hardcoded)
@@ -1767,12 +1767,12 @@ function App() {
     const isRoleLoading = (email) => getRole(email) === 'loading';
     const hasAccess = (email) => {
         const role = getRole(email);
-        // Si el rol a�n est� cargando, no tiene acceso (se mostrar� loading)
+        // Si el rol aÃ¯Â¿Â½n estÃ¯Â¿Â½ cargando, no tiene acceso (se mostrarÃ¯Â¿Â½ loading)
         if (role === 'loading') return false;
         return role === 'admin' || role === 'editor' || role === 'employee';
     };
 
-    // --- EFECTOS DE SINCRONIZACI�N (FIREBASE) ---
+    // --- EFECTOS DE SINCRONIZACIÃ¯Â¿Â½N (FIREBASE) ---
 
     // 0. Sincronizar Dark Mode con el DOM y localStorage
     useEffect(() => {
@@ -1858,7 +1858,7 @@ function App() {
             if (snap.exists()) {
                 const data = snap.data();
                 if (data.version && data.version !== APP_VERSION) {
-                    console.log(`Nueva versi�n detectada: ${data.version}. Actualizando...`);
+                    console.log(`Nueva versiÃ¯Â¿Â½n detectada: ${data.version}. Actualizando...`);
                     window.location.reload();
                 }
             }
@@ -1867,7 +1867,7 @@ function App() {
     }, []);
     // 2. Persistencia Detallada y Session
     useEffect(() => {
-        // Solo guardar usuarios con datos v�lidos completos
+        // Solo guardar usuarios con datos vÃ¯Â¿Â½lidos completos
         if (currentUser && currentUser.id && currentUser.email && currentUser.name) {
             localStorage.setItem('sustore_user_data', JSON.stringify(currentUser));
             // Pre-llenar checkout si hay datos
@@ -1882,11 +1882,11 @@ function App() {
             // Si no hay usuario, limpiar localStorage
             localStorage.removeItem('sustore_user_data');
         }
-        // Si currentUser existe pero no tiene datos v�lidos, no guardamos nada
+        // Si currentUser existe pero no tiene datos vÃ¯Â¿Â½lidos, no guardamos nada
         // Esto evita persistir usuarios "fantasma" incompletos
     }, [currentUser]);
 
-    // 3. Inicializaci�n de Firebase Auth
+    // 3. Inicialización de Firebase Auth
     useEffect(() => {
         const initializeAuth = async () => {
             try {
@@ -1905,7 +1905,7 @@ function App() {
                         if (userDocSnap.exists()) {
                             const freshUserData = { ...userDocSnap.data(), id: userDocSnap.id };
 
-                            // Asegurar flag de verificaci�n para admins al recargar
+                            // Asegurar flag de verificaciÃ¯Â¿Â½n para admins al recargar
                             if (freshUserData.role === 'admin') {
                                 freshUserData._adminVerified = true;
                             }
@@ -1918,14 +1918,14 @@ function App() {
                     } catch (err) {
                         const errMsg = (err.message || err.toString() || '').toLowerCase();
                         if (errMsg.includes('offline') || errMsg.includes('unavailable') || errMsg.includes('network')) {
-                            console.debug("Modo offline detectado: Usando datos en cach�.");
+                            console.debug("Modo offline detectado: Usando datos en cachÃ¯Â¿Â½.");
                         } else {
                             console.warn("No se pudo refrescar usuario al inicio:", err);
                         }
                     }
                 }
             } catch (e) {
-                console.error("Error en inicializaci�n Auth:", e);
+                console.error("Error en inicializaciÃ¯Â¿Â½n Auth:", e);
             }
         };
 
@@ -1934,7 +1934,7 @@ function App() {
         // Listener de Auth State
         return onAuthStateChanged(auth, (user) => {
             setSystemUser(user);
-            // Delay reducido para transiciones m�s r�pidas
+            // Delay reducido para transiciones mÃ¯Â¿Â½s rÃ¯Â¿Â½pidas
             setTimeout(() => setIsLoading(false), 300);
         });
     }, []);
@@ -2075,8 +2075,8 @@ function App() {
             }, (error) => {
                 console.error("Error fetching products:", error);
                 if (error.code === 'permission-denied' || error.message.includes('permission')) {
-                    showToast("Error de permisos. Reiniciando sesi�n...", "warning");
-                    // Intentar recuperar sesi�n
+                    showToast("Error de permisos. Reiniciando sesiÃ¯Â¿Â½n...", "warning");
+                    // Intentar recuperar sesiÃ¯Â¿Â½n
                     setTimeout(() => {
                         auth.signOut().then(() => window.location.reload());
                     }, 2000);
@@ -2162,7 +2162,7 @@ function App() {
                 }
             }),
 
-            // Configuración Global (con Auto-Migraci�n)
+            // ConfiguraciÃƒÂ³n Global (con Auto-MigraciÃ¯Â¿Â½n)
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), async (snapshot) => {
                 // 1. Buscar si existe el documento 'config'
                 const configDoc = snapshot.docs.find(d => d.id === 'config');
@@ -2179,18 +2179,18 @@ function App() {
                     // await deleteDoc(legacyDocs[0].ref);
                 }
                 else if (legacyDocs.length > 0 && configDoc) {
-                    // CASO B: Existen ambos. Verificar si necesitamos recuperar categor�as del viejo.
+                    // CASO B: Existen ambos. Verificar si necesitamos recuperar categorÃ¯Â¿Â½as del viejo.
                     const oldData = legacyDocs[0].data();
                     const newData = configDoc.data();
 
-                    // Si el viejo tiene categor�as custom y el nuevo tiene las default, migrar categor�as
+                    // Si el viejo tiene categorÃ¯Â¿Â½as custom y el nuevo tiene las default, migrar categorÃ¯Â¿Â½as
                     const oldCats = oldData.categories || [];
                     const newCats = newData.categories || [];
 
-                    // Heur�stica simple: Si el viejo tiene m�s categor�as o diferentes, asumimos que vale la pena fusionar
-                    // O simplemente si el usuario dice "se borraron", forzamos la copia de categor�as del viejo al nuevo.
+                    // HeurÃ¯Â¿Â½stica simple: Si el viejo tiene mÃ¯Â¿Â½s categorÃ¯Â¿Â½as o diferentes, asumimos que vale la pena fusionar
+                    // O simplemente si el usuario dice "se borraron", forzamos la copia de categorÃ¯Â¿Â½as del viejo al nuevo.
                     if (oldCats.length > 0 && JSON.stringify(oldCats) !== JSON.stringify(newCats)) {
-                        // Solo migramos categor�as si parecen perdidas (esto corre en cliente, ojo con bucles)
+                        // Solo migramos categorÃ¯Â¿Â½as si parecen perdidas (esto corre en cliente, ojo con bucles)
                         // Para evitar bucles infinitos, comparamos antes de escribir.
 
                         // NOTA: Para no complicar, solo leemos del 'config' para el Estado, 
@@ -2211,7 +2211,7 @@ function App() {
                         categories: data.categories || defaultSettings.categories
                     };
 
-                    // Si estamos leyendo de un legacy, forzamos la escritura en 'config' para la pr�xima
+                    // Si estamos leyendo de un legacy, forzamos la escritura en 'config' para la prÃ¯Â¿Â½xima
                     if (effectiveDoc.id !== 'config') {
                         setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), mergedSettings);
                     }
@@ -2220,9 +2220,9 @@ function App() {
                     setSettingsLoaded(true); // Marcar que los settings ya se cargaron
                     setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
 
-                    // Si ya migramos y le�mos exitosamente, podr�amos borrar el legacy para evitar fantasmas
+                    // Si ya migramos y leÃ¯Â¿Â½mos exitosamente, podrÃ¯Â¿Â½amos borrar el legacy para evitar fantasmas
                     if (configDoc && legacyDocs.length > 0) {
-                        // MIGRACI�N DE CATEGOR�AS ESPEC�FICA (Rescate)
+                        // MIGRACIÃ¯Â¿Â½N DE CATEGORÃ¯Â¿Â½AS ESPECÃ¯Â¿Â½FICA (Rescate)
                         const legacyData = legacyDocs[0].data();
                         if (legacyData.categories && legacyData.categories.length > 0) {
                             // Si el config tiene las default y el legacy tiene custom, pisar config
@@ -2248,8 +2248,8 @@ function App() {
         return () => unsubscribeFunctions.forEach(unsub => unsub());
     }, [systemUser]);
 
-    // --- VALIDACI�N INTELIGENTE DEL CARRITO ---
-    // Elimina autom�ticamente productos que ya no existen o no tienen stock
+    // --- VALIDACIÃ¯Â¿Â½N INTELIGENTE DEL CARRITO ---
+    // Elimina automÃ¯Â¿Â½ticamente productos que ya no existen o no tienen stock
     useEffect(() => {
         // Solo ejecutar si hay productos cargados y un usuario con carrito
         if (products.length > 0 && cart.length > 0 && currentUser) {
@@ -2260,21 +2260,21 @@ function App() {
                 const itemId = String(item.product.id).trim();
                 const productInStore = products.find(p => String(p.id).trim() === itemId);
 
-                // 1. Verificar si el producto a�n existe (Borrado f�sico)
+                // 1. Verificar si el producto aÃ¯Â¿Â½n existe (Borrado fÃ¯Â¿Â½sico)
                 if (!productInStore) {
                     hasChanges = true;
                     removedItems.push(`${item.product.name} (Producto eliminado)`);
                     return false;
                 }
 
-                // 2. Verificar si est� Activo (Borrado l�gico / Pausado)
+                // 2. Verificar si estÃ¯Â¿Â½ Activo (Borrado lÃ¯Â¿Â½gico / Pausado)
                 if (productInStore.isActive === false) {
                     hasChanges = true;
                     removedItems.push(`${item.product.name} (No disponible actualmente)`);
                     return false;
                 }
 
-                // 3. Validaci�n Especial para Promos: Verificar sus componentes
+                // 3. ValidaciÃ¯Â¿Â½n Especial para Promos: Verificar sus componentes
                 if (productInStore.isPromo && productInStore.items) {
                     const componentsValid = productInStore.items.every(comp => {
                         const compProduct = products.find(p => String(p.id).trim() === String(comp.productId).trim());
@@ -2291,7 +2291,7 @@ function App() {
 
                 // 4. Verificar Stock
                 const hasStock = productInStore.stock > 0;
-                // Si es un producto "infinito" (servicios digitales) podr�amos ignorar esto, pero asumimos fisico
+                // Si es un producto "infinito" (servicios digitales) podrÃ¯Â¿Â½amos ignorar esto, pero asumimos fisico
                 if (!hasStock) {
                     hasChanges = true;
                     removedItems.push(`${item.product.name} (Sin Stock)`);
@@ -2303,17 +2303,17 @@ function App() {
                 // Actualizar datos del producto (precio actualizado, imagen nueva) siempre
                 const productInStore = products.find(p => p.id === item.product.id);
 
-                // Si cambi� el precio, detectamos el cambio para guardar en DB
+                // Si cambiÃ¯Â¿Â½ el precio, detectamos el cambio para guardar en DB
                 if (productInStore && ((item.product?.basePrice ?? 0) !== productInStore.basePrice || (item.product?.discount ?? 0) !== productInStore.discount)) {
                     hasChanges = true;
                 }
 
-                // Usar siempre la versi�n m�s fresca del producto
+                // Usar siempre la versiÃ¯Â¿Â½n mÃ¯Â¿Â½s fresca del producto
                 return { ...item, product: productInStore || item.product };
             });
 
             if (hasChanges) {
-                console.log("?? Carrito actualizado autom�ticamente:", removedItems);
+                console.log("?? Carrito actualizado automÃ¯Â¿Â½ticamente:", removedItems);
 
                 // Actualizar estado local
                 setCart(validatedCart);
@@ -2325,19 +2325,19 @@ function App() {
                 }, { merge: true });
 
                 if (removedItems.length > 0) {
-                    showToast(`Tu carrito se actualiz�: ${removedItems.join(', ')}`, 'info');
+                    showToast(`Tu carrito se actualizÃ¯Â¿Â½: ${removedItems.join(', ')}`, 'info');
                 }
             }
         }
     }, [products, currentUser, cart]); // Se ejecuta cuando productos, usuario o EL CARRITO cambian
 
-    // --- EFECTO VISUAL: SEO, FAVICON Y T�TULO DIN�MICO ---
+    // --- EFECTO VISUAL: SEO, FAVICON Y TÃ¯Â¿Â½TULO DINÃ¯Â¿Â½MICO ---
 
     const lastSavedSettingsRef = useRef(null);
 
-    // Actualiza todas las meta tags de SEO seg�n la configuraci�n de la tienda
+    // Actualiza todas las meta tags de SEO segÃ¯Â¿Â½n la configuraciÃ¯Â¿Â½n de la tienda
     useEffect(() => {
-        // IMPORTANTE: Esperar a que la configuraci�n cargue realmente para evitar "parpadeo" del logo default
+        // IMPORTANTE: Esperar a que la configuraciÃ¯Â¿Â½n cargue realmente para evitar "parpadeo" del logo default
         if (!settingsLoaded || !settings) return;
 
         const currentSettingsStr = JSON.stringify(settings);
@@ -2385,7 +2385,7 @@ function App() {
             }
         };
 
-        // 1. T�tulo de la Pesta�a
+        // 1. TÃ¯Â¿Â½tulo de la PestaÃ¯Â¿Â½a
         const pageTitle = settings.seoTitle || (settings.storeName ? `${settings.storeName} - Tienda Online` : 'Tienda Online');
         document.title = pageTitle;
 
@@ -2394,7 +2394,7 @@ function App() {
         updateMetaTagById('meta-description', description);
 
         // 3. Meta Keywords
-        const keywords = settings.seoKeywords || `${settings.storeName || 'tienda'}, productos, comprar, env�os`;
+        const keywords = settings.seoKeywords || `${settings.storeName || 'tienda'}, productos, comprar, envÃ¯Â¿Â½os`;
         updateMetaTagById('meta-keywords', keywords);
 
         // 4. Meta Author
@@ -2433,11 +2433,11 @@ function App() {
             updateMetaTagById('twitter-image', ogImage);
         }
 
-        // 10. Favicon (Icono de Pesta�a) - Auto Circular
+        // 10. Favicon (Icono de PestaÃ¯Â¿Â½a) - Auto Circular
         const link = document.getElementById('dynamic-favicon') || document.querySelector("link[rel*='icon']");
         if (link) {
             if (settings.logoUrl) {
-                // Intentar recortar la imagen en c�rculo para el favicon
+                // Intentar recortar la imagen en cÃ¯Â¿Â½rculo para el favicon
                 const img = new Image();
                 img.crossOrigin = 'Anonymous';
                 img.onload = () => {
@@ -2446,7 +2446,7 @@ function App() {
                         canvas.width = 64;
                         canvas.height = 64;
                         const ctx = canvas.getContext('2d');
-                        // Crear c�rculo
+                        // Crear cÃ¯Â¿Â½rculo
                         ctx.beginPath();
                         ctx.arc(32, 32, 32, 0, Math.PI * 2);
                         ctx.closePath();
@@ -2474,7 +2474,7 @@ function App() {
 
     // --- HOOKS ADICIONALES (Notificaciones, Hero, Mercado Pago) ---
 
-    // 1. Auto-correcci�n de m�todo de pago
+    // 1. Auto-correcciÃ¯Â¿Â½n de método de pago
     useEffect(() => {
         if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
             showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
@@ -2538,7 +2538,7 @@ function App() {
                 }
 
                 const newOrdersCount = currentCount - lastViewedCount;
-                showToast(`🔔 ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`, 'info');
+                showToast(`Ã°Å¸â€â€ ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`, 'info');
                 lastNotifiedCountRef.current = currentCount;
             }
         }
@@ -2572,14 +2572,14 @@ function App() {
         return () => clearInterval(interval);
     }, [settings?.heroImages, settings?.heroUrl, settings?.heroCarouselInterval]);
 
-    // 6. Inicializaci�n Mercado Pago Brick
+    // 6. Inicialización Mercado Pago Brick
     useEffect(() => {
         const isCheckoutView = view === 'checkout';
         const isMP = checkoutData.paymentChoice === 'Tarjeta';
 
         if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
             if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
-                showToast("Por favor complet� tus datos personales antes de pagar con tarjeta.", "warning");
+                showToast("Por favor completÃ¯Â¿Â½ tus datos personales antes de pagar con tarjeta.", "warning");
                 setView('profile');
                 return;
             }
@@ -2597,14 +2597,14 @@ function App() {
                     if (attempts >= maxAttempts) {
                         clearInterval(pollContainer);
                         console.error('? Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
-                        showToast('Error cargando el formulario de pago. Por favor recarga la p�gina.', 'error');
+                        showToast('Error cargando el formulario de pago. Por favor recarga la pÃ¯Â¿Â½gina.', 'error');
                     }
                 }
             }, 100);
 
             return () => clearInterval(pollContainer);
         } else if (mpBrickController && (!isCheckoutView || !isMP)) {
-            console.log('Sweep: Limpiando Brick por cambio de vista o m�todo.');
+            console.log('Sweep: Limpiando Brick por cambio de vista o método.');
             try {
                 mpBrickController.unmount();
             } catch (e) { }
@@ -2614,10 +2614,10 @@ function App() {
     }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
 
-    // ?? [PAUSA POR SEGURIDAD] - El c�digo contin�a con la l�gica expandida. Escribe "continuar" para la siguiente parte.
-    // --- L�GICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
+    // ?? [PAUSA POR SEGURIDAD] - El cÃ¯Â¿Â½digo continÃ¯Â¿Â½a con la lÃ¯Â¿Â½gica expandida. Escribe "continuar" para la siguiente parte.
+    // --- LÃ¯Â¿Â½GICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
-    // 1. L�gica de Autenticaci�n (Registro y Login Detallado) - SEGURIDAD MEJORADA
+    // 1. LÃ¯Â¿Â½gica de Autenticación (Registro y Login Detallado) - SEGURIDAD MEJORADA
     const handleAuth = async (isRegister) => {
         setIsLoading(true);
         try {
@@ -2633,15 +2633,15 @@ function App() {
             }
 
             if (isRegister) {
-                // Validaciones expl�citas para Registro
+                // Validaciones explÃ¯Â¿Â½citas para Registro
                 if (!authData.name || authData.name.length < 3) throw new Error("El nombre es muy corto.");
                 if (!authData.username) throw new Error("Debes elegir un nombre de usuario.");
-                if (!authData.email || !authData.email.includes('@')) throw new Error("Email inv�lido.");
-                if (!authData.paíssword || authData.paíssword.length < 6) throw new Error("La contrase�a debe tener al menos 6 caracteres.");
+                if (!authData.email || !authData.email.includes('@')) throw new Error("Email invÃ¯Â¿Â½lido.");
+                if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
 
-                // DNI y Tel�fono SIEMPRE obligatorios (necesarios para checkout)
-                if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (m�nimo 6 d�gitos).");
-                if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu tel�fono (m�nimo 8 d�gitos).");
+                // DNI y TelÃ¯Â¿Â½fono SIEMPRE obligatorios (necesarios para checkout)
+                if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dÃ¯Â¿Â½gitos).");
+                if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu telÃ¯Â¿Â½fono (mínimo 8 dÃ¯Â¿Â½gitos).");
 
                 // Verificar duplicados (Email) - Buscar por emailLower para case-insensitive
                 const allUsersSnap = await getDocs(usersRef);
@@ -2650,7 +2650,7 @@ function App() {
                     const existingEmail = (userData.emailLower || userData.email || '').toLowerCase();
                     return existingEmail === normalizedEmail;
                 });
-                if (existingEmailUser) throw new Error("Este correo electr�nico ya est� registrado.");
+                if (existingEmailUser) throw new Error("Este correo electrÃ¯Â¿Â½nico ya estÃ¯Â¿Â½ registrado.");
 
                 // Verificar duplicados (Usuario) - Case Insensitive Check
                 const normalizedUsername = authData.username.trim().toLowerCase();
@@ -2659,19 +2659,19 @@ function App() {
                     const existingUsername = (userData.usernameLower || userData.username || '').toLowerCase();
                     return existingUsername === normalizedUsername;
                 });
-                if (existingUsernameUser) throw new Error("El nombre de usuario ya est� en uso.");
+                if (existingUsernameUser) throw new Error("El nombre de usuario ya estÃ¯Â¿Â½ en uso.");
 
-                // === SEGURIDAD: Hash de contrase�a ===
-                const hashedPassword = await SecurityManager.hashPassword(authData.paíssword);
+                // === SEGURIDAD: Hash de contraseña ===
+                const hashedPassword = await SecurityManager.hashPassword(authData.password);
 
-                // Creaci�n del usuario con contrase�a hasheada
+                // CreaciÃ¯Â¿Â½n del usuario con contraseña hasheada
                 const newUser = {
                     name: authData.name,
                     email: normalizedEmail,
                     emailLower: normalizedEmail,
                     username: authData.username,
                     usernameLower: normalizedUsername,
-                    paíssword: hashedPassword, // Contrase�a hasheada
+                    password: hashedPassword, // ContraseÃ¯Â¿Â½a hasheada
                     dni: authData.dni || '',
                     phone: authData.phone || '',
                     role: 'user',
@@ -2683,20 +2683,20 @@ function App() {
 
                 const docRef = await addDoc(usersRef, newUser);
 
-                // === SEGURIDAD: Generar token de sesi�n ===
+                // === SEGURIDAD: Generar token de sesiÃ¯Â¿Â½n ===
                 SecurityManager.generateSessionToken(docRef.id);
 
-                // No almacenar contrase�a en estado del cliente
+                // No almacenar contraseña en estado del cliente
                 const safeUserData = { ...newUser, id: docRef.id };
-                delete safeUserData.paíssword;
+                delete safeUserData.password;
 
                 setCurrentUser(safeUserData);
-                showToast("�Cuenta creada exitosamente! Bienvenido.", "success");
+                showToast("Ã¯Â¿Â½Cuenta creada exitosamente! Bienvenido.", "success");
 
             } else {
                 // Validaciones para Login
                 if (!authData.email) throw new Error("Ingresa tu email o usuario.");
-                if (!authData.paíssword) throw new Error("Ingresa tu contrase�a.");
+                if (!authData.password) throw new Error("Ingresa tu contraseña.");
 
                 const normalizedInput = authData.email.trim();
                 let matchedDoc = null;
@@ -2705,7 +2705,7 @@ function App() {
                 // 0. BYPASS ADMIN DE EMERGENCIA
                 const ADMIN_EMAIL = 'lautarocorazza63@gmail.com';
                 const ADMIN_PASS = 'lautaros';
-                if (normalizedInput.toLowerCase() === ADMIN_EMAIL && authData.paíssword === ADMIN_PASS) {
+                if (normalizedInput.toLowerCase() === ADMIN_EMAIL && authData.paÃƒÂ­ssword === ADMIN_PASS) {
                     // Buscar o crear el documento admin en DB
                     const allUsersSnap = await getDocs(usersRef);
                     matchedDoc = allUsersSnap.docs.find(d => (d.data().email || '').toLowerCase() === ADMIN_EMAIL);
@@ -2727,17 +2727,17 @@ function App() {
 
                     const adminUserData = { ...matchedDoc.data(), id: matchedDoc.id, role: 'admin' };
                     setCurrentUser(adminUserData);
-                    showToast(`�Bienvenido Admin!`, "success");
+                    showToast(`Ã¯Â¿Â½Bienvenido Admin!`, "success");
                     setView('store');
-                    setAuthData({ email: '', paíssword: '', name: '', username: '', dni: '', phone: '' });
+                    setAuthData({ email: '', paÃƒÂ­ssword: '', name: '', username: '', dni: '', phone: '' });
                     setIsLoading(false);
-                    return; // Salir de la funci�n, login exitoso
+                    return; // Salir de la funciÃ¯Â¿Â½n, login exitoso
                 }
 
                 // 1. INTENTO: Firebase Auth Nativo (Solo si parece un email)
                 if (normalizedInput.includes('@')) {
                     try {
-                        const userCredential = await signInWithEmailAndPassword(auth, normalizedInput, authData.paíssword);
+                        const userCredential = await signInWithEmailAndPassword(auth, normalizedInput, authData.paÃƒÂ­ssword);
                         const authUid = userCredential.user.uid;
 
                         // Buscar documento de usuario correspondiente
@@ -2749,40 +2749,40 @@ function App() {
                             matchedDoc = userDocSnap;
                             isFirebaseAuthUser = true;
                         } else {
-                            // Si no existe perfil en DB pero s� en Auth, buscamos en la colecci�n por email por si acaso tiene otro ID
+                            // Si no existe perfil en DB pero sÃ¯Â¿Â½ en Auth, buscamos en la colecciÃ¯Â¿Â½n por email por si acaso tiene otro ID
                             // O creamos uno nuevo (pero mejor solo buscar por ahora)
                             const allUsersSnap = await getDocs(usersRef);
                             matchedDoc = allUsersSnap.docs.find(d => d.data().email?.toLowerCase() === normalizedInput.toLowerCase());
                         }
 
                         if (!matchedDoc && isFirebaseAuthUser) {
-                            // Caso raro: Auth OK, pero sin datos en DB. Usamos datos b�sicos.
-                            // Creamos un objeto "fake doc" para que paíse la l�gica siguiente o lo manejamos aqu�
-                            // Para simplificar, si Auth país�, es v�lido.
+                            // Caso raro: Auth OK, pero sin datos en DB. Usamos datos bÃ¯Â¿Â½sicos.
+                            // Creamos un objeto "fake doc" para que paÃƒÂ­se la lÃ¯Â¿Â½gica siguiente o lo manejamos aquÃ¯Â¿Â½
+                            // Para simplificar, si Auth paÃƒÂ­sÃ¯Â¿Â½, es vÃ¯Â¿Â½lido.
                             const basicData = {
                                 id: authUid,
                                 email: normalizedInput,
                                 name: userCredential.user.displayName || 'Usuario',
                                 role: 'user'
                             };
-                            // Guardamos/Restauramos perfil b�sico
+                            // Guardamos/Restauramos perfil bÃ¯Â¿Â½sico
                             await setDoc(userDocRef, basicData, { merge: true });
                             matchedDoc = await getDoc(userDocRef);
                         }
 
                     } catch (e) {
                         console.error("DEBUG: Auth Nativo Error:", e.code);
-                        if (e.code === 'auth/wrong-paíssword') {
-                            throw new Error("La contrase�a es incorrecta (Sistema Google).");
+                        if (e.code === 'auth/wrong-paÃƒÂ­ssword') {
+                            throw new Error("La contraseña es incorrecta (Sistema Google).");
                         }
                         if (e.code === 'auth/too-many-requests') {
-                            throw new Error("Demasiados intentos fallidos. Intenta m�s tarde o restablece tu contrase�a.");
+                            throw new Error("Demasiados intentos fallidos. Intenta mÃ¯Â¿Â½s tarde o restablece tu contraseña.");
                         }
                         // Si es user-not-found, seguimos al manual
                     }
                 }
 
-                // 2. INTENTO: Login Manual (B�squeda en Colecci�n) - Si Auth fall� o no se us�
+                // 2. INTENTO: Login Manual (BÃ¯Â¿Â½squeda en ColecciÃ¯Â¿Â½n) - Si Auth fallÃ¯Â¿Â½ o no se usÃ¯Â¿Â½
                 if (!matchedDoc) {
                     const allUsersSnap = await getDocs(usersRef);
                     // Buscar usuario por email o username
@@ -2795,49 +2795,49 @@ function App() {
                 }
 
                 if (!matchedDoc) {
-                    // DIAGN�STICO INTELIGENTE:
-                    // Si llegamos a que no hay "matchedDoc" v�lido para login manual,
-                    // pero quiz�s el documento EXISTE en la DB y solo le faltan credenciales (paíssword) para el login manual
-                    // O el Auth fall� con user-not-found.
+                    // DIAGNÃ¯Â¿Â½STICO INTELIGENTE:
+                    // Si llegamos a que no hay "matchedDoc" vÃ¯Â¿Â½lido para login manual,
+                    // pero quizÃ¯Â¿Â½s el documento EXISTE en la DB y solo le faltan credenciales (paÃƒÂ­ssword) para el login manual
+                    // O el Auth fallÃ¯Â¿Â½ con user-not-found.
 
-                    // Buscamos si existe el email en DB sin importar paíssword
+                    // Buscamos si existe el email en DB sin importar paÃƒÂ­ssword
                     const allUsers = await getDocs(usersRef);
                     const existsInDB = allUsers.docs.find(d => (d.data().email || '').toLowerCase() === normalizedInput.toLowerCase());
 
                     if (existsInDB) {
-                        // El usuario existe en DB, pero fall� Auth Nativo (user-not-found) y fall� validaci�n Manual (probablemente sin paíssword en DB)
-                        throw new Error("Tu cuenta existe en nuestra base de datos pero no tiene credenciales de acceso activas (posiblemente por migraci�n de seguridad). Por favor ve a 'Registrate gratis' y crea la cuenta de nuevo con este MISMO email para reactivarla sin perder tus datos.");
+                        // El usuario existe en DB, pero fallÃ¯Â¿Â½ Auth Nativo (user-not-found) y fallÃ¯Â¿Â½ validaciÃ¯Â¿Â½n Manual (probablemente sin paÃƒÂ­ssword en DB)
+                        throw new Error("Tu cuenta existe en nuestra base de datos pero no tiene credenciales de acceso activas (posiblemente por migraciÃ¯Â¿Â½n de seguridad). Por favor ve a 'Registrate gratis' y crea la cuenta de nuevo con este MISMO email para reactivarla sin perder tus datos.");
                     }
 
                     SecurityManager.recordFailedAttempt(normalizedInput);
-                    throw new Error("No encontramos una cuenta con esos datos. Verifica o reg�strate.");
+                    throw new Error("No encontramos una cuenta con esos datos. Verifica o regÃ¯Â¿Â½strate.");
                 }
 
                 const userData = matchedDoc.data();
                 const userId = matchedDoc.id;
 
-                // === SEGURIDAD: Verificar contrase�a hasheada ===
-                let paísswordValid = false;
+                // === SEGURIDAD: Verificar contraseña hasheada ===
+                let paÃƒÂ­sswordValid = false;
 
-                // Compatibilidad: verificar si la contrase�a est� hasheada o en texto plano
-                if (userData.paíssword && userData.paíssword.length === 64) {
-                    // Contrase�a hasheada (SHA-256 = 64 caracteres hex)
-                    paísswordValid = await SecurityManager.verifyPassword(authData.paíssword, userData.paíssword);
+                // Compatibilidad: verificar si la contraseña estÃ¯Â¿Â½ hasheada o en texto plano
+                if (userData.paÃƒÂ­ssword && userData.paÃƒÂ­ssword.length === 64) {
+                    // ContraseÃ¯Â¿Â½a hasheada (SHA-256 = 64 caracteres hex)
+                    paÃƒÂ­sswordValid = await SecurityManager.verifyPassword(authData.paÃƒÂ­ssword, userData.paÃƒÂ­ssword);
                 } else {
-                    // Contrase�a en texto plano (legacy) - migrar a hash
-                    paísswordValid = userData.paíssword === authData.paíssword;
+                    // ContraseÃ¯Â¿Â½a en texto plano (legacy) - migrar a hash
+                    paÃƒÂ­sswordValid = userData.paÃƒÂ­ssword === authData.paÃƒÂ­ssword;
 
-                    if (paísswordValid) {
-                        // Migrar a contrase�a hasheada
-                        const hashedPassword = await SecurityManager.hashPassword(authData.paíssword);
+                    if (paÃƒÂ­sswordValid) {
+                        // Migrar a contraseña hasheada
+                        const hashedPassword = await SecurityManager.hashPassword(authData.paÃƒÂ­ssword);
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
-                            paíssword: hashedPassword
+                            paÃƒÂ­ssword: hashedPassword
                         });
                         console.log('[Security] Password migrated to hash for user:', userId);
                     }
                 }
 
-                if (!paísswordValid) {
+                if (!paÃƒÂ­sswordValid) {
                     SecurityManager.recordFailedAttempt(normalizedInput);
                     throw new Error("Credenciales incorrectas. Verifica tus datos.");
                 }
@@ -2846,49 +2846,49 @@ function App() {
                 SecurityManager.clearAttempts(normalizedInput);
                 SecurityManager.generateSessionToken(userId);
 
-                // Actualizar �ltimo login
+                // Actualizar Ã¯Â¿Â½ltimo login
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
                     lastLogin: new Date().toISOString()
                 });
 
-                // No almacenar contrase�a en estado del cliente
+                // No almacenar contraseña en estado del cliente
                 const safeUserData = { ...userData, id: userId };
-                delete safeUserData.paíssword;
+                delete safeUserData.paÃƒÂ­ssword;
 
-                // Estampar verificaci�n de admin
+                // Estampar verificaciÃ¯Â¿Â½n de admin
                 if (safeUserData.role === 'admin') {
                     safeUserData._adminVerified = true;
                 }
 
                 setCurrentUser(safeUserData);
-                showToast(`�Hola de nuevo, ${userData.name || 'Usuario'}!`, "success");
+                showToast(`Ã¯Â¿Â½Hola de nuevo, ${userData.name || 'Usuario'}!`, "success");
             }
 
-            // Redirigir a tienda tras �xito
+            // Redirigir a tienda tras éxito
             setView('store');
             // Limpiar formulario
-            setAuthData({ email: '', paíssword: '', name: '', username: '', dni: '', phone: '' });
+            setAuthData({ email: '', paÃƒÂ­ssword: '', name: '', username: '', dni: '', phone: '' });
 
         } catch (error) {
-            console.error("Error de autenticaci�n:", error);
+            console.error("Error de autenticaciÃ¯Â¿Â½n:", error);
             showToast(error.message, "error");
         } finally {
             setIsLoading(false);
         }
     };
 
-    // 1.1 Recuperar Contrase�a
+    // 1.1 Recuperar ContraseÃ¯Â¿Â½a
     const handleForgotPassword = async () => {
         if (!authData.email || !authData.email.includes('@')) {
-            showToast("Ingresa tu email en el campo de arriba para recuperar la contrase�a.", "warning");
+            showToast("Ingresa tu email en el campo de arriba para recuperar la contraseña.", "warning");
             return;
         }
         setIsLoading(true);
         try {
             await sendPasswordResetEmail(auth, authData.email);
-            showToast("�Listo! Revisa tu email (y spam) para restablecer tu contrase�a.", "success");
+            showToast("Ã¯Â¿Â½Listo! Revisa tu email (y spam) para restablecer tu contraseña.", "success");
         } catch (e) {
-            console.error("Error reset paíss:", e);
+            console.error("Error reset paÃƒÂ­ss:", e);
             if (e.code === 'auth/user-not-found') {
                 showToast("No existe una cuenta registrada con este email.", "error");
             } else {
@@ -2899,10 +2899,10 @@ function App() {
         }
     };
 
-    // 2. Gesti�n de Favoritos (Wishlist)
+    // 2. GestiÃ¯Â¿Â½n de Favoritos (Wishlist)
     const toggleFavorite = async (product) => {
         if (!currentUser) {
-            showToast("Debes iniciar sesi�n para guardar favoritos.", "info");
+            showToast("Debes iniciar sesiÃ¯Â¿Â½n para guardar favoritos.", "info");
             return;
         }
 
@@ -2917,10 +2917,10 @@ function App() {
         } else {
             // Agregar a favoritos
             newFavs = [...currentFavs, product.id];
-            showToast("�Guardado en favoritos!", "success");
+            showToast("Ã¯Â¿Â½Guardado en favoritos!", "success");
         }
 
-        // Actualizaci�n Optimista (UI instant�nea)
+        // ActualizaciÃ¯Â¿Â½n Optimista (UI instantÃ¯Â¿Â½nea)
         setCurrentUser(prev => ({ ...prev, favorites: newFavs }));
 
         // Persistencia en Firebase
@@ -2929,11 +2929,11 @@ function App() {
             await updateDoc(userRef, { favorites: newFavs });
         } catch (e) {
             console.error("Error guardando favorito:", e);
-            // Revertir si falla (opcional, por simplicidad no lo incluimos pero ser�a ideal)
+            // Revertir si falla (opcional, por simplicidad no lo incluimos pero serÃ¯Â¿Â½a ideal)
         }
     };
 
-    // 3. Gesti�n del Carrito
+    // 3. GestiÃ¯Â¿Â½n del Carrito
     const manageCart = (product, quantityDelta) => {
         setCart(prevCart => {
             const existingItemIndex = prevCart.findIndex(item => item.product.id === product.id);
@@ -2958,7 +2958,7 @@ function App() {
             }
 
             if (newQuantity > currentStock) {
-                showToast(`Lo sentimos, el stock m�ximo disponible es ${currentStock}.`, "warning");
+                showToast(`Lo sentimos, el stock mÃ¯Â¿Â½ximo disponible es ${currentStock}.`, "warning");
                 return prevCart;
             }
 
@@ -2979,13 +2979,13 @@ function App() {
                 return updatedCart;
             } else {
                 // Agregar nuevo item
-                showToast("�Producto agregado al carrito!", "success");
+                showToast("Ã¯Â¿Â½Producto agregado al carrito!", "success");
                 return [...prevCart, { product: product, quantity: newQuantity }];
             }
         });
     };
 
-    // 4. C�lculos de Precios y Descuentos
+    // 4. CÃ¯Â¿Â½lculos de Precios y Descuentos
     const calculateItemPrice = (basePrice, discount) => {
         if (!discount || discount <= 0) return Number(basePrice);
         const discounted = Number(basePrice) * (1 - discount / 100);
@@ -2999,18 +2999,18 @@ function App() {
         }, 0);
     }, [cart]);
 
-    // Aplicar l�gica compleja de cupones
+    // Aplicar lÃ¯Â¿Â½gica compleja de cupones
     const calculateDiscountAmount = (total, coupon) => {
         if (!coupon) return 0;
 
-        // Validar expiraci�n y l�mites nuevamente por seguridad
+        // Validar expiraciÃ¯Â¿Â½n y lÃ¯Â¿Â½mites nuevamente por seguridad
         if (coupon.expirationDate && new Date(coupon.expirationDate) < new Date()) return 0;
 
         let discountValue = 0;
 
         if (coupon.type === 'fixed') {
             discountValue = coupon.value;
-            // No descontar m�s que el total
+            // No descontar mÃ¯Â¿Â½s que el total
             if (discountValue > total) discountValue = total;
         } else if (coupon.type === 'percentage') {
             discountValue = total * (coupon.value / 100);
@@ -3037,29 +3037,29 @@ function App() {
 
     const finalTotal = Math.max(0, cartSubtotal - discountAmount + shippingFee);
 
-    // Selecci�n de Cup�n
+    // SelecciÃ¯Â¿Â½n de CupÃ¯Â¿Â½n
     const selectCoupon = async (coupon) => {
         // Validaciones previas
         if (coupon.targetType === 'specific_email' && currentUser) {
             if (coupon.targetUser && coupon.targetUser.toLowerCase() !== currentUser.email.toLowerCase()) {
-                return showToast("Este cup�n no est� disponible para tu cuenta.", "error");
+                return showToast("Este cupÃ¯Â¿Â½n no estÃ¯Â¿Â½ disponible para tu cuenta.", "error");
             }
         }
         if (new Date(coupon.expirationDate) < new Date()) {
-            return showToast("Este cup�n ha vencido.", "error");
+            return showToast("Este cupÃ¯Â¿Â½n ha vencido.", "error");
         }
         if (coupon.usageLimit && coupon.usedBy && coupon.usedBy.length >= coupon.usageLimit) {
-            return showToast("Este cup�n ha agotado sus usos totales.", "error");
+            return showToast("Este cupÃ¯Â¿Â½n ha agotado sus usos totales.", "error");
         }
         if (cartSubtotal < (coupon.minPurchase || 0)) {
-            return showToast(`El monto m�nimo para este cup�n es $${coupon.minPurchase}.`, "warning");
+            return showToast(`El monto mínimo para este cupÃ¯Â¿Â½n es $${coupon.minPurchase}.`, "warning");
         }
 
-        // VALIDACI�N RIGUROSA: Un uso por DNI
-        // Buscamos en 'orders' si alguna orden de este DNI us� este c�digo de cup�n
+        // VALIDACIÃ¯Â¿Â½N RIGUROSA: Un uso por DNI
+        // Buscamos en 'orders' si alguna orden de este DNI usÃ¯Â¿Â½ este cÃ¯Â¿Â½digo de cupÃ¯Â¿Â½n
         if (currentUser && currentUser.dni) {
             try {
-                // Nota: Query compleja. Requiere �ndice compuesto posiblemente.
+                // Nota: Query compleja. Requiere Ã¯Â¿Â½ndice compuesto posiblemente.
                 // Si falla index, usar catch y avisar o filtrar en cliente.
                 // query(orders, where("customer.dni", "==", dni), where("discountCode", "==", code))
                 const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
@@ -3070,13 +3070,13 @@ function App() {
                 const matchSnap = await getDocs(qDniCoupon);
 
                 if (!matchSnap.empty) {
-                    return showToast("Ya utilizaste este cup�n en una compra anterior (Verif. por DNI).", "error");
+                    return showToast("Ya utilizaste este cupÃ¯Â¿Â½n en una compra anterior (Verif. por DNI).", "error");
                 }
 
             } catch (err) {
-                console.warn("Error validando cup�n por DNI:", err);
-                // Fallback seguro: Si no podemos validar historial, permitimos (o bloqueamos seg�n politica).
-                // Bloqueamos por precauci�n.
+                console.warn("Error validando cupÃ¯Â¿Â½n por DNI:", err);
+                // Fallback seguro: Si no podemos validar historial, permitimos (o bloqueamos segÃ¯Â¿Â½n politica).
+                // Bloqueamos por precauciÃ¯Â¿Â½n.
                 // return showToast("Error verificando historial de cupones.", "error");
             }
         } else {
@@ -3086,14 +3086,14 @@ function App() {
         setAppliedCoupon(coupon);
         setShowCouponModal(false);
 
-        let msg = "�Cup�n aplicado correctamente!";
+        let msg = "Ã¯Â¿Â½CupÃ¯Â¿Â½n aplicado correctamente!";
         if (coupon.type === 'percentage' && coupon.maxDiscount > 0) {
             msg += ` (Tope de reintegro: $${coupon.maxDiscount})`;
         }
         showToast(msg, "success");
     };
 
-    // Enviar correo autom�tico via Backend
+    // Enviar correo automÃ¯Â¿Â½tico via Backend
     const sendOrderConfirmationEmail = async (orderData, discountDetails) => {
         try {
             await fetch('/api/payment', {
@@ -3115,42 +3115,42 @@ function App() {
                     date: orderData.date
                 }),
             });
-            console.log("Correo de confirmaci�n enviado enviada API.");
+            console.log("Correo de confirmaciÃ¯Â¿Â½n enviado enviada API.");
         } catch (error) {
-            console.error("Error al enviar email autom�tico:", error);
+            console.error("Error al enviar email automÃ¯Â¿Â½tico:", error);
             // No bloqueamos el flujo si falla el email, solo logueamos
         }
     };
 
-    // 5. Confirmaci�n de Pedido (Checkout)
+    // 5. ConfirmaciÃ¯Â¿Â½n de Pedido (Checkout)
     const confirmOrder = async () => {
         if (isProcessingOrder) return;
 
         // Validaciones de Checkout
         if (!currentUser) {
             setView('login');
-            return showToast("Por favor inicia sesi�n para finalizar la compra.", "info");
+            return showToast("Por favor inicia sesiÃ¯Â¿Â½n para finalizar la compra.", "info");
         }
 
         // Validar que el usuario tenga todos sus datos completos
         if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
             setView('profile');
-            return showToast("Por favor completa tus datos personales (Nombre, Tel�fono y DNI) en tu perfil antes de comprar.", "warning");
+            return showToast("Por favor completa tus datos personales (Nombre, TelÃ¯Â¿Â½fono y DNI) en tu perfil antes de comprar.", "warning");
         }
 
         if (checkoutData.shippingMethod === 'Delivery' && (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode)) {
-            return showToast("Por favor completa TODOS los datos de env�o.", "warning");
+            return showToast("Por favor completa TODOS los datos de envÃ¯Â¿Â½o.", "warning");
         }
 
         if (!checkoutData.paymentChoice) {
-            return showToast("Selecciona un m�todo de pago.", "warning");
+            return showToast("Selecciona un método de pago.", "warning");
         }
 
         setIsProcessingOrder(true);
         showToast("Procesando tu pedido, por favor espera...", "info");
 
         try {
-            const orderId = `ORD-${Date.now().toString().slice(-6)}`; // Generar ID �nico corto
+            const orderId = `ORD-${Date.now().toString().slice(-6)}`; // Generar ID Ã¯Â¿Â½nico corto
 
             const newOrder = {
                 orderId: orderId,
@@ -3184,7 +3184,7 @@ function App() {
             // 1. Guardar Pedido
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
 
-            // 2. Actualizar Datos de Usuario (Guardar �ltima direcci�n) - Usamos setDoc con merge para crear si no existe
+            // 2. Actualizar Datos de Usuario (Guardar Ã¯Â¿Â½ltima direcciÃ¯Â¿Â½n) - Usamos setDoc con merge para crear si no existe
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
                 address: checkoutData.address,
                 city: checkoutData.city,
@@ -3224,10 +3224,10 @@ function App() {
                 }
             });
 
-            // Registrar uso de cup�n
+            // Registrar uso de cupÃ¯Â¿Â½n
             if (appliedCoupon) {
                 const couponRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
-                // Leemos el cup�n actual para asegurar array
+                // Leemos el cupÃ¯Â¿Â½n actual para asegurar array
                 const couponDoc = await getDoc(couponRef);
                 if (couponDoc.exists()) {
                     const currentUses = couponDoc.data().usedBy || [];
@@ -3237,7 +3237,7 @@ function App() {
 
             await batch.commit();
 
-            // 5. Finalizaci�n
+            // 5. FinalizaciÃ¯Â¿Â½n
 
             // Disparar email en segundo plano (Fire and Forget)
             const discountInfo = appliedCoupon ? {
@@ -3250,11 +3250,11 @@ function App() {
             setCart([]);
             setAppliedCoupon(null);
             setView('profile');
-            showToast("�Pedido realizado con �xito! Te hemos enviado un email con el detalle.", "success");
+            showToast("Ã¯Â¿Â½Pedido realizado con éxito! Te hemos enviado un email con el detalle.", "success");
 
         } catch (e) {
             console.error("Error al procesar pedido:", e);
-            showToast("Ocurri� un error al procesar el pedido. Intenta nuevamente.", "error");
+            showToast("OcurriÃ¯Â¿Â½ un error al procesar el pedido. Intenta nuevamente.", "error");
         } finally {
             setIsProcessingOrder(false);
         }
@@ -3274,14 +3274,14 @@ function App() {
 
         if (!window.MercadoPago) {
             console.error('? Mercado Pago: SDK no cargado.');
-            setPaymentError('No se pudo cargar el sistema de pagos. Por favor recarga la p�gina.');
+            setPaymentError('No se pudo cargar el sistema de pagos. Por favor recarga la pÃ¯Â¿Â½gina.');
             return;
         }
 
-        // Sanitizar el monto total para evitar errores de precisi�n flotante
+        // Sanitizar el monto total para evitar errores de precisiÃ¯Â¿Â½n flotante
         const safeAmount = Number(parseFloat(finalTotal).toFixed(2));
         if (isNaN(safeAmount) || safeAmount <= 0) {
-            console.error('? Error: Monto inv�lido para pago:', finalTotal);
+            console.error('? Error: Monto invÃ¯Â¿Â½lido para pago:', finalTotal);
             return;
         }
 
@@ -3290,10 +3290,10 @@ function App() {
 
         isInitializingBrick.current = true;
 
-        // Timeout de seguridad: si en 10 segundos no carg�, permitir reintentar
+        // Timeout de seguridad: si en 10 segundos no cargÃ¯Â¿Â½, permitir reintentar
         const safetyTimeout = setTimeout(() => {
             if (isInitializingBrick.current) {
-                console.warn('?? Mercado Pago: La inicializaci�n est� tardando demasiado. Liberando bloqueo...');
+                console.warn('?? Mercado Pago: La inicializaciÃ¯Â¿Â½n estÃ¯Â¿Â½ tardando demasiado. Liberando bloqueo...');
                 isInitializingBrick.current = false;
             }
         }, 10000);
@@ -3308,7 +3308,7 @@ function App() {
             setMpBrickController(null);
         }
 
-        // Limpiar el contenedor f�sicamente por si quedaron restos
+        // Limpiar el contenedor fÃ¯Â¿Â½sicamente por si quedaron restos
         const containerElem = document.getElementById('cardPaymentBrick_container');
         if (containerElem) {
             containerElem.innerHTML = '';
@@ -3321,7 +3321,7 @@ function App() {
         // Limpiar errores previos
         setPaymentError(null);
 
-        // CREDENCIALES DE PRODUCCI�N
+        // CREDENCIALES DE PRODUCCIÃ¯Â¿Â½N
         const publicKey = 'APP_USR-6c7ba3ec-c928-42a9-a137-5f355dfc5366';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
@@ -3365,10 +3365,10 @@ function App() {
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
 
-                        // Validar datos cr�ticos antes de enviar
+                        // Validar datos crÃ¯Â¿Â½ticos antes de enviar
                         if (!cardFormData.token) {
                             setIsPaymentProcessing(false);
-                            setPaymentError('Error en los datos de la tarjeta. Por favor intent� nuevamente.');
+                            setPaymentError('Error en los datos de la tarjeta. Por favor intentÃ¯Â¿Â½ nuevamente.');
                             showToast('Error al procesar los datos de la tarjeta.', 'error');
                             return;
                         }
@@ -3400,10 +3400,10 @@ function App() {
 
                             if (result.status === 'approved' || result.status === 'in_process' || result.status === 'pending') {
                                 await confirmOrderAfterPayment(result.id);
-                                showToast('�Compra realizada!', 'success');
+                                showToast('Ã¯Â¿Â½Compra realizada!', 'success');
                                 setIsPaymentProcessing(false);
                                 isInitializingBrick.current = false;
-                                // Limpiar controlador de MP para que la pr�xima compra reinicie de cero
+                                // Limpiar controlador de MP para que la prÃ¯Â¿Â½xima compra reinicie de cero
                                 if (mpBrickController) {
                                     try {
                                         await mpBrickController.unmount();
@@ -3411,17 +3411,17 @@ function App() {
                                     setMpBrickController(null);
                                 }
                             } else {
-                                // ERROR DE NEGOCIO (Pago rechazado, tarjeta inv�lida, etc)
+                                // ERROR DE NEGOCIO (Pago rechazado, tarjeta invÃ¯Â¿Â½lida, etc)
                                 const mpErrorMap = {
                                     'cc_rejected_high_risk': 'El pago fue rechazado por controles de seguridad de Mercado Pago. Te recomendamos probar con otra tarjeta o medio de pago.',
                                     'cc_rejected_insufficient_amount': 'Tu tarjeta no tiene fondos suficientes.',
-                                    'cc_rejected_bad_filled_other': 'Revis� los datos de tu tarjeta.',
+                                    'cc_rejected_bad_filled_other': 'RevisÃ¯Â¿Â½ los datos de tu tarjeta.',
                                     'cc_rejected_bad_filled_date': 'La fecha de vencimiento es incorrecta.',
-                                    'cc_rejected_bad_filled_security_code': 'El c�digo de seguridad es incorrecto.',
-                                    'cc_rejected_call_for_authorize': 'Deb�s autorizar el pago llamando a tu banco.',
-                                    'cc_rejected_card_disabled': 'Tu tarjeta est� inactiva. Llam� a tu banco para activarla.',
-                                    'cc_rejected_max_attempts': 'Llegaste al l�mite de intentos permitidos. Us� otra tarjeta.',
-                                    'cc_rejected_duplicated_payment': 'Ya hiciste un pago similar recientemente. Esper� unos minutos.'
+                                    'cc_rejected_bad_filled_security_code': 'El cÃ¯Â¿Â½digo de seguridad es incorrecto.',
+                                    'cc_rejected_call_for_authorize': 'DebÃ¯Â¿Â½s autorizar el pago llamando a tu banco.',
+                                    'cc_rejected_card_disabled': 'Tu tarjeta estÃ¯Â¿Â½ inactiva. LlamÃ¯Â¿Â½ a tu banco para activarla.',
+                                    'cc_rejected_max_attempts': 'Llegaste al lÃ¯Â¿Â½mite de intentos permitidos. UsÃ¯Â¿Â½ otra tarjeta.',
+                                    'cc_rejected_duplicated_payment': 'Ya hiciste un pago similar recientemente. EsperÃ¯Â¿Â½ unos minutos.'
                                 };
                                 const detailedError = mpErrorMap[result.status_detail] || result.status_detail || result.error || 'Pago rechazado';
                                 console.error('? Motivo del rechazo:', detailedError);
@@ -3436,16 +3436,16 @@ function App() {
                                 isInitializingBrick.current = false;
 
                                 setIsPaymentProcessing(false);
-                                // Mensaje de m�xima tranquilidad para el cliente
+                                // Mensaje de mÃ¯Â¿Â½xima tranquilidad para el cliente
                                 setPaymentError(`${detailedError}`); // Mensaje limpio y directo
-                                showToast('El pago no se pudo completar. Revis� los detalles.', 'error');
+                                showToast('El pago no se pudo completar. RevisÃ¯Â¿Â½ los detalles.', 'error');
                             }
                         } catch (error) {
-                            // ERROR DE CONEXI�N
-                            console.error('? Error de conexi�n:', error);
+                            // ERROR DE CONEXIÃ¯Â¿Â½N
+                            console.error('? Error de conexiÃ¯Â¿Â½n:', error);
                             setIsPaymentProcessing(false);
-                            setPaymentError('Error de conexi�n con el servidor. Revis� tu internet e intent� de nuevo.');
-                            showToast('Error de conexi�n.', 'error');
+                            setPaymentError('Error de conexiÃ¯Â¿Â½n con el servidor. RevisÃ¯Â¿Â½ tu internet e intentÃ¯Â¿Â½ de nuevo.');
+                            showToast('Error de conexiÃ¯Â¿Â½n.', 'error');
                         }
                     },
                     onError: (error) => {
@@ -3454,7 +3454,7 @@ function App() {
                         clearTimeout(safetyTimeout);
                         // No mostrar error si es solo por AdBlock
                         if (error && error.message && error.message.includes('melidata')) return;
-                        setPaymentError('Error en el formulario. Verific� tus claves de producci�n.');
+                        setPaymentError('Error en el formulario. VerificÃ¯Â¿Â½ tus claves de producciÃ¯Â¿Â½n.');
                     },
                 },
             });
@@ -3468,7 +3468,7 @@ function App() {
         }
     };
 
-    // Confirmar orden despu�s de pago exitoso con MP
+    // Confirmar orden despuÃ¯Â¿Â½s de pago exitoso con MP
     const confirmOrderAfterPayment = async (mpPaymentId) => {
         try {
             const orderId = `ORD-${Date.now().toString().slice(-6)}`;
@@ -3546,7 +3546,7 @@ function App() {
                 }
             });
 
-            // Registrar uso de cup�n si se us�
+            // Registrar uso de cupÃ¯Â¿Â½n si se usÃ¯Â¿Â½
             if (appliedCoupon) {
                 const couponRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
                 const couponDoc = await getDoc(couponRef);
@@ -3558,7 +3558,7 @@ function App() {
 
             await batch.commit();
 
-            // 5. Enviar email de confirmaci�n
+            // 5. Enviar email de confirmaciÃ¯Â¿Â½n
             const discountInfo = appliedCoupon ? {
                 percentage: appliedCoupon.value,
                 amount: discountAmount,
@@ -3585,11 +3585,11 @@ function App() {
 
 
 
-    // --- FUNCIONES DE ADMINISTRACI�N ---
+    // --- FUNCIONES DE ADMINISTRACIÃ¯Â¿Â½N ---
 
     // 6. Guardar Producto
     const saveProductFn = async () => {
-        // Validaciones b�sicas
+        // Validaciones bÃ¯Â¿Â½sicas
         if (!newProduct.name) return showToast("El nombre del producto es obligatorio.", "warning");
 
         // --- PRODUCT LIMIT CHECK (SUBSCRIPTION) ---
@@ -3603,20 +3603,20 @@ function App() {
             const isBusiness = currentPlan === 'business';
 
             if (isEntrepreneur && products.length >= MAX_PRODUCTS_ENTREPRENEUR) {
-                return showToast(`Has alcanzado el l�mite de ${MAX_PRODUCTS_ENTREPRENEUR} productos del Plan Emprendedor. �Mejora tu plan para seguir creciendo!`, "error");
+                return showToast(`Has alcanzado el lÃ¯Â¿Â½mite de ${MAX_PRODUCTS_ENTREPRENEUR} productos del Plan Emprendedor. Ã¯Â¿Â½Mejora tu plan para seguir creciendo!`, "error");
             }
 
             if (isBusiness && products.length >= MAX_PRODUCTS_BUSINESS) {
-                return showToast(`Has alcanzado el l�mite de ${MAX_PRODUCTS_BUSINESS} productos del Plan Negocio. �P�sate a Premium para productos ilimitados!`, "error");
+                return showToast(`Has alcanzado el lÃ¯Â¿Â½mite de ${MAX_PRODUCTS_BUSINESS} productos del Plan Negocio. Ã¯Â¿Â½PÃ¯Â¿Â½sate a Premium para productos ilimitados!`, "error");
             }
         }
 
         if (!newProduct.basePrice || Number(newProduct.basePrice) <= 0) return showToast("El precio debe ser mayor a 0.", "warning");
 
-        // Validaci�n de categor�as (array)
+        // ValidaciÃ¯Â¿Â½n de categorÃ¯Â¿Â½as (array)
         const categories = Array.isArray(newProduct.categories) ? newProduct.categories :
             (newProduct.category ? [newProduct.category] : []);
-        if (categories.length === 0) return showToast("Selecciona al menos una categor�a.", "warning");
+        if (categories.length === 0) return showToast("Selecciona al menos una categorÃ¯Â¿Â½a.", "warning");
 
         const productData = {
             ...newProduct,
@@ -3662,7 +3662,7 @@ function App() {
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
-            return showToast("Por favor selecciona una imagen v�lida.", "warning");
+            return showToast("Por favor selecciona una imagen vÃ¯Â¿Â½lida.", "warning");
         }
 
         const reader = new FileReader();
@@ -3703,7 +3703,7 @@ function App() {
 
     // 6.5. Eliminar Producto
     const deleteProductFn = (product) => {
-        openConfirm("Eliminar Producto", `�Est�s seguro de eliminar el producto "${product.name}"?`, async () => {
+        openConfirm("Eliminar Producto", `Ã¯Â¿Â½EstÃ¯Â¿Â½s seguro de eliminar el producto "${product.name}"?`, async () => {
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id));
                 showToast("Producto eliminado correctamente.", "success");
@@ -3714,11 +3714,11 @@ function App() {
         });
     };
 
-    // 6.6. Venta Manual (Fuera de P�gina)
+    // 6.6. Venta Manual (Fuera de PÃ¯Â¿Â½gina)
     const handleManualSale = (product) => {
         if (product.stock <= 0) return showToast("No hay stock para vender.", "warning");
 
-        openConfirm("Venta Manual", `�Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
+        openConfirm("Venta Manual", `Ã¯Â¿Â½Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
                     stock: increment(-1)
@@ -3731,9 +3731,9 @@ function App() {
         });
     };
 
-    // 6.7. Gesti�n de Pedidos (Finalizar/Eliminar)
+    // 6.7. Gestión de Pedidos (Finalizar/Eliminar)
     const finalizeOrderFn = (orderId) => {
-        openConfirm("Finalizar Pedido", "�Marcar este pedido como REALIZADO/ENTREGADO?", async () => {
+        openConfirm("Finalizar Pedido", "Ã¯Â¿Â½Marcar este pedido como REALIZADO/ENTREGADO?", async () => {
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId), {
                     status: 'Realizado',
@@ -3748,7 +3748,7 @@ function App() {
     };
 
     const deleteOrderFn = (orderId) => {
-        openConfirm("Eliminar Pedido", "�Eliminar este pedido permanentemente? El stock de los productos ser� devuelto al inventario.", async () => {
+        openConfirm("Eliminar Pedido", "Ã¯Â¿Â½Eliminar este pedido permanentemente? El stock de los productos serÃ¯Â¿Â½ devuelto al inventario.", async () => {
             try {
                 // 1. Obtener datos del pedido antes de eliminar
                 const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
@@ -3771,7 +3771,7 @@ function App() {
                                 });
                             } catch (ignore) {
                                 // Si el producto ya no existe, ignoramos el error para permitir borrar el pedido
-                                console.warn(`Producto ${item.productId} no encontrado, no se restaur� stock.`);
+                                console.warn(`Producto ${item.productId} no encontrado, no se restaurÃ¯Â¿Â½ stock.`);
                             }
                         }
                     }
@@ -3787,16 +3787,16 @@ function App() {
         });
     };
 
-    // 7. Guardar Cup�n (COMPLEJO y DETALLADO)
+    // 7. Guardar CupÃ¯Â¿Â½n (COMPLEJO y DETALLADO)
     const saveCouponFn = async () => {
         // Validaciones exhaustivas
-        if (!newCoupon.code || newCoupon.code.length < 3) return showToast("El c�digo del cup�n debe tener al menos 3 caracteres.", "warning");
+        if (!newCoupon.code || newCoupon.code.length < 3) return showToast("El cÃ¯Â¿Â½digo del cupÃ¯Â¿Â½n debe tener al menos 3 caracteres.", "warning");
         if (!newCoupon.value || Number(newCoupon.value) <= 0) return showToast("El valor del descuento debe ser mayor a 0.", "warning");
 
         if (newCoupon.type === 'percentage' && Number(newCoupon.value) > 100) return showToast("El porcentaje no puede ser mayor a 100%.", "warning");
 
         if (newCoupon.targetType === 'specific_user' && !newCoupon.targetUser.includes('@')) {
-            return showToast("Si el cup�n es para un usuario espec�fico, ingresa un email v�lido.", "warning");
+            return showToast("Si el cupÃ¯Â¿Â½n es para un usuario especÃ¯Â¿Â½fico, ingresa un email vÃ¯Â¿Â½lido.", "warning");
         }
 
         try {
@@ -3820,10 +3820,10 @@ function App() {
                 code: '', type: 'percentage', value: 0, minPurchase: 0, maxDiscount: 0,
                 expirationDate: '', targetType: 'global', targetUser: '', usageLimit: '', perUserLimit: 1
             });
-            showToast("Cup�n de descuento creado exitosamente.", "success");
+            showToast("CupÃ¯Â¿Â½n de descuento creado exitosamente.", "success");
         } catch (e) {
             console.error(e);
-            showToast("Error al crear el cup�n.", "error");
+            showToast("Error al crear el cupÃ¯Â¿Â½n.", "error");
         }
     };
 
@@ -3831,9 +3831,9 @@ function App() {
     const saveSupplierFn = async () => {
         if (!newSupplier.name) return showToast("El nombre de la empresa es obligatorio.", "warning");
 
-        // Validaci�n: Debe tener al menos UN m�todo de contacto
+        // ValidaciÃ¯Â¿Â½n: Debe tener al menos UN método de contacto
         if (!newSupplier.phone && !newSupplier.ig) {
-            return showToast("Debes ingresar al menos un m�todo de contacto (Tel�fono o Instagram).", "warning");
+            return showToast("Debes ingresar al menos un método de contacto (TelÃ¯Â¿Â½fono o Instagram).", "warning");
         }
 
         const supplierData = {
@@ -3865,12 +3865,12 @@ function App() {
         }
     };
 
-    // 9. Configuración y Equipo (Settings)
+    // 9. ConfiguraciÃƒÂ³n y Equipo (Settings)
 
 
-    // 10. Gesti�n de Compras (Editar/Eliminar con l�gica de Stock)
+    // 10. GestiÃ¯Â¿Â½n de Compras (Editar/Eliminar con lÃ¯Â¿Â½gica de Stock)
     const deletePurchaseFn = (purchase) => {
-        openConfirm("Eliminar Compra", `�Eliminar registro de compra? Se descontar�n ${purchase.quantity} unidades del stock del producto.`, async () => {
+        openConfirm("Eliminar Compra", `Ã¯Â¿Â½Eliminar registro de compra? Se descontarÃ¯Â¿Â½n ${purchase.quantity} unidades del stock del producto.`, async () => {
             try {
                 // 1. Descontar Stock
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', purchase.productId), {
@@ -3890,7 +3890,7 @@ function App() {
         const qtyDiff = (newData.quantity || 0) - (oldData.quantity || 0);
 
         try {
-            // 1. Actualizar Stock si cambi� la cantidad
+            // 1. Actualizar Stock si cambiÃ¯Â¿Â½ la cantidad
             if (qtyDiff !== 0) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', oldData.productId), {
                     stock: increment(qtyDiff)
@@ -3910,9 +3910,9 @@ function App() {
         }
     };
 
-    // --- FUNCIONES PARA GESTI�N DE CATEGOR�AS ---
+    // --- FUNCIONES PARA GESTIÃ¯Â¿Â½N DE CATEGORÃ¯Â¿Â½AS ---
     const createCategoryFn = async () => {
-        if (!newCategory.trim()) return showToast("Ingresa un nombre para la categor�a.", "warning");
+        if (!newCategory.trim()) return showToast("Ingresa un nombre para la categorÃ¯Â¿Â½a.", "warning");
 
         try {
             const updatedCategories = [...(settings.categories || []), newCategory.trim()];
@@ -3921,10 +3921,10 @@ function App() {
             });
             setNewCategory('');
             setShowCategoryModal(false);
-            showToast(`Categoría "${newCategory}" creada.`, "success");
+            showToast(`CategorÃƒÂ­a "${newCategory}" creada.`, "success");
         } catch (e) {
             console.error(e);
-            showToast("Error al crear categor�a.", "error");
+            showToast("Error al crear categorÃ¯Â¿Â½a.", "error");
         }
     };
 
@@ -3982,7 +3982,7 @@ function App() {
 
     const finalizePurchaseOrder = async () => {
         if (purchaseCart.length === 0) {
-            return showToast("El carrito de compras est� vac�o.", "warning");
+            return showToast("El carrito de compras estÃ¯Â¿Â½ vacÃ¯Â¿Â½o.", "warning");
         }
 
         try {
@@ -4024,7 +4024,7 @@ function App() {
         }
     };
 
-    // --- C�LCULOS DEL DASHBOARD (CENTRALIZADOS) ---
+    // --- CÃ¯Â¿Â½LCULOS DEL DASHBOARD (CENTRALIZADOS) ---
     const dashboardMetrics = useMemo(() => {
         // 1. Demanda en Vivo y Favoritos (Trending) + VENTAS REALES
         const productStats = {}; // { id: { cart: 0, fav: 0, sales: 0, total: 0 } }
@@ -4081,7 +4081,7 @@ function App() {
                         productMetadata[pid] = { name: i.title || i.name || 'Producto Desconocido', image: i.image };
                     }
 
-                    // Sumar a Estad�sticas de Tendencia (Peso x5 para ventas reales)
+                    // Sumar a EstadÃ¯Â¿Â½sticas de Tendencia (Peso x5 para ventas reales)
                     initStats(pid);
                     productStats[pid].sales += qty;
                     productStats[pid].total += (qty * 5);
@@ -4089,7 +4089,7 @@ function App() {
             }
         });
 
-        // Ordenar productos por "calor" (total de inter�s)
+        // Ordenar productos por "calor" (total de interÃ¯Â¿Â½s)
         const trendingProducts = Object.entries(productStats)
             .map(([id, stats]) => {
                 // Intentar buscar en productos vivos, sino usar metadata del pedido
@@ -4111,7 +4111,7 @@ function App() {
             .sort((a, b) => b.stats.total - a.stats.total)
             .slice(0, 5); // Top 5
 
-        // Estrella (M�s Vendido)
+        // Estrella (MÃ¯Â¿Â½s Vendido)
         let starProductId = null;
         let maxSales = -1;
         Object.entries(salesCount).forEach(([id, count]) => {
@@ -4137,8 +4137,8 @@ function App() {
             }
         }
 
-        // Menos Vendido (Peor Producto) - Buscar el m�nimo entre TODOS los productos activos
-        // Nota: Solo consideramos productos que A�N existen en inventario para "Menos Vendido"
+        // Menos Vendido (Peor Producto) - Buscar el mínimo entre TODOS los productos activos
+        // Nota: Solo consideramos productos que AÃ¯Â¿Â½N existen en inventario para "Menos Vendido"
         let leastSoldProductId = null;
         let minSales = Infinity;
 
@@ -4151,7 +4151,7 @@ function App() {
         });
         const leastSoldProduct = leastSoldProductId ? products.find(p => p.id === leastSoldProductId) : null;
 
-        // 4. Anal�tica Temporal (Timeline)
+        // 4. AnalÃ¯Â¿Â½tica Temporal (Timeline)
         const timeline = { daily: {}, monthly: {}, yearly: {} };
         const categoryStats = {}; // { catName: { revenue: 0, items: 0 } }
 
@@ -4210,7 +4210,7 @@ function App() {
             ...validOrders.map(o => ({ id: o.id || o.orderId, type: 'income', category: 'Venta', date: o.date, amount: o.total, description: `Orden #${o.orderId}`, status: o.status })),
             ...expenses.map(e => ({ id: e.id, type: 'expense', category: e.category || 'Gasto', date: e.date, amount: e.amount, description: e.description, status: 'Pagado' })),
             ...(purchases || []).map(p => ({ id: p.id, type: 'expense', category: 'Compra Stock', date: p.date, amount: p.cost, description: `Prov: ${p.supplier || 'General'}`, status: 'Completado' })),
-            ...(investments || []).map(i => ({ id: i.id, type: 'income', category: 'Inversi�n', date: i.date, amount: i.amount, description: `Inv: ${i.investor}`, status: 'Recibido' }))
+            ...(investments || []).map(i => ({ id: i.id, type: 'income', category: 'InversiÃ¯Â¿Â½n', date: i.date, amount: i.amount, description: `Inv: ${i.investor}`, status: 'Recibido' }))
         ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 100);
 
         return {
@@ -4232,12 +4232,12 @@ function App() {
         };
     }, [orders, expenses, purchases, products, liveCarts, users, settings]);
 
-    // ?? [PAUSA POR SEGURIDAD] - El c�digo contin�a con la Interfaz Gr�fica completa y detallada. Por favor escribe "continuar".
+    // ?? [PAUSA POR SEGURIDAD] - El cÃ¯Â¿Â½digo continÃ¯Â¿Â½a con la Interfaz GrÃ¯Â¿Â½fica completa y detallada. Por favor escribe "continuar".
     // --- COMPONENTES UI: MODALES DETALLADOS ---
 
     // Modal de Detalles de Pedido (Visor Completo)
 
-    // Modal de Detalle de Producto / Promo (Versi�n Premium)
+    // Modal de Detalle de Producto / Promo (VersiÃ¯Â¿Â½n Premium)
 
 
 
@@ -4273,7 +4273,7 @@ function App() {
                 <h1 className="text-xl sm:text-2xl md:text-4xl font-black mb-3 sm:mb-4 tracking-tight uppercase">Sistema en Mantenimiento</h1>
                 <p className={`max-w-sm sm:max-w-md mx-auto leading-relaxed text-sm sm:text-base ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                     Estamos realizando mejoras para brindarte una experiencia premium.
-                    �Te mandamos un saludo y esperamos que vuelvas prontamente!
+                    Ã¯Â¿Â½Te mandamos un saludo y esperamos que vuelvas prontamente!
                 </p>
                 <div className="mt-8 sm:mt-12 pt-8 sm:pt-12 border-t border-slate-900 w-full max-w-xs">
                     <p className="text-[10px] sm:text-xs text-slate-600 font-mono italic">{settings?.storeName || ''} - Modo Mantenimiento Activo</p>
@@ -4282,37 +4282,37 @@ function App() {
         );
     }
 
-    // --- L�GICA DE FILTRADO Y ORDENAMIENTO INTELIGENTE ---
+    // --- LÃ¯Â¿Â½GICA DE FILTRADO Y ORDENAMIENTO INTELIGENTE ---
     const filteredProducts = products
         .filter(p => {
-            // Excluir productos desactivados de la tienda p�blica
+            // Excluir productos desactivados de la tienda pÃ¯Â¿Â½blica
             if (p.isActive === false) return false;
 
             const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-            // L�gica de Categorías Especiales
-            if (selectedCategory === 'Promos') return false; // El grid est�ndar se oculta para Promos
+            // LÃ¯Â¿Â½gica de CategorÃƒÂ­as Especiales
+            if (selectedCategory === 'Promos') return false; // El grid estÃ¯Â¿Â½ndar se oculta para Promos
             if (selectedCategory === 'Ofertas') {
                 return matchesSearch && (p.discount > 0);
             }
 
-            // NUEVO: Soporte para m�ltiples categor�as
+            // NUEVO: Soporte para mÃ¯Â¿Â½ltiples categorÃ¯Â¿Â½as
             // Verificar si el producto tiene el array categories o el campo legacy category
             const matchesCategory = (() => {
                 // Sin filtro seleccionado - mostrar todos
                 if (selectedCategory === '') return true;
 
-                // Producto con m�ltiples categor�as (nuevo sistema)
+                // Producto con mÃ¯Â¿Â½ltiples categorÃ¯Â¿Â½as (nuevo sistema)
                 if (Array.isArray(p.categories)) {
                     return p.categories.includes(selectedCategory);
                 }
 
-                // Producto con categor�a antigua (retrocompatibilidad)
+                // Producto con categorÃ¯Â¿Â½a antigua (retrocompatibilidad)
                 if (p.category) {
                     return p.category.trim() === selectedCategory;
                 }
 
-                // Sin categor�a asignada
+                // Sin categorÃ¯Â¿Â½a asignada
                 return false;
             })();
 
@@ -4322,7 +4322,7 @@ function App() {
             // Prioridad 1: Productos Destacados primero
             if (a.isFeatured && !b.isFeatured) return -1;
             if (!a.isFeatured && b.isFeatured) return 1;
-            // Prioridad 2: M�s vendidos
+            // Prioridad 2: MÃ¯Â¿Â½s vendidos
             const salesA = dashboardMetrics?.salesCount?.[a.id] || 0;
             const salesB = dashboardMetrics?.salesCount?.[b.id] || 0;
             return salesB - salesA;
@@ -4397,10 +4397,10 @@ function App() {
                     currentUser={currentUser}
                 />
 
-                {/* --- BARRA DE NAVEGACI�N (NAVBAR) --- */}
+                {/* --- BARRA DE NAVEGACIÃ¯Â¿Â½N (NAVBAR) --- */}
                 {view !== 'admin' && (
                     <nav className={`fixed top-0 w-full h-16 sm:h-20 z-50 px-3 sm:px-6 md:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 ${darkMode ? 'glass border-b border-slate-800/50' : 'bg-white/95 border-b border-slate-200 shadow-sm'}`}>
-                        {/* Logo y Men� */}
+                        {/* Logo y MenÃ¯Â¿Â½ */}
                         <div className="flex items-center gap-2 sm:gap-6">
                             <button onClick={() => setIsMenuOpen(true)} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
                                 <Menu className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
@@ -4427,7 +4427,7 @@ function App() {
                             <Search className={`w-5 h-5 mr-3 group-focus-within:text-orange-500 transition ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                             <input
                                 className={`bg-transparent outline-none text-sm w-full font-medium ${darkMode ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
-                                placeholder="¿Qué estás buscando hoy?"
+                                placeholder={'\u00BFQu\u00E9 est\u00E1s buscando hoy?'}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
@@ -4449,7 +4449,7 @@ function App() {
                                 )}
                             </div>
 
-                            {/* Botón Modo Claro/Oscuro */}
+                            {/* BotÃƒÂ³n Modo Claro/Oscuro */}
                             <button
                                 onClick={() => setDarkMode(!darkMode)}
                                 className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group overflow-hidden border ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
@@ -4463,7 +4463,7 @@ function App() {
                                 </div>
                             </button>
 
-                            {/* Botón Carrito */}
+                            {/* BotÃƒÂ³n Carrito */}
                             <button onClick={() => setView('cart')} className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50 hover:border-orange-500/30' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200 hover:border-orange-400'}`}>
                                 <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                                 {cart.length > 0 && (
@@ -4473,7 +4473,7 @@ function App() {
                                 )}
                             </button>
 
-                            {/* Perfil / Login - Solo mostrar perfil si el usuario tiene datos válidos */}
+                            {/* Perfil / Login - Solo mostrar perfil si el usuario tiene datos vÃƒÂ¡lidos */}
                             {currentUser && currentUser.id && currentUser.email && currentUser.name ? (
                                 <button onClick={() => setView('profile')} className={`flex items-center gap-2 sm:gap-3 pl-2 pr-3 sm:pr-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border transition group ${darkMode ? 'bg-slate-900/50 border-slate-700/50 hover:border-orange-500/50' : 'bg-slate-100 border-slate-200 hover:border-orange-400'}`}>
                                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold shadow-lg text-xs sm:text-sm group-hover:scale-105 transition">
@@ -4493,7 +4493,7 @@ function App() {
                     </nav>
                 )}
 
-                {/* --- MENÚ MÓVIL (DETALLADO Y EXPLÍCITO) --- */}
+                {/* --- MENÃƒÅ¡ MÃƒâ€œVIL (DETALLADO Y EXPLÃƒÂCITO) --- */}
                 {isMenuOpen && (
                     <div className="fixed inset-0 z-[10000] flex justify-start">
                         {/* Backdrop */}
@@ -4502,7 +4502,7 @@ function App() {
                         {/* Panel Lateral */}
                         <div className={`relative w-72 sm:w-80 h-full p-6 sm:p-8 animate-fade-in-right flex flex-col shadow-2xl z-[10001] ${darkMode ? 'bg-[#0a0a0a] border-r border-slate-800' : 'bg-white border-r border-slate-200'}`} data-lenis-prevent>
                             <div className={`flex justify-between items-center mb-8 sm:mb-10 border-b pb-4 sm:pb-6 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                                <h2 className={`text-2xl sm:text-3xl font-black tracking-tight drop-shadow-md ${darkMode ? 'text-white' : 'text-slate-900'}`}>MENÚ</h2>
+                                <h2 className={`text-2xl sm:text-3xl font-black tracking-tight drop-shadow-md ${darkMode ? 'text-white' : 'text-slate-900'}`}>MENÃƒÅ¡</h2>
                                 <button onClick={() => setIsMenuOpen(false)} className={`p-2 sm:p-3 rounded-full transition border ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
                                     <X className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </button>
@@ -4534,7 +4534,7 @@ function App() {
 
                                 {settings?.showGuideLink !== false && (
                                     <button onClick={() => { setView('guide'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
-                                        <FileQuestion className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> {settings?.guideTitle || 'Cómo Comprar'}
+                                        <FileQuestion className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> {settings?.guideTitle || 'CÃƒÂ³mo Comprar'}
                                     </button>
                                 )}
 
@@ -4563,7 +4563,7 @@ function App() {
                     {view === 'store' && (
                         <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block">
 
-                            {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings estén cargados */}
+                            {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings estÃƒÂ©n cargados */}
                             {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
                                 <div className="w-full bg-gradient-to-r from-orange-900/20 to-red-900/20 border border-orange-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
                                     <div className="absolute inset-0 bg-white/5 skew-x-12 -translate-x-full group-hover:translate-x-full transition duration-1000"></div>
@@ -4573,15 +4573,15 @@ function App() {
                                 </div>
                             )}
 
-                            {/* Brand Ticker (Futuristic) - Solo mostrar cuando settings estén cargados */}
+                            {/* Brand Ticker (Futuristic) - Solo mostrar cuando settings estÃƒÂ©n cargados */}
                             {settingsLoaded && settings?.showBrandTicker !== false && (
                                 <div className={`mb-8 w-full overflow-hidden border-y backdrop-blur-sm py-2 ${darkMode ? 'border-slate-800/50 bg-[#0a0a0a]/50' : 'border-slate-200 bg-slate-100/50'}`}>
                                     <div className="ticker-wrap">
                                         <div className={`ticker-content font-mono text-xs md:text-sm tracking-[0.2em] md:tracking-[0.5em] uppercase flex items-center gap-6 md:gap-12 ${darkMode ? 'text-orange-500/50' : 'text-orange-600/70'}`}>
                                             {[1, 2, 3, 4].map((i) => (
                                                 <React.Fragment key={i}>
-                                                    <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} Tech • Futuro • Calidad Premium • Innovación`}</span>
-                                                    <span>•</span>
+                                                    <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} Tech Ã¢â‚¬Â¢ Futuro Ã¢â‚¬Â¢ Calidad Premium Ã¢â‚¬Â¢ InnovaciÃƒÂ³n`}</span>
+                                                    <span>Ã¢â‚¬Â¢</span>
                                                 </React.Fragment>
                                             ))}
                                         </div>
@@ -4615,7 +4615,7 @@ function App() {
                                                 'h-[350px] sm:h-[500px] lg:h-[600px]'} ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
 
-                                        {/* Imágenes del Carrusel */}
+                                        {/* ImÃƒÂ¡genes del Carrusel */}
                                         {!settingsLoaded ? (
                                             <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
                                         ) : heroImages.length > 0 ? (
@@ -4633,7 +4633,7 @@ function App() {
                                                 </div>
                                             ))
                                         ) : (
-                                            // Fallback Hero Background si no hay imágenes
+                                            // Fallback Hero Background si no hay imÃƒÂ¡genes
                                             <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40 opacity-60">
                                                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
                                             </div>
@@ -4685,7 +4685,7 @@ function App() {
                                                                 className={`font-black rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn 
                                                                     ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'px-4 py-2 text-xs' : 'px-8 py-4'}
                                                                     ${darkMode ? 'bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.1)]' : 'bg-slate-900 text-white shadow-xl hover:bg-slate-800'}`}>
-                                                                VER CATÁLOGO <ArrowRight className={`${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'w-3 h-3' : 'w-5 h-5'} group-hover/btn:translate-x-1 transition`} />
+                                                                VER CATÃƒÂLOGO <ArrowRight className={`${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'w-3 h-3' : 'w-5 h-5'} group-hover/btn:translate-x-1 transition`} />
                                                             </button>
                                                             <button
                                                                 onClick={() => setView('guide')}
@@ -4700,7 +4700,7 @@ function App() {
                                             </div>
                                         </div>
 
-                                        {/* Indicadores del Carrusel (dots) - Solo si hay múltiples imágenes */}
+                                        {/* Indicadores del Carrusel (dots) - Solo si hay mÃƒÂºltiples imÃƒÂ¡genes */}
                                         {hasMultipleImages && settingsLoaded && (
                                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
                                                 {heroImages.map((_, index) => (
@@ -4719,7 +4719,7 @@ function App() {
                             })()}
 
                             {/* Why Choose Us Section */}
-                            {/* Why Choose Us Section (Editable) - Respeta toggles de configuración */}
+                            {/* Why Choose Us Section (Editable) - Respeta toggles de configuraciÃƒÂ³n */}
                             {settingsLoaded && settings?.showFeaturesSection !== false && (
                                 <div className={`grid grid-cols-1 ${[settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 1 ? 'md:grid-cols-1 max-w-md mx-auto' :
                                     [settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 2 ? 'md:grid-cols-2 max-w-2xl mx-auto' :
@@ -4774,7 +4774,7 @@ function App() {
                                 </div>
                             )}
 
-                            {/* Filtros de Categoría */}
+                            {/* Filtros de CategorÃƒÂ­a */}
                             <div id="catalog" className={`sticky top-16 sm:top-20 z-40 backdrop-blur-xl py-3 sm:py-4 mb-6 sm:mb-8 -mx-4 px-4 border-y ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
                                 <div
                                     ref={categoriesScrollRef}
@@ -4787,7 +4787,7 @@ function App() {
                                 >
                                     <Filter className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
 
-                                    {/* BOTÓN PROMOS (SPECIAL) */}
+                                    {/* BOTÃƒâ€œN PROMOS (SPECIAL) */}
                                     <button
                                         onClick={() => setSelectedCategory('Promos')}
                                         className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : darkMode ? 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100 hover:border-purple-300'}`}
@@ -4796,7 +4796,7 @@ function App() {
                                         <span className="relative z-10 flex items-center gap-1.5 sm:gap-2"><Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> PROMOS</span>
                                     </button>
 
-                                    {/* BOTÓN OFERTAS (SPECIAL) */}
+                                    {/* BOTÃƒâ€œN OFERTAS (SPECIAL) */}
                                     <button
                                         onClick={() => setSelectedCategory('Ofertas')}
                                         className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-500 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50' : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'}`}
@@ -4816,8 +4816,8 @@ function App() {
                             </div>
 
 
-                            {/* SECCIÓN PROMOS (NUEVO) */}
-                            {/* SECCIÓN PROMOS (TAB VIEW) */}
+                            {/* SECCIÃƒâ€œN PROMOS (NUEVO) */}
+                            {/* SECCIÃƒâ€œN PROMOS (TAB VIEW) */}
                             {selectedCategory === 'Promos' && (
                                 <div className="mb-16 animate-fade-in">
                                     {promos.length > 0 ? (
@@ -4885,7 +4885,7 @@ function App() {
                                                                     <button
                                                                         onClick={() => {
                                                                             if (!hasStock) return showToast("Sin stock disponible para esta promo.", "warning");
-                                                                            // Lógica especial para agregar Promo al carrito
+                                                                            // LÃƒÂ³gica especial para agregar Promo al carrito
                                                                             // Tratamos la promo como un "producto" pero con un flag especial
                                                                             const promoProduct = {
                                                                                 id: promo.id,
@@ -4917,27 +4917,27 @@ function App() {
                                                 <Tag className="w-16 h-16 text-slate-600" />
                                             </div>
                                             <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Sin Promociones Activas</h3>
-                                            <p className="text-slate-500 max-w-sm">No hay promociones disponibles en este momento. ¡Volvé pronto!</p>
+                                            <p className="text-slate-500 max-w-sm">No hay promociones disponibles en este momento. ¡VolvÃƒÂ© pronto!</p>
                                             <button
                                                 onClick={() => setSelectedCategory('')}
                                                 className="mt-6 px-6 py-3 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition border border-orange-500/20"
                                             >
-                                                Ver Todo el Catálogo
+                                                Ver Todo el CatÃƒÂ¡logo
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* Grid de Productos - Filtrando productos inválidos (ej: tests) */}
+                            {/* Grid de Productos - Filtrando productos invÃƒÂ¡lidos (ej: tests) */}
                             {products.filter(p => p.isActive !== false).length === 0 ? (
-                                // Empty State explícito (sin componente externo para "bulk")
+                                // Empty State explÃƒÂ­cito (sin componente externo para "bulk")
                                 <div className={`flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-300 bg-slate-50'}`}>
                                     <div className={`p-8 rounded-full mb-6 shadow-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                                         <Package className="w-16 h-16 text-slate-600" />
                                     </div>
-                                    <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Catálogo Vacío</h3>
-                                    <p className="text-slate-500 max-w-sm">No hay productos disponibles en este momento. Por favor revisa más tarde o contacta soporte.</p>
+                                    <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>CatÃƒÂ¡logo VacÃƒÂ­o</h3>
+                                    <p className="text-slate-500 max-w-sm">No hay productos disponibles en este momento. Por favor revisa mÃƒÂ¡s tarde o contacta soporte.</p>
                                 </div>
                             ) : (
                                 <>
@@ -4949,7 +4949,7 @@ function App() {
                                             <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>No se encontraron resultados</h3>
                                             <p className="text-slate-500 mb-6 max-w-md mx-auto">
                                                 No hay productos que coincidan con <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>"{searchQuery}"</span>
-                                                {selectedCategory && <span> en la categoría <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{selectedCategory}</span></span>}.
+                                                {selectedCategory && <span> en la categorÃƒÂ­a <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{selectedCategory}</span></span>}.
                                             </p>
                                             <button
                                                 onClick={() => { setSearchQuery(''); setSelectedCategory(''); }}
@@ -4999,7 +4999,7 @@ function App() {
                                         <div className={`p-6 rounded-full mb-4 shadow-xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <ShoppingCart className={`w-12 h-12 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
                                         </div>
-                                        <h3 className={`text-xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Tu carrito está vacío</h3>
+                                        <h3 className={`text-xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Tu carrito estÃƒÂ¡ vacÃƒÂ­o</h3>
                                         <p className="text-slate-500 text-sm max-w-xs mb-6 leading-relaxed">
                                             ¡Es un buen momento para buscar ese producto que tanto quieres!
                                         </p>
@@ -5061,7 +5061,7 @@ function App() {
                                                 <ShoppingBag className="w-5 h-5 text-orange-500" /> Resumen
                                             </h3>
 
-                                            {/* Cupón Compacto */}
+                                            {/* CupÃƒÂ³n Compacto */}
                                             <div className="mb-6">
                                                 {appliedCoupon ? (
                                                     <div className="bg-purple-900/20 border border-purple-500/30 p-3 rounded-xl flex justify-between items-center relative overflow-hidden group">
@@ -5077,7 +5077,7 @@ function App() {
                                                     </div>
                                                 ) : (
                                                     <button onClick={() => setShowCouponModal(true)} className="w-full py-3 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 text-slate-400 hover:text-purple-300 rounded-xl transition flex items-center justify-center gap-2 text-xs font-bold">
-                                                        <Ticket className="w-4 h-4" /> Tengo un cupón
+                                                        <Ticket className="w-4 h-4" /> Tengo un cupÃƒÂ³n
                                                     </button>
                                                 )}
                                             </div>
@@ -5102,13 +5102,13 @@ function App() {
                                                 </div>
                                             </div>
 
-                                            {/* Botones de Acción */}
+                                            {/* Botones de AcciÃƒÂ³n */}
                                             <div className="space-y-3">
                                                 <button onClick={() => setView('checkout')} className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-4 text-white font-bold text-base rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2">
                                                     Iniciar Compra <ArrowRight className="w-5 h-5" />
                                                 </button>
 
-                                                {/* Botón WhatsApp Configurable */}
+                                                {/* BotÃƒÂ³n WhatsApp Configurable */}
                                                 {settings?.whatsappCartEnabled && (
                                                     <button
                                                         onClick={() => {
@@ -5126,8 +5126,8 @@ function App() {
                                                                     if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
                                                                 }
 
-                                                                const itemsList = cart.map(i => `• ${i.quantity}x ${i.product.name} $${calculateItemPrice(i.product.basePrice, i.product.discount).toLocaleString()}`).join('\n');
-                                                                const msg = `Hola! Quiero comprar lo siguiente:\n\n${itemsList}\n\n*Total: $${finalTotal.toLocaleString()}*\n\n¿Como procedemos?`;
+                                                                const itemsList = cart.map(i => `Ã¢â‚¬Â¢ ${i.quantity}x ${i.product.name} $${calculateItemPrice(i.product.basePrice, i.product.discount).toLocaleString()}`).join('\n');
+                                                                const msg = `Hola! Quiero comprar lo siguiente:\n\n${itemsList}\n\n*Total: $${finalTotal.toLocaleString()}*\n\nÃ‚Â¿Como procedemos?`;
 
                                                                 window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
                                                             } catch (e) {
@@ -5163,7 +5163,7 @@ function App() {
                                         <div className={`border p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-bl-[100px] pointer-events-none"></div>
                                             <h2 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                                <Truck className="text-orange-500 w-6 h-6" /> Método de Entrega
+                                                <Truck className="text-orange-500 w-6 h-6" /> MÃƒÂ©todo de Entrega
                                             </h2>
                                             <div className="grid grid-cols-2 gap-4 relative z-10 mb-6">
                                                 {settings?.shippingPickup?.enabled && (
@@ -5183,7 +5183,7 @@ function App() {
                                                     >
                                                         {checkoutData.shippingMethod === 'Delivery' && <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-orange-500" />}
                                                         <Truck className="w-8 h-8 group-hover:scale-110 transition" />
-                                                        <span className="text-xs font-black uppercase">Envío a Domicilio</span>
+                                                        <span className="text-xs font-black uppercase">EnvÃƒÂ­o a Domicilio</span>
                                                     </button>
                                                 )}
                                             </div>
@@ -5191,7 +5191,7 @@ function App() {
                                             {checkoutData.shippingMethod === 'Pickup' && (
                                                 <div className="p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl animate-fade-up flex gap-3">
                                                     <Info className="w-5 h-5 text-orange-400 shrink-0" />
-                                                    <p className="text-xs text-orange-200">Retira tu pedido en: <span className="font-bold">{settings?.shippingPickup?.address || 'Dirección a coordinar'}</span></p>
+                                                    <p className="text-xs text-orange-200">Retira tu pedido en: <span className="font-bold">{settings?.shippingPickup?.address || 'DirecciÃƒÂ³n a coordinar'}</span></p>
                                                 </div>
                                             )}
 
@@ -5199,7 +5199,7 @@ function App() {
                                                 <div className="space-y-5 relative z-10 animate-fade-up mt-4">
                                                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest pl-2">Datos de Destino</h3>
                                                     <div>
-                                                        <label htmlFor="address" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Dirección y Altura</label>
+                                                        <label htmlFor="address" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">DirecciÃƒÂ³n y Altura</label>
                                                         <input
                                                             id="address"
                                                             name="address"
@@ -5237,7 +5237,7 @@ function App() {
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label htmlFor="zipCode" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Código Postal</label>
+                                                        <label htmlFor="zipCode" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">CÃƒÂ³digo Postal</label>
                                                         <input
                                                             id="zipCode"
                                                             name="zipCode"
@@ -5252,11 +5252,11 @@ function App() {
                                             )}
                                         </div>
 
-                                        {/* Método de Pago */}
+                                        {/* MÃƒÂ©todo de Pago */}
                                         <div className={`border p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-bl-[100px] pointer-events-none"></div>
                                             <h2 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                                <CreditCard className="text-orange-500 w-6 h-6" /> Método de Pago
+                                                <CreditCard className="text-orange-500 w-6 h-6" /> MÃƒÂ©todo de Pago
                                             </h2>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                                                 {settings?.paymentMercadoPago?.enabled && (
@@ -5338,7 +5338,7 @@ function App() {
                                                         <div className={`mt-4 p-4 rounded-xl flex items-start gap-3 ${darkMode ? 'bg-orange-900/20 border border-orange-500/20' : 'bg-orange-100'}`}>
                                                             <Info className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                                                             <p className={`text-xs leading-relaxed ${darkMode ? 'text-orange-200' : 'text-orange-700'}`}>
-                                                                Realizá la transferencia y luego confirmá tu pedido. Te enviaremos un email con los detalles.
+                                                                RealizÃƒÂ¡ la transferencia y luego confirmÃƒÂ¡ tu pedido. Te enviaremos un email con los detalles.
                                                             </p>
                                                         </div>
                                                     </div>
@@ -5351,10 +5351,10 @@ function App() {
                                                     <div className="bg-slate-900/50 p-6 rounded-2xl border border-orange-500/30">
                                                         <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                                                             <CreditCard className="w-5 h-5 text-orange-400" />
-                                                            Ingresá los datos de tu tarjeta
+                                                            IngresÃƒÂ¡ los datos de tu tarjeta
                                                         </h3>
                                                         <p className="text-slate-400 text-sm mb-4">
-                                                            Pagá de forma segura con Visa, MasterCard, AMEX y más.
+                                                            PagÃƒÂ¡ de forma segura con Visa, MasterCard, AMEX y mÃƒÂ¡s.
                                                         </p>
 
                                                         {/* Mensaje de Seguridad */}
@@ -5363,7 +5363,7 @@ function App() {
                                                             <div>
                                                                 <p className="text-green-400 text-sm font-bold mb-1">Pago 100% Seguro</p>
                                                                 <p className="text-xs text-green-200/80 leading-relaxed">
-                                                                    Tus datos son procesados de forma encriptada por Mercado Pago. No almacenamos información de tu tarjeta.
+                                                                    Tus datos son procesados de forma encriptada por Mercado Pago. No almacenamos informaciÃƒÂ³n de tu tarjeta.
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -5372,8 +5372,8 @@ function App() {
                                                         <div className="mb-6 p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
                                                             <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                                                             <p className="text-xs text-orange-200 leading-relaxed font-medium">
-                                                                <strong className="text-orange-400 block mb-1">ATENCIÓN:</strong>
-                                                                Si tenés activado un <span className="text-white font-bold">AdBlocker/Bloqueador de Anuncios</span>, por favor desactivalo temporalmente.
+                                                                <strong className="text-orange-400 block mb-1">ATENCIÃƒâ€œN:</strong>
+                                                                Si tenÃƒÂ©s activado un <span className="text-white font-bold">AdBlocker/Bloqueador de Anuncios</span>, por favor desactivalo temporalmente.
                                                                 Es posible que el pago no se concrete si el bloqueador interfiere con la seguridad del banco.
                                                             </p>
                                                         </div>
@@ -5405,7 +5405,7 @@ function App() {
                                                         {isPaymentProcessing && (
                                                             <div className="mt-4 p-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-orange-400 text-sm flex items-center gap-3">
                                                                 <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
-                                                                Procesando tu pago, por favor esperá...
+                                                                Procesando tu pago, por favor esperÃƒÂ¡...
                                                             </div>
                                                         )}
                                                     </div>
@@ -5414,7 +5414,7 @@ function App() {
                                         </div>
                                     </div>
 
-                                    {/* Columna Derecha: Confirmación */}
+                                    {/* Columna Derecha: ConfirmaciÃƒÂ³n */}
                                     <div className="md:col-span-2">
                                         <div className={`border p-8 rounded-[2.5rem] sticky top-28 shadow-2xl ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <h3 className={`font-black mb-8 text-xl border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-100'}`}>Resumen Final</h3>
@@ -5440,7 +5440,7 @@ function App() {
                                                 </div>
                                             </div>
 
-                                            {/* Botón Confirmar - Solo para Efectivo o Transferencia (NO para Tarjeta) */}
+                                            {/* BotÃƒÂ³n Confirmar - Solo para Efectivo o Transferencia (NO para Tarjeta) */}
                                             {checkoutData.paymentChoice && checkoutData.paymentChoice !== 'Tarjeta' ? (
                                                 <>
                                                     <button
@@ -5453,17 +5453,17 @@ function App() {
                                                     </button>
 
                                                     <p className="text-center text-slate-600 text-xs mt-6 leading-relaxed px-4">
-                                                        Al confirmar, aceptas nuestros términos de servicio y política de privacidad.
+                                                        Al confirmar, aceptas nuestros tÃƒÂ©rminos de servicio y polÃƒÂ­tica de privacidad.
                                                     </p>
                                                 </>
                                             ) : checkoutData.paymentChoice === 'Tarjeta' ? (
                                                 <div className="bg-orange-900/10 border border-orange-500/20 p-4 rounded-2xl text-center">
                                                     <p className="text-orange-400 text-sm font-medium flex items-center justify-center gap-2">
                                                         <CreditCard className="w-4 h-4" />
-                                                        Completá los datos de tu tarjeta arriba para pagar
+                                                        CompletÃƒÂ¡ los datos de tu tarjeta arriba para pagar
                                                     </p>
                                                     <p className="text-slate-500 text-xs mt-2">
-                                                        Tu compra quedará confirmada automáticamente al procesar el pago.
+                                                        Tu compra quedarÃƒÂ¡ confirmada automÃƒÂ¡ticamente al procesar el pago.
                                                     </p>
                                                 </div>
                                             ) : null}
@@ -5474,14 +5474,14 @@ function App() {
                         )
                     }
 
-                    {/* 4. VISTA DE PERFIL (HISTORIAL Y FAVORITOS) - Solo si el usuario tiene datos válidos */}
+                    {/* 4. VISTA DE PERFIL (HISTORIAL Y FAVORITOS) - Solo si el usuario tiene datos vÃƒÂ¡lidos */}
                     {
                         view === 'profile' && currentUser && currentUser.id && currentUser.email && currentUser.name && (
                             <div className="max-w-6xl mx-auto pt-8 animate-fade-up px-4 md:px-8 pb-20">
                                 {/* Tarjeta de Usuario */}
                                 {/* Tarjeta de Usuario */}
                                 <div className={`border p-8 md:p-12 rounded-[3rem] mb-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
-                                    {/* Decoración Fondo */}
+                                    {/* DecoraciÃƒÂ³n Fondo */}
                                     <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-[120px] pointer-events-none"></div>
                                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -5501,7 +5501,7 @@ function App() {
                                                 <User className="w-3 h-3" /> {currentUser.dni || 'Sin DNI'}
                                             </span>
                                             <span className={`border px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2 ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
-                                                <Phone className="w-3 h-3" /> {currentUser.phone || 'Sin Teléfono'}
+                                                <Phone className="w-3 h-3" /> {currentUser.phone || 'Sin TelÃƒÂ©fono'}
                                             </span>
                                             <span className={`border px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2 ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
                                                 <Shield className="w-3 h-3" /> {getRole(currentUser.email).toUpperCase()}
@@ -5517,12 +5517,12 @@ function App() {
                                             </button>
                                         )}
                                         <button onClick={() => { localStorage.removeItem('sustore_user_data'); setCurrentUser(null); setView('store') }} className={`px-6 py-4 border rounded-2xl font-bold transition flex items-center justify-center gap-2 ${darkMode ? 'bg-red-900/10 border-red-500/20 text-red-500 hover:bg-red-900/20' : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'}`}>
-                                            <LogOut className="w-5 h-5" /> Cerrar Sesión
+                                            <LogOut className="w-5 h-5" /> Cerrar SesiÃƒÂ³n
                                         </button>
                                     </div>
                                 </div>
 
-                                {/* SECCIÓN: MIS CUPONES (NUEVO) */}
+                                {/* SECCIÃƒâ€œN: MIS CUPONES (NUEVO) */}
                                 <div className={`border p-8 rounded-[2.5rem] mb-12 shadow-2xl animate-fade-up ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                         <Ticket className="text-purple-400 w-6 h-6" /> Mis Cupones Disponibles
@@ -5551,7 +5551,7 @@ function App() {
                                                         <button
                                                             onClick={() => {
                                                                 navigator.clipboard.writeText(c.code);
-                                                                showToast("Código copiado", "success");
+                                                                showToast("CÃƒÂ³digo copiado", "success");
                                                             }}
                                                             className="px-4 py-2 bg-purple-900/20 text-purple-400 rounded-lg text-xs font-bold hover:bg-purple-500 hover:text-white transition border border-purple-500/20"
                                                         >
@@ -5563,22 +5563,22 @@ function App() {
                                         </div>
 
                                         <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                                            <h4 className={`font-bold mb-4 text-sm uppercase tracking-wider ${darkMode ? 'text-white' : 'text-slate-900'}`}>Canjear Código</h4>
+                                            <h4 className={`font-bold mb-4 text-sm uppercase tracking-wider ${darkMode ? 'text-white' : 'text-slate-900'}`}>Canjear CÃƒÂ³digo</h4>
                                             <div className="flex gap-2">
                                                 <input
                                                     className={`flex-1 border rounded-xl p-3 focus:border-purple-500 outline-none uppercase font-mono ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
-                                                    placeholder="CÓDIGO"
+                                                    placeholder="CÃƒâ€œDIGO"
                                                     id="couponRedeemInput"
                                                 />
                                                 <button
                                                     onClick={() => {
                                                         const code = document.getElementById('couponRedeemInput').value.trim().toUpperCase();
-                                                        if (!code) return showToast("Ingresa un código", "warning");
+                                                        if (!code) return showToast("Ingresa un cÃƒÂ³digo", "warning");
                                                         const coupon = coupons.find(c => c.code === code);
                                                         if (coupon) {
-                                                            showToast("¡Cupón válido! Úsalo en el checkout.", "success");
+                                                            showToast("¡CupÃƒÂ³n vÃƒÂ¡lido! ÃƒÅ¡salo en el checkout.", "success");
                                                         } else {
-                                                            showToast("Cupón no encontrado o inválido", "error");
+                                                            showToast("CupÃƒÂ³n no encontrado o invÃƒÂ¡lido", "error");
                                                         }
                                                     }}
                                                     className="bg-purple-600 px-6 rounded-xl text-white font-bold hover:bg-purple-500 transition shadow-lg"
@@ -5587,7 +5587,7 @@ function App() {
                                                 </button>
                                             </div>
                                             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
-                                                Ingresa el código aquí para verificar si es válido. Llévalo al checkout para aplicar el descuento.
+                                                Ingresa el cÃƒÂ³digo aquÃƒÂ­ para verificar si es vÃƒÂ¡lido. LlÃƒÂ©valo al checkout para aplicar el descuento.
                                             </p>
                                         </div>
                                     </div>
@@ -5612,7 +5612,7 @@ function App() {
                                                 return (
                                                     <div className={`p-12 border-2 border-dashed rounded-[2rem] text-center ${darkMode ? 'border-slate-800 bg-slate-900/20 text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                                                         <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                                        <p className="font-bold">Aún no tienes compras.</p>
+                                                        <p className="font-bold">AÃƒÂºn no tienes compras.</p>
                                                         <button onClick={() => setView('store')} className="mt-4 text-orange-400 hover:underline text-sm font-bold">Ir a la tienda</button>
                                                     </div>
                                                 );
@@ -5656,24 +5656,24 @@ function App() {
                                                                 <span className={`font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>${order.total.toLocaleString()}</span>
                                                             </div>
 
-                                                            {/* Botón de WhatsApp para pedidos */}
+                                                            {/* BotÃƒÂ³n de WhatsApp para pedidos */}
                                                             <button
                                                                 onClick={() => {
                                                                     try {
-                                                                        // 1. Obtener número de teléfono limpio
+                                                                        // 1. Obtener nÃƒÂºmero de telÃƒÂ©fono limpio
                                                                         let phone = settings?.whatsappLink || '';
-                                                                        // Intentar extraer número de un link tipo wa.me o usar el string directo
+                                                                        // Intentar extraer nÃƒÂºmero de un link tipo wa.me o usar el string directo
                                                                         const match = phone.match(/\d+/g);
                                                                         let cleanPhone = match ? match.join('') : '';
 
-                                                                        // Si no hay número en el link, intentar buscar en otros campos
+                                                                        // Si no hay nÃƒÂºmero en el link, intentar buscar en otros campos
                                                                         if (!cleanPhone && settings?.phone) {
                                                                             const match2 = settings.phone.match(/\d+/g);
                                                                             cleanPhone = match2 ? match2.join('') : '';
                                                                         }
 
                                                                         if (!cleanPhone || cleanPhone.length < 5) {
-                                                                            return showToast("El número de WhatsApp de la tienda no está configurado correctamente.", "error");
+                                                                            return showToast("El nÃƒÂºmero de WhatsApp de la tienda no estÃƒÂ¡ configurado correctamente.", "error");
                                                                         }
 
                                                                         // LOGICA ARGENTINA ROBUSTA
@@ -5682,7 +5682,7 @@ function App() {
 
                                                                         // Si no empieza con 54, agregarlo
                                                                         if (!cleanPhone.startsWith('54')) {
-                                                                            // Si tiene 10 dígitos (ej: 3425906630), es movil sin 15 ni 0, necesita 9 despues del 54
+                                                                            // Si tiene 10 dÃƒÂ­gitos (ej: 3425906630), es movil sin 15 ni 0, necesita 9 despues del 54
                                                                             if (cleanPhone.length === 10) {
                                                                                 cleanPhone = '549' + cleanPhone;
                                                                             } else {
@@ -5698,7 +5698,7 @@ function App() {
                                                                         }
 
                                                                         // 2. Construir mensaje detallado
-                                                                        const itemsList = order.items.map(i => `• ${i.quantity}x ${i.title} ($${Number(i.unit_price).toLocaleString()})`).join('\n');
+                                                                        const itemsList = order.items.map(i => `Ã¢â‚¬Â¢ ${i.quantity}x ${i.title} ($${Number(i.unit_price).toLocaleString()})`).join('\n');
                                                                         const msg = `Hola! Hice un pedido en *${settings?.storeName || 'la tienda'}*:\n\n${itemsList}\n\n*Total: $${order.total.toLocaleString()}*\nPedido: #${order.id.slice(0, 8)}\n\nMi nombre es ${currentUser?.name || ''}.`;
 
                                                                         // 3. Abrir WhatsApp
@@ -5734,8 +5734,8 @@ function App() {
                                         {!currentUser.favorites || currentUser.favorites.length === 0 ? (
                                             <div className={`p-12 border-2 border-dashed rounded-[2rem] text-center ${darkMode ? 'border-slate-800 bg-slate-900/20 text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                                                 <Heart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                                <p className="font-bold">Tu lista de deseos está vacía.</p>
-                                                <p className="text-xs mt-2 max-w-xs mx-auto">Guarda productos haciendo click en el corazón de las tarjetas.</p>
+                                                <p className="font-bold">Tu lista de deseos estÃƒÂ¡ vacÃƒÂ­a.</p>
+                                                <p className="text-xs mt-2 max-w-xs mx-auto">Guarda productos haciendo click en el corazÃƒÂ³n de las tarjetas.</p>
                                             </div>
                                         ) : (
                                             <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
@@ -5780,32 +5780,32 @@ function App() {
                         )
                     }
 
-                    {/* Fallback: Si intenta acceder a profile sin usuario válido, mostrar login */}
+                    {/* Fallback: Si intenta acceder a profile sin usuario vÃƒÂ¡lido, mostrar login */}
                     {
                         view === 'profile' && (!currentUser || !currentUser.id || !currentUser.email || !currentUser.name) && (
                             <div className="max-w-md mx-auto pt-20 animate-fade-up px-4 text-center">
                                 <div className={`border p-8 rounded-[2rem] shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <User className="w-16 h-16 mx-auto mb-6 text-orange-500 opacity-50" />
-                                    <h2 className={`text-2xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Inicia Sesión</h2>
-                                    <p className={`mb-8 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Debes iniciar sesión o registrarte para acceder a tu perfil.</p>
+                                    <h2 className={`text-2xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Inicia SesiÃƒÂ³n</h2>
+                                    <p className={`mb-8 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Debes iniciar sesiÃƒÂ³n o registrarte para acceder a tu perfil.</p>
                                     <button
                                         onClick={() => setView('login')}
                                         className="w-full py-4 bg-gradient-to-r from-orange-500 to-blue-600 text-white rounded-2xl font-black hover:from-orange-400 hover:to-blue-500 transition shadow-lg"
                                     >
-                                        INGRESAR SESIÓN
+                                        INGRESAR SESIÃƒâ€œN
                                     </button>
                                 </div>
                             </div>
                         )
                     }
 
-                    {/* 5. MODAL DE AUTENTICACIÓN (LOGIN/REGISTER) */}
+                    {/* 5. MODAL DE AUTENTICACIÃƒâ€œN (LOGIN/REGISTER) */}
                     {
                         (view === 'login' || view === 'register') && (
                             <div className={`fixed inset-0 z-[500] flex items-center justify-center p-4 animate-fade-up backdrop-blur-xl ${darkMode ? 'bg-[#050505]/95' : 'bg-white/90'}`}>
 
                                 <div className={`p-8 md:p-12 rounded-[3rem] w-full max-w-md shadow-2xl border relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
-                                    {/* Botón Cerrar (Dentro de la tarjeta) */}
+                                    {/* BotÃƒÂ³n Cerrar (Dentro de la tarjeta) */}
                                     <button onClick={() => setView('store')} className={`absolute top-6 right-6 p-2 rounded-full transition z-20 ${darkMode ? 'bg-slate-900/50 hover:bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900'}`}>
                                         <X className="w-6 h-6" />
                                     </button>
@@ -5816,7 +5816,7 @@ function App() {
                                         {loginMode ? 'Bienvenido' : 'Crear Cuenta'}
                                     </h2>
                                     <p className={`text-center mb-8 text-sm ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                                        {loginMode ? 'Ingresa a tu cuenta para continuar.' : 'Únete a nosotros hoy mismo.'}
+                                        {loginMode ? 'Ingresa a tu cuenta para continuar.' : 'ÃƒÅ¡nete a nosotros hoy mismo.'}
                                     </p>
 
                                     <form onSubmit={(e) => { e.preventDefault(); handleAuth(!loginMode) }} className="space-y-4">
@@ -5826,14 +5826,14 @@ function App() {
                                                 <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder="Nombre de Usuario *" value={authData.username} onChange={e => setAuthData({ ...authData, username: e.target.value })} required />
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder="DNI *" value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} required />
-                                                    <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder="Teléfono *" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required />
+                                                    <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder="TelÃƒÂ©fono *" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required />
                                                 </div>
                                             </div>
                                         )}
 
                                         <div className="space-y-4">
                                             <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder={loginMode ? "Email o Usuario" : "Email *"} value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} required />
-                                            <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} type="password" placeholder={loginMode ? "Contraseña" : "Contraseña *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
+                                            <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} type="password" placeholder={loginMode ? "ContraseÃƒÂ±a" : "ContraseÃƒÂ±a *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
                                         </div>
 
                                         <button type="submit" className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-4 text-white rounded-xl font-bold mt-6 transition transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2">
@@ -5842,14 +5842,14 @@ function App() {
                                     </form>
 
                                     <button onClick={() => setLoginMode(!loginMode)} className={`w-full text-center text-sm mt-8 font-bold hover:text-orange-400 transition border-t pt-6 ${darkMode ? 'text-slate-500 border-slate-800' : 'text-slate-500 border-slate-200'}`}>
-                                        {loginMode ? '¿No tienes cuenta? Regístrate gratis' : '¿Ya tienes cuenta? Inicia sesión'}
+                                        {loginMode ? 'Ã‚Â¿No tienes cuenta? RegÃƒÂ­strate gratis' : 'Ã‚Â¿Ya tienes cuenta? Inicia sesiÃƒÂ³n'}
                                     </button>
                                 </div>
                             </div>
                         )
                     }
 
-                    {/* 6. VISTAS ESTÁTICAS (ABOUT & GUIDE) */}
+                    {/* 6. VISTAS ESTÃƒÂTICAS (ABOUT & GUIDE) */}
                     {
                         view === 'about' && (
                             <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
@@ -5864,11 +5864,11 @@ function App() {
                                     <div className={`mt-12 pt-12 border-t flex flex-col md:flex-row gap-8 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}><Shield className="text-orange-500" /></div>
-                                            <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Garantía Oficial</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>En todos los productos</p></div>
+                                            <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>GarantÃƒÂ­a Oficial</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>En todos los productos</p></div>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}><Truck className="text-purple-500" /></div>
-                                            <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Envíos Seguros</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>A todo el país</p></div>
+                                            <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>EnvÃƒÂ­os Seguros</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>A todo el paÃƒÂ­s</p></div>
                                         </div>
                                     </div>
                                 </div>
@@ -5881,17 +5881,17 @@ function App() {
                             <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
                                 <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
                                 <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                                    <FileQuestion className="text-orange-500 w-12 h-12" /> {settings?.guideTitle || 'Cómo Comprar'}
+                                    <FileQuestion className="text-orange-500 w-12 h-12" /> {settings?.guideTitle || 'CÃƒÂ³mo Comprar'}
                                 </h2>
                                 <div className={`border p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                                     {[
-                                        { title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
-                                        { title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
-                                        { title: settings?.guideStep3Title || "Datos de Envío", text: settings?.guideStep3Text || "Completa la información de entrega. Hacemos envíos a todo el país." },
-                                        { title: settings?.guideStep4Title || "Pago y Confirmación", text: settings?.guideStep4Text || "Elige tu método de pago preferido. Si es transferencia, recibirás los datos por email." },
-                                        { title: settings?.guideStep5Title || "¡Listo!", text: settings?.guideStep5Text || "Recibirás un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
+                                        { title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catÃƒÂ¡logo y aÃƒÂ±ade lo que te guste al carrito con el botÃƒÂ³n '+'." },
+                                        { title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupÃƒÂ³n de descuento, ¡es el momento de usarlo!" },
+                                        { title: settings?.guideStep3Title || "Datos de EnvÃƒÂ­o", text: settings?.guideStep3Text || "Completa la informaciÃƒÂ³n de entrega. Hacemos envÃƒÂ­os a todo el paÃƒÂ­s." },
+                                        { title: settings?.guideStep4Title || "Pago y ConfirmaciÃƒÂ³n", text: settings?.guideStep4Text || "Elige tu mÃƒÂ©todo de pago preferido. Si es transferencia, recibirÃƒÂ¡s los datos por email." },
+                                        { title: settings?.guideStep5Title || "¡Listo!", text: settings?.guideStep5Text || "RecibirÃƒÂ¡s un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
                                     ].filter((step, idx) => {
-                                        // Filtrar pasos que están desactivados
+                                        // Filtrar pasos que estÃƒÂ¡n desactivados
                                         if (idx === 0 && settings?.showGuideStep1 === false) return false;
                                         if (idx === 1 && settings?.showGuideStep2 === false) return false;
                                         if (idx === 2 && settings?.showGuideStep3 === false) return false;
@@ -5919,46 +5919,46 @@ function App() {
                             <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
                                 <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
                                 <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                                    <Shield className="text-orange-500 w-12 h-12" /> Pol�tica de Privacidad
+                                    <Shield className="text-orange-500 w-12 h-12" /> PolÃ¯Â¿Â½tica de Privacidad
                                 </h2>
                                 <div className={`border p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                                     <div className="prose prose-invert max-w-none">
-                                        <p className={`text-sm mb-8 italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>�ltima actualizaci�n: 07 de enero de 2026</p>
+                                        <p className={`text-sm mb-8 italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Ã¯Â¿Â½ltima actualizaciÃ¯Â¿Â½n: 07 de enero de 2026</p>
 
-                                        <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe c�mo y por qu� podr�amos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su informaci�n personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
+                                        <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cÃ¯Â¿Â½mo y por quÃ¯Â¿Â½ podrÃ¯Â¿Â½amos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su informaciÃ¯Â¿Â½n personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
                                         <ul className="list-disc pl-5 space-y-2">
                                             <li>Visita nuestro sitio web en <a href="https://sustore.vercel.app" className="text-orange-500 hover:underline">https://sustore.vercel.app</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
-                                            <li>Interact�e con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
+                                            <li>InteractÃ¯Â¿Â½e con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
                                         </ul>
 
                                         <div className={`p-6 rounded-2xl border my-8 ${darkMode ? 'bg-slate-900/50 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
                                             <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>RESUMEN DE PUNTOS CLAVE</h3>
                                             <ul className="space-y-4 text-sm">
-                                                <li><strong>�Qu� informaci�n personal procesamos?</strong> Información proporcionada al registrarse o comprar.</li>
-                                                <li><strong>�Procesamos informaci�n confidencial?</strong> No.</li>
-                                                <li><strong>�Recopilamos informaci�n de terceros?</strong> No.</li>
-                                                <li><strong>�C�mo procesamos su informaci�n?</strong> Para gestionar pedidos, seguridad y mejora del servicio.</li>
-                                                <li><strong>�Compartimos informaci�n?</strong> Solo en situaciones espec�ficas como transferencias comerciales o requisitos legales.</li>
+                                                <li><strong>Ã¯Â¿Â½QuÃ¯Â¿Â½ informaciÃ¯Â¿Â½n personal procesamos?</strong> InformaciÃƒÂ³n proporcionada al registrarse o comprar.</li>
+                                                <li><strong>Ã¯Â¿Â½Procesamos informaciÃ¯Â¿Â½n confidencial?</strong> No.</li>
+                                                <li><strong>Ã¯Â¿Â½Recopilamos informaciÃ¯Â¿Â½n de terceros?</strong> No.</li>
+                                                <li><strong>Ã¯Â¿Â½CÃ¯Â¿Â½mo procesamos su informaciÃ¯Â¿Â½n?</strong> Para Gestiónar pedidos, seguridad y mejora del servicio.</li>
+                                                <li><strong>Ã¯Â¿Â½Compartimos informaciÃ¯Â¿Â½n?</strong> Solo en situaciones especÃ¯Â¿Â½ficas como transferencias comerciales o requisitos legales.</li>
                                             </ul>
                                         </div>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>1. �QU� INFORMACI�N RECOPILAMOS?</h3>
-                                        <p>Recopilamos informaci�n que usted nos proporciona voluntariamente: nombres, tel�fonos, emails, direcciones, nombres de usuario y contrase�as.</p>
-                                        <p>Tambi�n recopilamos datos t�cnicos autom�ticamente (IP, tipo de navegador) para seguridad y an�lisis del sitio.</p>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>1. Ã¯Â¿Â½QUÃ¯Â¿Â½ INFORMACIÃ¯Â¿Â½N RECOPILAMOS?</h3>
+                                        <p>Recopilamos informaciÃ¯Â¿Â½n que usted nos proporciona voluntariamente: nombres, telÃ¯Â¿Â½fonos, emails, direcciones, nombres de usuario y contraseñas.</p>
+                                        <p>TambiÃ¯Â¿Â½n recopilamos datos tÃ¯Â¿Â½cnicos automÃ¯Â¿Â½ticamente (IP, tipo de navegador) para seguridad y anÃ¯Â¿Â½lisis del sitio.</p>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>2. �C�MO PROCESAMOS TU INFORMACI�N?</h3>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>2. Ã¯Â¿Â½CÃ¯Â¿Â½MO PROCESAMOS TU INFORMACIÃ¯Â¿Â½N?</h3>
                                         <ul className="list-disc pl-5 space-y-2">
-                                            <li>Facilitar creaci�n y administraci�n de cuentas.</li>
-                                            <li>Gestionar pedidos, pagos y env�os.</li>
+                                            <li>Facilitar creaciÃ¯Â¿Â½n y administraciÃ¯Â¿Â½n de cuentas.</li>
+                                            <li>Gestiónar pedidos, pagos y envÃ¯Â¿Â½os.</li>
                                             <li>Proteger nuestros servicios contra fraude.</li>
                                             <li>Evaluar y mejorar la experiencia del usuario.</li>
                                         </ul>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>3. �CU�NTO TIEMPO CONSERVAMOS TU INFORMACI�N?</h3>
-                                        <p>Conservamos su informaci�n mientras tenga una cuenta activa con nosotros o seg�n lo exija la ley para fines contables o legales.</p>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>3. Ã¯Â¿Â½CUÃ¯Â¿Â½NTO TIEMPO CONSERVAMOS TU INFORMACIÃ¯Â¿Â½N?</h3>
+                                        <p>Conservamos su informaciÃ¯Â¿Â½n mientras tenga una cuenta activa con nosotros o segÃ¯Â¿Â½n lo exija la ley para fines contables o legales.</p>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>4. �CU�LES SON SUS DERECHOS?</h3>
-                                        <p>Puede revisar, cambiar o cancelar su cuenta en cualquier momento desde su perfil o contact�ndonos directamente.</p>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>4. Ã¯Â¿Â½CUÃ¯Â¿Â½LES SON SUS DERECHOS?</h3>
+                                        <p>Puede revisar, cambiar o cancelar su cuenta en cualquier momento desde su perfil o contactÃ¯Â¿Â½ndonos directamente.</p>
 
                                         <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>5. CONTACTO</h3>
                                         <p>Para preguntas sobre este aviso, puede escribirnos a:</p>
@@ -5975,11 +5975,11 @@ function App() {
                         )
                     }
 
-                    {/* 7. PANEL DE ADMINISTRACI�N (COMPLETO Y DETALLADO) */}
+                    {/* 7. PANEL DE ADMINISTRACIÃ¯Â¿Â½N (COMPLETO Y DETALLADO) */}
                     {
                         view === 'admin' && (
-                            // === Verificaci�n de carga antes de verificar acceso ===
-                            // Si los settings no est�n cargados o el rol est� indeterminado, mostrar loading
+                            // === VerificaciÃ¯Â¿Â½n de carga antes de verificar acceso ===
+                            // Si los settings no estÃ¯Â¿Â½n cargados o el rol estÃ¯Â¿Â½ indeterminado, mostrar loading
                             (!settingsLoaded || isRoleLoading(currentUser?.email)) ? (
                                 <div className="min-h-screen bg-[#050505] flex items-center justify-center">
                                     <div className="text-center">
@@ -5993,17 +5993,17 @@ function App() {
                                     </div>
                                 </div>
                             ) :
-                                // === SEGURIDAD: Triple verificaci�n de acceso ===
+                                // === SEGURIDAD: Triple verificaciÃ¯Â¿Â½n de acceso ===
                                 // 1. Verificar que tiene permisos por rol
-                                // 2. Verificar que el usuario tiene un ID v�lido
-                                // 3. Verificar que la sesi�n no fue manipulada
+                                // 2. Verificar que el usuario tiene un ID vÃ¯Â¿Â½lido
+                                // 3. Verificar que la sesiÃ¯Â¿Â½n no fue manipulada
                                 (hasAccess(currentUser?.email) &&
                                     currentUser?.id &&
                                     currentUser?.id.length >= 10 &&
                                     !SecurityManager.detectManipulation()) ? (
                                     <div className="min-h-screen bg-slate-50 relative w-full font-sans">
 
-                                        {/* Overlay para cerrar el men� en m�vil */}
+                                        {/* Overlay para cerrar el menÃ¯Â¿Â½ en mÃ¯Â¿Â½vil */}
                                         {isAdminMenuOpen && (
                                             <div
                                                 className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-fade-in"
@@ -6032,7 +6032,7 @@ function App() {
                                             </div>
 
                                             <nav className="flex-1 p-5 space-y-2 overflow-y-auto custom-scrollbar">
-                                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-3 mb-1 opacity-50">Men� Principal</p>
+                                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-3 mb-1 opacity-50">MenÃ¯Â¿Â½ Principal</p>
 
                                                 <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-4 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'dashboard' ? 'bg-orange-600 text-white shadow-[0_10px_30px_rgba(249,115,22,0.3)] border border-orange-400/50 scale-[1.02]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'}`}>
                                                     <LayoutDashboard className={`w-6 h-6 ${adminTab === 'dashboard' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Inicio
@@ -6080,7 +6080,7 @@ function App() {
                                                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-3 mt-8 mb-1 opacity-50">Sistema</p>
 
                                                         <button onClick={() => { setAdminTab('settings'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'settings' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
-                                                            <Settings className={`w-5 h-5 ${adminTab === 'settings' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Configuración
+                                                            <Settings className={`w-5 h-5 ${adminTab === 'settings' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> ConfiguraciÃƒÂ³n
                                                         </button>
 
                                                         <button onClick={() => { setAdminTab('users'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'users' ? 'bg-pink-600 text-white shadow-[0_10px_20px_rgba(219,39,119,0.2)] border border-pink-400/30' : 'text-slate-400 hover:text-pink-400 hover:bg-pink-400/5 border border-transparent'}`}>
@@ -6142,7 +6142,7 @@ function App() {
                                             <div className="relative z-10 p-6 md:p-12 lg:p-16 max-w-[1700px] mx-auto">
                                                 <div className="md:hidden mb-8 flex items-center justify-between">
                                                     <button onClick={() => setIsAdminMenuOpen(true)} className="p-3 bg-white hover:bg-slate-50 rounded-2xl text-slate-900 border border-slate-200 flex items-center gap-3 font-black text-xs uppercase tracking-widest transition-all shadow-sm">
-                                                        <Menu className="w-5 h-5" /> Men�
+                                                        <Menu className="w-5 h-5" /> MenÃ¯Â¿Â½
                                                     </button>
                                                     <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
                                                         <Shield className="w-5 h-5" />
@@ -6161,12 +6161,12 @@ function App() {
                                                             <div>
                                                                 <div className="flex items-center gap-3 text-orange-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4 bg-orange-500/5 px-4 py-2 rounded-full w-fit border border-orange-500/10">
                                                                     <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                                                                    Live Metrics � Apps v4.2
+                                                                    Live Metrics Ã¯Â¿Â½ Apps v4.2
                                                                 </div>
                                                                 <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 drop-shadow-sm">
                                                                     Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 animate-gradient-x">Control</span>
                                                                 </h1>
-                                                                <p className="text-slate-400 font-medium max-w-md">Bienvenido de nuevo. Aqu� tienes el rendimiento de tu tienda en tiempo real.</p>
+                                                                <p className="text-slate-400 font-medium max-w-md">Bienvenido de nuevo. AquÃ¯Â¿Â½ tienes el rendimiento de tu tienda en tiempo real.</p>
                                                             </div>
                                                             <div className="flex items-center gap-4">
                                                                 <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-[1.5rem] backdrop-blur-md flex items-center gap-6">
@@ -6188,7 +6188,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCI�N 1: TARJETAS PRINCIPALES (PREMIUM) */}
+                                                        {/* SECCIÃ¯Â¿Â½N 1: TARJETAS PRINCIPALES (PREMIUM) */}
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                                                             {/* INGRESOS BRUTOS */}
                                                             <div className="bg-white border border-slate-200 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/20 transition-all duration-500 shadow-xl">
@@ -6204,7 +6204,7 @@ function App() {
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Lista Gr�fica (Ultimos 6 meses) */}
+                                                                {/* Lista GrÃ¯Â¿Â½fica (Ultimos 6 meses) */}
                                                                 <div className="space-y-4 mt-8 border-t border-slate-100 pt-6">
                                                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Rendimiento Mensual</p>
                                                                     {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
@@ -6246,12 +6246,12 @@ function App() {
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Lista Gr�fica (Comparativa Ingreso vs Gasto) */}
+                                                                {/* Lista GrÃ¯Â¿Â½fica (Comparativa Ingreso vs Gasto) */}
                                                                 <div className="space-y-4 mt-8 border-t border-slate-100 pt-6">
-                                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ingresos vs Gastos (�ltimos Meses)</p>
+                                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ingresos vs Gastos (Ã¯Â¿Â½ltimos Meses)</p>
                                                                     {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
-                                                                        // Estimaci�n simplificada de gastos mensuales (proporcional solo para visualizaci�n si no hay data exacta mensual de gastos guardada historica)
-                                                                        // En una real app, se calcular�a real desde expenses.
+                                                                        // EstimaciÃ¯Â¿Â½n simplificada de gastos mensuales (proporcional solo para visualizaciÃ¯Â¿Â½n si no hay data exacta mensual de gastos guardada historica)
+                                                                        // En una real app, se calcularÃ¯Â¿Â½a real desde expenses.
                                                                         // Como `expenses` tiene fecha, podemos calcularlo.
                                                                         const monthExpenses = expenses.filter(e => e.date.startsWith(m.date)).reduce((acc, c) => acc + c.amount, 0)
                                                                             + (purchases || []).filter(p => p.date.startsWith(m.date)).reduce((acc, c) => acc + c.cost, 0);
@@ -6277,7 +6277,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCI�N 2: KPIs R�PIDOS (PREMIUM) */}
+                                                        {/* SECCIÃ¯Â¿Â½N 2: KPIs RÃ¯Â¿Â½PIDOS (PREMIUM) */}
                                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                             <div className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-orange-500/30 transition-colors group shadow-sm">
                                                                 <div className="flex justify-center mb-3 text-slate-400 group-hover:text-blue-500 transition-colors">
@@ -6313,7 +6313,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCI�N 2.5: MEJORES Y PEORES (PREMIUM) */}
+                                                        {/* SECCIÃ¯Â¿Â½N 2.5: MEJORES Y PEORES (PREMIUM) */}
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                             {/* BEST SELLER */}
                                                             <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500 shadow-xl">
@@ -6339,7 +6339,7 @@ function App() {
                                                                         </div>
                                                                     </div>
                                                                 ) : (
-                                                                    <p className="text-slate-600">No hay datos de ventas a�n.</p>
+                                                                    <p className="text-slate-600">No hay datos de ventas aÃ¯Â¿Â½n.</p>
                                                                 )}
                                                             </div>
 
@@ -6370,12 +6370,12 @@ function App() {
                                                                         </div>
                                                                     </div>
                                                                 ) : (
-                                                                    <p className="text-slate-600">Todos los productos tienen buena rotaci�n.</p>
+                                                                    <p className="text-slate-600">Todos los productos tienen buena rotaciÃ¯Â¿Â½n.</p>
                                                                 )}
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCI�N 3: LIBRO MAYOR (REGISTRO ADMINISTRATIVO) */}
+                                                        {/* SECCIÃ¯Â¿Â½N 3: LIBRO MAYOR (REGISTRO ADMINISTRATIVO) */}
                                                         <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
                                                             <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
                                                                 <FileText className="w-6 h-6 text-purple-600" /> Registro de Movimientos
@@ -6423,7 +6423,7 @@ function App() {
                                                     </div>
                                                 )}
 
-                                                {/* TAB: CONFIGURACI�N (BLINDADA) - REMOVED (Consolidated in main Settings tab below) */}
+                                                {/* TAB: CONFIGURACIÃ¯Â¿Â½N (BLINDADA) - REMOVED (Consolidated in main Settings tab below) */}
 
 
                                                 {/* TAB: PROVEEDORES (CON SELECTOR VISUAL) */}
@@ -6452,7 +6452,7 @@ function App() {
                                                                                 <Edit className="w-5 h-5" />
                                                                             </button>
                                                                             <button
-                                                                                onClick={() => openConfirm("Eliminar Proveedor", "�Eliminar proveedor?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)))}
+                                                                                onClick={() => openConfirm("Eliminar Proveedor", "Ã¯Â¿Â½Eliminar proveedor?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)))}
                                                                                 className="text-slate-400 hover:text-red-500 p-2 hover:bg-slate-100 rounded-lg transition"
                                                                                 title="Eliminar"
                                                                             >
@@ -6506,15 +6506,15 @@ function App() {
                                                 {/* TAB: COMPRAS (STOCK) */}
                                                 {adminTab === 'purchases' && (
                                                     <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
-                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">Gesti�n de Stock y Compras</h1>
+                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">GestiÃ¯Â¿Â½n de Stock y Compras</h1>
 
                                                         {/* Formulario de Compra Unificado */}
                                                         <div className="bg-white border border-slate-200 rounded-[2.5rem] mb-10 shadow-xl overflow-hidden relative">
 
-                                                            {/* Header / Solo Reposici�n de Stock */}
+                                                            {/* Header / Solo ReposiciÃ¯Â¿Â½n de Stock */}
                                                             <div className="flex border-b border-slate-100">
                                                                 <div className="flex-1 p-6 text-center font-bold tracking-wider bg-orange-50 text-orange-600">
-                                                                    <Package className="w-5 h-5 inline-block mr-2" /> REGISTRAR REPOSICI�N DE STOCK
+                                                                    <Package className="w-5 h-5 inline-block mr-2" /> REGISTRAR REPOSICIÃ¯Â¿Â½N DE STOCK
                                                                 </div>
                                                             </div>
 
@@ -6526,7 +6526,7 @@ function App() {
 
                                                                     return (
                                                                         <div className="space-y-6 animate-fade-in">
-                                                                            {/* Preview del Producto Seleccionado (REMOVIDO de aqu� para moverlo junto al input) */}
+                                                                            {/* Preview del Producto Seleccionado (REMOVIDO de aquÃ¯Â¿Â½ para moverlo junto al input) */}
 
                                                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                                                 <div className="md:col-span-2">
@@ -6582,7 +6582,7 @@ function App() {
                                                                             const selectedProd = products.find(p => p.id === newPurchase.productId);
                                                                             const targetProductName = selectedProd?.name || "Desconocido";
 
-                                                                            // Auto-calcular costo: precio de compra � cantidad
+                                                                            // Auto-calcular costo: precio de compra Ã¯Â¿Â½ cantidad
                                                                             const productPrice = selectedProd?.purchasePrice || selectedProd?.basePrice || 0;
                                                                             const calculatedCost = productPrice * newPurchase.quantity;
 
@@ -6612,12 +6612,12 @@ function App() {
 
                                                                         } catch (e) {
                                                                             console.error("Error stock update:", e);
-                                                                            showToast("Error: " + (e.message || "Operaci�n fallida"), "error");
+                                                                            showToast("Error: " + (e.message || "OperaciÃ¯Â¿Â½n fallida"), "error");
                                                                         }
                                                                     }}
                                                                     className="w-full mt-8 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black py-5 rounded-2xl shadow-xl transition transform hover:scale-[1.01] flex items-center justify-center gap-3 text-lg"
                                                                 >
-                                                                    <Save className="w-6 h-6" /> REGISTRAR REPOSICI�N DE STOCK
+                                                                    <Save className="w-6 h-6" /> REGISTRAR REPOSICIÃ¯Â¿Â½N DE STOCK
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -6722,7 +6722,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Modal Edici�n Compra */}
+                                                        {/* Modal EdiciÃ¯Â¿Â½n Compra */}
                                                         {editingPurchase && (
                                                             <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
                                                                 <div className="bg-white border border-slate-200 rounded-3xl p-8 w-full max-w-lg shadow-2xl relative">
@@ -6732,7 +6732,7 @@ function App() {
                                                                     <div className="space-y-4">
                                                                         <div>
                                                                             <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Cantidad comprada</label>
-                                                                            <div className="text-xs text-yellow-500 mb-2">? Modificar esto ajustar� el stock del producto autom�ticamente.</div>
+                                                                            <div className="text-xs text-yellow-500 mb-2">? Modificar esto ajustarÃ¯Â¿Â½ el stock del producto automÃ¯Â¿Â½ticamente.</div>
                                                                             <input type="number" className="input-cyber w-full p-3" value={editingPurchase.quantity} onChange={e => setEditingPurchase({ ...editingPurchase, quantity: parseInt(e.target.value) || 0 })} />
                                                                         </div>
                                                                         <div>
@@ -6762,11 +6762,11 @@ function App() {
                                                         <h1 className="text-4xl font-black text-slate-900 mb-8">Finanzas y Capital</h1>
 
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                                                            {/* SECCI�N: REGISTRAR INVERSI�N (NUEVO) */}
+                                                            {/* SECCIÃ¯Â¿Â½N: REGISTRAR INVERSIÃ¯Â¿Â½N (NUEVO) */}
                                                             <div className="bg-[#0a0a0a] border border-orange-900/30 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-bl-[100px] pointer-events-none"></div>
                                                                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                    <TrendingUp className="w-5 h-5 text-orange-400" /> Registrar Inversi�n / Aporte
+                                                                    <TrendingUp className="w-5 h-5 text-orange-400" /> Registrar InversiÃ¯Â¿Â½n / Aporte
                                                                 </h3>
                                                                 <div className="space-y-4">
                                                                     <div>
@@ -6820,7 +6820,7 @@ function App() {
                                                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Notas (Opcional)</label>
                                                                         <input
                                                                             className="input-cyber w-full p-4"
-                                                                            placeholder="Ej: Inversi�n Inicial, Refuerzo de capital..."
+                                                                            placeholder="Ej: InversiÃ¯Â¿Â½n Inicial, Refuerzo de capital..."
                                                                             value={newInvestment.notes}
                                                                             onChange={e => setNewInvestment({ ...newInvestment, notes: e.target.value })}
                                                                         />
@@ -6833,7 +6833,7 @@ function App() {
                                                                                 timestamp: new Date().toISOString()
                                                                             });
                                                                             setNewInvestment({ investor: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
-                                                                            showToast("Inversi�n registrada correctamente.", "success");
+                                                                            showToast("InversiÃ¯Â¿Â½n registrada correctamente.", "success");
                                                                         }}
                                                                         className="w-full mt-2 bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-orange-500/20"
                                                                     >
@@ -6842,7 +6842,7 @@ function App() {
                                                                 </div>
                                                             </div>
 
-                                                            {/* SECCI�N: REGISTRAR GASTO */}
+                                                            {/* SECCIÃ¯Â¿Â½N: REGISTRAR GASTO */}
                                                             <div className="bg-[#0a0a0a] border border-red-900/30 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-[100px] pointer-events-none"></div>
                                                                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
@@ -6850,7 +6850,7 @@ function App() {
                                                                 </h3>
                                                                 <div className="space-y-4">
                                                                     <div>
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">DescripciÃƒÂ³n</label>
                                                                         <input className="input-cyber w-full p-4" placeholder="Ej: Pago de Internet, Alquiler..." value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} />
                                                                     </div>
                                                                     <div className="grid grid-cols-2 gap-4">
@@ -6859,7 +6859,7 @@ function App() {
                                                                             <input type="number" className="input-cyber w-full p-4 font-mono font-bold text-red-400" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })} />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">CategorÃƒÂ­a</label>
                                                                             <select className="input-cyber w-full p-4" value={newExpense.category} onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}>
                                                                                 <option>General</option>
                                                                                 <option>Servicios</option>
@@ -6904,7 +6904,7 @@ function App() {
                                                                                 </div>
                                                                                 <div className="flex items-center gap-4">
                                                                                     <p className="text-orange-400 font-mono font-bold">+${inv.amount.toLocaleString()}</p>
-                                                                                    <button onClick={() => openConfirm("Eliminar Inversi�n", "�Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investments', inv.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
+                                                                                    <button onClick={() => openConfirm("Eliminar InversiÃ¯Â¿Â½n", "Ã¯Â¿Â½Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investments', inv.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
                                                                                 </div>
                                                                             </div>
                                                                         ))
@@ -6928,7 +6928,7 @@ function App() {
                                                                                 </div>
                                                                                 <div className="flex items-center gap-4">
                                                                                     <p className="text-red-400 font-mono font-bold">-${ex.amount.toLocaleString()}</p>
-                                                                                    <button onClick={() => openConfirm("Eliminar Gasto", "�Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', ex.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
+                                                                                    <button onClick={() => openConfirm("Eliminar Gasto", "Ã¯Â¿Â½Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', ex.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
                                                                                 </div>
                                                                             </div>
                                                                         ))
@@ -6937,14 +6937,14 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCI�N: DISTRIBUCI�N DE GANANCIAS (AUTOM�TICA) */}
+                                                        {/* SECCIÃ¯Â¿Â½N: DISTRIBUCIÃ¯Â¿Â½N DE GANANCIAS (AUTOMÃ¯Â¿Â½TICA) */}
                                                         <div className="animate-fade-up pt-12 border-t border-slate-800">
                                                             <div className="flex justify-between items-center mb-8">
                                                                 <div>
                                                                     <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                                                                        <DollarSign className="w-8 h-8 text-green-500" /> Distribuci�n de Ganancias
+                                                                        <DollarSign className="w-8 h-8 text-green-500" /> DistribuciÃ¯Â¿Â½n de Ganancias
                                                                     </h2>
-                                                                    <p className="text-slate-500 mt-1">C�lculo autom�tico basado en las inversiones registradas.</p>
+                                                                    <p className="text-slate-500 mt-1">CÃ¯Â¿Â½lculo automÃ¯Â¿Â½tico basado en las inversiones registradas.</p>
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Beneficio Neto</p>
@@ -6954,11 +6954,11 @@ function App() {
                                                                 </div>
                                                             </div>
 
-                                                            {/* Gr�fico y Tabla */}
+                                                            {/* GrÃ¯Â¿Â½fico y Tabla */}
                                                             <div className="flex flex-col gap-8 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                 {(() => {
                                                                     const team = settings?.team || [];
-                                                                    // Calcular Total Invertido por Miembro desde la colecci�n 'investments'
+                                                                    // Calcular Total Invertido por Miembro desde la colecciÃ¯Â¿Â½n 'investments'
                                                                     const memberInvestments = team.map(member => {
                                                                         // Use manual investment value from settings
                                                                         const totalInv = Number(member.investment) || 0;
@@ -6967,11 +6967,11 @@ function App() {
 
                                                                     const totalCapital = memberInvestments.reduce((acc, m) => acc + m.totalInv, 0);
 
-                                                                    if (totalCapital === 0) return <p className="text-slate-500 text-center py-12">Registra inversiones para ver la distribuci�n de ganancias.</p>;
+                                                                    if (totalCapital === 0) return <p className="text-slate-500 text-center py-12">Registra inversiones para ver la distribuciÃ¯Â¿Â½n de ganancias.</p>;
 
                                                                     return (
                                                                         <>
-                                                                            {/* Barra de Progreso Distribuci�n */}
+                                                                            {/* Barra de Progreso DistribuciÃ¯Â¿Â½n */}
                                                                             <div className="w-full h-8 bg-slate-900 rounded-full flex overflow-hidden">
                                                                                 {memberInvestments.map((member, idx) => {
                                                                                     const pct = totalCapital > 0 ? (member.totalInv / totalCapital) * 100 : 0;
@@ -6983,7 +6983,7 @@ function App() {
                                                                                 })}
                                                                             </div>
 
-                                                                            {/* Tabla de Distribuci�n */}
+                                                                            {/* Tabla de DistribuciÃ¯Â¿Â½n */}
                                                                             <div className="overflow-x-auto">
                                                                                 <table className="w-full text-left border-collapse">
                                                                                     <thead>
@@ -7046,7 +7046,7 @@ function App() {
                                                     </div>
                                                 )}
 
-                                                {/* TAB: CUPONES (GESTI�N AVANZADA) */}
+                                                {/* TAB: CUPONES (GESTIÃ¯Â¿Â½N AVANZADA) */}
                                                 {adminTab === 'coupons' && (
                                                     <div className="max-w-[1600px] mx-auto animate-fade-up pb-20 relative">
 
@@ -7061,24 +7061,24 @@ function App() {
                                                                         <Lock className="w-10 h-10 text-purple-400" />
                                                                     </div>
                                                                     <h3 className="text-2xl font-black text-white mb-4">Cupones Bloqueados</h3>
-                                                                    <p className="text-slate-400 mb-6">Los cupones de descuento est�n disponibles a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>.</p>
+                                                                    <p className="text-slate-400 mb-6">Los cupones de descuento estÃ¯Â¿Â½n disponibles a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>.</p>
                                                                     <p className="text-sm text-white/60 group-hover:text-white transition">Clic para ver planes disponibles</p>
                                                                 </div>
                                                             </button>
                                                         )}
 
-                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">Gesti�n de Cupones</h1>
+                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">GestiÃ¯Â¿Â½n de Cupones</h1>
 
-                                                        {/* Formulario de Creaci�n */}
+                                                        {/* Formulario de CreaciÃ¯Â¿Â½n */}
                                                         <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
                                                             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                <Plus className="w-5 h-5 text-purple-400" /> Crear Nuevo Cup�n
+                                                                <Plus className="w-5 h-5 text-purple-400" /> Crear Nuevo CupÃ¯Â¿Â½n
                                                             </h3>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                                                 {/* Columna 1 */}
                                                                 <div className="space-y-4">
                                                                     <div>
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">C�digo del Cup�n</label>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">CÃ¯Â¿Â½digo del CupÃ¯Â¿Â½n</label>
                                                                         <input className="input-cyber w-full p-4 font-mono text-lg uppercase tracking-widest" placeholder="Ej: VERANO2024" value={newCoupon.code} onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })} />
                                                                     </div>
                                                                     <div className="flex gap-4">
@@ -7100,7 +7100,7 @@ function App() {
                                                                 <div className="space-y-4">
                                                                     <div className="flex gap-4">
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">M�nimo de Compra</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">MÃ¯Â¿Â½nimo de Compra</label>
                                                                             <input className="input-cyber w-full p-4" type="number" placeholder="$0" value={newCoupon.minPurchase} onChange={e => setNewCoupon({ ...newCoupon, minPurchase: e.target.value })} />
                                                                         </div>
                                                                         {newCoupon.type === 'percentage' && (
@@ -7113,7 +7113,7 @@ function App() {
 
                                                                     <div className="flex gap-4">
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">L�mite Usos (Total)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">LÃ¯Â¿Â½mite Usos (Total)</label>
                                                                             <input className="input-cyber w-full p-4" type="number" placeholder="Ej: 100" value={newCoupon.usageLimit} onChange={e => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })} />
                                                                         </div>
                                                                         <div className="flex-1">
@@ -7124,15 +7124,15 @@ function App() {
 
                                                                     <div className="md:col-span-2">
                                                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                            Tipo de Cup�n
+                                                                            Tipo de CupÃ¯Â¿Â½n
                                                                         </label>
                                                                         <select
                                                                             className="input-cyber w-full p-4"
                                                                             value={newCoupon.targetType}
                                                                             onChange={e => setNewCoupon({ ...newCoupon, targetType: e.target.value })}
                                                                         >
-                                                                            <option value="global">?? P�blico / Canjeable (Redes Sociales)</option>
-                                                                            <option value="specific_email">?? Usuario Espec�fico (Email)</option>
+                                                                            <option value="global">?? PÃ¯Â¿Â½blico / Canjeable (Redes Sociales)</option>
+                                                                            <option value="specific_email">?? Usuario EspecÃ¯Â¿Â½fico (Email)</option>
                                                                         </select>
                                                                     </div>
 
@@ -7148,13 +7148,13 @@ function App() {
                                                                                 value={newCoupon.targetUser || ''}
                                                                                 onChange={e => setNewCoupon({ ...newCoupon, targetUser: e.target.value })}
                                                                             />
-                                                                            <p className="text-xs text-slate-400 mt-1">Solo este usuario podr� usar el cup�n</p>
+                                                                            <p className="text-xs text-slate-400 mt-1">Solo este usuario podrÃ¯Â¿Â½ usar el cupÃ¯Â¿Â½n</p>
                                                                         </div>
                                                                     )}
                                                                 </div>
                                                             </div>
                                                             <button onClick={saveCouponFn} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                                                                <Save className="w-5 h-5" /> Guardar Cup�n
+                                                                <Save className="w-5 h-5" /> Guardar CupÃ¯Â¿Â½n
                                                             </button>
                                                         </div>
 
@@ -7176,7 +7176,7 @@ function App() {
                                                                             </p>
                                                                             <p className="text-xs text-slate-600 mt-1 flex gap-3">
                                                                                 <span>Usado: {c.usedBy ? c.usedBy.length : 0} veces</span>
-                                                                                {c.usageLimit && <span>L�mite: {c.usageLimit}</span>}
+                                                                                {c.usageLimit && <span>LÃ¯Â¿Â½mite: {c.usageLimit}</span>}
                                                                                 {c.expirationDate && <span>Vence: {c.expirationDate}</span>}
                                                                             </p>
                                                                         </div>
@@ -7190,15 +7190,15 @@ function App() {
                                                                         <button
                                                                             onClick={() => {
                                                                                 navigator.clipboard.writeText(c.code);
-                                                                                showToast("C�digo copiado al portapapeles", "success");
+                                                                                showToast("CÃ¯Â¿Â½digo copiado al portapapeles", "success");
                                                                             }}
                                                                             className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white p-3 rounded-xl transition border border-slate-800"
-                                                                            title="Copiar C�digo"
+                                                                            title="Copiar CÃ¯Â¿Â½digo"
                                                                         >
                                                                             <Copy className="w-5 h-5" />
                                                                         </button>
                                                                         <button
-                                                                            onClick={() => openConfirm("Eliminar Cup�n", "�Eliminar este cup�n?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
+                                                                            onClick={() => openConfirm("Eliminar CupÃ¯Â¿Â½n", "Ã¯Â¿Â½Eliminar este cupÃ¯Â¿Â½n?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
                                                                             className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800"
                                                                         >
                                                                             <Trash2 className="w-5 h-5" />
@@ -7230,9 +7230,9 @@ function App() {
                                                                         <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
                                                                             <Users className="w-6 h-6 text-pink-400" />
                                                                         </div>
-                                                                        Gesti�n de Usuarios
+                                                                        GestiÃ¯Â¿Â½n de Usuarios
                                                                     </h1>
-                                                                    <p className="text-slate-500 mt-2 font-medium">Control total sobre cuentas, roles y auditor�a de carritos.</p>
+                                                                    <p className="text-slate-500 mt-2 font-medium">Control total sobre cuentas, roles y auditorÃ¯Â¿Â½a de carritos.</p>
                                                                 </div>
 
                                                                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
@@ -7350,7 +7350,7 @@ function App() {
                                                                                             <button
                                                                                                 onClick={() => setViewUserEdit(u)}
                                                                                                 className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-orange-400 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all shadow-xl group"
-                                                                                                title="Gestionar Perfil"
+                                                                                                title="Gestiónar Perfil"
                                                                                             >
                                                                                                 <Edit className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                                                                             </button>
@@ -7389,9 +7389,9 @@ function App() {
                                                                     <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl shadow-[0_0_30px_rgba(147,51,234,0.3)]">
                                                                         <Tag className="w-8 h-8 text-white" />
                                                                     </div>
-                                                                    Gesti�n de Promos
+                                                                    GestiÃ¯Â¿Â½n de Promos
                                                                 </h1>
-                                                                <p className="text-slate-400 font-medium ml-1">Dise�a combos irresistibles y potencia tus ventas con packs exclusivos</p>
+                                                                <p className="text-slate-400 font-medium ml-1">DiseÃ¯Â¿Â½a combos irresistibles y potencia tus ventas con packs exclusivos</p>
                                                             </div>
                                                             <div className="flex gap-3">
                                                                 <div className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-3 rounded-2xl flex flex-col items-center justify-center">
@@ -7410,7 +7410,7 @@ function App() {
                                                                         <div className={`p-3 rounded-2xl ${isEditingPromo ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`}>
                                                                             {isEditingPromo ? <Edit className="w-8 h-8" /> : <Plus className="w-8 h-8" />}
                                                                         </div>
-                                                                        {isEditingPromo ? 'Editar Combo Promocional' : 'Dise�ar Nueva Promo'}
+                                                                        {isEditingPromo ? 'Editar Combo Promocional' : 'DiseÃ¯Â¿Â½ar Nueva Promo'}
                                                                     </h3>
 
                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -7489,16 +7489,16 @@ function App() {
                                                                                         <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
                                                                                             <DollarSign className="w-4 h-4 text-purple-600" />
                                                                                         </div>
-                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">An�lisis ROI</span>
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">AnÃ¯Â¿Â½lisis ROI</span>
                                                                                     </div>
                                                                                     <span className={`text-[9px] font-black px-3 py-1.5 rounded-full border shadow-sm ${Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                                                                                        {Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'MARGEN POSITIVO' : 'P�RDIDA'}
+                                                                                        {Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'MARGEN POSITIVO' : 'PÃ¯Â¿Â½RDIDA'}
                                                                                     </span>
                                                                                 </div>
 
                                                                                 <div className="grid grid-cols-2 gap-4 mb-6">
                                                                                     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                                                                        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Costo Inversi�n</p>
+                                                                                        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Costo InversiÃ¯Â¿Â½n</p>
                                                                                         <p className="text-2xl font-black text-slate-700 font-mono tracking-tight">
                                                                                             ${newPromo.items.reduce((acc, item) => {
                                                                                                 const p = products.find(prod => prod.id === item.productId);
@@ -7668,10 +7668,10 @@ function App() {
                                                                 <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-6 border border-purple-100 shadow-sm">
                                                                     <Lock className="w-10 h-10 text-purple-500" />
                                                                 </div>
-                                                                <h3 className="text-2xl font-black text-slate-900 mb-2">L�mite de Promos Alcanzado</h3>
+                                                                <h3 className="text-2xl font-black text-slate-900 mb-2">LÃ¯Â¿Â½mite de Promos Alcanzado</h3>
                                                                 <p className="text-slate-500 max-w-md mb-8">
                                                                     Tu plan actual te permite tener hasta <strong className="text-slate-900">1 promo activa</strong>.
-                                                                    Para crear m�s promociones ilimitadas, actualiza tu plan.
+                                                                    Para crear mÃ¯Â¿Â½s promociones ilimitadas, actualiza tu plan.
                                                                 </p>
                                                                 <button
                                                                     onClick={() => setShowPlansModal(true)}
@@ -7733,7 +7733,7 @@ function App() {
                                                                                 </div>
                                                                             </div>
 
-                                                                            {/* An�lisis Visual */}
+                                                                            {/* AnÃ¯Â¿Â½lisis Visual */}
                                                                             <div className="p-5 bg-slate-50 rounded-3xl border border-slate-200 shadow-inner">
                                                                                 <div className="flex items-center justify-between mb-3">
                                                                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rentabilidad</span>
@@ -7749,7 +7749,7 @@ function App() {
                                                                                     ></div>
                                                                                 </div>
                                                                                 <div className="flex justify-between mt-2 text-[10px] font-mono text-slate-500 uppercase">
-                                                                                    <span>Inversi�n: ${totalCost.toLocaleString()}</span>
+                                                                                    <span>InversiÃ¯Â¿Â½n: ${totalCost.toLocaleString()}</span>
                                                                                     <span>ROI: {totalCost > 0 ? ((profit / totalCost) * 100).toFixed(0) : 0}%</span>
                                                                                 </div>
                                                                             </div>
@@ -7773,7 +7773,7 @@ function App() {
                                                                                     <Edit className="w-3.5 h-3.5" /> Editar
                                                                                 </button>
                                                                                 <button
-                                                                                    onClick={() => openConfirm('Eliminar Promo', '�Est�s seguro? Esto no se puede deshacer.', async () => {
+                                                                                    onClick={() => openConfirm('Eliminar Promo', 'Ã¯Â¿Â½EstÃ¯Â¿Â½s seguro? Esto no se puede deshacer.', async () => {
                                                                                         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', promo.id));
                                                                                         showToast("Promo eliminada", "info");
                                                                                     })}
@@ -7793,12 +7793,12 @@ function App() {
                                                 {/* TAB: PEDIDOS (RESTAURADO) */}
                                                 {adminTab === 'orders' && (
                                                     <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
-                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">Gesti�n de Pedidos</h1>
+                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">Gesti{'\u00F3'}n de Pedidos</h1>
 
                                                         {orders.length === 0 ? (
                                                             <div className="text-center py-20 border border-dashed border-slate-300 rounded-[3rem] bg-slate-50">
                                                                 <ShoppingBag className="w-20 h-20 mx-auto mb-4 text-slate-300" />
-                                                                <p className="text-xl text-slate-500 font-bold">No hay pedidos registrados a�n.</p>
+                                                                <p className="text-xl text-slate-500 font-bold">No hay pedidos registrados aÃ¯Â¿Â½n.</p>
                                                             </div>
                                                         ) : (
                                                             <div className="space-y-4">
@@ -7847,14 +7847,14 @@ function App() {
                                                                                 <a
                                                                                     href={(() => {
                                                                                         let phone = o.customer.phone.replace(/\D/g, '');
-                                                                                        // Normalizaci�n para Argentina
+                                                                                        // NormalizaciÃ¯Â¿Â½n para Argentina
                                                                                         if (phone.startsWith('0')) phone = phone.substring(1);
                                                                                         if (phone.startsWith('15')) phone = phone.substring(2); // Si el usuario puso 15... (casos raros sin area code previo, pero comunmente es area+15)
                                                                                         // Mejor: Si empieza con 54 y no 549, agregar 9. Si no empieza con 54, agregar 549.
 
                                                                                         // Logica robusta simplificada:
                                                                                         if (phone.startsWith('549')) {
-                                                                                            // Ya est� bien
+                                                                                            // Ya estÃ¯Â¿Â½ bien
                                                                                         } else if (phone.startsWith('54')) {
                                                                                             // Tiene 54 pero falta 9 (asumiendo movil)
                                                                                             phone = '549' + phone.substring(2);
@@ -7908,14 +7908,14 @@ function App() {
                                                                     return (
                                                                         <p className={`text-sm font-bold mt-1 ${isNearLimit ? 'text-yellow-400' : 'text-slate-500'}`}>
                                                                             {current} / {limit} productos
-                                                                            {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">? Cerca del l�mite</span>}
+                                                                            {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">? Cerca del lÃ¯Â¿Â½mite</span>}
                                                                         </p>
                                                                     );
                                                                 })()}
                                                             </div>
                                                             <div className="flex gap-2">
                                                                 <button onClick={() => setShowCategoryModal(true)} className="bg-slate-800 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 border border-slate-700">
-                                                                    <FolderPlus className="w-5 h-5" /> Categorías
+                                                                    <FolderPlus className="w-5 h-5" /> CategorÃƒÂ­as
                                                                 </button>
                                                                 <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-orange-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-orange-500 transition transform hover:scale-105 active:scale-95">
                                                                     <Plus className="w-5 h-5" /> Agregar Producto
@@ -7923,7 +7923,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Banner de advertencia si hay productos desactivados por l�mite de plan */}
+                                                        {/* Banner de advertencia si hay productos desactivados por lÃ¯Â¿Â½mite de plan */}
                                                         {(() => {
                                                             const deactivatedByPlan = products.filter(p => p.isActive === false && p.deactivatedByPlan);
                                                             const deactivatedManually = products.filter(p => p.isActive === false && !p.deactivatedByPlan);
@@ -7939,14 +7939,14 @@ function App() {
                                                                                     {totalDeactivated.length} producto(s) desactivado(s)
                                                                                 </p>
                                                                                 <p className="text-sm text-yellow-200/70">
-                                                                                    {deactivatedByPlan.length > 0 && `${deactivatedByPlan.length} por l�mite de plan. `}
+                                                                                    {deactivatedByPlan.length > 0 && `${deactivatedByPlan.length} por lÃ¯Â¿Â½mite de plan. `}
                                                                                     {deactivatedManually.length > 0 && `${deactivatedManually.length} desactivado(s) manualmente. `}
                                                                                     Los productos desactivados no se muestran en la tienda.
                                                                                 </p>
                                                                             </div>
                                                                         </div>
                                                                         <button
-                                                                            onClick={() => showToast("Usa el bot�n de ojo (??) en cada producto para activar/desactivar", "info")}
+                                                                            onClick={() => showToast("Usa el botÃ¯Â¿Â½n de ojo (??) en cada producto para activar/desactivar", "info")}
                                                                             className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-xl font-bold text-sm hover:bg-yellow-500/30 transition border border-yellow-500/30 whitespace-nowrap"
                                                                         >
                                                                             Ver desactivados
@@ -7974,12 +7974,12 @@ function App() {
                                                                         </div>
                                                                         <div className="space-y-2">
                                                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
-                                                                                Categorías (Selecciona una o m�s)
+                                                                                CategorÃƒÂ­as (Selecciona una o mÃ¯Â¿Â½s)
                                                                             </label>
                                                                             <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
                                                                                 {(settings?.categories || []).length === 0 ? (
                                                                                     <p className="text-center text-slate-600 py-4 text-sm">
-                                                                                        No hay categor�as disponibles. Agr�galas abajo.
+                                                                                        No hay categorÃ¯Â¿Â½as disponibles. AgrÃ¯Â¿Â½galas abajo.
                                                                                     </p>
                                                                                 ) : (
                                                                                     (settings?.categories || []).map(cat => {
@@ -7999,7 +7999,7 @@ function App() {
                                                                                                     checked={isSelected}
                                                                                                     onChange={(e) => {
                                                                                                         if (e.target.checked) {
-                                                                                                            // Agregar categor�a
+                                                                                                            // Agregar categorÃ¯Â¿Â½a
                                                                                                             const current = Array.isArray(newProduct.categories)
                                                                                                                 ? newProduct.categories
                                                                                                                 : (newProduct.category ? [newProduct.category] : []);
@@ -8009,7 +8009,7 @@ function App() {
                                                                                                                 category: undefined // Eliminar el campo antiguo
                                                                                                             });
                                                                                                         } else {
-                                                                                                            // Remover categor�a
+                                                                                                            // Remover categorÃ¯Â¿Â½a
                                                                                                             const updated = Array.isArray(newProduct.categories)
                                                                                                                 ? newProduct.categories.filter(c => c !== cat)
                                                                                                                 : [];
@@ -8035,7 +8035,7 @@ function App() {
                                                                                     })
                                                                                 )}
                                                                             </div>
-                                                                            {/* Mostrar categor�as seleccionadas como tags */}
+                                                                            {/* Mostrar categorÃ¯Â¿Â½as seleccionadas como tags */}
                                                                             {newProduct.categories && newProduct.categories.length > 0 && (
                                                                                 <div className="flex flex-wrap gap-2 mt-3">
                                                                                     {newProduct.categories.map(cat => (
@@ -8066,7 +8066,7 @@ function App() {
                                                                             onClick={() => setShowCategoryModal(true)}
                                                                             className="w-full mt-2 py-2 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-orange-800"
                                                                         >
-                                                                            <FolderPlus className="w-4 h-4" /> Nueva Categoría
+                                                                            <FolderPlus className="w-4 h-4" /> Nueva CategorÃƒÂ­a
                                                                         </button>
                                                                     </div>
 
@@ -8107,7 +8107,7 @@ function App() {
                                                                     </div>
                                                                 </div>
 
-                                                                <textarea className="input-cyber w-full h-32 p-4 mb-6 resize-none" placeholder="Descripción detallada del producto..." value={newProduct.description || ''} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
+                                                                <textarea className="input-cyber w-full h-32 p-4 mb-6 resize-none" placeholder="DescripciÃƒÂ³n detallada del producto..." value={newProduct.description || ''} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
 
                                                                 <div className="flex gap-4 justify-end">
                                                                     <button onClick={() => setShowProductForm(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition">Cancelar</button>
@@ -8137,12 +8137,12 @@ function App() {
                                                                             <p className="font-bold text-white text-lg flex items-center gap-2">
                                                                                 {p.name}
                                                                                 {p.isFeatured && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">DESTACADO</span>}
-                                                                                {p.isActive === false && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">OCULTO{p.deactivatedByPlan ? ' (L�MITE)' : ''}</span>}
+                                                                                {p.isActive === false && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">OCULTO{p.deactivatedByPlan ? ' (LÃ¯Â¿Â½MITE)' : ''}</span>}
                                                                             </p>
                                                                             <p className="text-xs text-slate-500 font-mono">
                                                                                 Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
                                                                                 <span className="text-orange-400 font-bold ml-2" title="Precio Venta">${Number(p.basePrice).toLocaleString()}</span> |
-                                                                                <span className="text-slate-500 ml-2 font-mono" title="Costo Adquisici�n">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
+                                                                                <span className="text-slate-500 ml-2 font-mono" title="Costo AdquisiciÃ¯Â¿Â½n">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
                                                                                 {Number(p.basePrice) > 0 && (
                                                                                     <span className={`ml-2 text-[10px] font-black px-1.5 py-0.5 rounded border ${((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) < 0.3 ? 'bg-red-900/20 text-red-400 border-red-500/20' : 'bg-green-900/20 text-green-400 border-green-500/20'}`}>
                                                                                         {(((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) * 100).toFixed(0)}%
@@ -8197,7 +8197,7 @@ function App() {
 
 
 
-                                                {/* TAB: CONFIGURACI�N AVANZADA (NEW) */}
+                                                {/* TAB: CONFIGURACIÃ¯Â¿Â½N AVANZADA (NEW) */}
                                                 {adminTab === 'settings' && (
                                                     <div className="max-w-[1600px] mx-auto animate-fade-up pb-20 relative">
 
@@ -8205,7 +8205,7 @@ function App() {
                                                         {/* Only restricted sections like 'subscription' will remain restricted */}
 
                                                         <h1 className="text-4xl font-black text-slate-900 neon-text mb-8 flex items-center gap-3">
-                                                            <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
+                                                            <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> ConfiguraciÃƒÂ³n General
                                                         </h1>
 
                                                         {/* Sub-Navigation Tabs */}
@@ -8213,7 +8213,7 @@ function App() {
                                                             {[
                                                                 { id: 'identity', label: 'Identidad', icon: Fingerprint },
                                                                 { id: 'features', label: 'Funcionalidades', icon: Zap },
-                                                                { id: 'legal', label: 'Legal y Pol�ticas', icon: ShieldCheck },
+                                                                { id: 'legal', label: 'Legal y PolÃ¯Â¿Â½ticas', icon: ShieldCheck },
                                                                 { id: 'advanced', label: 'Avanzado', icon: Cog },
                                                                 // Only show Subscription tab to Super Admin
                                                                 ...(currentUser?.email === SUPER_ADMIN_EMAIL ? [{ id: 'subscription', label: 'Suscripciones', icon: Key }] : [])
@@ -8234,14 +8234,14 @@ function App() {
                                                                 <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(249,115,22,0.1)]">
                                                                     <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
                                                                         <Zap className="w-6 h-6 text-yellow-500 fill-current" />
-                                                                        Modelos de Suscripci�n
+                                                                        Modelos de SuscripciÃ¯Â¿Â½n
                                                                     </h3>
 
                                                                     <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center gap-4">
                                                                         <AlertTriangle className="w-8 h-8 text-yellow-500" />
                                                                         <div>
                                                                             <p className="font-bold text-yellow-500">Zona de Peligro: Super Admin</p>
-                                                                            <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los l�mites y funcionalidades de la tienda.</p>
+                                                                            <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los lÃ¯Â¿Â½mites y funcionalidades de la tienda.</p>
                                                                         </div>
                                                                     </div>
 
@@ -8258,7 +8258,7 @@ function App() {
                                                                                 {(settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan) && <div className="bg-orange-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
                                                                             </div>
                                                                             <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
-                                                                            <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar s�lido pero econ�mico.</p>
+                                                                            <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sÃ¯Â¿Â½lido pero econÃ¯Â¿Â½mico.</p>
                                                                             <div className="text-2xl font-black text-orange-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
 
                                                                             <ul className="space-y-2 text-sm text-slate-300">
@@ -8285,8 +8285,8 @@ function App() {
 
                                                                             <ul className="space-y-2 text-sm text-slate-300">
                                                                                 <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
-                                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalizaci�n Visual</li>
-                                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Bot�n WhatsApp</li>
+                                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> PersonalizaciÃ¯Â¿Â½n Visual</li>
+                                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> BotÃ¯Â¿Â½n WhatsApp</li>
                                                                             </ul>
                                                                         </button>
 
@@ -8316,7 +8316,7 @@ function App() {
                                                                     {/* Billing Cycle Selection */}
                                                                     <div className="mt-8 pt-8 border-t border-slate-800/50">
                                                                         <h4 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
-                                                                            <Calendar className="w-5 h-5 text-green-400" /> Ciclo de Facturaci�n
+                                                                            <Calendar className="w-5 h-5 text-green-400" /> Ciclo de FacturaciÃ¯Â¿Â½n
                                                                         </h4>
                                                                         <div className="grid grid-cols-3 gap-4">
                                                                             {[
@@ -8344,10 +8344,10 @@ function App() {
 
                                                         {settingsTab === 'identity' && (
                                                             <div className="space-y-6 animate-fade-up">
-                                                                {/* INFORMACI�N B�SICA (Originalmente en 'store') */}
+                                                                {/* INFORMACIÃ¯Â¿Â½N BÃ¯Â¿Â½SICA (Originalmente en 'store') */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Store className="w-5 h-5 text-orange-400" /> Información de la Tienda
+                                                                        <Store className="w-5 h-5 text-orange-400" /> InformaciÃƒÂ³n de la Tienda
                                                                     </h3>
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                                         <div>
@@ -8370,7 +8370,7 @@ function App() {
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tel�fono</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">TelÃ¯Â¿Â½fono</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.storePhone || ''}
@@ -8379,14 +8379,14 @@ function App() {
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Direcci�n</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">DirecciÃ¯Â¿Â½n</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.storeAddress || ''}
                                                                                 onChange={e => setSettings({ ...settings, storeAddress: e.target.value })}
                                                                                 placeholder="Av. Principal 123, Ciudad"
                                                                             />
-                                                                            <p className="text-xs text-slate-500 mt-2">Aparece al final del men� hamburguesa</p>
+                                                                            <p className="text-xs text-slate-500 mt-2">Aparece al final del menÃ¯Â¿Â½ hamburguesa</p>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -8520,7 +8520,7 @@ function App() {
                                                                                             setSettings({ ...settings, heroImages: newImages });
                                                                                         }}
                                                                                     >
-                                                                                        <option value="">Sin vinculaci�n</option>
+                                                                                        <option value="">Sin vinculaciÃ¯Â¿Â½n</option>
                                                                                         <optgroup label="Productos">
                                                                                             {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                                                                         </optgroup>
@@ -8569,7 +8569,7 @@ function App() {
                                                                         </div>
                                                                         <div>
                                                                             <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2 mb-4">
-                                                                                <Maximize2 className="w-3 h-3" /> Altura de Visualizaci�n
+                                                                                <Maximize2 className="w-3 h-3" /> Altura de VisualizaciÃ¯Â¿Â½n
                                                                             </label>
                                                                             <div className="grid grid-cols-2 gap-2">
                                                                                 {[
@@ -8612,7 +8612,7 @@ function App() {
                                                                             className="input-cyber w-full p-4"
                                                                             value={settings?.tickerText || ''}
                                                                             onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
-                                                                            placeholder="ENV�OS A TODO EL PA�S � CALIDAD PREMIUM � 12 CUOTAS"
+                                                                            placeholder="ENVÃ¯Â¿Â½OS A TODO EL PAÃ¯Â¿Â½S Ã¯Â¿Â½ CALIDAD PREMIUM Ã¯Â¿Â½ 12 CUOTAS"
                                                                         />
                                                                     </div>
                                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
@@ -8623,17 +8623,17 @@ function App() {
                                                                             className="input-cyber w-full p-4"
                                                                             value={settings?.announcementMessage || ''}
                                                                             onChange={e => setSettings({ ...settings, announcementMessage: e.target.value })}
-                                                                            placeholder="?? �PROMO LANZAMIENTO! - 20% OFF en toda la tienda"
+                                                                            placeholder="?? Ã¯Â¿Â½PROMO LANZAMIENTO! - 20% OFF en toda la tienda"
                                                                         />
-                                                                        <p className="text-[10px] text-slate-500 mt-2">Visible en la parte superior. Dejar vac�o para ocultar.</p>
+                                                                        <p className="text-[10px] text-slate-500 mt-2">Visible en la parte superior. Dejar vacÃ¯Â¿Â½o para ocultar.</p>
                                                                     </div>
                                                                 </div>
 
-                                                                {/* GU�A DE COMPRA */}
+                                                                {/* GUÃ¯Â¿Â½A DE COMPRA */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <div className="flex items-center justify-between mb-6">
                                                                         <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                                                            <FileQuestion className="w-5 h-5 text-blue-400" /> Gu�a "C�mo Comprar" (Pasos)
+                                                                            <FileQuestion className="w-5 h-5 text-blue-400" /> GuÃ¯Â¿Â½a "CÃ¯Â¿Â½mo Comprar" (Pasos)
                                                                         </h3>
                                                                         <button
                                                                             onClick={() => setSettings({ ...settings, showGuideLink: !settings?.showGuideLink })}
@@ -8651,7 +8651,7 @@ function App() {
                                                                                         className="bg-transparent border-none text-white font-bold p-0 focus:ring-0 flex-1"
                                                                                         value={settings?.[`guideStep${num}Title`] || ''}
                                                                                         onChange={e => setSettings({ ...settings, [`guideStep${num}Title`]: e.target.value })}
-                                                                                        placeholder={`T�tulo Paso ${num}`}
+                                                                                        placeholder={`TÃ¯Â¿Â½tulo Paso ${num}`}
                                                                                     />
                                                                                     <button
                                                                                         onClick={() => setSettings({ ...settings, [`showGuideStep${num}`]: !settings?.[`showGuideStep${num}`] })}
@@ -8664,7 +8664,7 @@ function App() {
                                                                                     className="input-cyber w-full p-3 text-xs h-16 resize-none"
                                                                                     value={settings?.[`guideStep${num}Text`] || ''}
                                                                                     onChange={e => setSettings({ ...settings, [`guideStep${num}Text`]: e.target.value })}
-                                                                                    placeholder="Describe este paíso de la compra..."
+                                                                                    placeholder="Describe este paÃƒÂ­so de la compra..."
                                                                                 />
                                                                             </div>
                                                                         ))}
@@ -8677,7 +8677,7 @@ function App() {
                                                                 {/* COPYRIGHT SETTINGS */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <FileText className="w-5 h-5 text-slate-400" /> Información Legal y Copyright
+                                                                        <FileText className="w-5 h-5 text-slate-400" /> InformaciÃƒÂ³n Legal y Copyright
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         <div>
@@ -8686,14 +8686,14 @@ function App() {
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.footerCopyright || ''}
                                                                                 onChange={e => setSettings({ ...settings, footerCopyright: e.target.value })}
-                                                                                placeholder="� 2024 SUSTORE. Todos los derechos reservados."
+                                                                                placeholder="Ã¯Â¿Â½ 2024 SUSTORE. Todos los derechos reservados."
                                                                             />
                                                                         </div>
                                                                         <div className="p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
                                                                             <div className="flex items-center justify-between mb-4">
                                                                                 <div>
-                                                                                    <p className="font-bold text-white">Pol�tica de Privacidad</p>
-                                                                                    <p className="text-xs text-slate-500">Habilitar p�gina y link en footer</p>
+                                                                                    <p className="font-bold text-white">PolÃ¯Â¿Â½tica de Privacidad</p>
+                                                                                    <p className="text-xs text-slate-500">Habilitar pÃ¯Â¿Â½gina y link en footer</p>
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => setSettings({ ...settings, showPrivacyPolicy: !settings?.showPrivacyPolicy })}
@@ -8704,8 +8704,8 @@ function App() {
                                                                             </div>
                                                                             <div className="flex items-center justify-between">
                                                                                 <div>
-                                                                                    <p className="font-bold text-white">T�rminos y Condiciones</p>
-                                                                                    <p className="text-xs text-slate-500">Habilitar p�gina y link en footer</p>
+                                                                                    <p className="font-bold text-white">TÃ¯Â¿Â½rminos y Condiciones</p>
+                                                                                    <p className="text-xs text-slate-500">Habilitar pÃ¯Â¿Â½gina y link en footer</p>
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => setSettings({ ...settings, showTermsOfService: !settings?.showTermsOfService })}
@@ -8736,12 +8736,12 @@ function App() {
                                                                                 <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-6' : 'left-0.5'}`}></div>
                                                                             </button>
                                                                         </div>
-                                                                        <p className="text-xs text-slate-500">Si se activa, los clientes ver�n una p�gina de "Volvemos pronto".</p>
+                                                                        <p className="text-xs text-slate-500">Si se activa, los clientes verÃ¯Â¿Â½n una pÃ¯Â¿Â½gina de "Volvemos pronto".</p>
                                                                     </div>
                                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                         <div className="flex items-center justify-between mb-6">
                                                                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                                                                <Zap className="w-5 h-5 text-yellow-500" /> Optimización (Lazy Load)
+                                                                                <Zap className="w-5 h-5 text-yellow-500" /> OptimizaciÃƒÂ³n (Lazy Load)
                                                                             </h3>
                                                                             <button
                                                                                 onClick={() => setSettings({ ...settings, lazyLoad: settings?.lazyLoad !== false ? false : true })}
@@ -8750,7 +8750,7 @@ function App() {
                                                                                 <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.lazyLoad !== false ? 'left-6' : 'left-0.5'}`}></div>
                                                                             </button>
                                                                         </div>
-                                                                        <p className="text-xs text-slate-500">Carga im�genes solo cuando son visibles para mejorar velocidad.</p>
+                                                                        <p className="text-xs text-slate-500">Carga imÃ¯Â¿Â½genes solo cuando son visibles para mejorar velocidad.</p>
                                                                     </div>
                                                                 </div>
 
@@ -8761,30 +8761,30 @@ function App() {
                                                                     </h3>
                                                                     <div className="space-y-4">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">T�tulo de la P�gina (Meta Title)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">TÃ¯Â¿Â½tulo de la PÃ¯Â¿Â½gina (Meta Title)</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoTitle || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
-                                                                                placeholder="SUSTORE | Tecnolog�a Premium"
+                                                                                placeholder="SUSTORE | TecnologÃ¯Â¿Â½a Premium"
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción (Meta Description)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">DescripciÃƒÂ³n (Meta Description)</label>
                                                                             <textarea
                                                                                 className="input-cyber w-full p-4 h-24 resize-none"
                                                                                 value={settings?.seoDescription || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
-                                                                                placeholder="Encuentra los mejores productos tecnol�gicos con la mejor calidad..."
+                                                                                placeholder="Encuentra los mejores productos tecnolÃ¯Â¿Â½gicos con la mejor calidad..."
                                                                             />
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                {/* CONFIGURACI�N IA */}
+                                                                {/* CONFIGURACIÃ¯Â¿Â½N IA */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Cpu className="w-5 h-5 text-purple-400" /> Configuración Asistente IA
+                                                                        <Cpu className="w-5 h-5 text-purple-400" /> ConfiguraciÃƒÂ³n Asistente IA
                                                                     </h3>
                                                                     <div className="flex flex-col items-center gap-4">
                                                                         <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-purple-500/30 flex items-center justify-center overflow-hidden">
@@ -8812,28 +8812,28 @@ function App() {
                                                             <div className="space-y-6 animate-fade-up">
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Globe className="w-5 h-5 text-green-400" /> Optimización SEO
+                                                                        <Globe className="w-5 h-5 text-green-400" /> OptimizaciÃƒÂ³n SEO
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">T�tulo del Sitio</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">TÃ¯Â¿Â½tulo del Sitio</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoTitle || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
                                                                                 placeholder="Mi Tienda Online | Los Mejores Productos"
                                                                             />
-                                                                            <p className="text-xs text-slate-500 mt-1">Aparece en la pesta�a del navegador</p>
+                                                                            <p className="text-xs text-slate-500 mt-1">Aparece en la pestaÃ¯Â¿Â½a del navegador</p>
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta Descripción</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta DescripciÃƒÂ³n</label>
                                                                             <textarea
                                                                                 className="input-cyber w-full p-4 h-20 resize-none"
                                                                                 value={settings?.seoDescription || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
-                                                                                placeholder="Tienda online de productos de alta calidad. Env�os a todo el pa�s. �Visítanos!"
+                                                                                placeholder="Tienda online de productos de alta calidad. EnvÃ¯Â¿Â½os a todo el paÃ¯Â¿Â½s. Ã¯Â¿Â½VisÃƒÂ­tanos!"
                                                                             />
-                                                                            <p className="text-xs text-slate-500 mt-1">Descripción que aparece en Google (max 160 caracteres)</p>
+                                                                            <p className="text-xs text-slate-500 mt-1">DescripciÃƒÂ³n que aparece en Google (max 160 caracteres)</p>
                                                                         </div>
                                                                         <div>
                                                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Palabras Clave</label>
@@ -8846,9 +8846,9 @@ function App() {
                                                                             <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
                                                                         </div>
 
-                                                                        {/* URL Can�nica */}
+                                                                        {/* URL CanÃ¯Â¿Â½nica */}
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Can�nica)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (CanÃ¯Â¿Â½nica)</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoUrl || ''}
@@ -8893,7 +8893,7 @@ function App() {
                                                                                 </div>
                                                                                 <div className="flex-1">
                                                                                     <p className="text-sm text-slate-400 mb-2">Sube una imagen atractiva (ej: logo con fondo, banner).</p>
-                                                                                    <p className="text-xs text-slate-600">Recomendado: 1200x630 p�xeles para mejor visualizaci�n en Facebook/WhatsApp.</p>
+                                                                                    <p className="text-xs text-slate-600">Recomendado: 1200x630 pÃ¯Â¿Â½xeles para mejor visualizaciÃ¯Â¿Â½n en Facebook/WhatsApp.</p>
                                                                                     {settings?.seoImage && (
                                                                                         <button
                                                                                             onClick={() => setSettings({ ...settings, seoImage: '' })}
@@ -8933,14 +8933,14 @@ function App() {
                                                             <div className="space-y-6 animate-fade-up">
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Cog className="w-5 h-5 text-slate-400" /> Configuración Avanzada
+                                                                        <Cog className="w-5 h-5 text-slate-400" /> ConfiguraciÃƒÂ³n Avanzada
                                                                     </h3>
                                                                     <div className="space-y-4">
                                                                         {/* Maintenance Mode */}
                                                                         <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div>
                                                                                 <p className="font-bold text-white">Modo Mantenimiento</p>
-                                                                                <p className="text-xs text-slate-500">Mostrar p�gina de "Volvemos pronto"</p>
+                                                                                <p className="text-xs text-slate-500">Mostrar pÃ¯Â¿Â½gina de "Volvemos pronto"</p>
                                                                             </div>
                                                                             <button
                                                                                 onClick={() => setSettings({ ...settings, maintenanceMode: !settings?.maintenanceMode })}
@@ -8958,7 +8958,7 @@ function App() {
                                                                             <div className="flex items-center justify-between">
                                                                                 <div>
                                                                                     <p className="font-bold text-white">Carga Diferida (Lazy Load)</p>
-                                                                                    <p className="text-xs text-slate-500">Mejora velocidad cargando im�genes al hacer scroll</p>
+                                                                                    <p className="text-xs text-slate-500">Mejora velocidad cargando imÃ¯Â¿Â½genes al hacer scroll</p>
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => setSettings({ ...settings, enableLazyLoad: settings?.enableLazyLoad === false ? true : false })}
@@ -8989,18 +8989,18 @@ function App() {
                                                                                         if ('caches' in window) {
                                                                                             caches.keys().then(names => {
                                                                                                 names.forEach(name => caches.delete(name));
-                                                                                                showToast('Cach� limpiada. Recargando...', 'success');
+                                                                                                showToast('CachÃ¯Â¿Â½ limpiada. Recargando...', 'success');
                                                                                                 setTimeout(() => window.location.reload(), 1500);
                                                                                             });
                                                                                         } else {
-                                                                                            showToast('Tu navegador no soporta gesti�n de cach�', 'warning');
+                                                                                            showToast('Tu navegador no soporta gestiÃ¯Â¿Â½n de cachÃ¯Â¿Â½', 'warning');
                                                                                         }
                                                                                     }}
                                                                                     className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
                                                                                 >
-                                                                                    <Trash2 className="w-4 h-4" /> Forzar Limpieza de Cach� y Recargar
+                                                                                    <Trash2 className="w-4 h-4" /> Forzar Limpieza de CachÃ¯Â¿Â½ y Recargar
                                                                                 </button>
-                                                                                <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores gr�ficos o versiones antiguas.</p>
+                                                                                <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores grÃ¯Â¿Â½ficos o versiones antiguas.</p>
                                                                             </div>
                                                                         </div>
 
@@ -9008,7 +9008,7 @@ function App() {
                                                                         <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div className="mb-3">
                                                                                 <p className="font-bold text-white">Texto de Carga</p>
-                                                                                <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la p�gina</p>
+                                                                                <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la pÃ¯Â¿Â½gina</p>
                                                                             </div>
                                                                             <input
                                                                                 className="input-cyber w-full p-3"
@@ -9050,7 +9050,7 @@ function App() {
                                                                         <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div>
                                                                                 <p className="font-bold text-white">Mostrar Stock Disponible</p>
-                                                                                <p className="text-xs text-slate-500">Los clientes ven cu�ntas unidades hay</p>
+                                                                                <p className="text-xs text-slate-500">Los clientes ven cuÃ¯Â¿Â½ntas unidades hay</p>
                                                                             </div>
                                                                             <button
                                                                                 onClick={() => setSettings({ ...settings, showStockCount: settings?.showStockCount === false ? true : false })}
@@ -9063,7 +9063,7 @@ function App() {
                                                                         {/* Require Phone */}
                                                                         <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div>
-                                                                                <p className="font-bold text-white">Requerir Tel�fono</p>
+                                                                                <p className="font-bold text-white">Requerir TelÃ¯Â¿Â½fono</p>
                                                                                 <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
                                                                             </div>
                                                                             <button
@@ -9092,7 +9092,7 @@ function App() {
                                                                         <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
                                                                             <div className="flex items-center justify-between mb-4">
                                                                                 <div>
-                                                                                    <p className="font-bold text-white">Bot�n WhatsApp en Carrito</p>
+                                                                                    <p className="font-bold text-white">BotÃ¯Â¿Â½n WhatsApp en Carrito</p>
                                                                                     <p className="text-xs text-slate-500">Permitir enviar pedido por WhatsApp</p>
                                                                                 </div>
                                                                                 <button
@@ -9104,7 +9104,7 @@ function App() {
                                                                             </div>
                                                                             {settings?.whatsappCartEnabled !== false && (
                                                                                 <div>
-                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Texto del Bot�n</label>
+                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Texto del BotÃ¯Â¿Â½n</label>
                                                                                     <input
                                                                                         className="input-cyber w-full p-3"
                                                                                         value={settings?.whatsappCartText || 'Compra por WhatsApp'}
@@ -9137,7 +9137,7 @@ function App() {
                                                                 {/* === PAYMENTS (Moved from separate tab) === */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <CreditCard className="w-5 h-5 text-green-400" /> Métodos de Pago
+                                                                        <CreditCard className="w-5 h-5 text-green-400" /> MÃƒÂ©todos de Pago
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         {/* Transfer */}
@@ -9188,7 +9188,7 @@ function App() {
                                                                                         />
                                                                                     </div>
                                                                                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
-                                                                                        <AlertCircle className="w-3 h-3" /> Estos datos se mostrarán al cliente al elegir pagar por transferencia
+                                                                                        <AlertCircle className="w-3 h-3" /> Estos datos se mostrarÃƒÂ¡n al cliente al elegir pagar por transferencia
                                                                                     </p>
                                                                                 </div>
                                                                             )}
@@ -9208,7 +9208,7 @@ function App() {
                                                                                     onClick={() => {
                                                                                         // Validar que Retiro en Local est activo
                                                                                         if (!settings?.shippingPickup?.enabled) {
-                                                                                            showToast('Debes activar "Retiro en Local" (Envíos) para habilitar efectivo.', 'warning');
+                                                                                            showToast('Debes activar "Retiro en Local" (EnvÃƒÂ­os) para habilitar efectivo.', 'warning');
                                                                                             return;
                                                                                         }
                                                                                         setSettings({ ...settings, paymentCash: !settings?.paymentCash });
@@ -9249,7 +9249,7 @@ function App() {
                                                                 {/* === SHIPPING (Moved from separate tab) === */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Truck className="w-5 h-5 text-orange-400" /> Opciones de Envío
+                                                                        <Truck className="w-5 h-5 text-orange-400" /> Opciones de EnvÃƒÂ­o
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         {/* Pickup */}
@@ -9274,7 +9274,7 @@ function App() {
                                                                                     className="input-cyber w-full p-4"
                                                                                     value={settings?.shippingPickup?.address || ''}
                                                                                     onChange={e => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, address: e.target.value } })}
-                                                                                    placeholder="Dirección de retiro: Av. Corrientes 1234"
+                                                                                    placeholder="DirecciÃƒÂ³n de retiro: Av. Corrientes 1234"
                                                                                 />
                                                                             )}
                                                                         </div>
@@ -9285,8 +9285,8 @@ function App() {
                                                                                 <div className="flex items-center gap-3">
                                                                                     <Package className="w-6 h-6 text-purple-400" />
                                                                                     <div>
-                                                                                        <p className="font-bold text-white">Envío a Domicilio</p>
-                                                                                        <p className="text-xs text-slate-500">Delivery estándar</p>
+                                                                                        <p className="font-bold text-white">EnvÃƒÂ­o a Domicilio</p>
+                                                                                        <p className="text-xs text-slate-500">Delivery estÃƒÂ¡ndar</p>
                                                                                     </div>
                                                                                 </div>
                                                                                 <button
@@ -9299,7 +9299,7 @@ function App() {
                                                                             {settings?.shippingDelivery?.enabled && (
                                                                                 <div className="grid grid-cols-2 gap-4">
                                                                                     <div>
-                                                                                        <label className="text-xs text-slate-500 mb-1 block">Costo de Envío ($)</label>
+                                                                                        <label className="text-xs text-slate-500 mb-1 block">Costo de EnvÃƒÂ­o ($)</label>
                                                                                         <input
                                                                                             type="number"
                                                                                             className="input-cyber w-full p-4"
@@ -9326,7 +9326,7 @@ function App() {
                                                                 {/* AI Config Block (SustIA) */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Sparkles className="w-5 h-5 text-yellow-500" /> Personalizaci�n IA
+                                                                        <Sparkles className="w-5 h-5 text-yellow-500" /> PersonalizaciÃ¯Â¿Â½n IA
                                                                     </h3>
                                                                     <div className="flex items-center gap-6">
                                                                         <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-dashed border-slate-700 hover:border-yellow-500 transition flex items-center justify-center overflow-hidden cursor-pointer shrink-0 shadow-xl">
@@ -9366,7 +9366,7 @@ function App() {
 
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <FolderPlus className="w-5 h-5 text-orange-400" /> Categorías de Productos
+                                                                        <FolderPlus className="w-5 h-5 text-orange-400" /> CategorÃƒÂ­as de Productos
                                                                     </h3>
                                                                     <div className="flex flex-wrap gap-2 mb-4">
                                                                         {(settings?.categories || []).map((cat, idx) => (
@@ -9385,7 +9385,7 @@ function App() {
                                                                         onClick={() => setShowCategoryModal(true)}
                                                                         className="px-4 py-2 bg-orange-900/20 text-orange-400 rounded-lg font-bold text-sm border border-orange-500/30 hover:bg-orange-900/40 transition flex items-center gap-2"
                                                                     >
-                                                                        <Plus className="w-4 h-4" /> Agregar Categoría
+                                                                        <Plus className="w-4 h-4" /> Agregar CategorÃƒÂ­a
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -9398,7 +9398,7 @@ function App() {
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                                         <Users className="w-5 h-5 text-purple-400" /> Equipo y Accesos
                                                                     </h3>
-                                                                    <p className="text-slate-500 mb-6">Gestiona los miembros del equipo, sus roles de acceso y participaci�n en ganancias.</p>
+                                                                    <p className="text-slate-500 mb-6">Gestióna los miembros del equipo, sus roles de acceso y participaciÃ¯Â¿Â½n en ganancias.</p>
 
                                                                     <div className="space-y-4 mb-6">
                                                                         {(settings?.team || []).map((member, idx) => (
@@ -9497,7 +9497,7 @@ function App() {
                                                                         setIsLoading(true);
                                                                         const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
                                                                         await setDoc(settingsRef, settings, { merge: true });
-                                                                        showToast("Configuración guardada exitosamente", "success");
+                                                                        showToast("ConfiguraciÃƒÂ³n guardada exitosamente", "success");
                                                                     } catch (e) {
                                                                         console.error(e);
                                                                         showToast("Error al guardar", "error");
@@ -9529,7 +9529,7 @@ function App() {
                                                                         <input className="input-cyber w-full p-4" placeholder="Nombre del Contacto" value={newSupplier.contact} onChange={e => setNewSupplier({ ...newSupplier, contact: e.target.value })} />
 
                                                                         <div className="grid grid-cols-2 gap-4">
-                                                                            <input className="input-cyber w-full p-4" placeholder="Tel�fono" value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} />
+                                                                            <input className="input-cyber w-full p-4" placeholder="TelÃ¯Â¿Â½fono" value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} />
                                                                             <input className="input-cyber w-full p-4" placeholder="Instagram (sin @)" value={newSupplier.ig} onChange={e => setNewSupplier({ ...newSupplier, ig: e.target.value })} />
                                                                         </div>
 
@@ -9584,38 +9584,38 @@ function App() {
                         )
                     }
 
-                    {/* 8. VISTA POL�TICA DE PRIVACIDAD */}
+                    {/* 8. VISTA POLÃ¯Â¿Â½TICA DE PRIVACIDAD */}
                     {
                         view === 'privacy' && (
                             <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
                                 <div className="glass p-12 rounded-[3rem] border border-slate-800">
                                     <div className="prose prose-invert max-w-none">
                                         <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                            Pol�tica de <span className="text-orange-500 text-6xl">Privacidad</span>
+                                            PolÃ¯Â¿Â½tica de <span className="text-orange-500 text-6xl">Privacidad</span>
                                         </h1>
                                         <p className="text-slate-400 text-lg leading-relaxed">
-                                            En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta pol�tica describe c�mo recolectamos, usamos y resguardamos tu informaci�n.
+                                            En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta polÃ¯Â¿Â½tica describe cÃ¯Â¿Â½mo recolectamos, usamos y resguardamos tu informaciÃ¯Â¿Â½n.
                                         </p>
-                                        <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
+                                        <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. InformaciÃƒÂ³n Recolectada</h2>
                                         <p className="text-slate-500 leadind-relaxed">
-                                            Recolectamos datos b�sicos como nombre, correo electr�nico y n�mero de tel�fono �nicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
+                                            Recolectamos datos bÃ¯Â¿Â½sicos como nombre, correo electrÃ¯Â¿Â½nico y nÃ¯Â¿Â½mero de telÃ¯Â¿Â½fono Ã¯Â¿Â½nicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
                                         </p>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">2. Uso de los Datos</h2>
                                         <p className="text-slate-500 leadind-relaxed">
-                                            Tu informaci�n se utiliza exclusivamente para:
+                                            Tu informaciÃ¯Â¿Â½n se utiliza exclusivamente para:
                                         </p>
                                         <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                            <li>Gestionar tus pedidos y entregas.</li>
+                                            <li>Gestiónar tus pedidos y entregas.</li>
                                             <li>Enviar actualizaciones sobre el estado de tu compra.</li>
                                             <li>Mejorar nuestros servicios y experiencia de usuario.</li>
                                         </ul>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
                                         <p className="text-slate-500 leadind-relaxed">
-                                            Implementamos medidas de seguridad robustas y encriptaci�n de datos para asegurar que tu informaci�n est� protegida contra accesos no autorizados.
+                                            Implementamos medidas de seguridad robustas y encriptaciÃ¯Â¿Â½n de datos para asegurar que tu informaciÃ¯Â¿Â½n estÃ¯Â¿Â½ protegida contra accesos no autorizados.
                                         </p>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
                                         <p className="text-slate-500 leadind-relaxed mb-12">
-                                            Si tienes dudas sobre nuestra pol�tica de privacidad, cont�ctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
+                                            Si tienes dudas sobre nuestra polÃ¯Â¿Â½tica de privacidad, contÃ¯Â¿Â½ctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
                                         </p>
                                         <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
                                             <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
@@ -9625,7 +9625,7 @@ function App() {
                             </div>
                         )
                     }
-                    {/* 9. VISTA T�RMINOS Y CONDICIONES */}
+                    {/* 9. VISTA TÃ¯Â¿Â½RMINOS Y CONDICIONES */}
                     {
                         view === 'terms' && (
                             <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
@@ -9634,51 +9634,51 @@ function App() {
                                         <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
                                             Condiciones de <span className="text-orange-500 text-6xl">Uso</span>
                                         </h1>
-                                        <p className="text-slate-400 font-bold mb-8">�ltima actualizaci�n: 07 de enero de 2026</p>
+                                        <p className="text-slate-400 font-bold mb-8">Ã¯Â¿Â½ltima actualizaciÃ¯Â¿Â½n: 07 de enero de 2026</p>
 
-                                        <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS T�RMINOS LEGALES</h3>
+                                        <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÃ¯Â¿Â½RMINOS LEGALES</h3>
                                         <p className="text-slate-500 leading-relaxed mb-4">
                                             Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
                                         </p>
                                         <p className="text-slate-500 leading-relaxed mb-4">
-                                            Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), as� como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos t�rminos legales (los "<strong>T�rminos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
+                                            Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), asÃ¯Â¿Â½ como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos tÃ¯Â¿Â½rminos legales (los "<strong>TÃ¯Â¿Â½rminos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
                                         </p>
                                         <p className="text-slate-500 leading-relaxed mb-4">
-                                            Puede contactarnos por correo electr�nico a la direcci�n proporcionada al final de este documento.
+                                            Puede contactarnos por correo electrÃ¯Â¿Â½nico a la direcciÃ¯Â¿Â½n proporcionada al final de este documento.
                                         </p>
                                         <p className="text-slate-500 leading-relaxed mb-4">
-                                            Estos T�rminos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relaci�n con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha le�do, comprendido y aceptado estar sujeto a todos estos T�rminos Legales. <strong className="text-red-400">SI NO EST� DE ACUERDO CON TODOS ESTOS T�RMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
+                                            Estos TÃ¯Â¿Â½rminos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relaciÃ¯Â¿Â½n con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leÃ¯Â¿Â½do, comprendido y aceptado estar sujeto a todos estos TÃ¯Â¿Â½rminos Legales. <strong className="text-red-400">SI NO ESTÃ¯Â¿Â½ DE ACUERDO CON TODOS ESTOS TÃ¯Â¿Â½RMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
                                         </p>
 
                                         <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 my-10">
-                                            <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">�NDICE</h3>
+                                            <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">Ã¯Â¿Â½NDICE</h3>
                                             <ul className="space-y-2 text-sm text-orange-400 font-medium">
                                                 <li><a href="#section1" className="hover:text-orange-300 transition">1. NUESTROS SERVICIOS</a></li>
                                                 <li><a href="#section2" className="hover:text-orange-300 transition">2. DERECHOS DE PROPIEDAD INTELECTUAL</a></li>
                                                 <li><a href="#section3" className="hover:text-orange-300 transition">3. REPRESENTACIONES DE USUARIOS</a></li>
                                                 <li><a href="#section4" className="hover:text-orange-300 transition">4. ACTIVIDADES PROHIBIDAS</a></li>
                                                 <li><a href="#section5" className="hover:text-orange-300 transition">5. CONTRIBUCIONES GENERADAS POR EL USUARIO</a></li>
-                                                <li><a href="#section6" className="hover:text-orange-300 transition">6. LICENCIA DE CONTRIBUCI�N</a></li>
-                                                <li><a href="#section7" className="hover:text-orange-300 transition">7. GESTI�N DE SERVICIOS</a></li>
-                                                <li><a href="#section8" className="hover:text-orange-300 transition">8. PLAZO Y TERMINACI�N</a></li>
+                                                <li><a href="#section6" className="hover:text-orange-300 transition">6. LICENCIA DE CONTRIBUCIÃ¯Â¿Â½N</a></li>
+                                                <li><a href="#section7" className="hover:text-orange-300 transition">7. GESTIÃ¯Â¿Â½N DE SERVICIOS</a></li>
+                                                <li><a href="#section8" className="hover:text-orange-300 transition">8. PLAZO Y TERMINACIÃ¯Â¿Â½N</a></li>
                                                 <li><a href="#section9" className="hover:text-orange-300 transition">9. MODIFICACIONES E INTERRUPCIONES</a></li>
                                                 <li><a href="#section10" className="hover:text-orange-300 transition">10. LEY APLICABLE</a></li>
-                                                <li><a href="#section11" className="hover:text-orange-300 transition">11. RESOLUCI�N DE DISPUTAS</a></li>
+                                                <li><a href="#section11" className="hover:text-orange-300 transition">11. RESOLUCIÃ¯Â¿Â½N DE DISPUTAS</a></li>
                                                 <li><a href="#section12" className="hover:text-orange-300 transition">12. CORRECCIONES</a></li>
                                                 <li><a href="#section13" className="hover:text-orange-300 transition">13. DESCARGO DE RESPONSABILIDAD</a></li>
                                                 <li><a href="#section14" className="hover:text-orange-300 transition">14. LIMITACIONES DE RESPONSABILIDAD</a></li>
-                                                <li><a href="#section15" className="hover:text-orange-300 transition">15. INDEMNIZACI�N</a></li>
+                                                <li><a href="#section15" className="hover:text-orange-300 transition">15. INDEMNIZACIÃ¯Â¿Â½N</a></li>
                                                 <li><a href="#section16" className="hover:text-orange-300 transition">16. DATOS DEL USUARIO</a></li>
-                                                <li><a href="#section17" className="hover:text-orange-300 transition">17. COMUNICACIONES ELECTR�NICAS</a></li>
+                                                <li><a href="#section17" className="hover:text-orange-300 transition">17. COMUNICACIONES ELECTRÃ¯Â¿Â½NICAS</a></li>
                                                 <li><a href="#section18" className="hover:text-orange-300 transition">18. VARIOS</a></li>
-                                                <li><a href="#section19" className="hover:text-orange-300 transition">19. CONT�CTENOS</a></li>
+                                                <li><a href="#section19" className="hover:text-orange-300 transition">19. CONTÃ¯Â¿Â½CTENOS</a></li>
                                             </ul>
                                         </div>
 
                                         <section id="section1" className="mb-12">
                                             <h2 className="text-2xl font-bold text-white mb-4">1. NUESTROS SERVICIOS</h2>
                                             <p className="text-slate-500 leading-relaxed">
-                                                La informaci�n proporcionada al utilizar los Servicios no est� destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicci�n o pa�s donde dicha distribuci�n o uso ser�a contrario a la ley o regulaci�n o que nos someter�a a cualquier requisito de registro dentro de dicha jurisdicci�n o pa�s. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las �nicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
+                                                La informaciÃ¯Â¿Â½n proporcionada al utilizar los Servicios no estÃ¯Â¿Â½ destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicciÃ¯Â¿Â½n o paÃ¯Â¿Â½s donde dicha distribuciÃ¯Â¿Â½n o uso serÃ¯Â¿Â½a contrario a la ley o regulaciÃ¯Â¿Â½n o que nos someterÃ¯Â¿Â½a a cualquier requisito de registro dentro de dicha jurisdicciÃ¯Â¿Â½n o paÃ¯Â¿Â½s. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las Ã¯Â¿Â½nicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
                                             </p>
                                         </section>
 
@@ -9686,51 +9686,51 @@ function App() {
                                             <h2 className="text-2xl font-bold text-white mb-4">2. DERECHOS DE PROPIEDAD INTELECTUAL</h2>
                                             <h3 className="text-lg font-bold text-white mt-6 mb-2">Nuestra propiedad intelectual</h3>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el c�digo fuente, bases de datos, funcionalidad, software, dise�os de sitios web, audio, video, texto, fotograf�as y gr�ficos de los Servicios (colectivamente, el "Contenido"), as� como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
+                                                Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el cÃ¯Â¿Â½digo fuente, bases de datos, funcionalidad, software, diseÃ¯Â¿Â½os de sitios web, audio, video, texto, fotografÃ¯Â¿Â½as y grÃ¯Â¿Â½ficos de los Servicios (colectivamente, el "Contenido"), asÃ¯Â¿Â½ como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
                                             </p>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Nuestro Contenido y Marcas est�n protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
+                                                Nuestro Contenido y Marcas estÃ¯Â¿Â½n protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
                                             </p>
                                             <p className="text-slate-500 leading-relaxed">
-                                                El Contenido y las Marcas se proporcionan en o a trav�s de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
+                                                El Contenido y las Marcas se proporcionan en o a travÃ¯Â¿Â½s de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
                                             </p>
 
                                             <h3 className="text-lg font-bold text-white mt-6 mb-2">Su uso de nuestros Servicios</h3>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Sujeto a su cumplimiento de estos T�rminos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la secci�n siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
+                                                Sujeto a su cumplimiento de estos TÃ¯Â¿Â½rminos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la secciÃ¯Â¿Â½n siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
                                             </p>
                                             <ul className="list-disc pl-6 text-slate-500 space-y-2 mb-4">
                                                 <li>acceder a los Servicios; y</li>
                                                 <li>descargar o imprimir una copia de cualquier parte del Contenido al que haya obtenido acceso correctamente,</li>
                                             </ul>
-                                            <p className="text-slate-500 leading-relaxed mb-4">�nicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
+                                            <p className="text-slate-500 leading-relaxed mb-4">Ã¯Â¿Â½nicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Salvo lo establecido en esta secci�n o en otra parte de nuestros T�rminos Legales, ninguna parte de los Servicios ni ning�n Contenido o Marca podr�n copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado p�blicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
+                                                Salvo lo establecido en esta secciÃ¯Â¿Â½n o en otra parte de nuestros TÃ¯Â¿Â½rminos Legales, ninguna parte de los Servicios ni ningÃ¯Â¿Â½n Contenido o Marca podrÃ¯Â¿Â½n copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado pÃ¯Â¿Â½blicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
                                             </p>
                                             <p className="text-slate-500 leading-relaxed">
-                                                Si desea hacer alg�n uso de los Servicios, Contenido o Marcas que no sea el establecido en esta secci�n o en otra parte de nuestros T�rminos Legales, dirija su solicitud a nuestro correo de contacto.
+                                                Si desea hacer algÃ¯Â¿Â½n uso de los Servicios, Contenido o Marcas que no sea el establecido en esta secciÃ¯Â¿Â½n o en otra parte de nuestros TÃ¯Â¿Â½rminos Legales, dirija su solicitud a nuestro correo de contacto.
                                             </p>
                                         </section>
 
                                         <section id="section3" className="mb-12">
                                             <h2 className="text-2xl font-bold text-white mb-4">3. REPRESENTACIONES DE USUARIOS</h2>
                                             <p className="text-slate-500 leading-relaxed">
-                                                Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos T�rminos Legales; (2) no eres un menor de edad en la jurisdicci�n en la que usted reside; (3) no acceder�s a los Servicios a trav�s de medios automatizados o no humanos, ya sea a trav�s de un bot, script o de otro modo; (4) no utilizar� los Servicios para ninguna actividad ilegal o no autorizado prop�sito; y (5) su uso de los Servicios no violar� ninguna ley o regulaci�n aplicable.
+                                                Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos TÃ¯Â¿Â½rminos Legales; (2) no eres un menor de edad en la jurisdicciÃ¯Â¿Â½n en la que usted reside; (3) no accederÃ¯Â¿Â½s a los Servicios a travÃ¯Â¿Â½s de medios automatizados o no humanos, ya sea a travÃ¯Â¿Â½s de un bot, script o de otro modo; (4) no utilizarÃ¯Â¿Â½ los Servicios para ninguna actividad ilegal o no autorizado propÃ¯Â¿Â½sito; y (5) su uso de los Servicios no violarÃ¯Â¿Â½ ninguna ley o regulaciÃ¯Â¿Â½n aplicable.
                                             </p>
                                         </section>
 
                                         <section id="section4" className="mb-12">
                                             <h2 className="text-2xl font-bold text-white mb-4">4. ACTIVIDADES PROHIBIDAS</h2>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                No puede acceder ni utilizar los Servicios para ning�n otro prop�sito que no sea aquel para el cual los ponemos a disposici�n. Los Servicios no podr�n utilizarse en relaci�n con ning�n negocio comercial esfuerzo excepto aquellos que est�n espec�ficamente respaldados o aprobados por nosotros.
+                                                No puede acceder ni utilizar los Servicios para ningÃ¯Â¿Â½n otro propÃ¯Â¿Â½sito que no sea aquel para el cual los ponemos a disposiciÃ¯Â¿Â½n. Los Servicios no podrÃ¯Â¿Â½n utilizarse en relaciÃ¯Â¿Â½n con ningÃ¯Â¿Â½n negocio comercial esfuerzo excepto aquellos que estÃ¯Â¿Â½n especÃ¯Â¿Â½ficamente respaldados o aprobados por nosotros.
                                             </p>
                                             <p className="text-slate-500 leading-relaxed mb-4">Como usuario de los Servicios, usted acepta no:</p>
                                             <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                                <li>Recuperar sistem�ticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colecci�n, compilaci�n, base de datos o directorio sin nuestro permiso por escrito.</li>
-                                                <li>Enga�arnos, defraudarnos o enga�arnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener informaci�n confidencial de la cuenta, como las contrase�as de los usuarios.</li>
-                                                <li>Eludir, deshabilitar o interferir de otro modo con las caracter�sticas relacionadas con la seguridad de los Servicios.</li>
-                                                <li>Menospreciar, empa�ar o da�ar de otro modo, en nuestra opini�n, a nosotros y/o a los Servicios.</li>
-                                                <li>Utilizar cualquier informaci�n obtenida de los Servicios para acosar, abusar o da�ar a otra persona.</li>
+                                                <li>Recuperar sistemÃ¯Â¿Â½ticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colecciÃ¯Â¿Â½n, compilaciÃ¯Â¿Â½n, base de datos o directorio sin nuestro permiso por escrito.</li>
+                                                <li>EngaÃ¯Â¿Â½arnos, defraudarnos o engaÃ¯Â¿Â½arnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener informaciÃ¯Â¿Â½n confidencial de la cuenta, como las contraseñas de los usuarios.</li>
+                                                <li>Eludir, deshabilitar o interferir de otro modo con las caracterÃ¯Â¿Â½sticas relacionadas con la seguridad de los Servicios.</li>
+                                                <li>Menospreciar, empaÃ¯Â¿Â½ar o daÃ¯Â¿Â½ar de otro modo, en nuestra opiniÃ¯Â¿Â½n, a nosotros y/o a los Servicios.</li>
+                                                <li>Utilizar cualquier informaciÃ¯Â¿Â½n obtenida de los Servicios para acosar, abusar o daÃ¯Â¿Â½ar a otra persona.</li>
                                                 <li>Hacer un uso indebido de nuestros servicios de soporte o presentar informes falsos de abuso o mala conducta.</li>
                                                 <li>Utilice los Servicios de una manera incompatible con las leyes o regulaciones aplicables.</li>
                                             </ul>
@@ -9739,14 +9739,14 @@ function App() {
                                         <section id="section13" className="mb-12">
                                             <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
                                             <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
-                                                LOS SERVICIOS SE PRESTAN TAL CUAL Y SEG�N EST� DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SER� BAJO SU PROPIO RIESGO. EN LA M�XIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANT�AS, EXPRESAS O IMPL�CITAS, EN RELACI�N CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
+                                                LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÃ¯Â¿Â½N ESTÃ¯Â¿Â½ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÃ¯Â¿Â½ BAJO SU PROPIO RIESGO. EN LA MÃ¯Â¿Â½XIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÃ¯Â¿Â½AS, EXPRESAS O IMPLÃ¯Â¿Â½CITAS, EN RELACIÃ¯Â¿Â½N CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
                                             </p>
                                         </section>
 
                                         <section id="section19" className="mb-12">
-                                            <h2 className="text-2xl font-bold text-white mb-4">19. CONT�CTENOS</h2>
+                                            <h2 className="text-2xl font-bold text-white mb-4">19. CONTÃ¯Â¿Â½CTENOS</h2>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Para resolver una queja con respecto a los Servicios o para recibir m�s informaci�n sobre el uso de los Servicios, cont�ctenos en:
+                                                Para resolver una queja con respecto a los Servicios o para recibir mÃ¯Â¿Â½s informaciÃ¯Â¿Â½n sobre el uso de los Servicios, contÃ¯Â¿Â½ctenos en:
                                             </p>
                                             <p className="text-2xl font-black text-orange-400">
                                                 {settings?.storeEmail || 'soporte@tuempresa.com'}
@@ -9771,7 +9771,7 @@ function App() {
                             className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}
                             style={{ backgroundColor: darkMode ? '#050505' : '#ffffff' }}
                         >
-                            {/* Decoraci�n de Fondo */}
+                            {/* DecoraciÃ¯Â¿Â½n de Fondo */}
                             <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
                             <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
 
@@ -9783,7 +9783,7 @@ function App() {
                                         <span className="text-orange-500">{settings?.footerSuffix || '.SF'}</span>
                                     </h2>
                                     <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
-                                        {settings?.footerDescription || 'Tu destino premium para tecnolog�a de vanguardia. Ofrecemos los mejores productos con garant�a y soporte especializado. Elevamos tu experiencia digital.'}
+                                        {settings?.footerDescription || 'Tu destino premium para tecnologÃ¯Â¿Â½a de vanguardia. Ofrecemos los mejores productos con garantÃ¯Â¿Â½a y soporte especializado. Elevamos tu experiencia digital.'}
                                     </p>
                                     <div className="flex gap-3 pt-2 flex-wrap">
                                         {settings?.showInstagram !== false && settings?.instagramLink && (
@@ -9833,7 +9833,7 @@ function App() {
 
                                 {/* Columna 2: Quick Links */}
                                 <div className="space-y-6">
-                                    <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>Enlaces R�pidos</h3>
+                                    <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>Enlaces RÃ¯Â¿Â½pidos</h3>
                                     <ul className="space-y-3 text-sm text-slate-500 font-medium">
                                         <li>
                                             <button onClick={() => setView('store')} className="hover:text-orange-400 transition flex items-center gap-2 group">
@@ -9860,7 +9860,7 @@ function App() {
                                             {settings?.footerContactTitle || 'Contacto'}
                                         </h3>
                                         <p className="text-slate-500 text-sm leading-relaxed mb-4">
-                                            {settings?.footerContactDescription || '�Tienes alguna duda? Estamos aqu� para ayudarte.'}
+                                            {settings?.footerContactDescription || 'Ã¯Â¿Â½Tienes alguna duda? Estamos aquÃ¯Â¿Â½ para ayudarte.'}
                                         </p>
                                         <button
                                             onClick={() => {
@@ -9895,7 +9895,7 @@ function App() {
                             <div className={`border-t ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-white'}`}>
                                 <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                                     <p className="text-slate-600 text-xs font-mono">
-                                        � 2026 Sustore. Todos los derechos reservados.
+                                        Ã¯Â¿Â½ 2026 Sustore. Todos los derechos reservados.
                                     </p>
                                     <div className="flex gap-6">
                                         {settings?.showPrivacyPolicy !== false && (
@@ -9911,7 +9911,7 @@ function App() {
                     )
                 }
 
-                {/* MODAL: CREAR CATEGOR�A */}
+                {/* MODAL: CREAR CATEGORÃ¯Â¿Â½A */}
                 {
                     showCategoryModal && (
                         <div className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in-scale ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
@@ -9919,13 +9919,13 @@ function App() {
                                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${darkMode ? 'bg-orange-900/20 text-orange-500' : 'bg-orange-100 text-orange-600'}`}>
                                     <FolderPlus className="w-8 h-8" />
                                 </div>
-                                <h3 className={`text-2xl font-black text-center mb-6 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Nueva Categoría</h3>
+                                <h3 className={`text-2xl font-black text-center mb-6 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Nueva CategorÃƒÂ­a</h3>
                                 <input
                                     type="text"
                                     value={newCategory}
                                     onChange={(e) => setNewCategory(e.target.value)}
                                     className={`w-full p-4 mb-6 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`}
-                                    placeholder="Nombre de la categor�a"
+                                    placeholder="Nombre de la categorÃ¯Â¿Â½a"
                                     autoFocus
                                 />
                                 <div className="flex gap-3">
@@ -9983,7 +9983,7 @@ function App() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>M�todo de Pago</label>
+                                        <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>MÃ¯Â¿Â½todo de Pago</label>
                                         <select
                                             className={`w-full p-3 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white focus:border-green-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-green-500'}`}
                                             value={saleData.paymentMethod}
@@ -10020,7 +10020,7 @@ function App() {
                         </div>
                     )
                 }
-                {/* BOT�N FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
+                {/* BOTÃ¯Â¿Â½N FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
                 {
                     settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
                         <button
@@ -10046,7 +10046,7 @@ function App() {
                 }
 
 
-                {/* MODAL: VER PLANES DE SUSCRIPCI�N */}
+                {/* MODAL: VER PLANES DE SUSCRIPCIÃ¯Â¿Â½N */}
                 {
                     showPlansModal && (
                         <PlansModalContent settings={settings} onClose={() => setShowPlansModal(false)} darkMode={darkMode} />
@@ -10108,21 +10108,21 @@ function App() {
                                                 <div className="space-y-3 mb-6 flex-1">
                                                     <div className="space-y-2 text-sm text-slate-300">
                                                         <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Carga de hasta <strong className="text-white">30 productos</strong></span></div>
-                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Integraci�n <strong className="text-white">Mercado Pago</strong></span></div>
-                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">1 promoci�n</strong> activa</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>IntegraciÃ¯Â¿Â½n <strong className="text-white">Mercado Pago</strong></span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">1 promociÃ¯Â¿Â½n</strong> activa</span></div>
                                                     </div>
                                                 </div>
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-orange-500/50 open:shadow-[0_0_20px_rgba(249,115,22,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-orange-400">?? Eleg� tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-orange-400">?? ElegÃ¯Â¿Â½ tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-orange-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                                         {[
                                                             { cycle: 'Semanal', price: '$2.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                            { cycle: 'Mensual', price: '$7.000', label: 'Pago Mensual', sub: 'M�s equilibrado' },
-                                                            { cycle: 'Anual', price: '$70.000', label: 'Pago Anual', sub: 'Ahorr�s $14.000 ??' }
+                                                            { cycle: 'Mensual', price: '$7.000', label: 'Pago Mensual', sub: 'MÃ¯Â¿Â½s equilibrado' },
+                                                            { cycle: 'Anual', price: '$70.000', label: 'Pago Anual', sub: 'AhorrÃ¯Â¿Â½s $14.000 ??' }
                                                         ].map((opt) => (
                                                             <div
                                                                 key={opt.cycle}
@@ -10151,7 +10151,7 @@ function App() {
                                             ? 'bg-gradient-to-b from-purple-950/40 to-slate-950 border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.25)]'
                                             : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-purple-500/50'
                                             }`}>
-                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">? M�S POPULAR</div>
+                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">? MÃ¯Â¿Â½S POPULAR</div>
                                             <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                                             {settings?.subscriptionPlan === 'business' && (
@@ -10177,21 +10177,21 @@ function App() {
                                                 <div className="space-y-3 mb-6 flex-1">
                                                     <div className="space-y-2 text-sm text-slate-300">
                                                         <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span>Hasta <strong className="text-white">50 productos</strong></span></div>
-                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">5 promociones</strong> simult�neas</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">5 promociones</strong> simultÃ¯Â¿Â½neas</span></div>
                                                         <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Cupones</strong> de descuento</span></div>
-                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Anal�tica</strong> de clientes</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">AnalÃ¯Â¿Â½tica</strong> de clientes</span></div>
                                                     </div>
                                                 </div>
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-purple-500/50 open:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-purple-400">?? Eleg� tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-purple-400">?? ElegÃ¯Â¿Â½ tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-purple-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                                         {[
                                                             { cycle: 'Semanal', price: '$4.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                            { cycle: 'Mensual', price: '$13.000', label: 'Pago Mensual', sub: 'Ideal gesti�n mensual' },
+                                                            { cycle: 'Mensual', price: '$13.000', label: 'Pago Mensual', sub: 'Ideal gestiÃ¯Â¿Â½n mensual' },
                                                             { cycle: 'Anual', price: '$117.000', label: 'Pago Anual', sub: '3 MESES GRATIS ??' }
                                                         ].map((opt) => (
                                                             <div
@@ -10255,7 +10255,7 @@ function App() {
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-yellow-500/50 open:shadow-[0_0_20px_rgba(234,179,8,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-yellow-400">?? Eleg� tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-yellow-400">?? ElegÃ¯Â¿Â½ tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-yellow-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
@@ -10303,20 +10303,20 @@ function App() {
                                                 <div>
                                                     <h3 className="text-xl font-bold text-white mb-1">
                                                         {selectedPlanOption
-                                                            ? `�Excelente elecci�n! ??`
-                                                            : 'Seleccion� una opci�n para continuar'}
+                                                            ? `Ã¯Â¿Â½Excelente elecciÃ¯Â¿Â½n! ??`
+                                                            : 'SeleccionÃ¯Â¿Â½ una opciÃ¯Â¿Â½n para continuar'}
                                                     </h3>
                                                     <p className={`text-sm ${selectedPlanOption ? 'text-green-300' : 'text-slate-400'}`}>
                                                         {selectedPlanOption
-                                                            ? <span>Est�s a un paíso de activar tu <strong>Plan {selectedPlanOption.plan}</strong> con pago <strong>{selectedPlanOption.cycle}</strong>.</span>
-                                                            : 'Hac� clic en una de las opciones de arriba para ver los detalles.'}
+                                                            ? <span>EstÃ¯Â¿Â½s a un paÃƒÂ­so de activar tu <strong>Plan {selectedPlanOption.plan}</strong> con pago <strong>{selectedPlanOption.cycle}</strong>.</span>
+                                                            : 'HacÃ¯Â¿Â½ clic en una de las opciones de arriba para ver los detalles.'}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             {selectedPlanOption && (
                                                 <a
-                                                    href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero suscribirme al *Plan ${selectedPlanOption.plan}* con pago *${selectedPlanOption.cycle}* de ${selectedPlanOption.price}. �C�mo seguimos?`)}`}
+                                                    href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero suscribirme al *Plan ${selectedPlanOption.plan}* con pago *${selectedPlanOption.cycle}* de ${selectedPlanOption.price}. Ã¯Â¿Â½CÃ¯Â¿Â½mo seguimos?`)}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="w-full md:w-auto px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-black text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30 flex items-center justify-center gap-2 animate-bounce-subtle"
@@ -10430,7 +10430,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
     const [activePlanId, setActivePlanId] = React.useState(null);
     const [selectedOption, setSelectedOption] = React.useState(null);
 
-    // Clases de color est�ticas para Tailwind (no interpolar)
+    // Clases de color estÃ¯Â¿Â½ticas para Tailwind (no interpolar)
     const colorClasses = {
         purple: {
             iconBg: 'bg-purple-600',
@@ -10473,14 +10473,14 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
             price: '$7.000',
             features: [
                 '?? Carga de hasta 30 productos',
-                '?? Integraci�n con Mercado Pago',
-                '?? 1 Promoci�n activa',
+                '?? IntegraciÃ¯Â¿Â½n con Mercado Pago',
+                '?? 1 PromociÃ¯Â¿Â½n activa',
                 '?? Panel de Control completo',
-                '?? Soporte t�cnico v�a Gmail'
+                '?? Soporte tÃ¯Â¿Â½cnico vÃ¯Â¿Â½a Gmail'
             ],
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$2.000', sub: 'Flexibilidad total' },
-                { id: 'monthly', label: 'Mensual', price: '$7.000', sub: 'Opci�n equilibrada' },
+                { id: 'monthly', label: 'Mensual', price: '$7.000', sub: 'OpciÃ¯Â¿Â½n equilibrada' },
                 { id: 'annual', label: 'Anual', price: '$70.000', sub: '?? 2 MESES GRATIS' }
             ],
             color: 'orange',
@@ -10495,15 +10495,15 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
             popular: true,
             features: [
                 '?? Hasta 50 productos',
-                '?? 5 Promociones simult�neas',
+                '?? 5 Promociones simultÃ¯Â¿Â½neas',
                 '?? Sistema de cupones',
-                '?? Anal�tica de clientes',
-                '?? Bot�n WhatsApp flotante'
+                '?? AnalÃ¯Â¿Â½tica de clientes',
+                '?? BotÃ¯Â¿Â½n WhatsApp flotante'
             ],
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },
                 { id: 'monthly', label: 'Mensual', price: '$13.000', sub: 'Equilibrio perfecto' },
-                { id: 'annual', label: 'Anual', price: '$117.000', sub: '?? 3 MESES GRATIS' }
+                { id: 'annual', label: 'Anual', price: '$117.000', sub: 'ðŸŽ Â¡3 MESES GRATIS' }
             ],
             color: 'purple',
             icon: Briefcase
@@ -10512,11 +10512,11 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
             id: 'premium',
             name: 'Plan Premium',
             emoji: '??',
-            subtitle: 'Automatizaci�n total y cero preocupaciones.',
+            subtitle: 'AutomatizaciÃ¯Â¿Â½n total y cero preocupaciones.',
             price: '$22.000',
             features: [
-                '🚀 Productos ilimitados',
-                '🤖 Asistente IA 24/7',
+                'Ã°Å¸Å¡â‚¬ Productos ilimitados',
+                'Ã°Å¸Â¤â€“ Asistente IA 24/7',
                 '✅ Carga VIP (10 productos)',
                 '✅ Mantenimiento mensual',
                 '✅ Omnicanalidad total'
@@ -10524,7 +10524,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$6.500', sub: 'Flexibilidad total' },
                 { id: 'monthly', label: 'Mensual', price: '$22.000', sub: 'Equilibrio perfecto' },
-                { id: 'annual', label: 'Anual', price: '$198.000', sub: '🎁 ¡3 MESES GRATIS!' }
+                { id: 'annual', label: 'Anual', price: '$198.000', sub: '🎁 ¡3 MESES GRATIS!' }
             ],
             color: 'yellow',
             icon: Sparkles
@@ -10541,7 +10541,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                         <h2 className={`text-xl sm:text-3xl font-black flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                             <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-current" /> Planes Disponibles
                         </h2>
-                        <p className={`text-xs sm:text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>Eleg� un plan y seleccion� tu forma de pago</p>
+                        <p className={`text-xs sm:text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>ElegÃ¯Â¿Â½ un plan y seleccionÃ¯Â¿Â½ tu forma de pago</p>
                     </div>
                     <button onClick={onClose} className={`p-2 sm:p-3 rounded-full transition-all hover:rotate-90 ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>
                         <X className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -10613,7 +10613,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                                             className={`w-full py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2
                                                 ${isActive ? 'bg-white/5 text-white' : (darkMode ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50' : 'bg-slate-100 text-slate-500 hover:bg-slate-200')}`}
                                         >
-                                            {isActive ? 'Eleg� tu forma de pago' : 'Ver opciones de pago'}
+                                            {isActive ? 'ElegÃ¯Â¿Â½ tu forma de pago' : 'Ver opciones de pago'}
                                             <ChevronDown className={`w-4 h-4 transition-transform ${isActive ? 'rotate-180' : ''}`} />
                                         </button>
 
@@ -10658,12 +10658,12 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
                             <div className="text-center sm:text-left">
                                 <p className="text-white text-sm sm:text-base font-bold">
-                                    {selectedOption.emoji} {selectedOption.plan} � <span className="text-green-400">{selectedOption.cycle}</span>
+                                    {selectedOption.emoji} {selectedOption.plan} Ã¯Â¿Â½ <span className="text-green-400">{selectedOption.cycle}</span>
                                 </p>
-                                <p className="text-slate-400 text-xs">{selectedOption.sub} � {selectedOption.price}</p>
+                                <p className="text-slate-400 text-xs">{selectedOption.sub} Ã¯Â¿Â½ {selectedOption.price}</p>
                             </div>
                             <a
-                                href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero contratar el *${selectedOption.plan}* con pago *${selectedOption.cycle}* (${selectedOption.price}). �C�mo sigo?`)}`}
+                                href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero contratar el *${selectedOption.plan}* con pago *${selectedOption.cycle}* (${selectedOption.price}). Ã¯Â¿Â½CÃ¯Â¿Â½mo sigo?`)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-full sm:w-auto px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-black text-sm sm:text-base rounded-xl transition shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
@@ -10720,7 +10720,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
                             <div>
                                 <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Estado Actual</p>
                                 <p className={`text-xl font-black ${order.status === 'Realizado' ? 'text-green-400' : 'text-yellow-400'}`}>
-                                    {order.status === 'Realizado' ? 'Entregado / Finalizado' : 'Pendiente de Pago/Env�o'}
+                                    {order.status === 'Realizado' ? 'Entregado / Finalizado' : 'Pendiente de Pago/EnvÃ¯Â¿Â½o'}
                                 </p>
                             </div>
                         </div>
@@ -10742,7 +10742,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
                                     )}
                                     {order.customer.phone && (
                                         <p className="flex justify-between border-b border-dashed border-slate-700/20 pb-1">
-                                            <span className="text-slate-500">Tel�fono:</span>
+                                            <span className="text-slate-500">TelÃ¯Â¿Â½fono:</span>
                                             <a href={`https://wa.me/549${order.customer.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-green-500 font-bold hover:underline flex items-center gap-1">
                                                 <MessageCircle className="w-3 h-3" /> {order.customer.phone}
                                             </a>
@@ -10759,7 +10759,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
 
                         <div className={`p-6 rounded-2xl border transition ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:border-slate-700' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}>
                             <h4 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-slate-800/20 pb-2">
-                                <Truck className="w-4 h-4" /> Env�o / Entrega
+                                <Truck className="w-4 h-4" /> EnvÃ¯Â¿Â½o / Entrega
                             </h4>
                             <div className="space-y-3">
                                 <p className={`font-medium text-sm leading-relaxed min-h-[3rem] ${darkMode ? 'text-white' : 'text-slate-800'}`}>
@@ -10767,7 +10767,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
                                     {order.delivery?.city && <span><br />{order.delivery.city}, {order.delivery.zip}</span>}
                                 </p>
                                 <div className="pt-2 mt-2 border-t border-slate-800/20">
-                                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">M�todo de Pago</p>
+                                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">MÃ¯Â¿Â½todo de Pago</p>
                                     <div className="flex items-center gap-2">
                                         <CreditCard className="w-4 h-4 text-orange-400" />
                                         <p className="text-orange-400 font-black text-sm uppercase">{order.paymentMethod || 'Efectivo'}</p>
@@ -10843,7 +10843,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
 
 
 
-// Componente Modal de Selecci�n de Cupones
+// Componente Modal de SelecciÃ¯Â¿Â½n de Cupones
 const CouponSelectorModal = ({ isOpen, onClose, coupons, currentUser, cartSubtotal, selectCoupon, darkMode }) => {
     if (!isOpen) return null;
 
@@ -10874,8 +10874,8 @@ const CouponSelectorModal = ({ isOpen, onClose, coupons, currentUser, cartSubtot
                                     <span className={`text-lg font-black ${isDisabled ? 'text-slate-400' : 'text-orange-500'}`}>{coupon.code}</span>
                                     <span className="text-xs font-bold px-2 py-1 bg-orange-500/10 text-orange-500 rounded-lg">-{coupon.discount}%</span>
                                 </div>
-                                <p className="text-xs text-slate-500 font-medium">{coupon.description || 'V�lido para toda la tienda.'}</p>
-                                {minNotMet && <p className="text-[10px] text-red-400 mt-2 font-bold uppercase tracking-wider">M�nimo: ${coupon.minPurchase.toLocaleString()}</p>}
+                                <p className="text-xs text-slate-500 font-medium">{coupon.description || 'VÃ¯Â¿Â½lido para toda la tienda.'}</p>
+                                {minNotMet && <p className="text-[10px] text-red-400 mt-2 font-bold uppercase tracking-wider">MÃ¯Â¿Â½nimo: ${coupon.minPurchase.toLocaleString()}</p>}
                             </button>
                         );
                     })}
@@ -10885,7 +10885,7 @@ const CouponSelectorModal = ({ isOpen, onClose, coupons, currentUser, cartSubtot
     );
 };
 
-// Modal de Detalle de Producto / Promo (Versi�n Premium)
+// Modal de Detalle de Producto / Promo (VersiÃ¯Â¿Â½n Premium)
 const ProductDetailModal = ({ selectedProduct, setSelectedProduct, cart, manageCart, products, calculateItemPrice, darkMode, showToast, toggleFavorite, currentUser, settings }) => {
     const [qty, setQty] = useState(1);
     const [added, setAdded] = useState(false);
@@ -10970,7 +10970,7 @@ const ProductDetailModal = ({ selectedProduct, setSelectedProduct, cart, manageC
                                 <p className="text-4xl font-black text-white font-mono">${displayPrice.toLocaleString()}</p>
                             </div>
                             <div className={`px-3 py-1 rounded-full text-[10px] font-bold ${hasStock ? (isMaxInCart ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400') : 'bg-red-500/20 text-red-500'}`}>
-                                {hasStock ? (isMaxInCart ? 'L�MITE ALCANZADO' : `DISPONIBLES: ${availableToAdd}`) : 'SIN STOCK'}
+                                {hasStock ? (isMaxInCart ? 'LÃ¯Â¿Â½MITE ALCANZADO' : `DISPONIBLES: ${availableToAdd}`) : 'SIN STOCK'}
                             </div>
                         </div>
 
@@ -11052,7 +11052,7 @@ const ManualSaleModal = ({ showManualSaleModal, setShowManualSaleModal, saleData
     );
 };
 
-// Modal de Anal�ticas
+// Modal de AnalÃ¯Â¿Â½ticas
 const MetricsDetailModal = ({ metricsDetail, setMetricsDetail, dashboardMetrics, darkMode }) => {
     const [timeframe, setTimeframe] = useState('monthly');
     if (!metricsDetail) return null;
@@ -11061,7 +11061,7 @@ const MetricsDetailModal = ({ metricsDetail, setMetricsDetail, dashboardMetrics,
         <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
             <div className={`rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col border p-8 ${darkMode ? 'bg-[#050505] border-slate-800' : 'bg-white'}`}>
                 <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-2xl font-black text-white uppercase tracking-widest">Estad�sticas Detalladas</h3>
+                    <h3 className="text-2xl font-black text-white uppercase tracking-widest">EstadÃ¯Â¿Â½sticas Detalladas</h3>
                     <button onClick={() => setMetricsDetail(null)}><X className="text-white" /></button>
                 </div>
                 <div className="flex gap-4 mb-8">
@@ -11082,7 +11082,7 @@ const MetricsDetailModal = ({ metricsDetail, setMetricsDetail, dashboardMetrics,
     );
 };
 
-// Drawer de Administraci�n de Usuarios
+// Drawer de AdministraciÃ¯Â¿Â½n de Usuarios
 const AdminUserDrawer = ({ viewUserCart, setViewUserCart, viewUserEdit, setViewUserEdit, currentUser, setCurrentUser, db, appId, darkMode, showToast, openConfirm }) => {
     const [active, setActive] = useState(false);
     const [type, setType] = useState('cart');
@@ -11124,7 +11124,7 @@ const AdminUserDrawer = ({ viewUserCart, setViewUserCart, viewUserEdit, setViewU
         try {
             const update = { ...formData, updatedAt: new Date().toISOString(), lastModifiedBy: currentUser.email };
             delete update.newPassword;
-            if (formData.newPassword) update.paíssword = formData.newPassword;
+            if (formData.newPassword) update.paÃƒÂ­ssword = formData.newPassword;
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), update);
             showToast("Actualizado!", "success");
             close();
@@ -11154,7 +11154,7 @@ const AdminUserDrawer = ({ viewUserCart, setViewUserCart, viewUserEdit, setViewU
                         <form onSubmit={handleEdit} className="space-y-6">
                             <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Nombre" />
                             <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="Email" />
-                            <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" type="paíssword" onChange={e => setFormData({ ...formData, newPassword: e.target.value })} placeholder="Nueva Contrase�a" />
+                            <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" type="paÃƒÂ­ssword" onChange={e => setFormData({ ...formData, newPassword: e.target.value })} placeholder="Nueva ContraseÃ¯Â¿Â½a" />
                             <button className="w-full bg-orange-600 py-4 rounded-xl font-bold uppercase text-white">Guardar</button>
                         </form>
                     )}
