@@ -6969,7 +6969,7 @@ function App() {
                                                     </div>
                                                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">ADMIN</span>
                                                 </h2>
-                                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em] ml-1 opacity-60">Control Center v4.0</p>
+                                                <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em] ml-1 opacity-60">Control Center v4.1</p>
                                             </div>
                                             <button
                                                 onClick={() => setIsAdminMenuOpen(false)}
@@ -7109,7 +7109,7 @@ function App() {
                                                         <div>
                                                             <div className="flex items-center gap-3 text-orange-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4 bg-orange-500/5 px-4 py-2 rounded-full w-fit border border-orange-500/10">
                                                                 <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                                                                Live Metrics • Apps v4.0
+                                                                Live Metrics • Apps v4.1
                                                             </div>
                                                             <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 drop-shadow-sm">
                                                                 Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 animate-gradient-x">Control</span>
@@ -7264,26 +7264,26 @@ function App() {
                                                     {/* SECCIÓN 2.5: MEJORES Y PEORES (PREMIUM) */}
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                         {/* BEST SELLER */}
-                                                        <div className="bg-gradient-to-br from-[#0a0a0a] to-[#161618] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500 shadow-xl">
+                                                        <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500 shadow-xl">
                                                             <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                                                             <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700">
                                                                 <Star className="w-32 h-32 text-yellow-500" />
                                                             </div>
-                                                            <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-6 flex items-center gap-2 relative z-10">
+                                                            <p className="text-slate-500 font-bold text-xs tracking-widest uppercase mb-6 flex items-center gap-2 relative z-10">
                                                                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" /> Producto Estrella
                                                             </p>
                                                             {dashboardMetrics.starProduct ? (
                                                                 <div className="flex items-center gap-8 relative z-10">
-                                                                    <div className="w-28 h-28 bg-white rounded-2xl p-2 shadow-2xl flex-shrink-0 rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                                                                    <div className="w-28 h-28 bg-white rounded-2xl p-2 shadow-md border border-slate-100 flex-shrink-0 rotate-3 group-hover:rotate-0 transition-transform duration-500">
                                                                         <img src={dashboardMetrics.starProduct.image} className="w-full h-full object-contain" />
                                                                     </div>
                                                                     <div>
-                                                                        <h3 className="text-2xl font-black text-white leading-none mb-2">{dashboardMetrics.starProduct.name}</h3>
+                                                                        <h3 className="text-2xl font-black text-slate-900 leading-none mb-2">{dashboardMetrics.starProduct.name}</h3>
                                                                         <div className="flex items-baseline gap-2">
-                                                                            <p className="text-yellow-400 font-black text-3xl">{dashboardMetrics.starProduct.sales}</p>
+                                                                            <p className="text-orange-500 font-black text-3xl">{dashboardMetrics.starProduct.sales}</p>
                                                                             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Unidades</p>
                                                                         </div>
-                                                                        <p className="text-slate-500 text-xs mt-2 bg-white/5 py-1 px-3 rounded-full w-fit">Stock disponible: {dashboardMetrics.starProduct.stock}</p>
+                                                                        <p className="text-slate-500 text-xs mt-2 bg-slate-100 py-1 px-3 rounded-full w-fit border border-slate-200">Stock disponible: {dashboardMetrics.starProduct.stock}</p>
                                                                     </div>
                                                                 </div>
                                                             ) : (
@@ -8646,15 +8646,16 @@ function App() {
                                                                 <div key={promo.id} className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden hover:border-purple-300 transition-all duration-500 group flex flex-col shadow-lg hover:shadow-xl hover:shadow-purple-200/50">
                                                                     <div className="aspect-[4/3] relative overflow-hidden">
                                                                         <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-1000 group-hover:scale-110" />
-                                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                                                                        {/* Gradient Overlay for Readability */}
+                                                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
                                                                         <div className="absolute top-4 right-4">
                                                                             <div className={`px-4 py-2 rounded-2xl text-xs font-black backdrop-blur-md border ${isProfitable ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-600 border-red-200'} shadow-sm`}>
                                                                                 {margin}% MARGEN
                                                                             </div>
                                                                         </div>
                                                                         <div className="absolute bottom-6 left-6 right-6">
-                                                                            <h4 className="text-2xl font-black text-white mb-1 drop-shadow-md">{promo.name}</h4>
-                                                                            <p className="text-3xl text-white font-black tracking-tighter drop-shadow-md">${price.toLocaleString()}</p>
+                                                                            <h4 className="text-2xl font-black text-white mb-1 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{promo.name}</h4>
+                                                                            <p className="text-3xl text-white font-black tracking-tighter drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>${price.toLocaleString()}</p>
                                                                         </div>
                                                                     </div>
 
