@@ -7089,10 +7089,10 @@ function App() {
 
                                         <div className="relative z-10 p-6 md:p-12 lg:p-16 max-w-[1700px] mx-auto">
                                             <div className="md:hidden mb-8 flex items-center justify-between">
-                                                <button onClick={() => setIsAdminMenuOpen(true)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white border border-white/10 flex items-center gap-3 font-black text-xs uppercase tracking-widest transition-all">
+                                                <button onClick={() => setIsAdminMenuOpen(true)} className="p-3 bg-white hover:bg-slate-50 rounded-2xl text-slate-900 border border-slate-200 flex items-center gap-3 font-black text-xs uppercase tracking-widest transition-all shadow-sm">
                                                     <Menu className="w-5 h-5" /> Menú
                                                 </button>
-                                                <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white">
+                                                <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
                                                     <Shield className="w-5 h-5" />
                                                 </div>
                                             </div>
@@ -7292,27 +7292,27 @@ function App() {
                                                         </div>
 
                                                         {/* WORST SELLER */}
-                                                        <div className="bg-gradient-to-br from-[#0a0a0a] to-[#161618] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-slate-500/30 transition-all duration-500 shadow-xl">
-                                                            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                                                                <TrendingDown className="w-32 h-32 text-slate-500" />
+                                                        <div className="bg-gradient-to-br from-white to-slate-50 p-6 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group hover:border-slate-300 transition-colors">
+                                                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                                                <TrendingDown className="w-24 h-24 text-slate-900" />
                                                             </div>
-                                                            <p className="text-slate-500 font-black text-xs tracking-widest uppercase mb-6 flex items-center gap-2 relative z-10">
-                                                                <TrendingDown className="w-4 h-4 text-slate-500" /> Menos Vendido (En Stock)
+                                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2 relative z-10">
+                                                                <TrendingDown className="w-4 h-4 text-slate-400" /> Menos Vendido (En Stock)
                                                             </p>
                                                             {dashboardMetrics.leastSoldProduct ? (
                                                                 <div className="flex items-center gap-8 relative z-10">
-                                                                    <div className="w-28 h-28 bg-white rounded-2xl p-2 shadow-2xl grayscale flex-shrink-0 -rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                                                                    <div className="w-28 h-28 bg-white rounded-2xl p-2 shadow-md border border-slate-100 grayscale flex-shrink-0 -rotate-3 group-hover:rotate-0 transition-transform duration-500">
                                                                         <img src={dashboardMetrics.leastSoldProduct.image} className="w-full h-full object-contain" />
                                                                     </div>
                                                                     <div>
-                                                                        <h3 className="text-2xl font-black text-white leading-none mb-2">{dashboardMetrics.leastSoldProduct.name}</h3>
+                                                                        <h3 className="text-2xl font-black text-slate-900 leading-none mb-2">{dashboardMetrics.leastSoldProduct.name}</h3>
                                                                         <div className="flex items-baseline gap-2">
-                                                                            <p className="text-slate-200 font-black text-3xl">
+                                                                            <p className="text-slate-400 font-black text-3xl">
                                                                                 {dashboardMetrics.salesCount[dashboardMetrics.leastSoldProduct.id] || 0}
                                                                             </p>
                                                                             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Unidades</p>
                                                                         </div>
-                                                                        <p className="text-slate-500 text-xs mt-2 bg-white/5 py-1 px-3 rounded-full w-fit flex items-center gap-2">
+                                                                        <p className="text-slate-500 text-xs mt-2 bg-slate-100 py-1 px-3 rounded-full w-fit flex items-center gap-2 border border-slate-200">
                                                                             <RefreshCw className="w-3 h-3" /> Sugerencia: Oferta Flash
                                                                         </p>
                                                                     </div>
@@ -7324,15 +7324,15 @@ function App() {
                                                     </div>
 
                                                     {/* SECCIÓN 3: LIBRO MAYOR (REGISTRO ADMINISTRATIVO) */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
-                                                        <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
-                                                            <FileText className="w-6 h-6 text-purple-400" /> Registro de Movimientos
+                                                    <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
+                                                        <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                                                            <FileText className="w-6 h-6 text-purple-600" /> Registro de Movimientos
                                                         </h3>
 
                                                         <div className="overflow-x-auto">
                                                             <table className="w-full text-left border-collapse">
                                                                 <thead>
-                                                                    <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
+                                                                    <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200">
                                                                         <th className="pb-4 pl-4">Fecha</th>
                                                                         <th className="pb-4">Tipo</th>
                                                                         <th className="pb-4">Concepto</th>
@@ -7342,21 +7342,21 @@ function App() {
                                                                 </thead>
                                                                 <tbody className="text-sm font-medium">
                                                                     {dashboardMetrics.transactions.map((t, idx) => (
-                                                                        <tr key={`${t.type}-${idx}`} className="border-b border-slate-800/50 hover:bg-slate-900/20 transition group">
-                                                                            <td className="py-4 pl-4 text-slate-400 font-mono text-xs">{new Date(t.date).toLocaleDateString()}</td>
+                                                                        <tr key={`${t.type}-${idx}`} className="border-b border-slate-100 hover:bg-slate-50 transition group">
+                                                                            <td className="py-4 pl-4 text-slate-500 font-mono text-xs">{new Date(t.date).toLocaleDateString()}</td>
                                                                             <td className="py-4">
-                                                                                <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider ${t.type === 'income' ? 'bg-green-900/20 text-green-400 border border-green-500/20' : 'bg-red-900/20 text-red-400 border border-red-500/20'
+                                                                                <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider ${t.type === 'income' ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-red-100 text-red-600 border border-red-200'
                                                                                     }`}>
                                                                                     {t.category}
                                                                                 </span>
                                                                             </td>
-                                                                            <td className="py-4 text-white group-hover:text-purple-300 transition">
+                                                                            <td className="py-4 text-slate-900 group-hover:text-purple-600 transition">
                                                                                 {t.description}
                                                                             </td>
                                                                             <td className="py-4 text-xs text-slate-500">
                                                                                 {t.status}
                                                                             </td>
-                                                                            <td className={`py-4 text-right pr-4 font-mono font-bold ${t.type === 'income' ? 'text-green-400' : 'text-red-400'}`}>
+                                                                            <td className={`py-4 text-right pr-4 font-mono font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
                                                                                 {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
                                                                             </td>
                                                                         </tr>
@@ -7376,7 +7376,7 @@ function App() {
 
                                             {/* TAB: PROVEEDORES (CON SELECTOR VISUAL) */}
                                             {adminTab === 'suppliers' && (
-                                                <div className="max-w-6xl mx-auto space-y-8 animate-fade-up pb-20">
+                                                <div className="max-w-[1600px] mx-auto space-y-8 animate-fade-up pb-20">
                                                     <div className="flex justify-between items-center">
                                                         <h1 className="text-3xl font-black text-slate-900">Proveedores</h1>
                                                         <button onClick={() => { setNewSupplier({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] }); setEditingSupplierId(null); setShowSupplierModal(true); }} className="bg-orange-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-orange-500 transition transform hover:-translate-y-1">
@@ -7386,22 +7386,22 @@ function App() {
 
                                                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                                         {suppliers.map((s, idx) => (
-                                                            <div key={s.id} style={{ animationDelay: `${idx * 0.05}s` }} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-[2rem] hover:border-slate-600 transition duration-300 group animate-fade-up">
+                                                            <div key={s.id} style={{ animationDelay: `${idx * 0.05}s` }} className="bg-white border border-slate-200 p-6 rounded-[2rem] hover:border-orange-500/30 transition duration-300 group animate-fade-up shadow-sm hover:shadow-md">
                                                                 <div className="flex justify-between items-start mb-6">
-                                                                    <div className="p-4 bg-slate-900 rounded-xl text-slate-400 group-hover:text-orange-400 transition group-hover:bg-orange-900/20">
+                                                                    <div className="p-4 bg-slate-100 rounded-xl text-slate-500 group-hover:text-orange-600 transition group-hover:bg-orange-50">
                                                                         <Truck className="w-8 h-8" />
                                                                     </div>
                                                                     <div className="flex gap-2">
                                                                         <button
                                                                             onClick={() => { setNewSupplier(s); setEditingSupplierId(s.id); setShowSupplierModal(true); }}
-                                                                            className="text-slate-600 hover:text-orange-400 p-2 hover:bg-slate-900 rounded-lg transition"
+                                                                            className="text-slate-400 hover:text-orange-600 p-2 hover:bg-slate-100 rounded-lg transition"
                                                                             title="Editar"
                                                                         >
                                                                             <Edit className="w-5 h-5" />
                                                                         </button>
                                                                         <button
                                                                             onClick={() => openConfirm("Eliminar Proveedor", "¿Eliminar proveedor?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)))}
-                                                                            className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-900 rounded-lg transition"
+                                                                            className="text-slate-400 hover:text-red-500 p-2 hover:bg-slate-100 rounded-lg transition"
                                                                             title="Eliminar"
                                                                         >
                                                                             <Trash2 className="w-5 h-5" />
@@ -7409,39 +7409,39 @@ function App() {
                                                                     </div>
                                                                 </div>
 
-                                                                <h3 className="text-2xl font-bold text-white mb-2">{s.name}</h3>
+                                                                <h3 className="text-2xl font-bold text-slate-900 mb-2">{s.name}</h3>
 
-                                                                <div className="space-y-3 mb-6 p-4 bg-slate-900/30 rounded-xl border border-slate-800/50">
-                                                                    <p className="text-slate-400 text-sm flex items-center gap-3">
-                                                                        <User className="w-4 h-4 text-slate-500" /> {s.contact}
+                                                                <div className="space-y-3 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                                    <p className="text-slate-600 text-sm flex items-center gap-3">
+                                                                        <User className="w-4 h-4 text-slate-400" /> {s.contact}
                                                                     </p>
                                                                     {s.phone && (
-                                                                        <p className="text-slate-400 text-sm flex items-center gap-3">
-                                                                            <Phone className="w-4 h-4 text-slate-500" /> {s.phone}
+                                                                        <p className="text-slate-600 text-sm flex items-center gap-3">
+                                                                            <Phone className="w-4 h-4 text-slate-400" /> {s.phone}
                                                                         </p>
                                                                     )}
                                                                     {s.ig && (
-                                                                        <p className="text-slate-400 text-sm flex items-center gap-3">
-                                                                            <Instagram className="w-4 h-4 text-slate-500" /> {s.ig}
+                                                                        <p className="text-slate-600 text-sm flex items-center gap-3">
+                                                                            <Instagram className="w-4 h-4 text-slate-400" /> {s.ig}
                                                                         </p>
                                                                     )}
                                                                 </div>
 
-                                                                <div className="pt-4 border-t border-slate-800">
-                                                                    <p className="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">Productos Suministrados</p>
+                                                                <div className="pt-4 border-t border-slate-100">
+                                                                    <p className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider">Productos Suministrados</p>
                                                                     <div className="flex flex-wrap gap-2">
                                                                         {(s.associatedProducts && s.associatedProducts.length > 0) ? (
                                                                             s.associatedProducts.map(pid => {
                                                                                 const p = products.find(prod => prod.id === pid);
                                                                                 if (!p) return null;
                                                                                 return (
-                                                                                    <div key={pid} className="w-10 h-10 rounded-lg bg-white p-1 flex items-center justify-center border border-slate-600 tooltip-container" title={p.name}>
+                                                                                    <div key={pid} className="w-10 h-10 rounded-lg bg-white p-1 flex items-center justify-center border border-slate-200 tooltip-container shadow-sm" title={p.name}>
                                                                                         <img src={p.image} className="w-full h-full object-contain" />
                                                                                     </div>
                                                                                 );
                                                                             })
                                                                         ) : (
-                                                                            <span className="text-xs text-slate-600 italic">No hay productos asignados</span>
+                                                                            <span className="text-xs text-slate-400 italic">No hay productos asignados</span>
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -7453,15 +7453,15 @@ function App() {
 
                                             {/* TAB: COMPRAS (STOCK) */}
                                             {adminTab === 'purchases' && (
-                                                <div className="max-w-6xl mx-auto animate-fade-up pb-20">
+                                                <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
                                                     <h1 className="text-3xl font-black text-slate-900 mb-8">Gestión de Stock y Compras</h1>
 
                                                     {/* Formulario de Compra Unificado */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] mb-10 shadow-xl overflow-hidden relative">
+                                                    <div className="bg-white border border-slate-200 rounded-[2.5rem] mb-10 shadow-xl overflow-hidden relative">
 
                                                         {/* Header / Solo Reposición de Stock */}
-                                                        <div className="flex border-b border-slate-800">
-                                                            <div className="flex-1 p-6 text-center font-bold tracking-wider bg-orange-900/20 text-orange-400">
+                                                        <div className="flex border-b border-slate-100">
+                                                            <div className="flex-1 p-6 text-center font-bold tracking-wider bg-orange-50 text-orange-600">
                                                                 <Package className="w-5 h-5 inline-block mr-2" /> REGISTRAR REPOSICIÓN DE STOCK
                                                             </div>
                                                         </div>
@@ -7481,12 +7481,12 @@ function App() {
                                                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto Existente</label>
                                                                                 <div className="flex gap-4 items-center">
                                                                                     {selectedProduct && (
-                                                                                        <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700">
+                                                                                        <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-200 shadow-sm">
                                                                                             <img src={selectedProduct.image} className="w-full h-full object-contain" alt="Preview" />
                                                                                         </div>
                                                                                     )}
                                                                                     <div className="flex-1">
-                                                                                        <select className="input-cyber w-full p-4" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
+                                                                                        <select className="input-cyber w-full p-4 bg-slate-50 border-slate-200 text-slate-900" value={newPurchase.productId} onChange={e => setNewPurchase({ ...newPurchase, productId: e.target.value })}>
                                                                                             <option value="">Seleccionar Producto...</option>
                                                                                             {products.map(p => (
                                                                                                 <option key={p.id} value={p.id}>
@@ -7495,7 +7495,7 @@ function App() {
                                                                                             ))}
                                                                                         </select>
                                                                                         {selectedProduct && (
-                                                                                            <p className="text-xs text-orange-400 mt-2 font-bold">
+                                                                                            <p className="text-xs text-orange-600 mt-2 font-bold">
                                                                                                 Stock Actual: {isNaN(Number(selectedProduct.stock)) ? 0 : selectedProduct.stock} | Costo Total Estimado: ${autoCost.toLocaleString()}
                                                                                             </p>
                                                                                         )}
@@ -7504,11 +7504,11 @@ function App() {
                                                                             </div>
                                                                             <div>
                                                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cantidad</label>
-                                                                                <input type="number" className="input-cyber w-full p-4" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
+                                                                                <input type="number" className="input-cyber w-full p-4 bg-slate-50 border-slate-200 text-slate-900" placeholder="0" value={newPurchase.quantity} onChange={e => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 0 })} />
                                                                             </div>
                                                                             <div className="md:col-span-3">
                                                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Proveedor</label>
-                                                                                <select className="input-cyber w-full p-4" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
+                                                                                <select className="input-cyber w-full p-4 bg-slate-50 border-slate-200 text-slate-900" value={newPurchase.supplierId} onChange={e => setNewPurchase({ ...newPurchase, supplierId: e.target.value })}>
                                                                                     <option value="">Seleccionar...</option>
                                                                                     {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                                                                 </select>
@@ -7572,39 +7572,39 @@ function App() {
 
                                                     {/* CARRITO DE COMPRAS */}
                                                     {purchaseCart.length > 0 && (
-                                                        <div className="bg-gradient-to-br from-orange-900/20 to-red-900/20 border border-orange-800 rounded-[2.5rem] p-8 mb-10 animate-fade-up">
+                                                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-[2.5rem] p-8 mb-10 animate-fade-up">
                                                             <div className="flex items-center justify-between mb-6">
-                                                                <h3 className="text-2xl font-black text-white flex items-center gap-3">
-                                                                    <ShoppingCart className="w-6 h-6 text-orange-400" />
+                                                                <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                                                                    <ShoppingCart className="w-6 h-6 text-orange-600" />
                                                                     Carrito de Compras ({purchaseCart.length} {purchaseCart.length === 1 ? 'producto' : 'productos'})
                                                                 </h3>
-                                                                <p className="text-orange-400 font-black text-2xl">
+                                                                <p className="text-orange-600 font-black text-2xl">
                                                                     TOTAL: ${purchaseCart.reduce((acc, item) => acc + item.cost, 0).toLocaleString()}
                                                                 </p>
                                                             </div>
 
                                                             <div className="space-y-4 mb-6">
                                                                 {purchaseCart.map((item, index) => (
-                                                                    <div key={index} className="flex items-center gap-6 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                                                                        <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0">
+                                                                    <div key={index} className="flex items-center gap-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                                                        <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-100">
                                                                             <img src={item.productImage} className="w-full h-full object-contain" alt={item.productName} />
                                                                         </div>
                                                                         <div className="flex-1">
-                                                                            <p className="font-bold text-white">{item.productName}</p>
-                                                                            <p className="text-xs text-slate-400">Precio Unit.: ${item.unitPrice.toLocaleString()}</p>
+                                                                            <p className="font-bold text-slate-900">{item.productName}</p>
+                                                                            <p className="text-xs text-slate-500">Precio Unit.: ${item.unitPrice.toLocaleString()}</p>
                                                                         </div>
                                                                         <div className="flex items-center gap-3">
                                                                             <input
                                                                                 type="number"
                                                                                 value={item.quantity}
                                                                                 onChange={(e) => updatePurchaseCartItem(index, parseInt(e.target.value) || 1)}
-                                                                                className="w-20 bg-slate-800 border border-slate-700 text-white px-3 py-2 rounded-lg text-center font-bold"
+                                                                                className="w-20 bg-slate-50 border border-slate-200 text-slate-900 px-3 py-2 rounded-lg text-center font-bold"
                                                                                 min="1"
                                                                             />
-                                                                            <p className="text-orange-400 font-bold w-28 text-right">${item.cost.toLocaleString()}</p>
+                                                                            <p className="text-orange-600 font-bold w-28 text-right">${item.cost.toLocaleString()}</p>
                                                                             <button
                                                                                 onClick={() => removeFromPurchaseCart(index)}
-                                                                                className="p-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 rounded-lg transition"
+                                                                                className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition"
                                                                             >
                                                                                 <Trash2 className="w-5 h-5" />
                                                                             </button>
@@ -7623,28 +7623,28 @@ function App() {
                                                     )}
 
                                                     {/* Historial */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] p-8">
-                                                        <h3 className="text-xl font-bold text-white mb-6">Historial de Compras</h3>
+                                                    <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm">
+                                                        <h3 className="text-xl font-bold text-slate-900 mb-6">Historial de Compras</h3>
                                                         <div className="space-y-4">
                                                             {purchases.sort((a, b) => new Date(b.date) - new Date(a.date)).map((p, idx) => {
                                                                 const prod = products.find(prod => prod.id === p.productId);
                                                                 const sup = suppliers.find(s => s.id === p.supplierId);
                                                                 return (
-                                                                    <div key={p.id} style={{ animationDelay: `${idx * 0.05}s` }} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-slate-600 transition group animate-fade-up">
+                                                                    <div key={p.id} style={{ animationDelay: `${idx * 0.05}s` }} className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 hover:border-slate-300 transition group animate-fade-up shadow-sm">
                                                                         <div className="flex items-center gap-4 flex-1">
                                                                             {/* Image Preview */}
-                                                                            <div className="w-12 h-12 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700">
+                                                                            <div className="w-12 h-12 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-200">
                                                                                 {prod?.image ? (
                                                                                     <img src={prod.image} className="w-full h-full object-contain" alt={prod.name} />
                                                                                 ) : (
-                                                                                    <Package className="w-full h-full text-slate-400 p-2" />
+                                                                                    <Package className="w-full h-full text-slate-300 p-2" />
                                                                                 )}
                                                                             </div>
 
                                                                             <div>
-                                                                                <p className="font-bold text-white flex items-center gap-2">
+                                                                                <p className="font-bold text-slate-900 flex items-center gap-2">
                                                                                     {prod?.name || 'Producto Eliminado'}
-                                                                                    <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">STOCK ACTUAL: {prod?.stock || 0}</span>
+                                                                                    <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500">STOCK ACTUAL: {prod?.stock || 0}</span>
                                                                                 </p>
                                                                                 <p className="text-xs text-slate-500">{new Date(p.date).toLocaleDateString()} {sup ? `- Prov: ${sup.name}` : ''}</p>
                                                                             </div>
@@ -7652,14 +7652,14 @@ function App() {
 
                                                                         <div className="flex items-center gap-6">
                                                                             <div className="text-right">
-                                                                                <p className="text-orange-400 font-bold">+{p.quantity} u.</p>
-                                                                                <p className="text-slate-400 text-xs font-mono">${(p.cost || 0).toLocaleString()}</p>
+                                                                                <p className="text-orange-600 font-bold">+{p.quantity} u.</p>
+                                                                                <p className="text-slate-500 text-xs font-mono">${(p.cost || 0).toLocaleString()}</p>
                                                                             </div>
                                                                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                <button onClick={() => setEditingPurchase(p)} className="p-2 bg-slate-800 hover:bg-blue-900/30 text-slate-400 hover:text-blue-400 rounded-lg transition">
+                                                                                <button onClick={() => setEditingPurchase(p)} className="p-2 bg-slate-100 hover:bg-blue-100 text-slate-400 hover:text-blue-500 rounded-lg transition">
                                                                                     <Edit className="w-4 h-4" />
                                                                                 </button>
-                                                                                <button onClick={() => deletePurchaseFn(p)} className="p-2 bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded-lg transition">
+                                                                                <button onClick={() => deletePurchaseFn(p)} className="p-2 bg-slate-100 hover:bg-red-100 text-slate-400 hover:text-red-500 rounded-lg transition">
                                                                                     <Trash2 className="w-4 h-4" />
                                                                                 </button>
                                                                             </div>
@@ -7673,9 +7673,9 @@ function App() {
                                                     {/* Modal Edición Compra */}
                                                     {editingPurchase && (
                                                         <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
-                                                            <div className="bg-[#0a0a0a] border border-slate-700 rounded-3xl p-8 w-full max-w-lg shadow-2xl relative">
-                                                                <button onClick={() => setEditingPurchase(null)} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
-                                                                <h3 className="text-2xl font-bold text-white mb-6">Editar Compra</h3>
+                                                            <div className="bg-white border border-slate-200 rounded-3xl p-8 w-full max-w-lg shadow-2xl relative">
+                                                                <button onClick={() => setEditingPurchase(null)} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-900"><X className="w-6 h-6" /></button>
+                                                                <h3 className="text-2xl font-bold text-slate-900 mb-6">Editar Compra</h3>
 
                                                                 <div className="space-y-4">
                                                                     <div>
@@ -8352,162 +8352,149 @@ function App() {
                                                     {/* Formulario Nueva Promo */}
                                                     {/* Formulario Nueva Promo o Banner Upgrade */}
                                                     {(!((settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && promos.length >= 1) || isEditingPromo) ? (
-                                                        <div className="bg-[#0f0f12] border border-white/5 p-6 sm:p-10 rounded-[2.5rem] mb-16 shadow-2xl relative overflow-hidden group">
-                                                            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 blur-[100px] -mr-32 -mt-32 rounded-full"></div>
-
-                                                            <div className="relative z-10">
-                                                                <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-3">
-                                                                    <div className={`p-2 rounded-xl ${isEditingPromo ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
-                                                                        {isEditingPromo ? <Edit className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+                                                        <div className="bg-white border border-slate-200 p-8 sm:p-12 rounded-[2.5rem] mb-16 shadow-lg relative overflow-hidden group">
+                                                            <div className="relative z-10 w-full max-w-5xl mx-auto">
+                                                                <h3 className="text-3xl font-black text-slate-900 mb-10 flex items-center gap-4 border-b border-slate-100 pb-6">
+                                                                    <div className={`p-3 rounded-2xl ${isEditingPromo ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`}>
+                                                                        {isEditingPromo ? <Edit className="w-8 h-8" /> : <Plus className="w-8 h-8" />}
                                                                     </div>
                                                                     {isEditingPromo ? 'Editar Combo Promocional' : 'Diseñar Nueva Promo'}
                                                                 </h3>
 
-                                                                <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-                                                                    {/* Lado Izquierdo: Configuración */}
-                                                                    <div className="xl:col-span-2 space-y-8">
-                                                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                                                            <div className="space-y-6">
-                                                                                <div className="space-y-3">
-                                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Nombre del Combo</label>
+                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                                                                    {/* Left Column: General Info */}
+                                                                    <div className="space-y-8">
+                                                                        <div>
+                                                                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3 block ml-1">Nombre del Combo</label>
+                                                                            <input
+                                                                                type="text"
+                                                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 font-bold text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400"
+                                                                                placeholder="Ej: Starter Pack Gaming"
+                                                                                value={newPromo.name}
+                                                                                onChange={e => setNewPromo({ ...newPromo, name: e.target.value })}
+                                                                            />
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-2 gap-6">
+                                                                            <div>
+                                                                                <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3 block ml-1">Precio Promocional</label>
+                                                                                <div className="relative">
+                                                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                                                                     <input
-                                                                                        type="text"
-                                                                                        className="input-cyber w-full p-4 text-lg font-bold"
-                                                                                        placeholder="Ej: Starter Pack Gaming"
-                                                                                        value={newPromo.name}
-                                                                                        onChange={e => setNewPromo({ ...newPromo, name: e.target.value })}
+                                                                                        type="number"
+                                                                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 pl-8 text-slate-900 font-black text-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder:text-slate-300"
+                                                                                        placeholder="0"
+                                                                                        value={newPromo.price}
+                                                                                        onChange={e => setNewPromo({ ...newPromo, price: e.target.value })}
                                                                                     />
                                                                                 </div>
-
-                                                                                <div className="grid grid-cols-2 gap-4">
-                                                                                    <div className="space-y-3">
-                                                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Precio Promocional</label>
-                                                                                        <div className="relative group">
-                                                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-500 font-bold">$</span>
-                                                                                            <input
-                                                                                                type="number"
-                                                                                                className="input-cyber w-full p-4 pl-8 font-black text-xl"
-                                                                                                placeholder="0"
-                                                                                                value={newPromo.price}
-                                                                                                onChange={e => setNewPromo({ ...newPromo, price: e.target.value })}
-                                                                                            />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="space-y-3">
-                                                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 opacity-50">Costo Base Ref.</label>
-                                                                                        <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5 text-slate-400 font-mono flex items-center h-[58px] shadow-inner">
-                                                                                            <span className="text-lg font-bold text-slate-500">
-                                                                                                ${newPromo.items.reduce((acc, item) => {
-                                                                                                    const p = products.find(prod => prod.id === item.productId);
-                                                                                                    return acc + ((Number(p?.basePrice) || 0) * item.quantity);
-                                                                                                }, 0).toLocaleString()}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div className="space-y-3">
-                                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Imagen del Combo</label>
-                                                                                    <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-[2rem] bg-slate-900/30 border border-white/5 group-hover:border-purple-500/20 transition-colors">
-                                                                                        <div className="relative group w-32 h-32 overflow-hidden rounded-2xl border border-white/10 shadow-xl bg-black flex items-center justify-center">
-                                                                                            {newPromo.image ? (
-                                                                                                <>
-                                                                                                    <img src={newPromo.image} className="w-full h-full object-cover" />
-                                                                                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                                                        <button onClick={() => setNewPromo({ ...newPromo, image: '' })} className="bg-red-500 p-2 rounded-xl text-white hover:scale-110 transition shadow-lg">
-                                                                                                            <X className="w-4 h-4" />
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                </>
-                                                                                            ) : (
-                                                                                                <ImageIcon className="w-10 h-10 text-slate-800" />
-                                                                                            )}
-                                                                                        </div>
-                                                                                        <div className="flex-1 space-y-3">
-                                                                                            <p className="text-[11px] text-slate-400 leading-relaxed uppercase tracking-tighter">Sube una imagen premium del pack completo.</p>
-                                                                                            <label className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 transition-all cursor-pointer font-bold text-sm">
-                                                                                                <Upload className="w-4 h-4" /> Seleccionar Archivo
-                                                                                                <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, setNewPromo)} />
-                                                                                            </label>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
                                                                             </div>
-
-                                                                            <div className="space-y-6">
-                                                                                {/* Análisis Financiero Rediseñado */}
-                                                                                <div className="bg-white/5 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-2xl">
-                                                                                    <div className="flex items-center justify-between mb-6">
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <div className="p-2 bg-indigo-500/20 rounded-lg">
-                                                                                                <DollarSign className="w-4 h-4 text-indigo-400" />
-                                                                                            </div>
-                                                                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Análisis ROI</span>
-                                                                                        </div>
-                                                                                        <span className={`text-[9px] font-black px-3 py-1 rounded-full border ${Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                                                                                            {Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'MARGEN POSITIVO' : 'PÉRDIDA'}
-                                                                                        </span>
-                                                                                    </div>
-
-                                                                                    <div className="grid grid-cols-2 gap-6 mb-6">
-                                                                                        <div className="space-y-1">
-                                                                                            <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Costo Inversión</p>
-                                                                                            <p className="text-2xl font-black text-white font-mono leading-none">
-                                                                                                ${newPromo.items.reduce((acc, item) => {
-                                                                                                    const p = products.find(prod => prod.id === item.productId);
-                                                                                                    return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
-                                                                                                }, 0).toLocaleString()}
-                                                                                            </p>
-                                                                                        </div>
-                                                                                        <div className="space-y-1">
-                                                                                            <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Ganancia Neta</p>
-                                                                                            <p className={`text-2xl font-black font-mono leading-none ${Number(newPromo.price) - (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                                                                ${(Number(newPromo.price) - newPromo.items.reduce((acc, item) => {
-                                                                                                    const p = products.find(prod => prod.id === item.productId);
-                                                                                                    return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
-                                                                                                }, 0)).toLocaleString()}
-                                                                                            </p>
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    <div className="flex items-center gap-4 p-4 bg-black/30 rounded-2xl border border-white/5 shadow-inner">
-                                                                                        <div className="flex-1 space-y-2">
-                                                                                            <div className="flex justify-between items-end">
-                                                                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Retorno Estimado</span>
-                                                                                                <span className="text-lg font-black text-indigo-400 font-mono leading-none">
-                                                                                                    {Number(newPromo.price) > 0 ? (((Number(newPromo.price) - newPromo.items.reduce((acc, item) => {
-                                                                                                        const p = products.find(prod => prod.id === item.productId);
-                                                                                                        return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
-                                                                                                    }, 0)) / Number(newPromo.price)) * 100).toFixed(0) : 0}%
-                                                                                                </span>
-                                                                                            </div>
-                                                                                            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                                                                                <div className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" style={{ width: `${Math.min(Math.max((Number(newPromo.price) > 0 ? (((Number(newPromo.price) - newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) / Number(newPromo.price)) * 100) : 0), 0), 100)}%` }}></div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
+                                                                            <div>
+                                                                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 block ml-1 opacity-70">Costo Base Ref.</label>
+                                                                                <div className="w-full bg-slate-100 border border-slate-200 rounded-xl p-4 flex items-center h-[60px] text-slate-500 font-bold text-lg font-mono">
+                                                                                    ${newPromo.items.reduce((acc, item) => {
+                                                                                        const p = products.find(prod => prod.id === item.productId);
+                                                                                        return acc + ((Number(p?.basePrice) || 0) * item.quantity);
+                                                                                    }, 0).toLocaleString()}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
 
-                                                                        <div className="space-y-3">
-                                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Contenido del Combo</label>
-                                                                            <div className="bg-[#141418] p-5 rounded-[2.5rem] border border-white/5 space-y-4 shadow-inner">
-                                                                                <div className="flex gap-2">
-                                                                                    <div className="flex flex-col gap-3 flex-1">
-                                                                                        <div className="relative group">
-                                                                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                                                                                <Search className="w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
+                                                                        <div>
+                                                                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3 block ml-1">Imagen del Combo</label>
+                                                                            <div className="flex items-center gap-6 p-6 rounded-2xl bg-slate-50 border border-slate-200 border-dashed hover:border-purple-300 transition-colors group/upload cursor-pointer">
+                                                                                <div className="relative w-24 h-24 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                                                    {newPromo.image ? (
+                                                                                        <>
+                                                                                            <img src={newPromo.image} className="w-full h-full object-cover" />
+                                                                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/upload:opacity-100 transition-opacity flex items-center justify-center">
+                                                                                                <button onClick={(e) => { e.stopPropagation(); setNewPromo({ ...newPromo, image: '' }); }} className="bg-white p-2 rounded-lg shadow-md text-red-500 hover:scale-110 transition">
+                                                                                                    <X className="w-4 h-4" />
+                                                                                                </button>
                                                                                             </div>
-                                                                                            <input
-                                                                                                type="text"
-                                                                                                placeholder="Buscar producto..."
-                                                                                                className="input-cyber w-full pl-12 p-3 text-sm"
-                                                                                                onChange={(e) => setPromoSearchQuery(e.target.value.toLowerCase())}
-                                                                                            />
-                                                                                        </div>
+                                                                                        </>
+                                                                                    ) : (
+                                                                                        <ImageIcon className="w-8 h-8 text-slate-300" />
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="flex-1">
+                                                                                    <p className="text-xs text-slate-500 font-medium mb-3">Sube una imagen atractiva (PNG/JPG)</p>
+                                                                                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 font-bold text-xs rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 cursor-pointer transition-colors">
+                                                                                        <Upload className="w-3.5 h-3.5" /> Seleccionar Archivo
+                                                                                        <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, setNewPromo)} />
+                                                                                    </label>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Right Column: ROI & Current Items */}
+                                                                    <div className="space-y-8">
+                                                                        {/* ROI Analysis Redesigned */}
+                                                                        <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200">
+                                                                            <div className="flex items-center justify-between mb-6">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
+                                                                                        <DollarSign className="w-4 h-4 text-purple-600" />
+                                                                                    </div>
+                                                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Análisis ROI</span>
+                                                                                </div>
+                                                                                <span className={`text-[9px] font-black px-3 py-1.5 rounded-full border shadow-sm ${Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                                                                                    {Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'MARGEN POSITIVO' : 'PÉRDIDA'}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                                                                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                                                                    <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Costo Inversión</p>
+                                                                                    <p className="text-2xl font-black text-slate-700 font-mono tracking-tight">
+                                                                                        ${newPromo.items.reduce((acc, item) => {
+                                                                                            const p = products.find(prod => prod.id === item.productId);
+                                                                                            return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
+                                                                                        }, 0).toLocaleString()}
+                                                                                    </p>
+                                                                                </div>
+                                                                                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                                                                    <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Ganancia Neta</p>
+                                                                                    <p className={`text-2xl font-black font-mono tracking-tight ${Number(newPromo.price) - (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                                                        ${(Number(newPromo.price) - newPromo.items.reduce((acc, item) => {
+                                                                                            const p = products.find(prod => prod.id === item.productId);
+                                                                                            return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
+                                                                                        }, 0)).toLocaleString()}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                                                                <div className="flex justify-between items-end mb-2">
+                                                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Retorno Estimado</span>
+                                                                                    <span className="text-xl font-black text-purple-600 font-mono">
+                                                                                        {Number(newPromo.price) > 0 ? (((Number(newPromo.price) - newPromo.items.reduce((acc, item) => {
+                                                                                            const p = products.find(prod => prod.id === item.productId);
+                                                                                            return acc + ((Number(p?.purchasePrice) || 0) * item.quantity);
+                                                                                        }, 0)) / Number(newPromo.price)) * 100).toFixed(0) : 0}%
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                                                    <div className="h-full bg-purple-500 transition-all duration-1000 rounded-full" style={{ width: `${Math.min(Math.max((Number(newPromo.price) > 0 ? (((Number(newPromo.price) - newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) / Number(newPromo.price)) * 100) : 0), 0), 100)}%` }}></div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Products List */}
+                                                                        <div>
+                                                                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3 block ml-1">Contenido del Combo</label>
+                                                                            <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4 shadow-sm">
+                                                                                <div className="flex gap-2">
+                                                                                    <div className="flex-1 space-y-2">
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            placeholder="Buscar producto..."
+                                                                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:border-purple-400 transition-colors"
+                                                                                            onChange={(e) => setPromoSearchQuery(e.target.value.toLowerCase())}
+                                                                                        />
                                                                                         <select
-                                                                                            className="input-cyber w-full p-3 text-sm font-bold"
+                                                                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700 font-bold outline-none"
                                                                                             value={selectedPromoProduct}
                                                                                             onChange={e => setSelectedPromoProduct(e.target.value)}
                                                                                         >
@@ -8519,172 +8506,124 @@ function App() {
                                                                                                 ))}
                                                                                         </select>
                                                                                     </div>
-                                                                                    <input
-                                                                                        type="number"
-                                                                                        className="input-cyber w-16 p-3 text-sm text-center font-black"
-                                                                                        value={promoProductQty}
-                                                                                        min="1"
-                                                                                        onChange={e => setPromoProductQty(Math.max(1, parseInt(e.target.value) || 1))}
-                                                                                    />
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            if (!selectedPromoProduct) return;
-                                                                                            const exists = newPromo.items.find(i => i.productId === selectedPromoProduct);
-                                                                                            if (exists) {
-                                                                                                setNewPromo({
-                                                                                                    ...newPromo,
-                                                                                                    items: newPromo.items.map(i => i.productId === selectedPromoProduct ? { ...i, quantity: i.quantity + promoProductQty } : i)
-                                                                                                });
-                                                                                            } else {
-                                                                                                setNewPromo({
-                                                                                                    ...newPromo,
-                                                                                                    items: [...newPromo.items, { productId: selectedPromoProduct, quantity: promoProductQty }]
-                                                                                                });
-                                                                                            }
-                                                                                            setSelectedPromoProduct('');
-                                                                                            setPromoProductQty(1);
-                                                                                        }}
-                                                                                        className="p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition shadow-lg shadow-purple-600/20 active:scale-95"
-                                                                                    >
-                                                                                        <Plus className="w-5 h-5" />
-                                                                                    </button>
+                                                                                    <div className="flex flex-col gap-2">
+                                                                                        <input
+                                                                                            type="number"
+                                                                                            className="w-16 bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-center font-bold outline-none"
+                                                                                            value={promoProductQty}
+                                                                                            min="1"
+                                                                                            onChange={e => setPromoProductQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                                                        />
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                if (!selectedPromoProduct) return;
+                                                                                                const exists = newPromo.items.find(i => i.productId === selectedPromoProduct);
+                                                                                                if (exists) {
+                                                                                                    setNewPromo({
+                                                                                                        ...newPromo,
+                                                                                                        items: newPromo.items.map(i => i.productId === selectedPromoProduct ? { ...i, quantity: i.quantity + promoProductQty } : i)
+                                                                                                    });
+                                                                                                } else {
+                                                                                                    setNewPromo({
+                                                                                                        ...newPromo,
+                                                                                                        items: [...newPromo.items, { productId: selectedPromoProduct, quantity: promoProductQty }]
+                                                                                                    });
+                                                                                                }
+                                                                                                setSelectedPromoProduct('');
+                                                                                                setPromoProductQty(1);
+                                                                                            }}
+                                                                                            className="h-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center justify-center transition-colors shadow-md"
+                                                                                        >
+                                                                                            <Plus className="w-5 h-5" />
+                                                                                        </button>
+                                                                                    </div>
                                                                                 </div>
 
-                                                                                <div className="space-y-2 max-h-[140px] overflow-y-auto custom-scrollbar pr-2">
+                                                                                <div className="space-y-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-2">
                                                                                     {newPromo.items.map((item, idx) => {
                                                                                         const p = products.find(prod => prod.id === item.productId);
                                                                                         if (!p) return null;
                                                                                         return (
-                                                                                            <div key={idx} className="flex justify-between items-center bg-black/40 p-2.5 rounded-2xl border border-white/5 animate-fade-in group/item">
+                                                                                            <div key={idx} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-200 group/item hover:border-purple-200 transition-colors">
                                                                                                 <div className="flex items-center gap-3">
-                                                                                                    <div className="w-10 h-10 rounded-lg bg-white p-1 shadow-inner relative overflow-hidden">
+                                                                                                    <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 p-1 flex-shrink-0">
                                                                                                         <img src={p.image} className="w-full h-full object-contain" />
                                                                                                     </div>
                                                                                                     <div>
-                                                                                                        <p className="text-xs font-black text-white truncate max-w-[120px] leading-tight">{p.name}</p>
-                                                                                                        <p className="text-[10px] text-slate-500 font-mono tracking-tighter">{item.quantity} x ${p.basePrice}</p>
+                                                                                                        <p className="text-xs font-black text-slate-700 truncate max-w-[140px] leading-tight">{p.name}</p>
+                                                                                                        <p className="text-[10px] text-slate-500 font-mono tracking-tight">{item.quantity} x ${p.basePrice}</p>
                                                                                                     </div>
                                                                                                 </div>
-                                                                                                <button onClick={() => setNewPromo({ ...newPromo, items: newPromo.items.filter((_, i) => i !== idx) })} className="text-slate-700 hover:text-red-500 p-2 transition-colors">
-                                                                                                    <X className="w-4 h-4" />
+                                                                                                <button onClick={() => setNewPromo({ ...newPromo, items: newPromo.items.filter((_, i) => i !== idx) })} className="text-slate-400 hover:text-red-500 p-2 transition-colors bg-white hover:bg-red-50 rounded-lg shadow-sm border border-slate-200 hover:border-red-200">
+                                                                                                    <X className="w-3.5 h-3.5" />
                                                                                                 </button>
                                                                                             </div>
                                                                                         );
                                                                                     })}
                                                                                     {newPromo.items.length === 0 && (
-                                                                                        <div className="text-center py-6 text-slate-700 font-bold text-[10px] uppercase tracking-widest border border-dashed border-white/5 rounded-3xl">
-                                                                                            Combo Vacío
+                                                                                        <div className="text-center py-8 text-slate-400 font-medium text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200 ">
+                                                                                            No hay productos seleccionados
                                                                                         </div>
                                                                                     )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
-
-                                                                    {/* Lado Derecho: Preview en Vivo */}
-                                                                    <div className="xl:col-span-1 flex flex-col items-center">
-                                                                        <div className="sticky top-10 w-full max-w-[340px]">
-                                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 block text-center">Vista Previa Real-Time</label>
-
-                                                                            <div className="relative group perspective-1000">
-                                                                                <div className="bg-[#0f0f12] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:rotate-y-2">
-                                                                                    <div className="aspect-[4/5] relative">
-                                                                                        <img
-                                                                                            src={newPromo.image || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop'}
-                                                                                            className="w-full h-full object-cover brightness-95 group-hover:scale-110 transition-transform duration-1000"
-                                                                                        />
-                                                                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f12] via-[#0f0f12]/20 to-transparent"></div>
-
-                                                                                        <div className="absolute top-4 left-4">
-                                                                                            <div className="bg-purple-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg brightness-110 uppercase tracking-widest">
-                                                                                                OFERTA LIMITADA
-                                                                                            </div>
-                                                                                        </div>
-
-                                                                                        <div className="absolute bottom-6 left-6 right-6">
-                                                                                            <h4 className="text-2xl font-black text-white leading-tight mb-2 drop-shadow-xl">
-                                                                                                {newPromo.name || 'Nombre Promo'}
-                                                                                            </h4>
-                                                                                            <div className="flex items-end gap-2">
-                                                                                                <span className="text-4xl font-black text-purple-400 leading-none">
-                                                                                                    ${(Number(newPromo.price) || 0).toLocaleString()}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="p-6 border-t border-white/5 bg-[#141418]">
-                                                                                        <button className="w-full py-4 bg-white text-black font-black rounded-2xl text-xs uppercase tracking-widest transition active:scale-95 shadow-[0_10px_20px_rgba(255,255,255,0.1)]">
-                                                                                            Añadir al Carrito
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
                                                                 </div>
-                                                            </div>
 
-                                                            <div className="flex gap-4 justify-end mt-6">
-                                                                {isEditingPromo && (
+                                                                {/* Action Button */}
+                                                                <div className="mt-10 flex justify-end">
                                                                     <button
-                                                                        onClick={() => {
-                                                                            setIsEditingPromo(false);
-                                                                            setEditingPromoId(null);
-                                                                            setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
-                                                                        }}
-                                                                        className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
-                                                                    >
-                                                                        Cancelar
-                                                                    </button>
-                                                                )}
-                                                                <button
-                                                                    onClick={async () => {
-                                                                        if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
-                                                                            return showToast("Completa nombre, precio y agrega productos.", "warning");
-                                                                        }
-
-                                                                        setIsLoading(true);
-                                                                        try {
-                                                                            if (isEditingPromo && editingPromoId) {
-                                                                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
-                                                                                showToast("Promo actualizada", "success");
-                                                                            } else {
-                                                                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
-                                                                                    ...newPromo,
-                                                                                    createdAt: new Date().toISOString()
-                                                                                });
-                                                                                showToast("Promo creada exitosamente", "success");
+                                                                        onClick={async () => {
+                                                                            if (!newPromo.name || !newPromo.price || newPromo.items.length === 0) {
+                                                                                showToast("Completa nombre, precio y agrega productos.", "warning");
+                                                                                return;
                                                                             }
-                                                                            setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
-                                                                            setIsEditingPromo(false);
-                                                                            setEditingPromoId(null);
-                                                                        } catch (e) {
-                                                                            console.error(e);
-                                                                            showToast("Error al guardar promo", "error");
-                                                                        } finally {
-                                                                            setIsLoading(false);
-                                                                        }
-                                                                    }}
-                                                                    className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
-                                                                >
-                                                                    {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
-                                                                </button>
+
+                                                                            setIsLoading(true);
+                                                                            try {
+                                                                                if (isEditingPromo && editingPromoId) {
+                                                                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', editingPromoId), newPromo);
+                                                                                    showToast("Promo actualizada", "success");
+                                                                                } else {
+                                                                                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), {
+                                                                                        ...newPromo,
+                                                                                        createdAt: new Date().toISOString()
+                                                                                    });
+                                                                                    showToast("Promo creada exitosamente", "success");
+                                                                                }
+                                                                                setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
+                                                                                setIsEditingPromo(false);
+                                                                                setEditingPromoId(null);
+                                                                            } catch (e) {
+                                                                                console.error(e);
+                                                                                showToast("Error al guardar promo", "error");
+                                                                            } finally {
+                                                                                setIsLoading(false);
+                                                                            }
+                                                                        }}
+                                                                        className="bg-slate-900 text-white px-8 py-4 rounded-xl font-black text-lg shadow-xl hover:bg-slate-800 transition-all flex items-center gap-3 active:scale-95"
+                                                                    >
+                                                                        {isEditingPromo ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                                                                        {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo Ahora'}
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
 
                                                     ) : (
-                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] mb-10 shadow-xl flex flex-col items-center justify-center text-center animate-fade-up">
-                                                            <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30">
-                                                                <Lock className="w-10 h-10 text-purple-400" />
+                                                        <div className="bg-slate-50 border border-slate-200 p-8 rounded-[2rem] mb-10 shadow-inner flex flex-col items-center justify-center text-center animate-fade-up">
+                                                            <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-6 border border-purple-100 shadow-sm">
+                                                                <Lock className="w-10 h-10 text-purple-500" />
                                                             </div>
-                                                            <h3 className="text-2xl font-black text-white mb-2">Límite de Promos Alcanzado</h3>
-                                                            <p className="text-slate-400 max-w-md mb-8">
-                                                                Tu plan actual te permite tener hasta <strong className="text-white">1 promo activa</strong>.
+                                                            <h3 className="text-2xl font-black text-slate-900 mb-2">Límite de Promos Alcanzado</h3>
+                                                            <p className="text-slate-500 max-w-md mb-8">
+                                                                Tu plan actual te permite tener hasta <strong className="text-slate-900">1 promo activa</strong>.
                                                                 Para crear más promociones ilimitadas, actualiza tu plan.
                                                             </p>
                                                             <button
                                                                 onClick={() => setShowPlansModal(true)}
-                                                                className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
+                                                                className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
                                                             >
                                                                 <Zap className="w-5 h-5" /> Mejorar mi Plan
                                                             </button>
@@ -8704,35 +8643,35 @@ function App() {
                                                             const isProfitable = profit > 0;
 
                                                             return (
-                                                                <div key={promo.id} className="bg-[#0f0f12] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-purple-600/50 transition-all duration-500 group flex flex-col shadow-2xl hover:shadow-purple-600/10">
+                                                                <div key={promo.id} className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden hover:border-purple-300 transition-all duration-500 group flex flex-col shadow-lg hover:shadow-xl hover:shadow-purple-200/50">
                                                                     <div className="aspect-[4/3] relative overflow-hidden">
-                                                                        <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-1000 group-hover:scale-110 brightness-90 group-hover:brightness-100" />
-                                                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f12] via-transparent to-transparent"></div>
+                                                                        <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-1000 group-hover:scale-110" />
+                                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
                                                                         <div className="absolute top-4 right-4">
-                                                                            <div className={`px-4 py-2 rounded-2xl text-xs font-black backdrop-blur-md border ${isProfitable ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-red-500/20 border-red-500/30 text-red-400'} shadow-xl`}>
+                                                                            <div className={`px-4 py-2 rounded-2xl text-xs font-black backdrop-blur-md border ${isProfitable ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-600 border-red-200'} shadow-sm`}>
                                                                                 {margin}% MARGEN
                                                                             </div>
                                                                         </div>
                                                                         <div className="absolute bottom-6 left-6 right-6">
-                                                                            <h4 className="text-2xl font-black text-white mb-1 drop-shadow-2xl">{promo.name}</h4>
-                                                                            <p className="text-3xl text-purple-400 font-black tracking-tighter drop-shadow-2xl">${price.toLocaleString()}</p>
+                                                                            <h4 className="text-2xl font-black text-white mb-1 drop-shadow-md">{promo.name}</h4>
+                                                                            <p className="text-3xl text-white font-black tracking-tighter drop-shadow-md">${price.toLocaleString()}</p>
                                                                         </div>
                                                                     </div>
 
                                                                     <div className="p-8 flex-1 flex flex-col space-y-6">
                                                                         {/* Productos Incluidos */}
                                                                         <div className="flex-1">
-                                                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">Componentes del Combo:</p>
+                                                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Componentes del Combo:</p>
                                                                             <div className="space-y-3">
                                                                                 {(promo.items || []).map((item, i) => {
                                                                                     const p = products.find(prod => prod.id === item.productId);
                                                                                     return (
-                                                                                        <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group/item">
-                                                                                            <div className="w-10 h-10 bg-white rounded-xl p-1 flex-shrink-0 shadow-inner group-hover/item:scale-110 transition-transform">
+                                                                                        <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors group/item">
+                                                                                            <div className="w-10 h-10 bg-white rounded-xl p-1 flex-shrink-0 shadow-sm border border-slate-200 group-hover/item:scale-110 transition-transform">
                                                                                                 <img src={p?.image || 'https://via.placeholder.com/50'} className="w-full h-full object-contain" />
                                                                                             </div>
                                                                                             <div className="flex-1 min-w-0">
-                                                                                                <p className="text-xs font-bold text-white truncate">{p?.name || 'Producto Eliminado'}</p>
+                                                                                                <p className="text-xs font-bold text-slate-700 truncate">{p?.name || 'Producto Eliminado'}</p>
                                                                                                 <p className="text-[10px] text-slate-500 font-mono">{item.quantity} unidades</p>
                                                                                             </div>
                                                                                         </div>
@@ -8742,21 +8681,21 @@ function App() {
                                                                         </div>
 
                                                                         {/* Análisis Visual */}
-                                                                        <div className="p-5 bg-gradient-to-br from-slate-900 to-[#141418] rounded-3xl border border-white/5 shadow-inner">
+                                                                        <div className="p-5 bg-slate-50 rounded-3xl border border-slate-200 shadow-inner">
                                                                             <div className="flex items-center justify-between mb-3">
                                                                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rentabilidad</span>
-                                                                                <span className={`text-xs font-black ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
+                                                                                <span className={`text-xs font-black ${isProfitable ? 'text-green-600' : 'text-red-500'}`}>
                                                                                     {isProfitable ? '+' : ''}${profit.toLocaleString()}
                                                                                 </span>
                                                                             </div>
                                                                             {/* Barra de progreso visual */}
-                                                                            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                                                                            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                                                                                 <div
-                                                                                    className={`h-full rounded-full transition-all duration-1000 ${isProfitable ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`}
+                                                                                    className={`h-full rounded-full transition-all duration-1000 ${isProfitable ? 'bg-green-500 shadow-sm' : 'bg-red-500'}`}
                                                                                     style={{ width: `${Math.min(Math.max(Number(margin), 0), 100)}%` }}
                                                                                 ></div>
                                                                             </div>
-                                                                            <div className="flex justify-between mt-2 text-[10px] font-mono text-slate-600 uppercase">
+                                                                            <div className="flex justify-between mt-2 text-[10px] font-mono text-slate-500 uppercase">
                                                                                 <span>Inversión: ${totalCost.toLocaleString()}</span>
                                                                                 <span>ROI: {totalCost > 0 ? ((profit / totalCost) * 100).toFixed(0) : 0}%</span>
                                                                             </div>
@@ -8776,7 +8715,7 @@ function App() {
                                                                                     setIsEditingPromo(true);
                                                                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                                                                 }}
-                                                                                className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border border-white/5 flex items-center justify-center gap-2 hover:border-purple-500/30"
+                                                                                className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                                                                             >
                                                                                 <Edit className="w-3.5 h-3.5" /> Editar
                                                                             </button>
@@ -8785,7 +8724,7 @@ function App() {
                                                                                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', promo.id));
                                                                                     showToast("Promo eliminada", "info");
                                                                                 })}
-                                                                                className="w-14 py-4 bg-red-900/10 hover:bg-red-900/30 text-red-500 rounded-2xl transition border border-red-500/20 flex items-center justify-center"
+                                                                                className="w-14 py-4 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-2xl transition flex items-center justify-center"
                                                                             >
                                                                                 <Trash2 className="w-4 h-4" />
                                                                             </button>
@@ -8804,8 +8743,8 @@ function App() {
                                                     <h1 className="text-3xl font-black text-slate-900 mb-8">Gestión de Pedidos</h1>
 
                                                     {orders.length === 0 ? (
-                                                        <div className="text-center py-20 border border-dashed border-slate-800 rounded-[3rem] bg-slate-900/20">
-                                                            <ShoppingBag className="w-20 h-20 mx-auto mb-4 text-slate-700" />
+                                                        <div className="text-center py-20 border border-dashed border-slate-300 rounded-[3rem] bg-slate-50">
+                                                            <ShoppingBag className="w-20 h-20 mx-auto mb-4 text-slate-300" />
                                                             <p className="text-xl text-slate-500 font-bold">No hay pedidos registrados aún.</p>
                                                         </div>
                                                     ) : (
@@ -8837,7 +8776,7 @@ function App() {
                                                                     {/* Items Preview */}
                                                                     <div className="flex -space-x-2">
                                                                         {o.items.slice(0, 4).map((i, idx) => (
-                                                                            <div key={idx} className="w-10 h-10 rounded-full border-2 border-[#0a0a0a] bg-slate-800 flex items-center justify-center overflow-hidden" title={i.title}>
+                                                                            <div key={idx} className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden" title={i.title}>
                                                                                 {i.image ? <img src={i.image} className="w-full h-full object-cover" /> : <Package className="w-4 h-4 text-slate-500" />}
                                                                             </div>
                                                                         ))}
