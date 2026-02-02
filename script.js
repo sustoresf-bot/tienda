@@ -1928,8 +1928,9 @@ function App() {
                             }
                         }
                     } catch (err) {
-                        if (err.message && err.message.includes('offline')) {
-                            console.log("Modo offline: Usuario cargado desde caché local.");
+                        const errMsg = (err.message || err.toString() || '').toLowerCase();
+                        if (errMsg.includes('offline') || errMsg.includes('unavailable') || errMsg.includes('network')) {
+                            console.debug("Modo offline detectado: Usando datos en caché.");
                         } else {
                             console.warn("No se pudo refrescar usuario al inicio:", err);
                         }

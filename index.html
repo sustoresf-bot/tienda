@@ -49,7 +49,7 @@
         if (typeof console !== 'undefined') {
             const originalWarn = console.warn;
             console.warn = function (...args) {
-                if (args[0] && typeof args[0] === 'string' && (args[0].includes('cdn.tailwindcss.com') || args[0].includes('babel'))) return;
+                if (args[0] && typeof args[0] === 'string' && (args[0].includes('cdn.tailwindcss.com') || args[0].includes('babel') || args[0].includes('Could not reach Cloud Firestore backend'))) return;
                 originalWarn.apply(console, args);
             };
         }
