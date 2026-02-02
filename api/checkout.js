@@ -35,7 +35,9 @@ export default async function handler(req, res) {
 
     try {
         if (action === 'process_payment') {
-            const payment = new Payment(client);
+            if (!paymentData || isNaN(paymentData.transaction_amount) || Number(paymentData.transaction_amount) <= 0) {
+                return res.status(400).json({ error: 'Monto de transacción inválido' });
+            }
 
             const paymentBody = {
                 transaction_amount: Number(paymentData.transaction_amount),

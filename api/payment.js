@@ -234,7 +234,7 @@ export default async function handler(req, res) {
                                                 ¿NECESITAS AYUDA? CONTACTANOS
                                             </a>
                                             <div style="font-size: 12px; color: #64748b;">
-                                                © 2026 Sustore. Todos los derechos reservados.
+                                                © ${new Date().getFullYear()} Sustore. Todos los derechos reservados.
                                             </div>
                                         </div>
                                     </td>
