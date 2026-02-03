@@ -2538,15 +2538,13 @@ function App() {
                 }
 
                 const newOrdersCount = currentCount - lastViewedCount;
-                showToast(`Ã°Å¸â€â€ ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`, 'info');
+                showToast(`🔔 ${newOrdersCount === 1 ? '¡Nuevo Pedido!' : `¡${newOrdersCount} Nuevos Pedidos!`} - ${newOrdersCount === 1 ? 'Haz clic' : 'Ve a Pedidos'} para revisarlo${newOrdersCount === 1 ? '' : 's'}.`, 'info');
                 lastNotifiedCountRef.current = currentCount;
             }
         }
-        // Si se reducen los pedidos (ej: se borraron), sincronizamos
-        else if (currentCount < lastViewedCount) {
-            localStorage.setItem('sustore_last_viewed_orders', currentCount.toString());
-            lastNotifiedCountRef.current = currentCount;
-        }
+
+        // Removed generic "reset if lower" logic to prevent clearing local storage on initial load (orders=[]).
+        // Only update downwards if we are actually viewing the orders tab (already handled in the first if block).
 
         // Cleanup al desmontar: detener sonido
         return () => {
@@ -6040,9 +6038,9 @@ function App() {
 
                                                 <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 relative group ${adminTab === 'orders' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'}`}>
                                                     <ShoppingBag className={`w-5 h-5 ${adminTab === 'orders' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Pedidos
-                                                    {orders.filter(o => o.status === 'Pendiente').length > 0 && (
-                                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 min-w-[22px] h-[22px] bg-white text-orange-600 text-[10px] font-black rounded-full flex items-center justify-center px-1.5 shadow-lg animate-bounce">
-                                                            {orders.filter(o => o.status === 'Pendiente').length}
+                                                    {orders.length > (parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0')) && (
+                                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 min-w-[22px] h-[22px] bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1.5 shadow-lg animate-bounce">
+                                                            {orders.length - parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0')}
                                                         </span>
                                                     )}
                                                 </button>
