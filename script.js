@@ -2496,6 +2496,48 @@ function App() {
 
     // 4. Efecto de Notificaciones y Sonido
     const audioRef = useRef(new Audio('/notification.mp3'));
+    const isAudioUnlocked = useRef(false);
+
+    // Función para "desbloquear" el audio en el primer click (Autoplay Policy)
+    const unlockAudio = useCallback(() => {
+        if (isAudioUnlocked.current) return;
+
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        // Intentamos reproducir y pausar inmediatamente un sonido silencioso
+        // Esto le dice al navegador que el usuario permite audio en este sitio
+        audio.volume = 0;
+        audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.volume = 0.5;
+            isAudioUnlocked.current = true;
+            console.log("[Audio] System unlocked and ready.");
+        }).catch(() => {
+            // Aún bloqueado (posible si el click no fue lo suficientemente claro para el navegador)
+        });
+    }, []);
+
+    // Desbloquear audio al interactuar con el Admin Panel
+    useEffect(() => {
+        if (view === 'admin') {
+            const handleInteraction = () => {
+                unlockAudio();
+                window.removeEventListener('mousedown', handleInteraction);
+                window.removeEventListener('keydown', handleInteraction);
+                window.removeEventListener('touchstart', handleInteraction);
+            };
+            window.addEventListener('mousedown', handleInteraction);
+            window.addEventListener('keydown', handleInteraction);
+            window.addEventListener('touchstart', handleInteraction);
+            return () => {
+                window.removeEventListener('mousedown', handleInteraction);
+                window.removeEventListener('keydown', handleInteraction);
+                window.removeEventListener('touchstart', handleInteraction);
+            };
+        }
+    }, [view, unlockAudio]);
 
     useEffect(() => {
         if (!isAdmin(currentUser?.email)) return;
@@ -2524,7 +2566,11 @@ function App() {
                         audio.loop = true; // REPETIR HASTA QUE SE VEA
                         audio.volume = 0.5;
                         audio.play().catch(e => {
-                            if (e.name !== 'NotAllowedError') {
+                            if (e.name === 'NotAllowedError') {
+                                isAudioUnlocked.current = false;
+                                console.warn("[Audio] Blocked by browser. User interaction required.");
+                                showToast("🔊 Haz clic en la página para activar las alertas sonoras", "warning");
+                            } else {
                                 console.error("Error playing sound:", e);
                             }
                         });
@@ -2538,9 +2584,6 @@ function App() {
                 lastNotifiedCountRef.current = currentCount;
             }
         }
-
-        // Removed generic "reset if lower" logic to prevent clearing local storage on initial load (orders=[]).
-        // Only update downwards if we are actually viewing the orders tab (already handled in the first if block).
 
         // Cleanup al desmontar: detener sonido
         return () => {
@@ -6108,13 +6151,27 @@ function App() {
                                                     onClick={() => {
                                                         const newState = !soundEnabled;
                                                         setSoundEnabled(newState);
+                                                        localStorage.setItem('sustore_sound_enabled', JSON.stringify(newState));
+
                                                         if (newState) {
-                                                            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                                                            audio.volume = 0.6;
-                                                            audio.play().catch(() => { });
-                                                            showToast("Sonido activado ??", "success");
+                                                            // Usar el mismo audioRef para probar y desbloquear
+                                                            try {
+                                                                const audio = audioRef.current;
+                                                                audio.loop = false;
+                                                                audio.volume = 0.5;
+                                                                audio.play().catch(() => {
+                                                                    showToast("🔊 Haz clic aquí de nuevo para confirmar sonido", "warning");
+                                                                });
+                                                                showToast("Sonido activado 🔔", "success");
+                                                            } catch (e) {
+                                                                showToast("Sonido activado 🔔", "success");
+                                                            }
                                                         } else {
-                                                            showToast("Sonido desactivado ??", "info");
+                                                            if (audioRef.current) {
+                                                                audioRef.current.pause();
+                                                                audioRef.current.currentTime = 0;
+                                                            }
+                                                            showToast("Sonido desactivado 🔕", "info");
                                                         }
                                                     }}
                                                     className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all border ${soundEnabled
