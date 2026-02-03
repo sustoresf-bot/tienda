@@ -2391,7 +2391,7 @@ function App() {
     }, [coupons, orders, currentUser]);
 
     const heroCarouselData = useMemo(() => {
-        const heroImages = settings?.heroImages?.length ? settings.heroImages :
+        const heroImages = Array.isArray(settings?.heroImages) && settings.heroImages.length ? settings.heroImages :
             (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
         const hasMultipleImages = heroImages.length > 1;
         return { heroImages, hasMultipleImages };
@@ -5480,8 +5480,8 @@ function App() {
                                 {/* Imágenes del Carrusel */}
                                 {!settingsLoaded ? (
                                     <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
-                                ) : heroCarouselData.heroImages.length > 0 ? (
-                                    heroCarouselData.heroImages.map((image, index) => (
+                                ) : (Array.isArray(heroCarouselData.heroImages) ? heroCarouselData.heroImages : []).length > 0 ? (
+                                    (Array.isArray(heroCarouselData.heroImages) ? heroCarouselData.heroImages : []).map((image, index) => (
                                         <div
                                             key={index}
                                             onClick={() => handleHeroClick(image)}
@@ -5556,7 +5556,7 @@ function App() {
                                 {/* Indicadores del Carrusel (dots) - Solo si hay múltiples imágenes */}
                                 {heroCarouselData.hasMultipleImages && settingsLoaded && (
                                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-                                        {heroCarouselData.heroImages.map((_, index) => (
+                                        {(Array.isArray(heroCarouselData.heroImages) ? heroCarouselData.heroImages : []).map((_, index) => (
                                             <button
                                                 key={index}
                                                 onClick={() => setCurrentHeroSlide(index)}
