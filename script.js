@@ -6991,21 +6991,13 @@ function App() {
                                                                 <p className="text-slate-400 font-medium max-w-md">Bienvenido de nuevo. Aquí tienes el rendimiento de tu tienda en tiempo real.</p>
                                                             </div>
                                                             <div className="flex items-center gap-4">
-                                                                <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-[1.5rem] backdrop-blur-md flex items-center gap-6">
+                                                                <div className="bg-white border border-slate-200 px-6 py-4 rounded-[1.5rem] shadow-sm flex items-center gap-6">
                                                                     <div>
                                                                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 leading-none">Fecha Actual</p>
-                                                                        <p className="text-white font-bold text-sm leading-none">
+                                                                        <p className="text-slate-900 font-bold text-sm leading-none">
                                                                             {new Date().toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
                                                                         </p>
                                                                     </div>
-                                                                    <div className="w-px h-8 bg-white/10"></div>
-                                                                    <button
-                                                                        onClick={() => window.location.reload()}
-                                                                        className="p-2.5 bg-orange-600/20 hover:bg-orange-600 text-orange-400 hover:text-white rounded-xl transition-all hover:rotate-180 duration-700 active:scale-95 group"
-                                                                        title="Sincronizar Datos"
-                                                                    >
-                                                                        <RefreshCw className="w-5 h-5 group-active:animate-spin" />
-                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -8701,13 +8693,13 @@ function App() {
                                                                 <h1 className="text-3xl font-black text-slate-900">Inventario</h1>
                                                                 {(() => {
                                                                     const plan = settings?.subscriptionPlan || 'entrepreneur';
-                                                                    const limit = plan === 'premium' ? '8' : plan === 'business' ? 50 : 30;
+                                                                    const limit = plan === 'premium' ? Infinity : plan === 'business' ? 50 : 30;
                                                                     const current = products.length;
                                                                     const isNearLimit = plan !== 'premium' && current >= limit * 0.8;
                                                                     return (
                                                                         <p className={`text-sm font-bold mt-1 ${isNearLimit ? 'text-yellow-400' : 'text-slate-500'}`}>
-                                                                            {current} / {limit} productos
-                                                                            {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">? Cerca del límite</span>}
+                                                                            {current} / {plan === 'premium' ? 'Ilimitado' : limit} productos
+                                                                            {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">⚠️ Cerca del límite</span>}
                                                                         </p>
                                                                     );
                                                                 })()}
