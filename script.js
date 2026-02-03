@@ -181,7 +181,7 @@ const SecurityManager = {
         if (stored) {
             try {
                 const userData = JSON.parse(stored);
-                // Verificar estructura vÃ¯Â¿Â½lida
+                // Verificar estructura válida
                 if (!userData.id || userData.id.length < 10 ||
                     !userData.email || !userData.email.includes('@')) {
                     console.warn('[Security] Invalid session data detected');
@@ -262,7 +262,7 @@ const SecurityManager = {
             ['log', 'debug', 'info', 'table', 'dir'].forEach(method => {
                 console[method] = noop;
             });
-            // Mantener warn y error para debugging crÃ¯Â¿Â½tico
+            // Mantener warn y error para debugging crítico
         }
     },
 
@@ -277,7 +277,7 @@ const SecurityManager = {
                 // console.warn('[Security] DevTools detected');
             }
         };
-        // Verificar periÃ¯Â¿Â½dicamente
+        // Verificar periódicamente
         setInterval(check, 5000);
     },
 
@@ -529,7 +529,7 @@ function AccessDenied({ onBack, darkMode }) {
 
 // --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
 function ProductCard({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode }) {
-    // Clases dinÃ¯Â¿Â½micas basadas en el tema
+    // Clases dinámicas basadas en el tema
     const cardBg = darkMode ? 'bg-[#0a0a0a]' : 'bg-white';
     const cardBorder = darkMode ? 'border-slate-800/50' : 'border-slate-200';
     const cardHoverBorder = darkMode ? 'hover:border-orange-500/50' : 'hover:border-orange-400';
@@ -916,7 +916,7 @@ function SustIABot({ settings, products, addToCart, controlPanel, coupons, darkM
             // currentMessages incluye el mensaje actual del usuario al final.
             const history = [...currentMessages].reverse();
             // history[0] es el mensaje del usuario actual
-            // history[1] deberÃ¯Â¿Â½a ser el último del modelo
+            // history[1] debería ser el último del modelo
             const lastModelMsg = history.find(m => m.role === 'model' && m.products && m.products.length > 0);
 
             if (lastModelMsg) {
@@ -1931,7 +1931,7 @@ function AdminUserDrawer({ viewUserCart, setViewUserCart, viewUserEdit, setViewU
     );
 }
 
-// --- APLICACIÃ“N PRINCIPAL ---
+// --- APLICACIÓN PRINCIPAL ---
 function App() {
     // Versión del Sistema para Auto-Updates
     const APP_VERSION = '3.0.0';
@@ -2312,7 +2312,7 @@ function App() {
 
 
 
-    // Estado para EDICIÃ¯Â¿Â½N DE COMPRAS
+    // Estado para EDICIÓN DE COMPRAS
     const [editingPurchase, setEditingPurchase] = useState(null);
 
     // Configuración y Equipo
@@ -2518,7 +2518,7 @@ function App() {
     const showToast = (msg, type = 'info') => {
         const id = Date.now();
         setToasts(prev => {
-            // Limitar a 3 toasts simultÃ¯Â¿Â½neos
+            // Limitar a 3 toasts simultáneos
             const filtered = prev.filter(t => Date.now() - t.id < 3000);
             return [...filtered, { id, message: msg, type }];
         });
@@ -2531,7 +2531,7 @@ function App() {
         if (!email) return 'user';
         const cleanEmail = email.trim().toLowerCase();
 
-        // Super Admin Hardcodeado (Prioridad MÃ¯Â¿Â½xima) - No depende de settings
+        // Super Admin Hardcodeado (Prioridad Máxima) - No depende de settings
         if (cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) return 'admin';
 
         // 1. Verificar currentUser.role (Prioridad sobre equipo estático)
@@ -2541,8 +2541,8 @@ function App() {
             return currentUser.role;
         }
 
-        // Si settings aÃ¯Â¿Â½n no está cargado, no podemos verificar team ni users
-        // Devolvemos 'loading' para indicar que no sabemos aÃ¯Â¿Â½n el rol real
+        // Si settings aún no está cargado, no podemos verificar team ni users
+        // Devolvemos 'loading' para indicar que no sabemos aún el rol real
         if (!settings || !settingsLoaded) return 'loading';
 
         // 2. Buscar en el equipo (settings.team - Fallback/Hardcoded)
@@ -2564,12 +2564,12 @@ function App() {
     const isRoleLoading = (email) => getRole(email) === 'loading';
     const hasAccess = (email) => {
         const role = getRole(email);
-        // Si el rol aÃ¯Â¿Â½n está cargando, no tiene acceso (se mostrarÃ¯Â¿Â½ loading)
+        // Si el rol aún está cargando, no tiene acceso (se mostrará loading)
         if (role === 'loading') return false;
         return role === 'admin' || role === 'editor' || role === 'employee';
     };
 
-    // --- EFECTOS DE SINCRONIZACIÃ¯Â¿Â½N (FIREBASE) ---
+    // --- EFECTOS DE SINCRONIZACIÓN (FIREBASE) ---
 
     // 0. Sincronizar Dark Mode con el DOM y localStorage
     useEffect(() => {
@@ -2664,7 +2664,7 @@ function App() {
     }, []);
     // 2. Persistencia Detallada y Session
     useEffect(() => {
-        // Solo guardar usuarios con datos vÃ¯Â¿Â½lidos completos
+        // Solo guardar usuarios con datos válidos completos
         if (currentUser && currentUser.id && currentUser.email && currentUser.name) {
             localStorage.setItem('sustore_user_data', JSON.stringify(currentUser));
             // Pre-llenar checkout si hay datos
@@ -2679,7 +2679,7 @@ function App() {
             // Si no hay usuario, limpiar localStorage
             localStorage.removeItem('sustore_user_data');
         }
-        // Si currentUser existe pero no tiene datos vÃ¯Â¿Â½lidos, no guardamos nada
+        // Si currentUser existe pero no tiene datos válidos, no guardamos nada
         // Esto evita persistir usuarios "fantasma" incompletos
     }, [currentUser]);
 
@@ -2984,7 +2984,7 @@ function App() {
                     const oldCats = oldData.categories || [];
                     const newCats = newData.categories || [];
 
-                    // HeurÃ¯Â¿Â½stica simple: Si el viejo tiene más categorías o diferentes, asumimos que vale la pena fusionar
+                    // Heurística simple: Si el viejo tiene más categorías o diferentes, asumimos que vale la pena fusionar
                     // O simplemente si el usuario dice "se borraron", forzamos la copia de categorías del viejo al nuevo.
                     if (oldCats.length > 0 && JSON.stringify(oldCats) !== JSON.stringify(newCats)) {
                         // Solo migramos categorías si parecen perdidas (esto corre en cliente, ojo con bucles)
@@ -3057,7 +3057,7 @@ function App() {
                 const itemId = String(item.product.id).trim();
                 const productInStore = products.find(p => String(p.id).trim() === itemId);
 
-                // 1. Verificar si el producto aÃ¯Â¿Â½n existe (Borrado físico)
+                // 1. Verificar si el producto aún existe (Borrado físico)
                 if (!productInStore) {
                     hasChanges = true;
                     removedItems.push(`${item.product.name} (Producto eliminado)`);
@@ -3230,11 +3230,11 @@ function App() {
             updateMetaTagById('twitter-image', ogImage);
         }
 
-        // 10. Favicon (Icono de PestaÃ¯Â¿Â½a) - Auto Circular
+        // 10. Favicon (Icono de Pestaña) - Auto Circular
         const link = document.getElementById('dynamic-favicon') || document.querySelector("link[rel*='icon']");
         if (link) {
             if (settings.logoUrl) {
-                // Intentar recortar la imagen en cÃ¯Â¿Â½rculo para el favicon
+                // Intentar recortar la imagen en círculo para el favicon
                 const img = new Image();
                 img.crossOrigin = 'Anonymous';
                 img.onload = () => {
@@ -3243,7 +3243,7 @@ function App() {
                         canvas.width = 64;
                         canvas.height = 64;
                         const ctx = canvas.getContext('2d');
-                        // Crear cÃ¯Â¿Â½rculo
+                        // Crear círculo
                         ctx.beginPath();
                         ctx.arc(32, 32, 32, 0, Math.PI * 2);
                         ctx.closePath();
@@ -3421,7 +3421,7 @@ function App() {
 
         if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
             if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
-                showToast("Por favor completÃ¯Â¿Â½ tus datos personales antes de pagar con tarjeta.", "warning");
+                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
                 setView('profile');
                 return;
             }
@@ -3456,7 +3456,7 @@ function App() {
     }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
 
-    // ?? [PAUSA POR SEGURIDAD] - El código continúa con la lÃ¯Â¿Â½gica expandida. Escribe "continuar" para la siguiente parte.
+    // ?? [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
     // --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
     // 1. Lógica de Autenticación (Registro y Login Detallado) - SEGURIDAD MEJORADA
@@ -3591,7 +3591,7 @@ function App() {
                             matchedDoc = userDocSnap;
                             isFirebaseAuthUser = true;
                         } else {
-                            // Si no existe perfil en DB pero sÃ¯Â¿Â½ en Auth, buscamos en la colección por email por si acaso tiene otro ID
+                            // Si no existe perfil en DB pero sí en Auth, buscamos en la colección por email por si acaso tiene otro ID
                             // O creamos uno nuevo (pero mejor solo buscar por ahora)
                             const allUsersSnap = await getDocs(usersRef);
                             matchedDoc = allUsersSnap.docs.find(d => d.data().email?.toLowerCase() === normalizedInput.toLowerCase());
@@ -3624,7 +3624,7 @@ function App() {
                     }
                 }
 
-                // 2. INTENTO: Login Manual (Búsqueda en Colección) - Si Auth falló o no se usÃ¯Â¿Â½
+                // 2. INTENTO: Login Manual (Búsqueda en Colección) - Si Auth falló o no se usó
                 if (!matchedDoc) {
                     const allUsersSnap = await getDocs(usersRef);
                     // Buscar usuario por email o username
@@ -3741,7 +3741,7 @@ function App() {
         }
     };
 
-    // 2. GestiÃ¯Â¿Â½n de Favoritos (Wishlist)
+    // 2. Gestión de Favoritos (Wishlist)
     const toggleFavorite = async (product) => {
         if (!currentUser) {
             showToast("Debes iniciar sesión para guardar favoritos.", "info");
@@ -3775,7 +3775,7 @@ function App() {
         }
     };
 
-    // 3. GestiÃ¯Â¿Â½n del Carrito
+    // 3. Gestión del Carrito
     const manageCart = (product, quantityDelta) => {
         setCart(prevCart => {
             const existingItemIndex = prevCart.findIndex(item => item.product.id === product.id);
@@ -4066,10 +4066,10 @@ function App() {
                 }
             });
 
-            // Registrar uso de cupÃ¯Â¿Â½n
+            // Registrar uso de cupón
             if (appliedCoupon) {
                 const couponRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
-                // Leemos el cupÃ¯Â¿Â½n actual para asegurar array
+                // Leemos el cupón actual para asegurar array
                 const couponDoc = await getDoc(couponRef);
                 if (couponDoc.exists()) {
                     const currentUses = couponDoc.data().usedBy || [];
@@ -4120,7 +4120,7 @@ function App() {
             return;
         }
 
-        // Sanitizar el monto total para evitar errores de precisiÃ¯Â¿Â½n flotante
+        // Sanitizar el monto total para evitar errores de precisión flotante
         const safeAmount = Number(parseFloat(finalTotal).toFixed(2));
         if (isNaN(safeAmount) || safeAmount <= 0) {
             console.error('? Error: Monto inválido para pago:', finalTotal);
@@ -6602,14 +6602,14 @@ function App() {
                                         onClick={() => setView('login')}
                                         className="w-full py-4 bg-gradient-to-r from-orange-500 to-blue-600 text-white rounded-2xl font-black hover:from-orange-400 hover:to-blue-500 transition shadow-lg"
                                     >
-                                        INGRESAR SESIÃƒâ€œN
+                                        INGRESAR SESIÓN
                                     </button>
                                 </div>
                             </div>
                         )
                     }
 
-                    {/* 5. MODAL DE AUTENTICACIÃƒâ€œN (LOGIN/REGISTER) */}
+                    {/* 5. MODAL DE AUTENTICACIÓN (LOGIN/REGISTER) */}
                     {
                         (view === 'login' || view === 'register') && (
                             <div className={`fixed inset-0 z-[500] flex items-center justify-center p-4 animate-fade-up backdrop-blur-xl ${darkMode ? 'bg-[#050505]/95' : 'bg-white/90'}`}>
@@ -7584,7 +7584,7 @@ function App() {
                                                         <h1 className="text-4xl font-black text-slate-900 mb-8">Finanzas y Capital</h1>
 
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                                                            {/* SECCIÃ¯Â¿Â½N: REGISTRAR INVERSIÓN (NUEVO) */}
+                                                            {/* SECCIÓN: REGISTRAR INVERSIÓN (NUEVO) */}
                                                             <div className="bg-[#0a0a0a] border border-orange-900/30 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-bl-[100px] pointer-events-none"></div>
                                                                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
@@ -7664,7 +7664,7 @@ function App() {
                                                                 </div>
                                                             </div>
 
-                                                            {/* SECCIÃ¯Â¿Â½N: REGISTRAR GASTO */}
+                                                            {/* SECCIÓN: REGISTRAR GASTO */}
                                                             <div className="bg-[#0a0a0a] border border-red-900/30 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-[100px] pointer-events-none"></div>
                                                                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
@@ -7759,7 +7759,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCIÃ¯Â¿Â½N: DISTRIBUCIÓN DE GANANCIAS (AUTOMÁTICA) */}
+                                                        {/* SECCIÓN: DISTRIBUCIÓN DE GANANCIAS (AUTOMÁTICA) */}
                                                         <div className="animate-fade-up pt-12 border-t border-slate-800">
                                                             <div className="flex justify-between items-center mb-8">
                                                                 <div>
@@ -7776,7 +7776,7 @@ function App() {
                                                                 </div>
                                                             </div>
 
-                                                            {/* GrÃ¯Â¿Â½fico y Tabla */}
+                                                            {/* Gráfico y Tabla */}
                                                             <div className="flex flex-col gap-8 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                 {distributionData.totalCapital === 0 ? (
                                                                     <p className="text-slate-500 text-center py-12">Registra inversiones para ver la distribución de ganancias.</p>
@@ -7958,7 +7958,7 @@ function App() {
                                                                                 value={newCoupon.targetUser || ''}
                                                                                 onChange={e => setNewCoupon({ ...newCoupon, targetUser: e.target.value })}
                                                                             />
-                                                                            <p className="text-xs text-slate-400 mt-1">Solo este usuario podrá usar el cupÃ¯Â¿Â½n</p>
+                                                                            <p className="text-xs text-slate-400 mt-1">Solo este usuario podrá usar el cupón</p>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -8008,7 +8008,7 @@ function App() {
                                                                             <Copy className="w-5 h-5" />
                                                                         </button>
                                                                         <button
-                                                                            onClick={() => openConfirm("Eliminar Cupón", "¿Eliminar este cupÃ¯Â¿Â½n?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
+                                                                            onClick={() => openConfirm("Eliminar Cupón", "¿Eliminar este cupón?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
                                                                             className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800"
                                                                         >
                                                                             <Trash2 className="w-5 h-5" />
@@ -8467,7 +8467,7 @@ function App() {
                                                                 <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-6 border border-purple-100 shadow-sm">
                                                                     <Lock className="w-10 h-10 text-purple-500" />
                                                                 </div>
-                                                                <h3 className="text-2xl font-black text-slate-900 mb-2">LÃ¯Â¿Â½mite de Promos Alcanzado</h3>
+                                                                <h3 className="text-2xl font-black text-slate-900 mb-2">Límite de Promos Alcanzado</h3>
                                                                 <p className="text-slate-500 max-w-md mb-8">
                                                                     Tu plan actual te permite tener hasta <strong className="text-slate-900">1 promo activa</strong>.
                                                                     Para crear más promociones ilimitadas, actualiza tu plan.
@@ -9143,7 +9143,7 @@ function App() {
 
                                                         {settingsTab === 'identity' && (
                                                             <div className="space-y-6 animate-fade-up">
-                                                                {/* INFORMACIÃ¯Â¿Â½N BÃ¯Â¿Â½SICA (Originalmente en 'store') */}
+                                                                {/* INFORMACIÓN BÁSICA (Originalmente en 'store') */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                                         <Store className="w-5 h-5 text-orange-400" /> Información de la Tienda
@@ -9428,7 +9428,7 @@ function App() {
                                                                     </div>
                                                                 </div>
 
-                                                                {/* GUÃ¯Â¿Â½A DE COMPRA */}
+                                                                {/* GUÍA DE COMPRA */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <div className="flex items-center justify-between mb-6">
                                                                         <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -9485,7 +9485,7 @@ function App() {
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.footerCopyright || ''}
                                                                                 onChange={e => setSettings({ ...settings, footerCopyright: e.target.value })}
-                                                                                placeholder="Ã¯Â¿Â½ 2024 SUSTORE. Todos los derechos reservados."
+                                                                                placeholder="© 2024 SUSTORE. Todos los derechos reservados."
                                                                             />
                                                                         </div>
                                                                         <div className="p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
