@@ -5088,8 +5088,8 @@ function App() {
         const transactions = [
             ...validOrders.map(o => ({ id: o.id || o.orderId, type: 'income', category: 'Venta', date: o.date, amount: o.total, description: `Orden #${o.orderId}`, status: o.status })),
             ...expenses.map(e => ({ id: e.id, type: 'expense', category: e.category || 'Gasto', date: e.date, amount: e.amount, description: e.description, status: 'Pagado' })),
-            ...(purchases || []).map(p => ({ id: p.id, type: 'expense', category: 'Compra Stock', date: p.date, amount: p.cost, description: `Prov: ${p.supplier || 'General'}`, status: 'Completado' })),
-            ...(investments || []).map(i => ({ id: i.id, type: 'income', category: 'Inversión', date: i.date, amount: i.amount, description: `Inv: ${i.investor}`, status: 'Recibido' }))
+            ...(Array.isArray(purchases) ? purchases : []).map(p => ({ id: p.id, type: 'expense', category: 'Compra Stock', date: p.date, amount: p.cost, description: `Prov: ${p.supplier || 'General'}`, status: 'Completado' })),
+            ...(Array.isArray(investments) ? investments : []).map(i => ({ id: i.id, type: 'income', category: 'Inversión', date: i.date, amount: i.amount, description: `Inv: ${i.investor}`, status: 'Recibido' }))
         ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 100);
 
         return {
@@ -8572,7 +8572,7 @@ function App() {
                                                                             <div className="flex-1">
                                                                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Componentes del Combo:</p>
                                                                                 <div className="space-y-3">
-                                                                                    {(promo.items || []).map((item, i) => {
+                                                                                    {(Array.isArray(promo.items) ? promo.items : []).map((item, i) => {
                                                                                         const p = products.find(prod => prod.id === item.productId);
                                                                                         return (
                                                                                             <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors group/item">
