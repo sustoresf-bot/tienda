@@ -3347,8 +3347,8 @@ function App() {
         window.addEventListener('keydown', handleInteraction);
         window.addEventListener('touchstart', handleInteraction);
 
-        // Intentar desbloquear inmediatamente si ya hubo interacción previa
-        setTimeout(() => unlockAudio(), 100);
+        // Intentar desbloquear inmediatamente si ya hubo interacción previa (eliminado para evitar warnings de consola)
+        // setTimeout(() => unlockAudio(), 100);
 
         return () => {
             window.removeEventListener('click', handleInteraction);
@@ -9365,7 +9365,7 @@ function App() {
                                                                                         value={image.linkedProductId || (image.linkedPromoId ? `promo_${image.linkedPromoId}` : '')}
                                                                                         onChange={(e) => {
                                                                                             const value = e.target.value;
-                                                                                            const newImages = [...(settings?.heroImages || [])];
+                                                                                            const newImages = [...(Array.isArray(settings?.heroImages) ? settings.heroImages : [])];
                                                                                             if (value.startsWith('promo_')) {
                                                                                                 newImages[index] = { ...newImages[index], linkedProductId: null, linkedPromoId: value.replace('promo_', '') };
                                                                                             } else if (value) {
@@ -9387,7 +9387,7 @@ function App() {
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => {
-                                                                                        const newImages = (settings?.heroImages || []).filter((_, i) => i !== index);
+                                                                                        const newImages = (Array.isArray(settings?.heroImages) ? settings.heroImages : []).filter((_, i) => i !== index);
                                                                                         setSettings({ ...settings, heroImages: newImages });
                                                                                     }}
                                                                                     className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg transition"
@@ -9396,7 +9396,7 @@ function App() {
                                                                                 </button>
                                                                             </div>
                                                                         ))}
-                                                                        {(!settings?.heroImages || settings.heroImages.length < 5) && (
+                                                                        {(!Array.isArray(settings?.heroImages) || settings.heroImages.length < 5) && (
                                                                             <label className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-800 hover:border-orange-500 rounded-[2rem] cursor-pointer transition bg-slate-900/20 group">
                                                                                 <Plus className="w-10 h-10 text-slate-700 group-hover:text-orange-500 mb-2 transition" />
                                                                                 <span className="text-slate-500 font-bold group-hover:text-slate-300">Agregar imagen</span>
