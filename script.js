@@ -9494,7 +9494,7 @@ function App() {
                                                                 {/* PERSONALIZACIÓN DEL FOOTER */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Layout className="w-5 h-5 text-orange-400" /> Personalización del Footer
+                                                                        <LayoutDashboard className="w-5 h-5 text-orange-400" /> Personalización del Footer
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
