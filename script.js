@@ -730,7 +730,8 @@ function BotProductCard({ product, onAdd, darkMode }) {
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
 function SustIABot({ settings, products, addToCart, controlPanel, coupons, darkMode }) {
     // 1. Verificación de Plan - Solo disponible en Plan Premium
-    if (settings?.subscriptionPlan !== 'premium') return null;
+    // 1. Verificación de Plan - Logica movida al componente padre App para evitar errores de Hooks
+    // if (settings?.subscriptionPlan !== 'premium') return null;
 
     const [isOpen, setIsOpen] = useState(false);
 
@@ -11207,17 +11208,19 @@ function App() {
                     onAdd={(newCat) => setSettings({ ...settings, categories: [...(settings?.categories || []), newCat] })}
                     onRemove={(cat) => setSettings({ ...settings, categories: (settings?.categories || []).filter(c => c !== cat) })}
                 />
-                <SustIABot
-                    settings={settings}
-                    products={products}
-                    addToCart={(p, q = 1) => manageCart(p, q)}
-                    controlPanel={{
-                        setDarkMode: setDarkMode,
-                        openCart: () => setView('cart')
-                    }}
-                    coupons={coupons}
-                    darkMode={darkMode}
-                />
+                {settings?.subscriptionPlan === 'premium' && (
+                    <SustIABot
+                        settings={settings}
+                        products={products}
+                        addToCart={(p, q = 1) => manageCart(p, q)}
+                        controlPanel={{
+                            setDarkMode: setDarkMode,
+                            openCart: () => setView('cart')
+                        }}
+                        coupons={coupons}
+                        darkMode={darkMode}
+                    />
+                )}
             </div>
         </React.Fragment>
     );
