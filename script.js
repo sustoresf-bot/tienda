@@ -5522,7 +5522,7 @@ function App() {
                                     </div>
                                 </div>
 
-                                {/* SECCIÃƒâ€œN: MIS CUPONES (NUEVO) */}
+                                {/* SECCIÓN: MIS CUPONES (NUEVO) */}
                                 <div className={`border p-8 rounded-[2.5rem] mb-12 shadow-2xl animate-fade-up ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                         <Ticket className="text-purple-400 w-6 h-6" /> Mis Cupones Disponibles
@@ -5567,7 +5567,7 @@ function App() {
                                             <div className="flex gap-2">
                                                 <input
                                                     className={`flex-1 border rounded-xl p-3 focus:border-purple-500 outline-none uppercase font-mono ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
-                                                    placeholder="CÃƒâ€œDIGO"
+                                                    placeholder="CÓDIGO"
                                                     id="couponRedeemInput"
                                                 />
                                                 <button
@@ -5576,7 +5576,7 @@ function App() {
                                                         if (!code) return showToast("Ingresa un código", "warning");
                                                         const coupon = coupons.find(c => c.code === code);
                                                         if (coupon) {
-                                                            showToast("¡Cupón válido! ÃƒÅ¡salo en el checkout.", "success");
+                                                            showToast("¡Cupón válido! Úsalo en el checkout.", "success");
                                                         } else {
                                                             showToast("Cupón no encontrado o inválido", "error");
                                                         }
@@ -5816,7 +5816,7 @@ function App() {
                                         {loginMode ? 'Bienvenido' : 'Crear Cuenta'}
                                     </h2>
                                     <p className={`text-center mb-8 text-sm ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                                        {loginMode ? 'Ingresa a tu cuenta para continuar.' : 'ÃƒÅ¡nete a nosotros hoy mismo.'}
+                                        {loginMode ? 'Ingresa a tu cuenta para continuar.' : 'Únete a nosotros hoy mismo.'}
                                     </p>
 
                                     <form onSubmit={(e) => { e.preventDefault(); handleAuth(!loginMode) }} className="space-y-4">
@@ -5842,14 +5842,14 @@ function App() {
                                     </form>
 
                                     <button onClick={() => setLoginMode(!loginMode)} className={`w-full text-center text-sm mt-8 font-bold hover:text-orange-400 transition border-t pt-6 ${darkMode ? 'text-slate-500 border-slate-800' : 'text-slate-500 border-slate-200'}`}>
-                                        {loginMode ? 'Ã‚Â¿No tienes cuenta? Regístrate gratis' : 'Ã‚Â¿Ya tienes cuenta? Inicia sesión'}
+                                        {loginMode ? '¿No tienes cuenta? Regístrate gratis' : '¿Ya tienes cuenta? Inicia sesión'}
                                     </button>
                                 </div>
                             </div>
                         )
                     }
 
-                    {/* 6. VISTAS ESTÃƒÂTICAS (ABOUT & GUIDE) */}
+                    {/* 6. VISTAS ESTÁTICAS (ABOUT & GUIDE) */}
                     {
                         view === 'about' && (
                             <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
@@ -5925,10 +5925,10 @@ function App() {
                                     <div className="prose prose-invert max-w-none">
                                         <p className={`text-sm mb-8 italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>última actualización: 07 de enero de 2026</p>
 
-                                        <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cómo y por quÃ¯Â¿Â½ podríamos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su información personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
+                                        <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cómo y por qué podríamos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su información personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
                                         <ul className="list-disc pl-5 space-y-2">
                                             <li>Visita nuestro sitio web en <a href="https://sustore.vercel.app" className="text-orange-500 hover:underline">https://sustore.vercel.app</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
-                                            <li>InteractÃ¯Â¿Â½e con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
+                                            <li>Interactúe con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
                                         </ul>
 
                                         <div className={`p-6 rounded-2xl border my-8 ${darkMode ? 'bg-slate-900/50 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
@@ -5942,11 +5942,11 @@ function App() {
                                             </ul>
                                         </div>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>1. -QUÃ¯Â¿Â½ INFORMACIÃ¯Â¿Â½N RECOPILAMOS?</h3>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>1. -QUÉ INFORMACIÓN RECOPILAMOS?</h3>
                                         <p>Recopilamos información que usted nos proporciona voluntariamente: nombres, teléfonos, emails, direcciones, nombres de usuario y contraseñas.</p>
-                                        <p>También recopilamos datos técnicos automáticamente (IP, tipo de navegador) para seguridad y anÃ¯Â¿Â½lisis del sitio.</p>
+                                        <p>También recopilamos datos técnicos automáticamente (IP, tipo de navegador) para seguridad y análisis del sitio.</p>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>2. ¿CÃ¯Â¿Â½MO PROCESAMOS TU INFORMACIÃ¯Â¿Â½N?</h3>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>2. ¿CÓMO PROCESAMOS TU INFORMACIÓN?</h3>
                                         <ul className="list-disc pl-5 space-y-2">
                                             <li>Facilitar creación y administración de cuentas.</li>
                                             <li>gestionar pedidos, pagos y envíos.</li>
@@ -5954,7 +5954,7 @@ function App() {
                                             <li>Evaluar y mejorar la experiencia del usuario.</li>
                                         </ul>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>3. ¿CUÁNTO TIEMPO CONSERVAMOS TU INFORMACIÃ¯Â¿Â½N?</h3>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>3. ¿CUÁNTO TIEMPO CONSERVAMOS TU INFORMACIÓN?</h3>
                                         <p>Conservamos su información mientras tenga una cuenta activa con nosotros o según lo exija la ley para fines contables o legales.</p>
 
                                         <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>4. ¿CUÁLES SON SUS DERECHOS?</h3>
@@ -5975,7 +5975,7 @@ function App() {
                         )
                     }
 
-                    {/* 7. PANEL DE ADMINISTRACIÃ¯Â¿Â½N (COMPLETO Y DETALLADO) */}
+                    {/* 7. PANEL DE ADMINISTRACIÓN (COMPLETO Y DETALLADO) */}
                     {
                         view === 'admin' && (
                             // === Verificación de carga antes de verificar acceso ===
@@ -5995,7 +5995,7 @@ function App() {
                             ) :
                                 // === SEGURIDAD: Triple verificación de acceso ===
                                 // 1. Verificar que tiene permisos por rol
-                                // 2. Verificar que el usuario tiene un ID vÃ¯Â¿Â½lido
+                                // 2. Verificar que el usuario tiene un ID válido
                                 // 3. Verificar que la sesión no fue manipulada
                                 (hasAccess(currentUser?.email) &&
                                     currentUser?.id &&
@@ -6003,7 +6003,7 @@ function App() {
                                     !SecurityManager.detectManipulation()) ? (
                                     <div className="min-h-screen bg-slate-50 relative w-full font-sans">
 
-                                        {/* Overlay para cerrar el menÃ¯Â¿Â½ en mÃ¯Â¿Â½vil */}
+                                        {/* Overlay para cerrar el menú en móvil */}
                                         {isAdminMenuOpen && (
                                             <div
                                                 className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-fade-in"
@@ -6166,7 +6166,7 @@ function App() {
                                                                 <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 drop-shadow-sm">
                                                                     Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 animate-gradient-x">Control</span>
                                                                 </h1>
-                                                                <p className="text-slate-400 font-medium max-w-md">Bienvenido de nuevo. AquÃ¯Â¿Â½ tienes el rendimiento de tu tienda en tiempo real.</p>
+                                                                <p className="text-slate-400 font-medium max-w-md">Bienvenido de nuevo. Aquí tienes el rendimiento de tu tienda en tiempo real.</p>
                                                             </div>
                                                             <div className="flex items-center gap-4">
                                                                 <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-[1.5rem] backdrop-blur-md flex items-center gap-6">
@@ -6188,7 +6188,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCIÃ¯Â¿Â½N 1: TARJETAS PRINCIPALES (PREMIUM) */}
+                                                        {/* SECCIÓN 1: TARJETAS PRINCIPALES (PREMIUM) */}
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                                                             {/* INGRESOS BRUTOS */}
                                                             <div className="bg-white border border-slate-200 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/20 transition-all duration-500 shadow-xl">
@@ -6251,7 +6251,7 @@ function App() {
                                                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ingresos vs Gastos (últimos Meses)</p>
                                                                     {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
                                                                         // Estimación simplificada de gastos mensuales (proporcional solo para visualización si no hay data exacta mensual de gastos guardada historica)
-                                                                        // En una real app, se calcularÃ¯Â¿Â½a real desde expenses.
+                                                                        // En una real app, se calcularía real desde expenses.
                                                                         // Como `expenses` tiene fecha, podemos calcularlo.
                                                                         const monthExpenses = expenses.filter(e => e.date.startsWith(m.date)).reduce((acc, c) => acc + c.amount, 0)
                                                                             + (purchases || []).filter(p => p.date.startsWith(m.date)).reduce((acc, c) => acc + c.cost, 0);
@@ -6277,7 +6277,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCIÃ¯Â¿Â½N 2: KPIs RÃ¯Â¿Â½PIDOS (PREMIUM) */}
+                                                        {/* SECCIÓN 2: KPIs RÁPIDOS (PREMIUM) */}
                                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                             <div className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-orange-500/30 transition-colors group shadow-sm">
                                                                 <div className="flex justify-center mb-3 text-slate-400 group-hover:text-blue-500 transition-colors">
@@ -6313,7 +6313,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCIÃ¯Â¿Â½N 2.5: MEJORES Y PEORES (PREMIUM) */}
+                                                        {/* SECCIÓN 2.5: MEJORES Y PEORES (PREMIUM) */}
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                             {/* BEST SELLER */}
                                                             <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500 shadow-xl">
@@ -6339,7 +6339,7 @@ function App() {
                                                                         </div>
                                                                     </div>
                                                                 ) : (
-                                                                    <p className="text-slate-600">No hay datos de ventas aÃ¯Â¿Â½n.</p>
+                                                                    <p className="text-slate-600">No hay datos de ventas aún.</p>
                                                                 )}
                                                             </div>
 
@@ -6375,7 +6375,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCIÃ¯Â¿Â½N 3: LIBRO MAYOR (REGISTRO ADMINISTRATIVO) */}
+                                                        {/* SECCIÓN 3: LIBRO MAYOR (REGISTRO ADMINISTRATIVO) */}
                                                         <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
                                                             <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
                                                                 <FileText className="w-6 h-6 text-purple-600" /> Registro de Movimientos
@@ -6423,7 +6423,7 @@ function App() {
                                                     </div>
                                                 )}
 
-                                                {/* TAB: CONFIGURACIÃ¯Â¿Â½N (BLINDADA) - REMOVED (Consolidated in main Settings tab below) */}
+                                                {/* TAB: CONFIGURACIÓN (BLINDADA) - REMOVED (Consolidated in main Settings tab below) */}
 
 
                                                 {/* TAB: PROVEEDORES (CON SELECTOR VISUAL) */}
@@ -6452,7 +6452,7 @@ function App() {
                                                                                 <Edit className="w-5 h-5" />
                                                                             </button>
                                                                             <button
-                                                                                onClick={() => openConfirm("Eliminar Proveedor", "Ã¯Â¿Â½Eliminar proveedor?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)))}
+                                                                                onClick={() => openConfirm("Eliminar Proveedor", "¿Eliminar proveedor?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'suppliers', s.id)))}
                                                                                 className="text-slate-400 hover:text-red-500 p-2 hover:bg-slate-100 rounded-lg transition"
                                                                                 title="Eliminar"
                                                                             >
@@ -6506,7 +6506,7 @@ function App() {
                                                 {/* TAB: COMPRAS (STOCK) */}
                                                 {adminTab === 'purchases' && (
                                                     <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
-                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">GestiÃ¯Â¿Â½n de Stock y Compras</h1>
+                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">Gestión de Stock y Compras</h1>
 
                                                         {/* Formulario de Compra Unificado */}
                                                         <div className="bg-white border border-slate-200 rounded-[2.5rem] mb-10 shadow-xl overflow-hidden relative">
@@ -6514,7 +6514,7 @@ function App() {
                                                             {/* Header / Solo Reposición de Stock */}
                                                             <div className="flex border-b border-slate-100">
                                                                 <div className="flex-1 p-6 text-center font-bold tracking-wider bg-orange-50 text-orange-600">
-                                                                    <Package className="w-5 h-5 inline-block mr-2" /> REGISTRAR REPOSICIÃ¯Â¿Â½N DE STOCK
+                                                                    <Package className="w-5 h-5 inline-block mr-2" /> REGISTRAR REPOSICIÓN DE STOCK
                                                                 </div>
                                                             </div>
 
@@ -6617,7 +6617,7 @@ function App() {
                                                                     }}
                                                                     className="w-full mt-8 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black py-5 rounded-2xl shadow-xl transition transform hover:scale-[1.01] flex items-center justify-center gap-3 text-lg"
                                                                 >
-                                                                    <Save className="w-6 h-6" /> REGISTRAR REPOSICIÃ¯Â¿Â½N DE STOCK
+                                                                    <Save className="w-6 h-6" /> REGISTRAR REPOSICIÓN DE STOCK
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -6732,7 +6732,7 @@ function App() {
                                                                     <div className="space-y-4">
                                                                         <div>
                                                                             <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Cantidad comprada</label>
-                                                                            <div className="text-xs text-yellow-500 mb-2">? Modificar esto ajustarÃ¯Â¿Â½ el stock del producto automáticamente.</div>
+                                                                            <div className="text-xs text-yellow-500 mb-2">? Modificar esto ajustará el stock del producto automáticamente.</div>
                                                                             <input type="number" className="input-cyber w-full p-3" value={editingPurchase.quantity} onChange={e => setEditingPurchase({ ...editingPurchase, quantity: parseInt(e.target.value) || 0 })} />
                                                                         </div>
                                                                         <div>
@@ -6762,7 +6762,7 @@ function App() {
                                                         <h1 className="text-4xl font-black text-slate-900 mb-8">Finanzas y Capital</h1>
 
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                                                            {/* SECCIÃ¯Â¿Â½N: REGISTRAR INVERSIÃ¯Â¿Â½N (NUEVO) */}
+                                                            {/* SECCIÃ¯Â¿Â½N: REGISTRAR INVERSIÓN (NUEVO) */}
                                                             <div className="bg-[#0a0a0a] border border-orange-900/30 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-bl-[100px] pointer-events-none"></div>
                                                                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
@@ -6904,7 +6904,7 @@ function App() {
                                                                                 </div>
                                                                                 <div className="flex items-center gap-4">
                                                                                     <p className="text-orange-400 font-mono font-bold">+${inv.amount.toLocaleString()}</p>
-                                                                                    <button onClick={() => openConfirm("Eliminar Inversión", "Ã¯Â¿Â½Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investments', inv.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
+                                                                                    <button onClick={() => openConfirm("Eliminar Inversión", "¿Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investments', inv.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
                                                                                 </div>
                                                                             </div>
                                                                         ))
@@ -6928,7 +6928,7 @@ function App() {
                                                                                 </div>
                                                                                 <div className="flex items-center gap-4">
                                                                                     <p className="text-red-400 font-mono font-bold">-${ex.amount.toLocaleString()}</p>
-                                                                                    <button onClick={() => openConfirm("Eliminar Gasto", "Ã¯Â¿Â½Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', ex.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
+                                                                                    <button onClick={() => openConfirm("Eliminar Gasto", "¿Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', ex.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
                                                                                 </div>
                                                                             </div>
                                                                         ))
@@ -6937,14 +6937,14 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* SECCIÃ¯Â¿Â½N: DISTRIBUCIÃ¯Â¿Â½N DE GANANCIAS (AUTOMÃ¯Â¿Â½TICA) */}
+                                                        {/* SECCIÃ¯Â¿Â½N: DISTRIBUCIÓN DE GANANCIAS (AUTOMÁTICA) */}
                                                         <div className="animate-fade-up pt-12 border-t border-slate-800">
                                                             <div className="flex justify-between items-center mb-8">
                                                                 <div>
                                                                     <h2 className="text-2xl font-black text-white flex items-center gap-3">
                                                                         <DollarSign className="w-8 h-8 text-green-500" /> Distribución de Ganancias
                                                                     </h2>
-                                                                    <p className="text-slate-500 mt-1">CÃ¯Â¿Â½lculo automático basado en las inversiones registradas.</p>
+                                                                    <p className="text-slate-500 mt-1">Cálculo automático basado en las inversiones registradas.</p>
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Beneficio Neto</p>
@@ -7067,18 +7067,18 @@ function App() {
                                                             </button>
                                                         )}
 
-                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">GestiÃ¯Â¿Â½n de Cupones</h1>
+                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">Gestión de Cupones</h1>
 
                                                         {/* Formulario de Creación */}
                                                         <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
                                                             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                <Plus className="w-5 h-5 text-purple-400" /> Crear Nuevo CupÃ¯Â¿Â½n
+                                                                <Plus className="w-5 h-5 text-purple-400" /> Crear Nuevo Cupón
                                                             </h3>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                                                 {/* Columna 1 */}
                                                                 <div className="space-y-4">
                                                                     <div>
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">CÃ¯Â¿Â½digo del CupÃ¯Â¿Â½n</label>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Código del Cupón</label>
                                                                         <input className="input-cyber w-full p-4 font-mono text-lg uppercase tracking-widest" placeholder="Ej: VERANO2024" value={newCoupon.code} onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })} />
                                                                     </div>
                                                                     <div className="flex gap-4">
@@ -7113,7 +7113,7 @@ function App() {
 
                                                                     <div className="flex gap-4">
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">LÃ¯Â¿Â½mite Usos (Total)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Límite Usos (Total)</label>
                                                                             <input className="input-cyber w-full p-4" type="number" placeholder="Ej: 100" value={newCoupon.usageLimit} onChange={e => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })} />
                                                                         </div>
                                                                         <div className="flex-1">
@@ -7124,15 +7124,15 @@ function App() {
 
                                                                     <div className="md:col-span-2">
                                                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                            Tipo de CupÃ¯Â¿Â½n
+                                                                            Tipo de Cupón
                                                                         </label>
                                                                         <select
                                                                             className="input-cyber w-full p-4"
                                                                             value={newCoupon.targetType}
                                                                             onChange={e => setNewCoupon({ ...newCoupon, targetType: e.target.value })}
                                                                         >
-                                                                            <option value="global">?? PÃ¯Â¿Â½blico / Canjeable (Redes Sociales)</option>
-                                                                            <option value="specific_email">?? Usuario EspecÃ¯Â¿Â½fico (Email)</option>
+                                                                            <option value="global">🌐 Público / Canjeable (Redes Sociales)</option>
+                                                                            <option value="specific_email">👤 Usuario Específico (Email)</option>
                                                                         </select>
                                                                     </div>
 
@@ -7148,13 +7148,13 @@ function App() {
                                                                                 value={newCoupon.targetUser || ''}
                                                                                 onChange={e => setNewCoupon({ ...newCoupon, targetUser: e.target.value })}
                                                                             />
-                                                                            <p className="text-xs text-slate-400 mt-1">Solo este usuario podrÃ¯Â¿Â½ usar el cupÃ¯Â¿Â½n</p>
+                                                                            <p className="text-xs text-slate-400 mt-1">Solo este usuario podrá usar el cupÃ¯Â¿Â½n</p>
                                                                         </div>
                                                                     )}
                                                                 </div>
                                                             </div>
                                                             <button onClick={saveCouponFn} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                                                                <Save className="w-5 h-5" /> Guardar CupÃ¯Â¿Â½n
+                                                                <Save className="w-5 h-5" /> Guardar Cupón
                                                             </button>
                                                         </div>
 
@@ -7176,7 +7176,7 @@ function App() {
                                                                             </p>
                                                                             <p className="text-xs text-slate-600 mt-1 flex gap-3">
                                                                                 <span>Usado: {c.usedBy ? c.usedBy.length : 0} veces</span>
-                                                                                {c.usageLimit && <span>LÃ¯Â¿Â½mite: {c.usageLimit}</span>}
+                                                                                {c.usageLimit && <span>Límite: {c.usageLimit}</span>}
                                                                                 {c.expirationDate && <span>Vence: {c.expirationDate}</span>}
                                                                             </p>
                                                                         </div>
@@ -7190,15 +7190,15 @@ function App() {
                                                                         <button
                                                                             onClick={() => {
                                                                                 navigator.clipboard.writeText(c.code);
-                                                                                showToast("CÃ¯Â¿Â½digo copiado al portapapeles", "success");
+                                                                                showToast("Código copiado al portapapeles", "success");
                                                                             }}
                                                                             className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white p-3 rounded-xl transition border border-slate-800"
-                                                                            title="Copiar CÃ¯Â¿Â½digo"
+                                                                            title="Copiar Código"
                                                                         >
                                                                             <Copy className="w-5 h-5" />
                                                                         </button>
                                                                         <button
-                                                                            onClick={() => openConfirm("Eliminar CupÃ¯Â¿Â½n", "Ã¯Â¿Â½Eliminar este cupÃ¯Â¿Â½n?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
+                                                                            onClick={() => openConfirm("Eliminar Cupón", "¿Eliminar este cupÃ¯Â¿Â½n?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
                                                                             className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800"
                                                                         >
                                                                             <Trash2 className="w-5 h-5" />
@@ -7230,9 +7230,9 @@ function App() {
                                                                         <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
                                                                             <Users className="w-6 h-6 text-pink-400" />
                                                                         </div>
-                                                                        GestiÃ¯Â¿Â½n de Usuarios
+                                                                        Gestión de Usuarios
                                                                     </h1>
-                                                                    <p className="text-slate-500 mt-2 font-medium">Control total sobre cuentas, roles y auditorÃ¯Â¿Â½a de carritos.</p>
+                                                                    <p className="text-slate-500 mt-2 font-medium">Control total sobre cuentas, roles y auditoría de carritos.</p>
                                                                 </div>
 
                                                                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
@@ -7389,9 +7389,9 @@ function App() {
                                                                     <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl shadow-[0_0_30px_rgba(147,51,234,0.3)]">
                                                                         <Tag className="w-8 h-8 text-white" />
                                                                     </div>
-                                                                    GestiÃ¯Â¿Â½n de Promos
+                                                                    Gestión de Promos
                                                                 </h1>
-                                                                <p className="text-slate-400 font-medium ml-1">DiseÃ¯Â¿Â½a combos irresistibles y potencia tus ventas con packs exclusivos</p>
+                                                                <p className="text-slate-400 font-medium ml-1">Diseña combos irresistibles y potencia tus ventas con packs exclusivos</p>
                                                             </div>
                                                             <div className="flex gap-3">
                                                                 <div className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-3 rounded-2xl flex flex-col items-center justify-center">
@@ -7410,7 +7410,7 @@ function App() {
                                                                         <div className={`p-3 rounded-2xl ${isEditingPromo ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`}>
                                                                             {isEditingPromo ? <Edit className="w-8 h-8" /> : <Plus className="w-8 h-8" />}
                                                                         </div>
-                                                                        {isEditingPromo ? 'Editar Combo Promocional' : 'DiseÃ¯Â¿Â½ar Nueva Promo'}
+                                                                        {isEditingPromo ? 'Editar Combo Promocional' : 'Diseñar Nueva Promo'}
                                                                     </h3>
 
                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -7489,10 +7489,10 @@ function App() {
                                                                                         <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
                                                                                             <DollarSign className="w-4 h-4 text-purple-600" />
                                                                                         </div>
-                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">AnÃ¯Â¿Â½lisis ROI</span>
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Análisis ROI</span>
                                                                                     </div>
                                                                                     <span className={`text-[9px] font-black px-3 py-1.5 rounded-full border shadow-sm ${Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                                                                                        {Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'MARGEN POSITIVO' : 'PÃ¯Â¿Â½RDIDA'}
+                                                                                        {Number(newPromo.price) > (newPromo.items.reduce((acc, item) => acc + ((Number(products.find(p => p.id === item.productId)?.purchasePrice) || 0) * item.quantity), 0)) ? 'MARGEN POSITIVO' : 'PÉRDIDA'}
                                                                                     </span>
                                                                                 </div>
 
@@ -7733,7 +7733,7 @@ function App() {
                                                                                 </div>
                                                                             </div>
 
-                                                                            {/* AnÃ¯Â¿Â½lisis Visual */}
+                                                                            {/* Análisis Visual */}
                                                                             <div className="p-5 bg-slate-50 rounded-3xl border border-slate-200 shadow-inner">
                                                                                 <div className="flex items-center justify-between mb-3">
                                                                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rentabilidad</span>
@@ -7793,12 +7793,12 @@ function App() {
                                                 {/* TAB: PEDIDOS (RESTAURADO) */}
                                                 {adminTab === 'orders' && (
                                                     <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
-                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">Gesti{'\u00F3'}n de Pedidos</h1>
+                                                        <h1 className="text-3xl font-black text-slate-900 mb-8">Gestión de Pedidos</h1>
 
                                                         {orders.length === 0 ? (
                                                             <div className="text-center py-20 border border-dashed border-slate-300 rounded-[3rem] bg-slate-50">
                                                                 <ShoppingBag className="w-20 h-20 mx-auto mb-4 text-slate-300" />
-                                                                <p className="text-xl text-slate-500 font-bold">No hay pedidos registrados aÃ¯Â¿Â½n.</p>
+                                                                <p className="text-xl text-slate-500 font-bold">No hay pedidos registrados aún.</p>
                                                             </div>
                                                         ) : (
                                                             <div className="space-y-4">
@@ -7946,7 +7946,7 @@ function App() {
                                                                             </div>
                                                                         </div>
                                                                         <button
-                                                                            onClick={() => showToast("Usa el botÃ¯Â¿Â½n de ojo (??) en cada producto para activar/desactivar", "info")}
+                                                                            onClick={() => showToast("Usa el botón de ojo (👁️) en cada producto para activar/desactivar", "info")}
                                                                             className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-xl font-bold text-sm hover:bg-yellow-500/30 transition border border-yellow-500/30 whitespace-nowrap"
                                                                         >
                                                                             Ver desactivados
@@ -7979,7 +7979,7 @@ function App() {
                                                                             <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
                                                                                 {(settings?.categories || []).length === 0 ? (
                                                                                     <p className="text-center text-slate-600 py-4 text-sm">
-                                                                                        No hay categorías disponibles. AgrÃ¯Â¿Â½galas abajo.
+                                                                                        No hay categorías disponibles. Agrégalas abajo.
                                                                                     </p>
                                                                                 ) : (
                                                                                     (settings?.categories || []).map(cat => {
@@ -8197,7 +8197,7 @@ function App() {
 
 
 
-                                                {/* TAB: CONFIGURACIÃ¯Â¿Â½N AVANZADA (NEW) */}
+                                                {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
                                                 {adminTab === 'settings' && (
                                                     <div className="max-w-[1600px] mx-auto animate-fade-up pb-20 relative">
 
@@ -8258,7 +8258,7 @@ function App() {
                                                                                 {(settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan) && <div className="bg-orange-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
                                                                             </div>
                                                                             <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
-                                                                            <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sÃ¯Â¿Â½lido pero econÃ¯Â¿Â½mico.</p>
+                                                                            <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sólido pero económico.</p>
                                                                             <div className="text-2xl font-black text-orange-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
 
                                                                             <ul className="space-y-2 text-sm text-slate-300">
@@ -8386,7 +8386,7 @@ function App() {
                                                                                 onChange={e => setSettings({ ...settings, storeAddress: e.target.value })}
                                                                                 placeholder="Av. Principal 123, Ciudad"
                                                                             />
-                                                                            <p className="text-xs text-slate-500 mt-2">Aparece al final del menÃ¯Â¿Â½ hamburguesa</p>
+                                                                            <p className="text-xs text-slate-500 mt-2">Aparece al final del menú hamburguesa</p>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -8612,7 +8612,7 @@ function App() {
                                                                             className="input-cyber w-full p-4"
                                                                             value={settings?.tickerText || ''}
                                                                             onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
-                                                                            placeholder="ENVÃ¯Â¿Â½OS A TODO EL PAÃ¯Â¿Â½S - CALIDAD PREMIUM - 12 CUOTAS"
+                                                                            placeholder="ENVÍOS A TODO EL PAÍS - CALIDAD PREMIUM - 12 CUOTAS"
                                                                         />
                                                                     </div>
                                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
@@ -8625,7 +8625,7 @@ function App() {
                                                                             onChange={e => setSettings({ ...settings, announcementMessage: e.target.value })}
                                                                             placeholder="?? -PROMO LANZAMIENTO! - 20% OFF en toda la tienda"
                                                                         />
-                                                                        <p className="text-[10px] text-slate-500 mt-2">Visible en la parte superior. Dejar vacÃ¯Â¿Â½o para ocultar.</p>
+                                                                        <p className="text-[10px] text-slate-500 mt-2">Visible en la parte superior. Dejar vacío para ocultar.</p>
                                                                     </div>
                                                                 </div>
 
@@ -8633,7 +8633,7 @@ function App() {
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <div className="flex items-center justify-between mb-6">
                                                                         <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                                                            <FileQuestion className="w-5 h-5 text-blue-400" /> GuÃ¯Â¿Â½a "CÃ¯Â¿Â½mo Comprar" (Pasos)
+                                                                            <FileQuestion className="w-5 h-5 text-blue-400" /> Guía "Cómo Comprar" (Pasos)
                                                                         </h3>
                                                                         <button
                                                                             onClick={() => setSettings({ ...settings, showGuideLink: !settings?.showGuideLink })}
@@ -8736,7 +8736,7 @@ function App() {
                                                                                 <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-6' : 'left-0.5'}`}></div>
                                                                             </button>
                                                                         </div>
-                                                                        <p className="text-xs text-slate-500">Si se activa, los clientes verÃ¯Â¿Â½n una página de "Volvemos pronto".</p>
+                                                                        <p className="text-xs text-slate-500">Si se activa, los clientes verán una página de "Volvemos pronto".</p>
                                                                     </div>
                                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                         <div className="flex items-center justify-between mb-6">
@@ -8766,7 +8766,7 @@ function App() {
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoTitle || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
-                                                                                placeholder="SUSTORE | TecnologÃ¯Â¿Â½a Premium"
+                                                                                placeholder="SUSTORE | Tecnología Premium"
                                                                             />
                                                                         </div>
                                                                         <div>
@@ -8775,13 +8775,13 @@ function App() {
                                                                                 className="input-cyber w-full p-4 h-24 resize-none"
                                                                                 value={settings?.seoDescription || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
-                                                                                placeholder="Encuentra los mejores productos tecnolÃ¯Â¿Â½gicos con la mejor calidad..."
+                                                                                placeholder="Encuentra los mejores productos tecnológicos con la mejor calidad..."
                                                                             />
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                {/* CONFIGURACIÃ¯Â¿Â½N IA */}
+                                                                {/* CONFIGURACIÓN IA */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                                         <Cpu className="w-5 h-5 text-purple-400" /> Configuración Asistente IA
@@ -8993,7 +8993,7 @@ function App() {
                                                                                                 setTimeout(() => window.location.reload(), 1500);
                                                                                             });
                                                                                         } else {
-                                                                                            showToast('Tu navegador no soporta gestión de cachÃ¯Â¿Â½', 'warning');
+                                                                                            showToast('Tu navegador no soporta gestión de caché', 'warning');
                                                                                         }
                                                                                     }}
                                                                                     className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
@@ -9206,7 +9206,7 @@ function App() {
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => {
-                                                                                        // Validar que Retiro en Local est activo
+                                                                                        // Validar que Retiro en Local está activo
                                                                                         if (!settings?.shippingPickup?.enabled) {
                                                                                             showToast('Debes activar "Retiro en Local" (Envíos) para habilitar efectivo.', 'warning');
                                                                                             return;
@@ -9911,7 +9911,7 @@ function App() {
                     )
                 }
 
-                {/* MODAL: CREAR CATEGORÃ¯Â¿Â½A */}
+                {/* MODAL: CREAR CATEGORÍA */}
                 {
                     showCategoryModal && (
                         <div className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in-scale ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
@@ -10067,7 +10067,7 @@ function App() {
                                                 </div>
                                                 Planes Disponibles
                                             </h2>
-                                            <p className="text-slate-500">Tu plan actual: <span className="text-orange-400 font-bold uppercase bg-orange-500/10 px-3 py-1 rounded-full text-sm">{settings?.subscriptionPlan === 'business' ? '?? Negocio' : settings?.subscriptionPlan === 'premium' ? '?? Premium' : '?? Emprendedor'}</span></p>
+                                            <p className="text-slate-500">Tu plan actual: <span className="text-orange-400 font-bold uppercase bg-orange-500/10 px-3 py-1 rounded-full text-sm">{settings?.subscriptionPlan === 'business' ? '💼 Negocio' : settings?.subscriptionPlan === 'premium' ? '💎 Premium' : '🚀 Emprendedor'}</span></p>
                                         </div>
                                         <button onClick={() => setShowPlansModal(false)} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all duration-300 hover:rotate-90">
                                             <X className="w-6 h-6" />
@@ -10086,7 +10086,7 @@ function App() {
                                             <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                                             {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
-                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-orange-400 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">? TU PLAN ACTUAL</div>
+                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-orange-400 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">📍 TU PLAN ACTUAL</div>
                                             )}
 
                                             <div className="relative z-10 p-6 flex-1 flex flex-col">
@@ -10095,7 +10095,7 @@ function App() {
                                                         <Store className="w-7 h-7 text-white" />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-2xl font-black text-white">?? Emprendedor</h4>
+                                                        <h4 className="text-2xl font-black text-white">🚀 Emprendedor</h4>
                                                         <p className="text-sm text-orange-400 font-medium leading-tight">Impulso inicial</p>
                                                     </div>
                                                 </div>
@@ -10115,7 +10115,7 @@ function App() {
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-orange-500/50 open:shadow-[0_0_20px_rgba(249,115,22,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-orange-400">?? Elegí tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-orange-400">💳 Elegí tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-orange-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
@@ -10151,11 +10151,11 @@ function App() {
                                             ? 'bg-gradient-to-b from-purple-950/40 to-slate-950 border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.25)]'
                                             : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-purple-500/50'
                                             }`}>
-                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">? MÁS POPULAR</div>
+                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">🔥 MÁS POPULAR</div>
                                             <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                                             {settings?.subscriptionPlan === 'business' && (
-                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-400 text-white text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">? TU PLAN ACTUAL</div>
+                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-400 text-white text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">📍 TU PLAN ACTUAL</div>
                                             )}
 
                                             <div className="relative z-10 p-6 flex-1 flex flex-col">
@@ -10164,7 +10164,7 @@ function App() {
                                                         <Briefcase className="w-7 h-7 text-white" />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-2xl font-black text-white">?? Negocio</h4>
+                                                        <h4 className="text-2xl font-black text-white">💼 Negocio</h4>
                                                         <p className="text-sm text-purple-400 font-medium leading-tight">Escala tu marca</p>
                                                     </div>
                                                 </div>
@@ -10185,7 +10185,7 @@ function App() {
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-purple-500/50 open:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-purple-400">?? Elegí tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-purple-400">💳 Elegí tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-purple-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
@@ -10221,11 +10221,11 @@ function App() {
                                             ? 'bg-gradient-to-b from-yellow-950/40 to-slate-950 border-yellow-500 shadow-[0_0_40px_rgba(234,179,8,0.25)]'
                                             : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-yellow-500/50'
                                             }`}>
-                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20">?? VIP</div>
+                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20">👑 VIP</div>
                                             <div className="absolute inset-0 bg-gradient-to-t from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                                             {settings?.subscriptionPlan === 'premium' && (
-                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">? TU PLAN ACTUAL</div>
+                                                <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-xs font-black px-5 py-1.5 rounded-b-xl shadow-lg z-20">📍 TU PLAN ACTUAL</div>
                                             )}
 
                                             <div className="relative z-10 p-6 flex-1 flex flex-col">
@@ -10234,7 +10234,7 @@ function App() {
                                                         <Sparkles className="w-7 h-7 text-white" />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-2xl font-black text-white">?? Premium</h4>
+                                                        <h4 className="text-2xl font-black text-white">💎 Premium</h4>
                                                         <p className="text-sm text-yellow-400 font-medium leading-tight">Liderazgo total</p>
                                                     </div>
                                                 </div>
@@ -10255,7 +10255,7 @@ function App() {
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-yellow-500/50 open:shadow-[0_0_20px_rgba(234,179,8,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-yellow-400">?? Elegí tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-yellow-400">💳 Elegí tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-yellow-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
@@ -10303,7 +10303,7 @@ function App() {
                                                 <div>
                                                     <h3 className="text-xl font-bold text-white mb-1">
                                                         {selectedPlanOption
-                                                            ? `¡Excelente elección! ??`
+                                                            ? `¡Excelente elección! 🎉`
                                                             : 'Seleccioná una opción para continuar'}
                                                     </h3>
                                                     <p className={`text-sm ${selectedPlanOption ? 'text-green-300' : 'text-slate-400'}`}>
@@ -10503,7 +10503,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },
                 { id: 'monthly', label: 'Mensual', price: '$13.000', sub: 'Equilibrio perfecto' },
-                { id: 'annual', label: 'Anual', price: '$117.000', sub: '🎁 Â¡3 MESES GRATIS' }
+                { id: 'annual', label: 'Anual', price: '$117.000', sub: '🎁  3 MESES GRATIS' }
             ],
             color: 'purple',
             icon: Briefcase
@@ -10524,7 +10524,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$6.500', sub: 'Flexibilidad total' },
                 { id: 'monthly', label: 'Mensual', price: '$22.000', sub: 'Equilibrio perfecto' },
-                { id: 'annual', label: 'Anual', price: '$198.000', sub: '🎁 ¡3 MESES GRATIS!' }
+                { id: 'annual', label: 'Anual', price: '$198.000', sub: '🎁  3 MESES GRATIS!' }
             ],
             color: 'yellow',
             icon: Sparkles
@@ -10577,7 +10577,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                                     {/* Current Plan Badge */}
                                     {isCurrentPlan && (
                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur text-white text-[10px] font-bold px-3 py-1 rounded-b-lg border border-white/20">
-                                            ? TU PLAN
+                                            📍 TU PLAN
                                         </div>
                                     )}
 
