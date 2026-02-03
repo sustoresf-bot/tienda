@@ -5576,9 +5576,9 @@ function App() {
                                 }
 
                                 {/* Overlay de Texto - Solo en primera imagen (slide 0) */}
-                                <div className={`absolute inset-0 z-10 flex flex-col justify-center transition-all duration-500 
+                                <div className={`absolute inset-0 z-10 flex flex-col justify-center transition-all duration-500 pointer-events-none
                                             ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'px-6 sm:px-12 md:px-16 lg:px-20' : 'px-8 sm:px-16 md:px-24'}`}>
-                                    <div className={`transition-all duration-700 transform ${currentHeroSlide === 0 ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
+                                    <div className={`transition-all duration-700 transform ${currentHeroSlide === 0 ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
                                         {/* Si hay un overlay per-image, lo mostramos (vanguardia) */}
                                         {heroCarouselData.heroImages[0]?.textOverlay ? (
                                             <>
@@ -5605,7 +5605,7 @@ function App() {
                                                         {settings?.heroSubtitle || ''}
                                                     </p>
                                                 )}
-                                                <div className={`flex items-center transition-all ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'gap-2 mt-2' : 'gap-4'}`}>
+                                                <div className={`flex items-center pointer-events-auto transition-all ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'gap-2 mt-2' : 'gap-4'}`}>
                                                     <button
                                                         onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })}
                                                         className={`font-black rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn 
