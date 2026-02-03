@@ -4036,8 +4036,8 @@ function App() {
         }
     };
 
-    // Manejar Clic en Hero Carousel
-    const handleHeroClick = (image) => {
+    // Manejar Clic en Hero Carousel (Renombrado para evitar conflictos)
+    const onHeroClick = (image) => {
         if (!image) return;
 
         // Caso 1: Producto Vinculado
@@ -5557,7 +5557,7 @@ function App() {
                                     (Array.isArray(heroCarouselData.heroImages) ? heroCarouselData.heroImages : []).map((image, index) => (
                                         <div
                                             key={index}
-                                            onClick={() => handleHeroClick(image)}
+                                            onClick={() => onHeroClick(image)}
                                             className={`absolute inset-0 transition-opacity duration-700 ${image?.linkedProductId || image?.linkedPromoId ? 'cursor-pointer' : ''} ${currentHeroSlide === index ? 'opacity-100 z-[1]' : 'opacity-0 z-0'}`}
                                         >
                                             <img
