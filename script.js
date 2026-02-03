@@ -726,7 +726,7 @@ const BotProductCard = ({ product, onAdd, darkMode }) => {
 };
 
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
-const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, coupons, darkMode }) => {
+const SustIABot = ({ settings, products, addToCart, controlPanel, coupons, darkMode }) => {
     // 1. Verificación de Plan - Solo disponible en Plan Premium
     if (settings?.subscriptionPlan !== 'premium') return null;
 
@@ -1102,15 +1102,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             </button>
         </div>
     );
-}, (prevProps, nextProps) => {
-    // Custom comparison for performance optimization
-    // Only re-render if isOpen state changes internally (handled by internal state mainly)
-    // or if critical props change deep inside
-    if (prevProps.settings?.subscriptionPlan !== nextProps.settings?.subscriptionPlan) return false;
-    if (prevProps.products !== nextProps.products) return false;
-    // Don't re-render on addToCart change (function ref usually stable but check if it matters)
-    return true;
-});
+};
 
 const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
     const [catName, setCatName] = React.useState('');
@@ -2531,7 +2523,11 @@ function App() {
                         const audio = audioRef.current;
                         audio.loop = true; // REPETIR HASTA QUE SE VEA
                         audio.volume = 0.5;
-                        audio.play().catch(e => console.error("Error playing sound:", e));
+                        audio.play().catch(e => {
+                            if (e.name !== 'NotAllowedError') {
+                                console.error("Error playing sound:", e);
+                            }
+                        });
                     } catch (e) {
                         console.error('Error handling notification sound:', e);
                     }
