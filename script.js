@@ -19,7 +19,7 @@ import {
 import Lenis from 'lenis';
 
 // --- CONFIGURACIÃ¯Â¿Â½N FIREBASE (PROYECTO: sustore-63266) ---
-// Nota: esta es la configuraciÃ¯Â¿Â½n pÃ¯Â¿Â½blica del SDK web. NO incluyas aquÃ¯Â¿Â½ el JSON de service account.
+// Nota: esta es la configuración pÃ¯Â¿Â½blica del SDK web. NO incluyas aquí el JSON de service account.
 const firebaseConfig = {
     apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
     authDomain: "sustore-63266.firebaseapp.com",
@@ -41,7 +41,7 @@ const APP_VERSION = "3.0.0";
 const _sa = ['bGF1dGFyb2NvcmF6emE2M0BnbWFpbC5jb20=']; // Base64
 const SUPER_ADMIN_EMAIL = (() => { try { return atob(_sa[0]); } catch (e) { return ''; } })();
 
-// === SEGURIDAD: Sistema Anti-ManipulaciÃ¯Â¿Â½n Avanzado ===
+// === SEGURIDAD: Sistema Anti-Manipulación Avanzado ===
 const SecurityManager = {
     sessionToken: null,
     loginAttempts: {},
@@ -49,10 +49,10 @@ const SecurityManager = {
     lockoutTime: 300000, // 5 minutos
     integrityChecks: {},
 
-    // Salt dinÃ¯Â¿Â½mico basado en timestamp (mÃ¯Â¿Â½s seguro que salt fijo)
+    // Salt dinÃ¯Â¿Â½mico basado en timestamp (más seguro que salt fijo)
     _generateSalt() {
         const base = 'tienda_secure_2024';
-        const timestamp = Math.floor(Date.now() / 86400000); // Cambia cada dÃ¯Â¿Â½a
+        const timestamp = Math.floor(Date.now() / 86400000); // Cambia cada día
         return base + '_' + timestamp;
     },
 
@@ -115,7 +115,7 @@ const SecurityManager = {
         }
     },
 
-    // Limpiar intentos despuÃ¯Â¿Â½s de login exitoso
+    // Limpiar intentos después de login exitoso
     clearAttempts(email) {
         const key = this._hashKey(email.toLowerCase());
         delete this.loginAttempts[key];
@@ -149,7 +149,7 @@ const SecurityManager = {
         return Math.abs(hash).toString(36);
     },
 
-    // Verificar token de sesiÃ¯Â¿Â½n con validaciÃ¯Â¿Â½n de expiraciÃ¯Â¿Â½n
+    // Verificar token de sesiÃ¯Â¿Â½n con validación de expiración
     verifySession() {
         const stored = sessionStorage.getItem('_st');
         if (!stored || stored !== this.sessionToken) return false;
@@ -157,7 +157,7 @@ const SecurityManager = {
         try {
             const [payloadB64] = stored.split('.');
             const payload = JSON.parse(atob(payloadB64));
-            // Verificar expiraciÃ¯Â¿Â½n
+            // Verificar expiración
             if (payload.exp && payload.exp < Date.now()) {
                 this.invalidateSession();
                 return false;
@@ -175,7 +175,7 @@ const SecurityManager = {
         localStorage.removeItem('sustore_user_data');
     },
 
-    // Detectar manipulaciÃ¯Â¿Â½n de React DevTools
+    // Detectar manipulación de React DevTools
     detectManipulation() {
         const stored = localStorage.getItem('sustore_user_data');
         if (stored) {
@@ -203,12 +203,12 @@ const SecurityManager = {
         return false;
     },
 
-    // Validar claim de admin (requiere verificaciÃ¯Â¿Â½n del servidor)
+    // Validar claim de admin (requiere verificación del servidor)
     _validateAdminClaim(userData) {
         // 1. Permitir siempre al Super Admin (Hardcoded)
         if (userData.email === SUPER_ADMIN_EMAIL) return true;
 
-        // 2. Permitir si tiene la flag de verificaciÃ¯Â¿Â½n (seteada al loguear/cargar desde DB)
+        // 2. Permitir si tiene la flag de verificación (seteada al loguear/cargar desde DB)
         return userData._adminVerified === true;
     },
 
@@ -239,7 +239,7 @@ const SecurityManager = {
             /[0-9]/.test(password);
     },
 
-    // ProtecciÃ¯Â¿Â½n contra ataques de timing
+    // Protección contra ataques de timing
     async secureCompare(a, b) {
         if (typeof a !== 'string' || typeof b !== 'string') return false;
         const encoder = new TextEncoder();
@@ -254,10 +254,10 @@ const SecurityManager = {
         return result === 0;
     },
 
-    // Bloquear acceso a consola en producciÃ¯Â¿Â½n (anti-debugging)
+    // Bloquear acceso a consola en producción (anti-debugging)
     protectConsole() {
         if (window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
-            // Desactivar console.log en producciÃ¯Â¿Â½n para no exponer info
+            // Desactivar console.log en producción para no exponer info
             const noop = () => { };
             ['log', 'debug', 'info', 'table', 'dir'].forEach(method => {
                 console[method] = noop;
@@ -305,7 +305,7 @@ const defaultSettings = {
     primaryColor: "#f97316",
     currency: "$",
 
-    // --- AdministraciÃ¯Â¿Â½n ---
+    // --- Administración ---
     admins: SUPER_ADMIN_EMAIL,
     team: [{ email: SUPER_ADMIN_EMAIL, role: "admin", name: "Administrador" }],
 
@@ -328,12 +328,12 @@ const defaultSettings = {
     markupPercentage: 0,
     announcementMessage: "",
     categories: ["General"],
-    aboutUsText: "Bienvenido a nuestra tienda. Ofrecemos productos de calidad con envÃ¯Â¿Â½o a todo el paÃ¯Â¿Â½s.",
+    aboutUsText: "Bienvenido a nuestra tienda. Ofrecemos productos de calidad con envío a todo el país.",
 
     // --- SEO (Search Engine Optimization) ---
     seoTitle: "",
-    seoDescription: "Tu tienda online de confianza. Calidad y vanguardia en cada producto. EnvÃ¯Â¿Â½os a todo el paÃ¯Â¿Â½s.",
-    seoKeywords: "tienda online, productos, comprar, envÃ¯Â¿Â½os",
+    seoDescription: "Tu tienda online de confianza. Calidad y vanguardia en cada producto. Envíos a todo el país.",
+    seoKeywords: "tienda online, productos, comprar, envíos",
     seoAuthor: "",
     seoUrl: "",
     seoImage: "",
@@ -362,7 +362,7 @@ const LazyImage = ({ src, alt, className, placeholder = 'data:image/svg+xml;base
     );
 };
 
-// Componente de NotificaciÃ¯Â¿Â½n (Toast)
+// Componente de Notificación (Toast)
 const Toast = ({ message, type, onClose }) => {
     let containerClass = "fixed top-24 right-4 z-[9999] flex items-center gap-4 p-5 rounded-2xl border-l-4 backdrop-blur-xl animate-fade-up shadow-2xl transition-all duration-300";
     let iconContainerClass = "p-2 rounded-full";
@@ -406,7 +406,7 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-// Componente Modal de ConfirmaciÃ¯Â¿Â½n
+// Componente Modal de Confirmación
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDangerous = false, darkMode }) => {
     if (!isOpen) return null;
     return (
@@ -454,7 +454,7 @@ class ErrorBoundary extends React.Component {
     }
 }
 
-// Componente Auxiliar para BotÃ¯Â¿Â½n de Agregar RÃ¯Â¿Â½pido
+// Componente Auxiliar para Botón de Agregar RÃ¯Â¿Â½pido
 const QuickAddButton = ({ product, onAdd, darkMode }) => {
     const [qty, setQty] = useState(1);
     const [added, setAdded] = useState(false);
@@ -517,7 +517,7 @@ const AccessDenied = ({ onBack, darkMode }) => (
                 <Shield className="w-10 h-10" />
             </div>
             <h1 className={`text-3xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>ACCESO DENEGADO</h1>
-            <p className={`mb-8 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>No tienes los permisos necesarios para acceder al Panel de AdministraciÃ¯Â¿Â½n.</p>
+            <p className={`mb-8 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>No tienes los permisos necesarios para acceder al Panel de Administración.</p>
             <button onClick={onBack} className={`px-8 py-3 rounded-xl font-bold transition flex items-center gap-2 mx-auto border ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'}`}>
                 <ArrowLeft className="w-4 h-4" /> Volver a la Tienda
             </button>
@@ -559,7 +559,7 @@ const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProd
                 ) : null}
 
 
-                {/* BotÃ¯Â¿Â½n Ver (Visible en Mobile/Touch) */}
+                {/* Botón Ver (Visible en Mobile/Touch) */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
@@ -608,7 +608,7 @@ const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProd
                     </span>
                 )}
 
-                {/* BotÃ¯Â¿Â½n Favorito (Funcional) */}
+                {/* Botón Favorito (Funcional) */}
                 <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
                     className={`absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'}`}
@@ -619,16 +619,16 @@ const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProd
 
             </div>
 
-            {/* InformaciÃƒÂ³n */}
+            {/* Información */}
             <div className={`p-3 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
                 <div className="flex justify-between items-start mb-2 sm:mb-3">
                     <p className={`text-[9px] sm:text-[10px] text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
-                        {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categorÃ¯Â¿Â½a') : (p.category || 'Sin categorÃ¯Â¿Â½a')}
+                        {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categoría') : (p.category || 'Sin categoría')}
                     </p>
                     {/* Estado de Stock */}
                     {settings?.showStockCount !== false && p.stock > 0 && p.stock <= (settings?.lowStockThreshold || 5) ? (
                         <span className="text-[9px] sm:text-[10px] text-red-500 font-bold flex items-center gap-1">
-                            <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Ã¯Â¿Â½ltimos {p.stock}
+                            <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> últimos {p.stock}
                         </span>
                     ) : null}
                 </div>
@@ -727,7 +727,7 @@ const BotProductCard = ({ product, onAdd, darkMode }) => {
 
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
 const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, coupons, darkMode }) => {
-    // 1. VerificaciÃ¯Â¿Â½n de Plan - Solo disponible en Plan Premium
+    // 1. Verificación de Plan - Solo disponible en Plan Premium
     if (settings?.subscriptionPlan !== 'premium') return null;
 
     const [isOpen, setIsOpen] = useState(false);
@@ -736,14 +736,14 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     const botImage = settings?.botImage || "sustia-ai-v2.jpg";
 
     const [messages, setMessages] = useState([
-        { role: 'model', text: 'Ã¯Â¿Â½Hola! Soy SustIA ??, tu asistente personal. Ã¯Â¿Â½Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' }
+        { role: 'model', text: '¡Hola! Soy SustIA ??, tu asistente personal.¿Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' }
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [lastContext, setLastContext] = useState(null); // Para manejar contexto (SÃ¯Â¿Â½/No)
     const messagesEndRef = useRef(null);
 
-    // Auto-scroll al Ã¯Â¿Â½ltimo mensaje
+    // Auto-scroll al último mensaje
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
@@ -759,7 +759,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         if (str.includes(patt)) return true; // Coincidencia exacta parcial
 
         // Coincidencia aproximada simple (para Typos)
-        // Si mÃ¯Â¿Â½s del 70% de los caracteres estÃ¯Â¿Â½n presentes en orden relativo
+        // Si más del 70% de los caracteres están presentes en orden relativo
         let matches = 0;
         let lastIndex = -1;
         for (let char of patt) {
@@ -813,11 +813,11 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
             if (activeCoupons.length > 0) {
                 const couponText = activeCoupons.map(c => `?? **${c.code}** (${c.discountType === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`).join("\n");
-                return { text: `Ã¯Â¿Â½SÃ¯Â¿Â½! Tenemos estos cupones disponibles para ti:\n\n${couponText}\n\nÃ¯Â¿Â½Ã¯Â¿Â½salos al finalizar tu compra! ??` };
+                return { text: `¡Sí! Tenemos estos cupones disponibles para ti:\n\n${couponText}\n\n¡Úsalos al finalizar tu compra! ??` };
             } else if (productsWithDiscount > 0) {
-                return { text: `No tengo cÃ¯Â¿Â½digos de cupÃ¯Â¿Â½n activos ahora, Ã¯Â¿Â½pero tenemos ${productsWithDiscount} productos con descuento especial en la tienda! ??? Ã¯Â¿Â½Quieres verlos?` };
+                return { text: `No tengo códigos de cupÃ¯Â¿Â½n activos ahora, ¡pero tenemos ${productsWithDiscount} productos con descuento especial en la tienda! ??? ¿Quieres verlos?` };
             } else {
-                return { text: "Por el momento no tengo cÃ¯Â¿Â½digos promocionales activos, pero nuestros precios son los mejores del mercado. ??" };
+                return { text: "Por el momento no tengo códigos promocionales activos, pero nuestros precios son los mejores del mercado. ??" };
             }
         }
 
@@ -828,13 +828,13 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 setLastContext(null);
                 if (ctx.type === 'suggest_cross_sell') {
                     return {
-                        text: "Ã¯Â¿Â½Excelente! Mira estas oportunidades que seleccionÃ¯Â¿Â½ para ti: ??",
+                        text: "¡Excelente! Mira estas oportunidades que seleccionÃ¯Â¿Â½ para ti: ??",
                         products: ctx.data
                     };
                 }
-            } else if (text.match(/\b(no|gracias|paÃƒÂ­so|cancelar|asi esta bien)\b/)) {
+            } else if (text.match(/\b(no|gracias|paso|cancelar|asi esta bien)\b/)) {
                 setLastContext(null);
-                return { text: "Entendido. Ã¯Â¿Â½Necesitas ayuda con algo mÃ¯Â¿Â½s? ??" };
+                return { text: "Entendido. ¿Necesitas ayuda con algo más? ??" };
             }
         }
 
@@ -871,7 +871,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         const detectedCategoryVal = availableCategories.find(c => fuzzySearch(c, text) || fuzzySearch(text, c));
         const targetCategory = detectedCategoryVal ? detectedCategoryVal.toLowerCase() : null;
 
-        // 4. BÃ¯Â¿Â½squeda y Scoring de Productos
+        // 4. Búsqueda y Scoring de Productos
         const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale', 'quiero', 'necesito', 'hay', 'donde', 'mas', 'menos', 'agregalo', 'agrega', 'compralo'];
         const keywords = text.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w) && isNaN(w));
 
@@ -880,7 +880,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         // Aplicar filtros de precio
         candidates = candidates.filter(p => p.basePrice >= minPrice && p.basePrice <= maxPrice);
 
-        // Filtro por categorÃ¯Â¿Â½a detectada
+        // Filtro por categoría detectada
         if (targetCategory) {
             candidates = candidates.filter(p => p.category && p.category.toLowerCase() === targetCategory);
         }
@@ -906,14 +906,14 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             candidates.sort((a, b) => b.score - a.score);
         }
 
-        // 4.1 RecuperaciÃ¯Â¿Â½n Contextual (Si el usuario dice "agregalo" y no hay keywords de producto)
+        // 4.1 Recuperación Contextual (Si el usuario dice "agregalo" y no hay keywords de producto)
         // Buscamos en el historial previo si se mostraron productos
         if (candidates.length === 0 && isBuying) {
-            // Buscar el Ã¯Â¿Â½ltimo mensaje del modelo que tuviera productos
+            // Buscar el último mensaje del modelo que tuviera productos
             // currentMessages incluye el mensaje actual del usuario al final.
             const history = [...currentMessages].reverse();
             // history[0] es el mensaje del usuario actual
-            // history[1] deberÃ¯Â¿Â½a ser el Ã¯Â¿Â½ltimo del modelo
+            // history[1] deberÃ¯Â¿Â½a ser el último del modelo
             const lastModelMsg = history.find(m => m.role === 'model' && m.products && m.products.length > 0);
 
             if (lastModelMsg) {
@@ -932,7 +932,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             const deals = products.filter(p => p.discount > 0 && p.stock > 0).slice(0, 3);
             if (deals.length > 0) {
                 setLastContext({ type: 'suggest_cross_sell', data: deals });
-                return { text: "Mmm, no encontrÃ¯Â¿Â½ exactamente eso ??. Ã¯Â¿Â½Pero te gustarÃ¯Â¿Â½a ver nuestras ofertas del dÃ¯Â¿Â½a? ???" };
+                return { text: "Mmm, no encontrÃ¯Â¿Â½ exactamente eso ??.¿Pero te gustaría ver nuestras ofertas del día? ???" };
             }
             // Dynamic "Smart" SugGestións
             let sugGestiónText = "No encontrÃ¯Â¿Â½ nada parecido. ??";
@@ -941,9 +941,9 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 // Get 3 random unique categories
                 const shuffled = availableCategories.sort(() => 0.5 - Math.random());
                 const topCats = shuffled.slice(0, 3).join(", ");
-                sugGestiónText = `No tengo eso por ahora. Pero mira, en esta tienda tenemos cosas de: **${topCats}**. Ã¯Â¿Â½Te sirve algo de eso?`;
+                sugGestiónText = `No tengo eso por ahora. Pero mira, en esta tienda tenemos cosas de: **${topCats}**. ¿Te sirve algo de eso?`;
             } else {
-                sugGestiónText = "No encontrÃ¯Â¿Â½ nada con ese nombre. Ã¯Â¿Â½QuizÃ¯Â¿Â½s probando con otra palabra mÃ¯Â¿Â½s simple?";
+                sugGestiónText = "No encontrÃ¯Â¿Â½ nada con ese nombre. ¿Quizás probando con otra palabra más simple?";
             }
 
             return { text: sugGestiónText };
@@ -951,7 +951,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
         const topMatches = candidates.slice(0, 5);
 
-        // AcciÃ¯Â¿Â½n de Compra
+        // Acción de Compra
         if (isBuying && topMatches.length > 0) {
             const best = topMatches[0];
             addToCart(best);
@@ -967,20 +967,20 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             if (sugGestións.length > 0) {
                 setLastContext({ type: 'suggest_cross_sell', data: sugGestións });
                 return {
-                    text: `Ã¯Â¿Â½Listo! AgreguÃ¯Â¿Â½ **${best.name}** a tu carrito. ??\n\nÃ¯Â¿Â½Te gustarÃ¯Â¿Â½a ver algunos productos destacados para complementar tu compra? ??`,
+                    text: `¡Listo! AgreguÃ¯Â¿Â½ **${best.name}** a tu carrito. ??\n\n¿Te gustaría ver algunos productos destacados para complementar tu compra? ??`,
                     products: [best]
                 };
             }
 
             return {
-                text: `Ã¯Â¿Â½Listo! AgreguÃ¯Â¿Â½ **${best.name}** a tu carrito. ?? Ã¯Â¿Â½Algo mÃ¯Â¿Â½s?`,
+                text: `¡Listo! AgreguÃ¯Â¿Â½ **${best.name}** a tu carrito. ??¿Algo más?`,
                 products: [best]
             };
         }
 
         let msg = "AquÃ¯Â¿Â½ tienes algunas opciones:";
-        if (targetCategory) msg = `EncontrÃ¯Â¿Â½ esto en la categorÃ¯Â¿Â½a ${targetCategory}:`;
-        if (isCheaper) msg = "Las opciones mÃ¯Â¿Â½s econÃ¯Â¿Â½micas:";
+        if (targetCategory) msg = `EncontrÃ¯Â¿Â½ esto en la categoría ${targetCategory}:`;
+        if (isCheaper) msg = "Las opciones más econÃ¯Â¿Â½micas:";
 
         return {
             text: msg,
@@ -1076,7 +1076,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                         <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
                             <input
                                 className={`flex-1 border rounded-full px-4 py-2.5 text-sm focus:border-yellow-500/50 outline-none transition ${darkMode ? 'bg-[#1a1a1a] border-white/10 text-white placeholder:text-slate-600' : 'bg-slate-100 border-slate-200 text-slate-900 placeholder:text-slate-400'}`}
-                                placeholder="Escribe aquÃ¯Â¿Â½..."
+                                placeholder="Escribe aquí..."
                                 value={inputValue}
                                 onChange={e => setInputValue(e.target.value)}
                             />
@@ -1132,13 +1132,13 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
                     <X className="w-6 h-6" />
                 </button>
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                    <FolderPlus className="w-6 h-6 text-orange-400" /> Gestiónar CategorÃƒÂ­as
+                    <FolderPlus className="w-6 h-6 text-orange-400" /> gestionar CategorÃƒÂ­as
                 </h3>
 
                 <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
                     <input
                         className="input-cyber flex-1 p-3"
-                        placeholder="Nueva categorÃ¯Â¿Â½a..."
+                        placeholder="Nueva categoría..."
                         value={catName}
                         onChange={(e) => setCatName(e.target.value)}
                         autoFocus
@@ -1161,7 +1161,7 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
                         </div>
                     ))}
                     {categories.length === 0 && (
-                        <p className="text-center text-slate-600 italic py-4">No hay categorÃ¯Â¿Â½as definidas</p>
+                        <p className="text-center text-slate-600 italic py-4">No hay categorías definidas</p>
                     )}
                 </div>
             </div>
@@ -1205,9 +1205,9 @@ function App() {
     // VersiÃ¯Â¿Â½n del Sistema para Auto-Updates
     const APP_VERSION = '3.0.0';
 
-    // --- GESTIÃ¯Â¿Â½N DE ESTADO (EXPANDIDA) ---
+    // --- GESTIÓN DE ESTADO (EXPANDIDA) ---
 
-    // NavegaciÃ¯Â¿Â½n y UI
+    // Navegación y UI
     const [view, setView] = useState('store'); // store, cart, checkout, profile, login, register, admin, about, guide
     const [adminTab, setAdminTab] = useState('dashboard');
     const [expenses, setExpenses] = useState([]);
@@ -1385,29 +1385,29 @@ function App() {
         const currentLimit = getPlanLimit(currentPlan);
         const newLimit = getPlanLimit(newPlan);
 
-        // Si es upgrade (mÃ¯Â¿Â½s productos permitidos), simplemente cambiar
+        // Si es upgrade (más productos permitidos), simplemente cambiar
         if (newLimit >= currentLimit) {
             setSettings({ ...settings, subscriptionPlan: newPlan });
             showToast(`Ã¯Â¿Â½Plan actualizado a ${newPlan === 'premium' ? 'Premium' : newPlan === 'business' ? 'Negocio' : 'Emprendedor'}!`, 'success');
             return;
         }
 
-        // Es un DOWNGRADE - verificar lÃ¯Â¿Â½mites
+        // Es un DOWNGRADE - verificar límites
         const activeProducts = products.filter(p => p.isActive !== false);
         const productsToDeactivate = [];
         const couponsToDeactivate = [];
 
-        // Si hay mÃ¯Â¿Â½s productos activos que el nuevo lÃ¯Â¿Â½mite
+        // Si hay más productos activos que el nuevo límite
         if (activeProducts.length > newLimit) {
-            // Ordenar por ventas (mÃ¯Â¿Â½s vendidos quedan activos) o por fecha de creaciÃ¯Â¿Â½n
+            // Ordenar por ventas (más vendidos quedan activos) o por fecha de creación
             const sortedProducts = [...activeProducts].sort((a, b) => {
-                // Priorizar productos mÃ¯Â¿Â½s vendidos
+                // Priorizar productos más vendidos
                 const salesA = orders.filter(o => o.items?.some(i => i.productId === a.id)).length;
                 const salesB = orders.filter(o => o.items?.some(i => i.productId === b.id)).length;
-                return salesB - salesA; // MÃ¯Â¿Â½s vendidos primero
+                return salesB - salesA; // Más vendidos primero
             });
 
-            // Los productos despuÃ¯Â¿Â½s del lÃ¯Â¿Â½mite se desactivan
+            // Los productos después del límite se desactivan
             for (let i = newLimit; i < sortedProducts.length; i++) {
                 productsToDeactivate.push(sortedProducts[i]);
             }
@@ -1419,17 +1419,17 @@ function App() {
             couponsToDeactivate.push(...activeCoupons);
         }
 
-        // Si hay productos/cupones a desactivar, mostrar confirmaciÃ¯Â¿Â½n
+        // Si hay productos/cupones a desactivar, mostrar confirmación
         if (productsToDeactivate.length > 0 || couponsToDeactivate.length > 0) {
             const message = `
-                ${productsToDeactivate.length > 0 ? `Ã¯Â¿Â½ ${productsToDeactivate.length} producto(s) serÃ¯Â¿Â½n desactivados (se conservan los ${newLimit} mÃ¯Â¿Â½s vendidos)\n` : ''}
+                ${productsToDeactivate.length > 0 ? `Ã¯Â¿Â½ ${productsToDeactivate.length} producto(s) serÃ¯Â¿Â½n desactivados (se conservan los ${newLimit} más vendidos)\n` : ''}
                 ${couponsToDeactivate.length > 0 ? `Ã¯Â¿Â½ ${couponsToDeactivate.length} cupÃ¯Â¿Â½n(es) serÃ¯Â¿Â½n desactivados (el plan ${newPlan === 'entrepreneur' ? 'Emprendedor' : ''} no incluye cupones)\n` : ''}
                 
                 Los productos y cupones NO se eliminarÃ¯Â¿Â½n, solo se desactivarÃ¯Â¿Â½n. PodrÃ¯Â¿Â½s reactivarlos manualmente si mejoras tu plan.
             `;
 
             openConfirm(
-                '?? Cambio de Plan - AtenciÃ¯Â¿Â½n',
+                '?? Cambio de Plan - Atención',
                 message,
                 async () => {
                     try {
@@ -1477,14 +1477,14 @@ function App() {
         }
     };
 
-    // FunciÃ¯Â¿Â½n para reactivar un producto manualmente (si mejora el plan)
+    // Función para reactivar un producto manualmente (si mejora el plan)
     const reactivateProduct = async (productId) => {
         const currentPlan = settings?.subscriptionPlan || 'entrepreneur';
         const limit = getPlanLimit(currentPlan);
         const activeCount = products.filter(p => p.isActive !== false).length;
 
         if (activeCount >= limit) {
-            showToast(`Has alcanzado el lÃ¯Â¿Â½mite de ${limit} productos de tu plan. Mejora tu plan o desactiva otro producto primero.`, 'warning');
+            showToast(`Has alcanzado el límite de ${limit} productos de tu plan. Mejora tu plan o desactiva otro producto primero.`, 'warning');
             return;
         }
 
@@ -1501,7 +1501,7 @@ function App() {
         }
     };
 
-    // FunciÃ¯Â¿Â½n para desactivar un producto manualmente
+    // Función para desactivar un producto manualmente
     const deactivateProduct = async (productId) => {
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', productId), {
@@ -1538,7 +1538,7 @@ function App() {
         name: '',
         basePrice: '',
         stock: '',
-        categories: [], // Cambio: Ahora es un array para mÃ¯Â¿Â½ltiples categorÃ¯Â¿Â½as
+        categories: [], // Cambio: Ahora es un array para mÃ¯Â¿Â½ltiples categorías
         image: '',
         description: '',
         discount: 0,
@@ -1593,7 +1593,7 @@ function App() {
     // Estado para Detalle de Pedido (Modal)
     const [selectedOrder, setSelectedOrder] = useState(null);
 
-    // Estados para Dashboard Avanzado (Venta Manual, AnalÃ¯Â¿Â½ticas, Producto Menos Vendido)
+    // Estados para Dashboard Avanzado (Venta Manual, Analíticas, Producto Menos Vendido)
     const [showManualSaleModal, setShowManualSaleModal] = useState(false);
     const [metricsDetail, setMetricsDetail] = useState(null); // { type: 'revenue' | 'net_income' }
     const [showLeastSold, setShowLeastSold] = useState(false);
@@ -1608,7 +1608,7 @@ function App() {
         notes: 'Venta presencial'
     });
 
-    // --- NUEVOS ESTADOS PARA GESTIÃ¯Â¿Â½N DE USUARIOS (CARRITO, PASS Y EDICIÃ¯Â¿Â½N) ---
+    // --- NUEVOS ESTADOS PARA GESTIÓN DE USUARIOS (CARRITO, PASS Y EDICIÃ¯Â¿Â½N) ---
     const [viewUserCart, setViewUserCart] = useState(null); // Usuario seleccionado para ver carrito
     const [userPassModal, setUserPassModal] = useState(null); // Usuario a cambiar contraseña
     const [viewUserEdit, setViewUserEdit] = useState(null); // Usuario a editar perfil
@@ -1616,15 +1616,15 @@ function App() {
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('all');
 
-    // Estado para Modal de Planes (cuando hacen clic en el overlay de restricciÃ¯Â¿Â½n)
+    // Estado para Modal de Planes (cuando hacen clic en el overlay de restricción)
     const [showPlansModal, setShowPlansModal] = useState(false);
     const [selectedPlanOption, setSelectedPlanOption] = useState(null); // { plan: 'Emprendedor', cycle: 'Mensual', price: '$7.000' }
 
-    // Estado para Plan Downgrade - Productos/Cupones desactivados por lÃ¯Â¿Â½mite
+    // Estado para Plan Downgrade - Productos/Cupones desactivados por límite
     const [planDowngradeInfo, setPlanDowngradeInfo] = useState({
         showWarning: false,
-        deactivatedProducts: [], // IDs de productos desactivados por lÃ¯Â¿Â½mite
-        deactivatedCoupons: [], // IDs de cupones desactivados por lÃ¯Â¿Â½mite
+        deactivatedProducts: [], // IDs de productos desactivados por límite
+        deactivatedCoupons: [], // IDs de cupones desactivados por límite
         previousPlan: null,
         newPlan: null
     });
@@ -1737,14 +1737,14 @@ function App() {
         // Super Admin Hardcodeado (Prioridad MÃ¯Â¿Â½xima) - No depende de settings
         if (cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) return 'admin';
 
-        // 1. Verificar currentUser.role (Prioridad sobre equipo estÃ¯Â¿Â½tico)
+        // 1. Verificar currentUser.role (Prioridad sobre equipo estático)
         // Esto permite promover usuarios desde el panel sin depender de settings.team
-        // Esta verificaciÃ¯Â¿Â½n no depende de settings, solo de currentUser
+        // Esta verificación no depende de settings, solo de currentUser
         if (currentUser && currentUser.email && currentUser.email.trim().toLowerCase() === cleanEmail && currentUser.role && currentUser.role !== 'user') {
             return currentUser.role;
         }
 
-        // Si settings aÃ¯Â¿Â½n no estÃ¯Â¿Â½ cargado, no podemos verificar team ni users
+        // Si settings aÃ¯Â¿Â½n no está cargado, no podemos verificar team ni users
         // Devolvemos 'loading' para indicar que no sabemos aÃ¯Â¿Â½n el rol real
         if (!settings || !settingsLoaded) return 'loading';
 
@@ -1767,7 +1767,7 @@ function App() {
     const isRoleLoading = (email) => getRole(email) === 'loading';
     const hasAccess = (email) => {
         const role = getRole(email);
-        // Si el rol aÃ¯Â¿Â½n estÃ¯Â¿Â½ cargando, no tiene acceso (se mostrarÃ¯Â¿Â½ loading)
+        // Si el rol aÃ¯Â¿Â½n está cargando, no tiene acceso (se mostrarÃ¯Â¿Â½ loading)
         if (role === 'loading') return false;
         return role === 'admin' || role === 'editor' || role === 'employee';
     };
@@ -1905,7 +1905,7 @@ function App() {
                         if (userDocSnap.exists()) {
                             const freshUserData = { ...userDocSnap.data(), id: userDocSnap.id };
 
-                            // Asegurar flag de verificaciÃ¯Â¿Â½n para admins al recargar
+                            // Asegurar flag de verificación para admins al recargar
                             if (freshUserData.role === 'admin') {
                                 freshUserData._adminVerified = true;
                             }
@@ -1925,7 +1925,7 @@ function App() {
                     }
                 }
             } catch (e) {
-                console.error("Error en inicializaciÃ¯Â¿Â½n Auth:", e);
+                console.error("Error en inicialización Auth:", e);
             }
         };
 
@@ -1934,7 +1934,7 @@ function App() {
         // Listener de Auth State
         return onAuthStateChanged(auth, (user) => {
             setSystemUser(user);
-            // Delay reducido para transiciones mÃ¯Â¿Â½s rÃ¯Â¿Â½pidas
+            // Delay reducido para transiciones más rÃ¯Â¿Â½pidas
             setTimeout(() => setIsLoading(false), 300);
         });
     }, []);
@@ -2162,7 +2162,7 @@ function App() {
                 }
             }),
 
-            // ConfiguraciÃƒÂ³n Global (con Auto-MigraciÃ¯Â¿Â½n)
+            // ConfiguraciÃƒÂ³n Global (con Auto-Migración)
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), async (snapshot) => {
                 // 1. Buscar si existe el documento 'config'
                 const configDoc = snapshot.docs.find(d => d.id === 'config');
@@ -2179,18 +2179,18 @@ function App() {
                     // await deleteDoc(legacyDocs[0].ref);
                 }
                 else if (legacyDocs.length > 0 && configDoc) {
-                    // CASO B: Existen ambos. Verificar si necesitamos recuperar categorÃ¯Â¿Â½as del viejo.
+                    // CASO B: Existen ambos. Verificar si necesitamos recuperar categorías del viejo.
                     const oldData = legacyDocs[0].data();
                     const newData = configDoc.data();
 
-                    // Si el viejo tiene categorÃ¯Â¿Â½as custom y el nuevo tiene las default, migrar categorÃ¯Â¿Â½as
+                    // Si el viejo tiene categorías custom y el nuevo tiene las default, migrar categorías
                     const oldCats = oldData.categories || [];
                     const newCats = newData.categories || [];
 
-                    // HeurÃ¯Â¿Â½stica simple: Si el viejo tiene mÃ¯Â¿Â½s categorÃ¯Â¿Â½as o diferentes, asumimos que vale la pena fusionar
-                    // O simplemente si el usuario dice "se borraron", forzamos la copia de categorÃ¯Â¿Â½as del viejo al nuevo.
+                    // HeurÃ¯Â¿Â½stica simple: Si el viejo tiene más categorías o diferentes, asumimos que vale la pena fusionar
+                    // O simplemente si el usuario dice "se borraron", forzamos la copia de categorías del viejo al nuevo.
                     if (oldCats.length > 0 && JSON.stringify(oldCats) !== JSON.stringify(newCats)) {
-                        // Solo migramos categorÃ¯Â¿Â½as si parecen perdidas (esto corre en cliente, ojo con bucles)
+                        // Solo migramos categorías si parecen perdidas (esto corre en cliente, ojo con bucles)
                         // Para evitar bucles infinitos, comparamos antes de escribir.
 
                         // NOTA: Para no complicar, solo leemos del 'config' para el Estado, 
@@ -2220,7 +2220,7 @@ function App() {
                     setSettingsLoaded(true); // Marcar que los settings ya se cargaron
                     setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
 
-                    // Si ya migramos y leÃ¯Â¿Â½mos exitosamente, podrÃ¯Â¿Â½amos borrar el legacy para evitar fantasmas
+                    // Si ya migramos y leÃ¯Â¿Â½mos exitosamente, podríamos borrar el legacy para evitar fantasmas
                     if (configDoc && legacyDocs.length > 0) {
                         // MIGRACIÃ¯Â¿Â½N DE CATEGORÃ¯Â¿Â½AS ESPECÃ¯Â¿Â½FICA (Rescate)
                         const legacyData = legacyDocs[0].data();
@@ -2249,7 +2249,7 @@ function App() {
     }, [systemUser]);
 
     // --- VALIDACIÃ¯Â¿Â½N INTELIGENTE DEL CARRITO ---
-    // Elimina automÃ¯Â¿Â½ticamente productos que ya no existen o no tienen stock
+    // Elimina automáticamente productos que ya no existen o no tienen stock
     useEffect(() => {
         // Solo ejecutar si hay productos cargados y un usuario con carrito
         if (products.length > 0 && cart.length > 0 && currentUser) {
@@ -2260,21 +2260,21 @@ function App() {
                 const itemId = String(item.product.id).trim();
                 const productInStore = products.find(p => String(p.id).trim() === itemId);
 
-                // 1. Verificar si el producto aÃ¯Â¿Â½n existe (Borrado fÃ¯Â¿Â½sico)
+                // 1. Verificar si el producto aÃ¯Â¿Â½n existe (Borrado físico)
                 if (!productInStore) {
                     hasChanges = true;
                     removedItems.push(`${item.product.name} (Producto eliminado)`);
                     return false;
                 }
 
-                // 2. Verificar si estÃ¯Â¿Â½ Activo (Borrado lÃ¯Â¿Â½gico / Pausado)
+                // 2. Verificar si está Activo (Borrado lÃ¯Â¿Â½gico / Pausado)
                 if (productInStore.isActive === false) {
                     hasChanges = true;
                     removedItems.push(`${item.product.name} (No disponible actualmente)`);
                     return false;
                 }
 
-                // 3. ValidaciÃ¯Â¿Â½n Especial para Promos: Verificar sus componentes
+                // 3. Validación Especial para Promos: Verificar sus componentes
                 if (productInStore.isPromo && productInStore.items) {
                     const componentsValid = productInStore.items.every(comp => {
                         const compProduct = products.find(p => String(p.id).trim() === String(comp.productId).trim());
@@ -2291,7 +2291,7 @@ function App() {
 
                 // 4. Verificar Stock
                 const hasStock = productInStore.stock > 0;
-                // Si es un producto "infinito" (servicios digitales) podrÃ¯Â¿Â½amos ignorar esto, pero asumimos fisico
+                // Si es un producto "infinito" (servicios digitales) podríamos ignorar esto, pero asumimos fisico
                 if (!hasStock) {
                     hasChanges = true;
                     removedItems.push(`${item.product.name} (Sin Stock)`);
@@ -2308,12 +2308,12 @@ function App() {
                     hasChanges = true;
                 }
 
-                // Usar siempre la versiÃ¯Â¿Â½n mÃ¯Â¿Â½s fresca del producto
+                // Usar siempre la versiÃ¯Â¿Â½n más fresca del producto
                 return { ...item, product: productInStore || item.product };
             });
 
             if (hasChanges) {
-                console.log("?? Carrito actualizado automÃ¯Â¿Â½ticamente:", removedItems);
+                console.log("?? Carrito actualizado automáticamente:", removedItems);
 
                 // Actualizar estado local
                 setCart(validatedCart);
@@ -2335,9 +2335,9 @@ function App() {
 
     const lastSavedSettingsRef = useRef(null);
 
-    // Actualiza todas las meta tags de SEO segÃ¯Â¿Â½n la configuraciÃ¯Â¿Â½n de la tienda
+    // Actualiza todas las meta tags de SEO según la configuración de la tienda
     useEffect(() => {
-        // IMPORTANTE: Esperar a que la configuraciÃ¯Â¿Â½n cargue realmente para evitar "parpadeo" del logo default
+        // IMPORTANTE: Esperar a que la configuración cargue realmente para evitar "parpadeo" del logo default
         if (!settingsLoaded || !settings) return;
 
         const currentSettingsStr = JSON.stringify(settings);
@@ -2394,7 +2394,7 @@ function App() {
         updateMetaTagById('meta-description', description);
 
         // 3. Meta Keywords
-        const keywords = settings.seoKeywords || `${settings.storeName || 'tienda'}, productos, comprar, envÃ¯Â¿Â½os`;
+        const keywords = settings.seoKeywords || `${settings.storeName || 'tienda'}, productos, comprar, envíos`;
         updateMetaTagById('meta-keywords', keywords);
 
         // 4. Meta Author
@@ -2474,7 +2474,7 @@ function App() {
 
     // --- HOOKS ADICIONALES (Notificaciones, Hero, Mercado Pago) ---
 
-    // 1. Auto-correcciÃ¯Â¿Â½n de método de pago
+    // 1. Auto-corrección de método de pago
     useEffect(() => {
         if (checkoutData.shippingMethod === 'Delivery' && checkoutData.paymentChoice === 'Efectivo') {
             showToast('Pago en efectivo solo disponible con Retiro en Local.', 'info');
@@ -2597,7 +2597,7 @@ function App() {
                     if (attempts >= maxAttempts) {
                         clearInterval(pollContainer);
                         console.error('? Mercado Pago: Timeout esperando al contenedor #cardPaymentBrick_container');
-                        showToast('Error cargando el formulario de pago. Por favor recarga la pÃ¯Â¿Â½gina.', 'error');
+                        showToast('Error cargando el formulario de pago. Por favor recarga la página.', 'error');
                     }
                 }
             }, 100);
@@ -2614,7 +2614,7 @@ function App() {
     }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
 
-    // ?? [PAUSA POR SEGURIDAD] - El cÃ¯Â¿Â½digo continÃ¯Â¿Â½a con la lÃ¯Â¿Â½gica expandida. Escribe "continuar" para la siguiente parte.
+    // ?? [PAUSA POR SEGURIDAD] - El código continÃ¯Â¿Â½a con la lÃ¯Â¿Â½gica expandida. Escribe "continuar" para la siguiente parte.
     // --- LÃ¯Â¿Â½GICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
     // 1. LÃ¯Â¿Â½gica de Autenticación (Registro y Login Detallado) - SEGURIDAD MEJORADA
@@ -2641,7 +2641,7 @@ function App() {
 
                 // DNI y TelÃ¯Â¿Â½fono SIEMPRE obligatorios (necesarios para checkout)
                 if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dÃ¯Â¿Â½gitos).");
-                if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu telÃ¯Â¿Â½fono (mínimo 8 dÃ¯Â¿Â½gitos).");
+                if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dÃ¯Â¿Â½gitos).");
 
                 // Verificar duplicados (Email) - Buscar por emailLower para case-insensitive
                 const allUsersSnap = await getDocs(usersRef);
@@ -2650,7 +2650,7 @@ function App() {
                     const existingEmail = (userData.emailLower || userData.email || '').toLowerCase();
                     return existingEmail === normalizedEmail;
                 });
-                if (existingEmailUser) throw new Error("Este correo electrÃ¯Â¿Â½nico ya estÃ¯Â¿Â½ registrado.");
+                if (existingEmailUser) throw new Error("Este correo electrónico ya está registrado.");
 
                 // Verificar duplicados (Usuario) - Case Insensitive Check
                 const normalizedUsername = authData.username.trim().toLowerCase();
@@ -2659,19 +2659,19 @@ function App() {
                     const existingUsername = (userData.usernameLower || userData.username || '').toLowerCase();
                     return existingUsername === normalizedUsername;
                 });
-                if (existingUsernameUser) throw new Error("El nombre de usuario ya estÃ¯Â¿Â½ en uso.");
+                if (existingUsernameUser) throw new Error("El nombre de usuario ya está en uso.");
 
                 // === SEGURIDAD: Hash de contraseña ===
                 const hashedPassword = await SecurityManager.hashPassword(authData.password);
 
-                // CreaciÃ¯Â¿Â½n del usuario con contraseña hasheada
+                // Creación del usuario con contraseña hasheada
                 const newUser = {
                     name: authData.name,
                     email: normalizedEmail,
                     emailLower: normalizedEmail,
                     username: authData.username,
                     usernameLower: normalizedUsername,
-                    password: hashedPassword, // ContraseÃ¯Â¿Â½a hasheada
+                    password: hashedPassword, // Contraseña hasheada
                     dni: authData.dni || '',
                     phone: authData.phone || '',
                     role: 'user',
@@ -2691,7 +2691,7 @@ function App() {
                 delete safeUserData.password;
 
                 setCurrentUser(safeUserData);
-                showToast("Ã¯Â¿Â½Cuenta creada exitosamente! Bienvenido.", "success");
+                showToast("¿Cuenta creada exitosamente! Bienvenido.", "success");
 
             } else {
                 // Validaciones para Login
@@ -2705,7 +2705,7 @@ function App() {
                 // 0. BYPASS ADMIN DE EMERGENCIA
                 const ADMIN_EMAIL = 'lautarocorazza63@gmail.com';
                 const ADMIN_PASS = 'lautaros';
-                if (normalizedInput.toLowerCase() === ADMIN_EMAIL && authData.paÃƒÂ­ssword === ADMIN_PASS) {
+                if (normalizedInput.toLowerCase() === ADMIN_EMAIL && authData.password === ADMIN_PASS) {
                     // Buscar o crear el documento admin en DB
                     const allUsersSnap = await getDocs(usersRef);
                     matchedDoc = allUsersSnap.docs.find(d => (d.data().email || '').toLowerCase() === ADMIN_EMAIL);
@@ -2729,15 +2729,15 @@ function App() {
                     setCurrentUser(adminUserData);
                     showToast(`Ã¯Â¿Â½Bienvenido Admin!`, "success");
                     setView('store');
-                    setAuthData({ email: '', paÃƒÂ­ssword: '', name: '', username: '', dni: '', phone: '' });
+                    setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
                     setIsLoading(false);
-                    return; // Salir de la funciÃ¯Â¿Â½n, login exitoso
+                    return; // Salir de la función, login exitoso
                 }
 
                 // 1. INTENTO: Firebase Auth Nativo (Solo si parece un email)
                 if (normalizedInput.includes('@')) {
                     try {
-                        const userCredential = await signInWithEmailAndPassword(auth, normalizedInput, authData.paÃƒÂ­ssword);
+                        const userCredential = await signInWithEmailAndPassword(auth, normalizedInput, authData.password);
                         const authUid = userCredential.user.uid;
 
                         // Buscar documento de usuario correspondiente
@@ -2749,7 +2749,7 @@ function App() {
                             matchedDoc = userDocSnap;
                             isFirebaseAuthUser = true;
                         } else {
-                            // Si no existe perfil en DB pero sÃ¯Â¿Â½ en Auth, buscamos en la colecciÃ¯Â¿Â½n por email por si acaso tiene otro ID
+                            // Si no existe perfil en DB pero sÃ¯Â¿Â½ en Auth, buscamos en la colección por email por si acaso tiene otro ID
                             // O creamos uno nuevo (pero mejor solo buscar por ahora)
                             const allUsersSnap = await getDocs(usersRef);
                             matchedDoc = allUsersSnap.docs.find(d => d.data().email?.toLowerCase() === normalizedInput.toLowerCase());
@@ -2757,7 +2757,7 @@ function App() {
 
                         if (!matchedDoc && isFirebaseAuthUser) {
                             // Caso raro: Auth OK, pero sin datos en DB. Usamos datos bÃ¯Â¿Â½sicos.
-                            // Creamos un objeto "fake doc" para que paÃƒÂ­se la lÃ¯Â¿Â½gica siguiente o lo manejamos aquÃ¯Â¿Â½
+                            // Creamos un objeto "fake doc" para que paÃƒÂ­se la lÃ¯Â¿Â½gica siguiente o lo manejamos aquí
                             // Para simplificar, si Auth paÃƒÂ­sÃ¯Â¿Â½, es vÃ¯Â¿Â½lido.
                             const basicData = {
                                 id: authUid,
@@ -2772,17 +2772,17 @@ function App() {
 
                     } catch (e) {
                         console.error("DEBUG: Auth Nativo Error:", e.code);
-                        if (e.code === 'auth/wrong-paÃƒÂ­ssword') {
+                        if (e.code === 'auth/wrong-password') {
                             throw new Error("La contraseña es incorrecta (Sistema Google).");
                         }
                         if (e.code === 'auth/too-many-requests') {
-                            throw new Error("Demasiados intentos fallidos. Intenta mÃ¯Â¿Â½s tarde o restablece tu contraseña.");
+                            throw new Error("Demasiados intentos fallidos. Intenta más tarde o restablece tu contraseña.");
                         }
                         // Si es user-not-found, seguimos al manual
                     }
                 }
 
-                // 2. INTENTO: Login Manual (BÃ¯Â¿Â½squeda en ColecciÃ¯Â¿Â½n) - Si Auth fallÃ¯Â¿Â½ o no se usÃ¯Â¿Â½
+                // 2. INTENTO: Login Manual (Búsqueda en Colección) - Si Auth falló o no se usÃ¯Â¿Â½
                 if (!matchedDoc) {
                     const allUsersSnap = await getDocs(usersRef);
                     // Buscar usuario por email o username
@@ -2797,47 +2797,47 @@ function App() {
                 if (!matchedDoc) {
                     // DIAGNÃ¯Â¿Â½STICO INTELIGENTE:
                     // Si llegamos a que no hay "matchedDoc" vÃ¯Â¿Â½lido para login manual,
-                    // pero quizÃ¯Â¿Â½s el documento EXISTE en la DB y solo le faltan credenciales (paÃƒÂ­ssword) para el login manual
-                    // O el Auth fallÃ¯Â¿Â½ con user-not-found.
+                    // pero quizás el documento EXISTE en la DB y solo le faltan credenciales (password) para el login manual
+                    // O el Auth falló con user-not-found.
 
-                    // Buscamos si existe el email en DB sin importar paÃƒÂ­ssword
+                    // Buscamos si existe el email en DB sin importar password
                     const allUsers = await getDocs(usersRef);
                     const existsInDB = allUsers.docs.find(d => (d.data().email || '').toLowerCase() === normalizedInput.toLowerCase());
 
                     if (existsInDB) {
-                        // El usuario existe en DB, pero fallÃ¯Â¿Â½ Auth Nativo (user-not-found) y fallÃ¯Â¿Â½ validaciÃ¯Â¿Â½n Manual (probablemente sin paÃƒÂ­ssword en DB)
-                        throw new Error("Tu cuenta existe en nuestra base de datos pero no tiene credenciales de acceso activas (posiblemente por migraciÃ¯Â¿Â½n de seguridad). Por favor ve a 'Registrate gratis' y crea la cuenta de nuevo con este MISMO email para reactivarla sin perder tus datos.");
+                        // El usuario existe en DB, pero falló Auth Nativo (user-not-found) y falló validación Manual (probablemente sin password en DB)
+                        throw new Error("Tu cuenta existe en nuestra base de datos pero no tiene credenciales de acceso activas (posiblemente por migración de seguridad). Por favor ve a 'Registrate gratis' y crea la cuenta de nuevo con este MISMO email para reactivarla sin perder tus datos.");
                     }
 
                     SecurityManager.recordFailedAttempt(normalizedInput);
-                    throw new Error("No encontramos una cuenta con esos datos. Verifica o regÃ¯Â¿Â½strate.");
+                    throw new Error("No encontramos una cuenta con esos datos. Verifica o registrate.");
                 }
 
                 const userData = matchedDoc.data();
                 const userId = matchedDoc.id;
 
                 // === SEGURIDAD: Verificar contraseña hasheada ===
-                let paÃƒÂ­sswordValid = false;
+                let passwordValid = false;
 
-                // Compatibilidad: verificar si la contraseña estÃ¯Â¿Â½ hasheada o en texto plano
-                if (userData.paÃƒÂ­ssword && userData.paÃƒÂ­ssword.length === 64) {
-                    // ContraseÃ¯Â¿Â½a hasheada (SHA-256 = 64 caracteres hex)
-                    paÃƒÂ­sswordValid = await SecurityManager.verifyPassword(authData.paÃƒÂ­ssword, userData.paÃƒÂ­ssword);
+                // Compatibilidad: verificar si la contraseña está hasheada o en texto plano
+                if (userData.password && userData.password.length === 64) {
+                    // Contraseña hasheada (SHA-256 = 64 caracteres hex)
+                    passwordValid = await SecurityManager.verifyPassword(authData.password, userData.password);
                 } else {
-                    // ContraseÃ¯Â¿Â½a en texto plano (legacy) - migrar a hash
-                    paÃƒÂ­sswordValid = userData.paÃƒÂ­ssword === authData.paÃƒÂ­ssword;
+                    // Contraseña en texto plano (legacy) - migrar a hash
+                    passwordValid = userData.password === authData.password;
 
-                    if (paÃƒÂ­sswordValid) {
+                    if (passwordValid) {
                         // Migrar a contraseña hasheada
-                        const hashedPassword = await SecurityManager.hashPassword(authData.paÃƒÂ­ssword);
+                        const hashedPassword = await SecurityManager.hashPassword(authData.password);
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
-                            paÃƒÂ­ssword: hashedPassword
+                            password: hashedPassword
                         });
                         console.log('[Security] Password migrated to hash for user:', userId);
                     }
                 }
 
-                if (!paÃƒÂ­sswordValid) {
+                if (!passwordValid) {
                     SecurityManager.recordFailedAttempt(normalizedInput);
                     throw new Error("Credenciales incorrectas. Verifica tus datos.");
                 }
@@ -2846,16 +2846,16 @@ function App() {
                 SecurityManager.clearAttempts(normalizedInput);
                 SecurityManager.generateSessionToken(userId);
 
-                // Actualizar Ã¯Â¿Â½ltimo login
+                // Actualizar último login
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
                     lastLogin: new Date().toISOString()
                 });
 
                 // No almacenar contraseña en estado del cliente
                 const safeUserData = { ...userData, id: userId };
-                delete safeUserData.paÃƒÂ­ssword;
+                delete safeUserData.password;
 
-                // Estampar verificaciÃ¯Â¿Â½n de admin
+                // Estampar verificación de admin
                 if (safeUserData.role === 'admin') {
                     safeUserData._adminVerified = true;
                 }
@@ -2867,17 +2867,17 @@ function App() {
             // Redirigir a tienda tras éxito
             setView('store');
             // Limpiar formulario
-            setAuthData({ email: '', paÃƒÂ­ssword: '', name: '', username: '', dni: '', phone: '' });
+            setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
 
         } catch (error) {
-            console.error("Error de autenticaciÃ¯Â¿Â½n:", error);
+            console.error("Error de autenticación:", error);
             showToast(error.message, "error");
         } finally {
             setIsLoading(false);
         }
     };
 
-    // 1.1 Recuperar ContraseÃ¯Â¿Â½a
+    // 1.1 Recuperar Contraseña
     const handleForgotPassword = async () => {
         if (!authData.email || !authData.email.includes('@')) {
             showToast("Ingresa tu email en el campo de arriba para recuperar la contraseña.", "warning");
@@ -2886,7 +2886,7 @@ function App() {
         setIsLoading(true);
         try {
             await sendPasswordResetEmail(auth, authData.email);
-            showToast("Ã¯Â¿Â½Listo! Revisa tu email (y spam) para restablecer tu contraseña.", "success");
+            showToast("¡Listo! Revisa tu email (y spam) para restablecer tu contraseña.", "success");
         } catch (e) {
             console.error("Error reset paÃƒÂ­ss:", e);
             if (e.code === 'auth/user-not-found') {
@@ -2920,7 +2920,7 @@ function App() {
             showToast("Ã¯Â¿Â½Guardado en favoritos!", "success");
         }
 
-        // ActualizaciÃ¯Â¿Â½n Optimista (UI instantÃ¯Â¿Â½nea)
+        // Actualización Optimista (UI instantÃ¯Â¿Â½nea)
         setCurrentUser(prev => ({ ...prev, favorites: newFavs }));
 
         // Persistencia en Firebase
@@ -2929,7 +2929,7 @@ function App() {
             await updateDoc(userRef, { favorites: newFavs });
         } catch (e) {
             console.error("Error guardando favorito:", e);
-            // Revertir si falla (opcional, por simplicidad no lo incluimos pero serÃ¯Â¿Â½a ideal)
+            // Revertir si falla (opcional, por simplicidad no lo incluimos pero sería ideal)
         }
     };
 
@@ -3003,14 +3003,14 @@ function App() {
     const calculateDiscountAmount = (total, coupon) => {
         if (!coupon) return 0;
 
-        // Validar expiraciÃ¯Â¿Â½n y lÃ¯Â¿Â½mites nuevamente por seguridad
+        // Validar expiración y límites nuevamente por seguridad
         if (coupon.expirationDate && new Date(coupon.expirationDate) < new Date()) return 0;
 
         let discountValue = 0;
 
         if (coupon.type === 'fixed') {
             discountValue = coupon.value;
-            // No descontar mÃ¯Â¿Â½s que el total
+            // No descontar más que el total
             if (discountValue > total) discountValue = total;
         } else if (coupon.type === 'percentage') {
             discountValue = total * (coupon.value / 100);
@@ -3037,12 +3037,12 @@ function App() {
 
     const finalTotal = Math.max(0, cartSubtotal - discountAmount + shippingFee);
 
-    // SelecciÃ¯Â¿Â½n de CupÃ¯Â¿Â½n
+    // Selección de CupÃ¯Â¿Â½n
     const selectCoupon = async (coupon) => {
         // Validaciones previas
         if (coupon.targetType === 'specific_email' && currentUser) {
             if (coupon.targetUser && coupon.targetUser.toLowerCase() !== currentUser.email.toLowerCase()) {
-                return showToast("Este cupÃ¯Â¿Â½n no estÃ¯Â¿Â½ disponible para tu cuenta.", "error");
+                return showToast("Este cupÃ¯Â¿Â½n no está disponible para tu cuenta.", "error");
             }
         }
         if (new Date(coupon.expirationDate) < new Date()) {
@@ -3056,10 +3056,10 @@ function App() {
         }
 
         // VALIDACIÃ¯Â¿Â½N RIGUROSA: Un uso por DNI
-        // Buscamos en 'orders' si alguna orden de este DNI usÃ¯Â¿Â½ este cÃ¯Â¿Â½digo de cupÃ¯Â¿Â½n
+        // Buscamos en 'orders' si alguna orden de este DNI usÃ¯Â¿Â½ este código de cupÃ¯Â¿Â½n
         if (currentUser && currentUser.dni) {
             try {
-                // Nota: Query compleja. Requiere Ã¯Â¿Â½ndice compuesto posiblemente.
+                // Nota: Query compleja. Requiere -ndice compuesto posiblemente.
                 // Si falla index, usar catch y avisar o filtrar en cliente.
                 // query(orders, where("customer.dni", "==", dni), where("discountCode", "==", code))
                 const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
@@ -3075,8 +3075,8 @@ function App() {
 
             } catch (err) {
                 console.warn("Error validando cupÃ¯Â¿Â½n por DNI:", err);
-                // Fallback seguro: Si no podemos validar historial, permitimos (o bloqueamos segÃ¯Â¿Â½n politica).
-                // Bloqueamos por precauciÃ¯Â¿Â½n.
+                // Fallback seguro: Si no podemos validar historial, permitimos (o bloqueamos según politica).
+                // Bloqueamos por precaución.
                 // return showToast("Error verificando historial de cupones.", "error");
             }
         } else {
@@ -3086,14 +3086,14 @@ function App() {
         setAppliedCoupon(coupon);
         setShowCouponModal(false);
 
-        let msg = "Ã¯Â¿Â½CupÃ¯Â¿Â½n aplicado correctamente!";
+        let msg = "¿CupÃ¯Â¿Â½n aplicado correctamente!";
         if (coupon.type === 'percentage' && coupon.maxDiscount > 0) {
             msg += ` (Tope de reintegro: $${coupon.maxDiscount})`;
         }
         showToast(msg, "success");
     };
 
-    // Enviar correo automÃ¯Â¿Â½tico via Backend
+    // Enviar correo automático via Backend
     const sendOrderConfirmationEmail = async (orderData, discountDetails) => {
         try {
             await fetch('/api/payment', {
@@ -3115,14 +3115,14 @@ function App() {
                     date: orderData.date
                 }),
             });
-            console.log("Correo de confirmaciÃ¯Â¿Â½n enviado enviada API.");
+            console.log("Correo de confirmación enviado enviada API.");
         } catch (error) {
-            console.error("Error al enviar email automÃ¯Â¿Â½tico:", error);
+            console.error("Error al enviar email automático:", error);
             // No bloqueamos el flujo si falla el email, solo logueamos
         }
     };
 
-    // 5. ConfirmaciÃ¯Â¿Â½n de Pedido (Checkout)
+    // 5. Confirmación de Pedido (Checkout)
     const confirmOrder = async () => {
         if (isProcessingOrder) return;
 
@@ -3139,7 +3139,7 @@ function App() {
         }
 
         if (checkoutData.shippingMethod === 'Delivery' && (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode)) {
-            return showToast("Por favor completa TODOS los datos de envÃ¯Â¿Â½o.", "warning");
+            return showToast("Por favor completa TODOS los datos de envío.", "warning");
         }
 
         if (!checkoutData.paymentChoice) {
@@ -3150,7 +3150,7 @@ function App() {
         showToast("Procesando tu pedido, por favor espera...", "info");
 
         try {
-            const orderId = `ORD-${Date.now().toString().slice(-6)}`; // Generar ID Ã¯Â¿Â½nico corto
+            const orderId = `ORD-${Date.now().toString().slice(-6)}`; // Generar ID único corto
 
             const newOrder = {
                 orderId: orderId,
@@ -3184,7 +3184,7 @@ function App() {
             // 1. Guardar Pedido
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
 
-            // 2. Actualizar Datos de Usuario (Guardar Ã¯Â¿Â½ltima direcciÃ¯Â¿Â½n) - Usamos setDoc con merge para crear si no existe
+            // 2. Actualizar Datos de Usuario (Guardar última dirección) - Usamos setDoc con merge para crear si no existe
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
                 address: checkoutData.address,
                 city: checkoutData.city,
@@ -3237,7 +3237,7 @@ function App() {
 
             await batch.commit();
 
-            // 5. FinalizaciÃ¯Â¿Â½n
+            // 5. Finalización
 
             // Disparar email en segundo plano (Fire and Forget)
             const discountInfo = appliedCoupon ? {
@@ -3274,7 +3274,7 @@ function App() {
 
         if (!window.MercadoPago) {
             console.error('? Mercado Pago: SDK no cargado.');
-            setPaymentError('No se pudo cargar el sistema de pagos. Por favor recarga la pÃ¯Â¿Â½gina.');
+            setPaymentError('No se pudo cargar el sistema de pagos. Por favor recarga la página.');
             return;
         }
 
@@ -3293,7 +3293,7 @@ function App() {
         // Timeout de seguridad: si en 10 segundos no cargÃ¯Â¿Â½, permitir reintentar
         const safetyTimeout = setTimeout(() => {
             if (isInitializingBrick.current) {
-                console.warn('?? Mercado Pago: La inicializaciÃ¯Â¿Â½n estÃ¯Â¿Â½ tardando demasiado. Liberando bloqueo...');
+                console.warn('?? Mercado Pago: La inicialización está tardando demasiado. Liberando bloqueo...');
                 isInitializingBrick.current = false;
             }
         }, 10000);
@@ -3400,7 +3400,7 @@ function App() {
 
                             if (result.status === 'approved' || result.status === 'in_process' || result.status === 'pending') {
                                 await confirmOrderAfterPayment(result.id);
-                                showToast('Ã¯Â¿Â½Compra realizada!', 'success');
+                                showToast('¿Compra realizada!', 'success');
                                 setIsPaymentProcessing(false);
                                 isInitializingBrick.current = false;
                                 // Limpiar controlador de MP para que la prÃ¯Â¿Â½xima compra reinicie de cero
@@ -3417,10 +3417,10 @@ function App() {
                                     'cc_rejected_insufficient_amount': 'Tu tarjeta no tiene fondos suficientes.',
                                     'cc_rejected_bad_filled_other': 'RevisÃ¯Â¿Â½ los datos de tu tarjeta.',
                                     'cc_rejected_bad_filled_date': 'La fecha de vencimiento es incorrecta.',
-                                    'cc_rejected_bad_filled_security_code': 'El cÃ¯Â¿Â½digo de seguridad es incorrecto.',
+                                    'cc_rejected_bad_filled_security_code': 'El código de seguridad es incorrecto.',
                                     'cc_rejected_call_for_authorize': 'DebÃ¯Â¿Â½s autorizar el pago llamando a tu banco.',
-                                    'cc_rejected_card_disabled': 'Tu tarjeta estÃ¯Â¿Â½ inactiva. LlamÃ¯Â¿Â½ a tu banco para activarla.',
-                                    'cc_rejected_max_attempts': 'Llegaste al lÃ¯Â¿Â½mite de intentos permitidos. UsÃ¯Â¿Â½ otra tarjeta.',
+                                    'cc_rejected_card_disabled': 'Tu tarjeta está inactiva. LlamÃ¯Â¿Â½ a tu banco para activarla.',
+                                    'cc_rejected_max_attempts': 'Llegaste al límite de intentos permitidos. UsÃ¯Â¿Â½ otra tarjeta.',
                                     'cc_rejected_duplicated_payment': 'Ya hiciste un pago similar recientemente. EsperÃ¯Â¿Â½ unos minutos.'
                                 };
                                 const detailedError = mpErrorMap[result.status_detail] || result.status_detail || result.error || 'Pago rechazado';
@@ -3454,7 +3454,7 @@ function App() {
                         clearTimeout(safetyTimeout);
                         // No mostrar error si es solo por AdBlock
                         if (error && error.message && error.message.includes('melidata')) return;
-                        setPaymentError('Error en el formulario. VerificÃ¯Â¿Â½ tus claves de producciÃ¯Â¿Â½n.');
+                        setPaymentError('Error en el formulario. VerificÃ¯Â¿Â½ tus claves de producción.');
                     },
                 },
             });
@@ -3468,7 +3468,7 @@ function App() {
         }
     };
 
-    // Confirmar orden despuÃ¯Â¿Â½s de pago exitoso con MP
+    // Confirmar orden después de pago exitoso con MP
     const confirmOrderAfterPayment = async (mpPaymentId) => {
         try {
             const orderId = `ORD-${Date.now().toString().slice(-6)}`;
@@ -3558,7 +3558,7 @@ function App() {
 
             await batch.commit();
 
-            // 5. Enviar email de confirmaciÃ¯Â¿Â½n
+            // 5. Enviar email de confirmación
             const discountInfo = appliedCoupon ? {
                 percentage: appliedCoupon.value,
                 amount: discountAmount,
@@ -3603,20 +3603,20 @@ function App() {
             const isBusiness = currentPlan === 'business';
 
             if (isEntrepreneur && products.length >= MAX_PRODUCTS_ENTREPRENEUR) {
-                return showToast(`Has alcanzado el lÃ¯Â¿Â½mite de ${MAX_PRODUCTS_ENTREPRENEUR} productos del Plan Emprendedor. Ã¯Â¿Â½Mejora tu plan para seguir creciendo!`, "error");
+                return showToast(`Has alcanzado el límite de ${MAX_PRODUCTS_ENTREPRENEUR} productos del Plan Emprendedor.¡Mejora tu plan para seguir creciendo!`, "error");
             }
 
             if (isBusiness && products.length >= MAX_PRODUCTS_BUSINESS) {
-                return showToast(`Has alcanzado el lÃ¯Â¿Â½mite de ${MAX_PRODUCTS_BUSINESS} productos del Plan Negocio. Ã¯Â¿Â½PÃ¯Â¿Â½sate a Premium para productos ilimitados!`, "error");
+                return showToast(`Has alcanzado el límite de ${MAX_PRODUCTS_BUSINESS} productos del Plan Negocio.¡Pásate a Premium para productos ilimitados!`, "error");
             }
         }
 
         if (!newProduct.basePrice || Number(newProduct.basePrice) <= 0) return showToast("El precio debe ser mayor a 0.", "warning");
 
-        // ValidaciÃ¯Â¿Â½n de categorÃ¯Â¿Â½as (array)
+        // Validación de categorías (array)
         const categories = Array.isArray(newProduct.categories) ? newProduct.categories :
             (newProduct.category ? [newProduct.category] : []);
-        if (categories.length === 0) return showToast("Selecciona al menos una categorÃ¯Â¿Â½a.", "warning");
+        if (categories.length === 0) return showToast("Selecciona al menos una categoría.", "warning");
 
         const productData = {
             ...newProduct,
@@ -3703,7 +3703,7 @@ function App() {
 
     // 6.5. Eliminar Producto
     const deleteProductFn = (product) => {
-        openConfirm("Eliminar Producto", `Ã¯Â¿Â½EstÃ¯Â¿Â½s seguro de eliminar el producto "${product.name}"?`, async () => {
+        openConfirm("Eliminar Producto", `¿Estés seguro de eliminar el producto "${product.name}"?`, async () => {
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id));
                 showToast("Producto eliminado correctamente.", "success");
@@ -3714,7 +3714,7 @@ function App() {
         });
     };
 
-    // 6.6. Venta Manual (Fuera de PÃ¯Â¿Â½gina)
+    // 6.6. Venta Manual (Fuera de Página)
     const handleManualSale = (product) => {
         if (product.stock <= 0) return showToast("No hay stock para vender.", "warning");
 
@@ -3790,7 +3790,7 @@ function App() {
     // 7. Guardar CupÃ¯Â¿Â½n (COMPLEJO y DETALLADO)
     const saveCouponFn = async () => {
         // Validaciones exhaustivas
-        if (!newCoupon.code || newCoupon.code.length < 3) return showToast("El cÃ¯Â¿Â½digo del cupÃ¯Â¿Â½n debe tener al menos 3 caracteres.", "warning");
+        if (!newCoupon.code || newCoupon.code.length < 3) return showToast("El código del cupÃ¯Â¿Â½n debe tener al menos 3 caracteres.", "warning");
         if (!newCoupon.value || Number(newCoupon.value) <= 0) return showToast("El valor del descuento debe ser mayor a 0.", "warning");
 
         if (newCoupon.type === 'percentage' && Number(newCoupon.value) > 100) return showToast("El porcentaje no puede ser mayor a 100%.", "warning");
@@ -3831,7 +3831,7 @@ function App() {
     const saveSupplierFn = async () => {
         if (!newSupplier.name) return showToast("El nombre de la empresa es obligatorio.", "warning");
 
-        // ValidaciÃ¯Â¿Â½n: Debe tener al menos UN método de contacto
+        // Validación: Debe tener al menos UN método de contacto
         if (!newSupplier.phone && !newSupplier.ig) {
             return showToast("Debes ingresar al menos un método de contacto (TelÃ¯Â¿Â½fono o Instagram).", "warning");
         }
@@ -3910,9 +3910,9 @@ function App() {
         }
     };
 
-    // --- FUNCIONES PARA GESTIÃ¯Â¿Â½N DE CATEGORÃ¯Â¿Â½AS ---
+    // --- FUNCIONES PARA GESTIÓN DE CATEGORÃ¯Â¿Â½AS ---
     const createCategoryFn = async () => {
-        if (!newCategory.trim()) return showToast("Ingresa un nombre para la categorÃ¯Â¿Â½a.", "warning");
+        if (!newCategory.trim()) return showToast("Ingresa un nombre para la categoría.", "warning");
 
         try {
             const updatedCategories = [...(settings.categories || []), newCategory.trim()];
@@ -3924,7 +3924,7 @@ function App() {
             showToast(`CategorÃƒÂ­a "${newCategory}" creada.`, "success");
         } catch (e) {
             console.error(e);
-            showToast("Error al crear categorÃ¯Â¿Â½a.", "error");
+            showToast("Error al crear categoría.", "error");
         }
     };
 
@@ -3982,7 +3982,7 @@ function App() {
 
     const finalizePurchaseOrder = async () => {
         if (purchaseCart.length === 0) {
-            return showToast("El carrito de compras estÃ¯Â¿Â½ vacÃ¯Â¿Â½o.", "warning");
+            return showToast("El carrito de compras está vacÃ¯Â¿Â½o.", "warning");
         }
 
         try {
@@ -4111,7 +4111,7 @@ function App() {
             .sort((a, b) => b.stats.total - a.stats.total)
             .slice(0, 5); // Top 5
 
-        // Estrella (MÃ¯Â¿Â½s Vendido)
+        // Estrella (Más Vendido)
         let starProductId = null;
         let maxSales = -1;
         Object.entries(salesCount).forEach(([id, count]) => {
@@ -4151,7 +4151,7 @@ function App() {
         });
         const leastSoldProduct = leastSoldProductId ? products.find(p => p.id === leastSoldProductId) : null;
 
-        // 4. AnalÃ¯Â¿Â½tica Temporal (Timeline)
+        // 4. Analítica Temporal (Timeline)
         const timeline = { daily: {}, monthly: {}, yearly: {} };
         const categoryStats = {}; // { catName: { revenue: 0, items: 0 } }
 
@@ -4232,7 +4232,7 @@ function App() {
         };
     }, [orders, expenses, purchases, products, liveCarts, users, settings]);
 
-    // ?? [PAUSA POR SEGURIDAD] - El cÃ¯Â¿Â½digo continÃ¯Â¿Â½a con la Interfaz GrÃ¯Â¿Â½fica completa y detallada. Por favor escribe "continuar".
+    // ?? [PAUSA POR SEGURIDAD] - El código continÃ¯Â¿Â½a con la Interfaz GrÃ¯Â¿Â½fica completa y detallada. Por favor escribe "continuar".
     // --- COMPONENTES UI: MODALES DETALLADOS ---
 
     // Modal de Detalles de Pedido (Visor Completo)
@@ -4273,7 +4273,7 @@ function App() {
                 <h1 className="text-xl sm:text-2xl md:text-4xl font-black mb-3 sm:mb-4 tracking-tight uppercase">Sistema en Mantenimiento</h1>
                 <p className={`max-w-sm sm:max-w-md mx-auto leading-relaxed text-sm sm:text-base ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                     Estamos realizando mejoras para brindarte una experiencia premium.
-                    Ã¯Â¿Â½Te mandamos un saludo y esperamos que vuelvas prontamente!
+                    ¿Te mandamos un saludo y esperamos que vuelvas prontamente!
                 </p>
                 <div className="mt-8 sm:mt-12 pt-8 sm:pt-12 border-t border-slate-900 w-full max-w-xs">
                     <p className="text-[10px] sm:text-xs text-slate-600 font-mono italic">{settings?.storeName || ''} - Modo Mantenimiento Activo</p>
@@ -4291,28 +4291,28 @@ function App() {
             const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
 
             // LÃ¯Â¿Â½gica de CategorÃƒÂ­as Especiales
-            if (selectedCategory === 'Promos') return false; // El grid estÃ¯Â¿Â½ndar se oculta para Promos
+            if (selectedCategory === 'Promos') return false; // El grid estándar se oculta para Promos
             if (selectedCategory === 'Ofertas') {
                 return matchesSearch && (p.discount > 0);
             }
 
-            // NUEVO: Soporte para mÃ¯Â¿Â½ltiples categorÃ¯Â¿Â½as
+            // NUEVO: Soporte para mÃ¯Â¿Â½ltiples categorías
             // Verificar si el producto tiene el array categories o el campo legacy category
             const matchesCategory = (() => {
                 // Sin filtro seleccionado - mostrar todos
                 if (selectedCategory === '') return true;
 
-                // Producto con mÃ¯Â¿Â½ltiples categorÃ¯Â¿Â½as (nuevo sistema)
+                // Producto con mÃ¯Â¿Â½ltiples categorías (nuevo sistema)
                 if (Array.isArray(p.categories)) {
                     return p.categories.includes(selectedCategory);
                 }
 
-                // Producto con categorÃ¯Â¿Â½a antigua (retrocompatibilidad)
+                // Producto con categoría antigua (retrocompatibilidad)
                 if (p.category) {
                     return p.category.trim() === selectedCategory;
                 }
 
-                // Sin categorÃ¯Â¿Â½a asignada
+                // Sin categoría asignada
                 return false;
             })();
 
@@ -4322,7 +4322,7 @@ function App() {
             // Prioridad 1: Productos Destacados primero
             if (a.isFeatured && !b.isFeatured) return -1;
             if (!a.isFeatured && b.isFeatured) return 1;
-            // Prioridad 2: MÃ¯Â¿Â½s vendidos
+            // Prioridad 2: Más vendidos
             const salesA = dashboardMetrics?.salesCount?.[a.id] || 0;
             const salesB = dashboardMetrics?.salesCount?.[b.id] || 0;
             return salesB - salesA;
@@ -5573,7 +5573,7 @@ function App() {
                                                 <button
                                                     onClick={() => {
                                                         const code = document.getElementById('couponRedeemInput').value.trim().toUpperCase();
-                                                        if (!code) return showToast("Ingresa un cÃƒÂ³digo", "warning");
+                                                        if (!code) return showToast("Ingresa un código", "warning");
                                                         const coupon = coupons.find(c => c.code === code);
                                                         if (coupon) {
                                                             showToast("¡CupÃƒÂ³n vÃƒÂ¡lido! ÃƒÅ¡salo en el checkout.", "success");
@@ -5587,7 +5587,7 @@ function App() {
                                                 </button>
                                             </div>
                                             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
-                                                Ingresa el cÃƒÂ³digo aquÃƒÂ­ para verificar si es vÃƒÂ¡lido. LlÃƒÂ©valo al checkout para aplicar el descuento.
+                                                Ingresa el código aquÃƒÂ­ para verificar si es vÃƒÂ¡lido. LlÃƒÂ©valo al checkout para aplicar el descuento.
                                             </p>
                                         </div>
                                     </div>
@@ -5919,13 +5919,13 @@ function App() {
                             <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
                                 <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
                                 <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                                    <Shield className="text-orange-500 w-12 h-12" /> PolÃ¯Â¿Â½tica de Privacidad
+                                    <Shield className="text-orange-500 w-12 h-12" /> Política de Privacidad
                                 </h2>
                                 <div className={`border p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                                     <div className="prose prose-invert max-w-none">
-                                        <p className={`text-sm mb-8 italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Ã¯Â¿Â½ltima actualizaciÃ¯Â¿Â½n: 07 de enero de 2026</p>
+                                        <p className={`text-sm mb-8 italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>última actualización: 07 de enero de 2026</p>
 
-                                        <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cÃ¯Â¿Â½mo y por quÃ¯Â¿Â½ podrÃ¯Â¿Â½amos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su informaciÃ¯Â¿Â½n personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
+                                        <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cÃ¯Â¿Â½mo y por quÃ¯Â¿Â½ podríamos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su información personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
                                         <ul className="list-disc pl-5 space-y-2">
                                             <li>Visita nuestro sitio web en <a href="https://sustore.vercel.app" className="text-orange-500 hover:underline">https://sustore.vercel.app</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
                                             <li>InteractÃ¯Â¿Â½e con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
@@ -5934,31 +5934,31 @@ function App() {
                                         <div className={`p-6 rounded-2xl border my-8 ${darkMode ? 'bg-slate-900/50 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
                                             <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>RESUMEN DE PUNTOS CLAVE</h3>
                                             <ul className="space-y-4 text-sm">
-                                                <li><strong>Ã¯Â¿Â½QuÃ¯Â¿Â½ informaciÃ¯Â¿Â½n personal procesamos?</strong> InformaciÃƒÂ³n proporcionada al registrarse o comprar.</li>
-                                                <li><strong>Ã¯Â¿Â½Procesamos informaciÃ¯Â¿Â½n confidencial?</strong> No.</li>
-                                                <li><strong>Ã¯Â¿Â½Recopilamos informaciÃ¯Â¿Â½n de terceros?</strong> No.</li>
-                                                <li><strong>Ã¯Â¿Â½CÃ¯Â¿Â½mo procesamos su informaciÃ¯Â¿Â½n?</strong> Para Gestiónar pedidos, seguridad y mejora del servicio.</li>
-                                                <li><strong>Ã¯Â¿Â½Compartimos informaciÃ¯Â¿Â½n?</strong> Solo en situaciones especÃ¯Â¿Â½ficas como transferencias comerciales o requisitos legales.</li>
+                                                <li><strong>¿Qué información personal procesamos?</strong> Información proporcionada al registrarse o comprar.</li>
+                                                <li><strong>¿Procesamos información confidencial?</strong> No.</li>
+                                                <li><strong>¿Recopilamos información de terceros?</strong> No.</li>
+                                                <li><strong>¿Cómo procesamos su información?</strong> Para gestionar pedidos, seguridad y mejora del servicio.</li>
+                                                <li><strong>¿Compartimos información?</strong> Solo en situaciones específicas como transferencias comerciales o requisitos legales.</li>
                                             </ul>
                                         </div>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>1. Ã¯Â¿Â½QUÃ¯Â¿Â½ INFORMACIÃ¯Â¿Â½N RECOPILAMOS?</h3>
-                                        <p>Recopilamos informaciÃ¯Â¿Â½n que usted nos proporciona voluntariamente: nombres, telÃ¯Â¿Â½fonos, emails, direcciones, nombres de usuario y contraseñas.</p>
-                                        <p>TambiÃ¯Â¿Â½n recopilamos datos tÃ¯Â¿Â½cnicos automÃ¯Â¿Â½ticamente (IP, tipo de navegador) para seguridad y anÃ¯Â¿Â½lisis del sitio.</p>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>1. -QUÃ¯Â¿Â½ INFORMACIÃ¯Â¿Â½N RECOPILAMOS?</h3>
+                                        <p>Recopilamos información que usted nos proporciona voluntariamente: nombres, teléfonos, emails, direcciones, nombres de usuario y contraseñas.</p>
+                                        <p>También recopilamos datos técnicos automáticamente (IP, tipo de navegador) para seguridad y anÃ¯Â¿Â½lisis del sitio.</p>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>2. Ã¯Â¿Â½CÃ¯Â¿Â½MO PROCESAMOS TU INFORMACIÃ¯Â¿Â½N?</h3>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>2. ¿CÃ¯Â¿Â½MO PROCESAMOS TU INFORMACIÃ¯Â¿Â½N?</h3>
                                         <ul className="list-disc pl-5 space-y-2">
-                                            <li>Facilitar creaciÃ¯Â¿Â½n y administraciÃ¯Â¿Â½n de cuentas.</li>
-                                            <li>Gestiónar pedidos, pagos y envÃ¯Â¿Â½os.</li>
+                                            <li>Facilitar creación y administración de cuentas.</li>
+                                            <li>gestionar pedidos, pagos y envíos.</li>
                                             <li>Proteger nuestros servicios contra fraude.</li>
                                             <li>Evaluar y mejorar la experiencia del usuario.</li>
                                         </ul>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>3. Ã¯Â¿Â½CUÃ¯Â¿Â½NTO TIEMPO CONSERVAMOS TU INFORMACIÃ¯Â¿Â½N?</h3>
-                                        <p>Conservamos su informaciÃ¯Â¿Â½n mientras tenga una cuenta activa con nosotros o segÃ¯Â¿Â½n lo exija la ley para fines contables o legales.</p>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>3. ¿CUÁNTO TIEMPO CONSERVAMOS TU INFORMACIÃ¯Â¿Â½N?</h3>
+                                        <p>Conservamos su información mientras tenga una cuenta activa con nosotros o según lo exija la ley para fines contables o legales.</p>
 
-                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>4. Ã¯Â¿Â½CUÃ¯Â¿Â½LES SON SUS DERECHOS?</h3>
-                                        <p>Puede revisar, cambiar o cancelar su cuenta en cualquier momento desde su perfil o contactÃ¯Â¿Â½ndonos directamente.</p>
+                                        <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>4. ¿CUÁLES SON SUS DERECHOS?</h3>
+                                        <p>Puede revisar, cambiar o cancelar su cuenta en cualquier momento desde su perfil o contactándonos directamente.</p>
 
                                         <h3 className={`text-xl font-bold mt-12 mb-4 border-b pb-2 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>5. CONTACTO</h3>
                                         <p>Para preguntas sobre este aviso, puede escribirnos a:</p>
@@ -5978,8 +5978,8 @@ function App() {
                     {/* 7. PANEL DE ADMINISTRACIÃ¯Â¿Â½N (COMPLETO Y DETALLADO) */}
                     {
                         view === 'admin' && (
-                            // === VerificaciÃ¯Â¿Â½n de carga antes de verificar acceso ===
-                            // Si los settings no estÃ¯Â¿Â½n cargados o el rol estÃ¯Â¿Â½ indeterminado, mostrar loading
+                            // === Verificación de carga antes de verificar acceso ===
+                            // Si los settings no están cargados o el rol está indeterminado, mostrar loading
                             (!settingsLoaded || isRoleLoading(currentUser?.email)) ? (
                                 <div className="min-h-screen bg-[#050505] flex items-center justify-center">
                                     <div className="text-center">
@@ -5993,7 +5993,7 @@ function App() {
                                     </div>
                                 </div>
                             ) :
-                                // === SEGURIDAD: Triple verificaciÃ¯Â¿Â½n de acceso ===
+                                // === SEGURIDAD: Triple verificación de acceso ===
                                 // 1. Verificar que tiene permisos por rol
                                 // 2. Verificar que el usuario tiene un ID vÃ¯Â¿Â½lido
                                 // 3. Verificar que la sesiÃ¯Â¿Â½n no fue manipulada
@@ -6161,7 +6161,7 @@ function App() {
                                                             <div>
                                                                 <div className="flex items-center gap-3 text-orange-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4 bg-orange-500/5 px-4 py-2 rounded-full w-fit border border-orange-500/10">
                                                                     <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                                                                    Live Metrics Ã¯Â¿Â½ Apps v4.2
+                                                                    Live Metrics - Apps v4.2
                                                                 </div>
                                                                 <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-4 drop-shadow-sm">
                                                                     Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 animate-gradient-x">Control</span>
@@ -6248,9 +6248,9 @@ function App() {
 
                                                                 {/* Lista GrÃ¯Â¿Â½fica (Comparativa Ingreso vs Gasto) */}
                                                                 <div className="space-y-4 mt-8 border-t border-slate-100 pt-6">
-                                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ingresos vs Gastos (Ã¯Â¿Â½ltimos Meses)</p>
+                                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ingresos vs Gastos (últimos Meses)</p>
                                                                     {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
-                                                                        // EstimaciÃ¯Â¿Â½n simplificada de gastos mensuales (proporcional solo para visualizaciÃ¯Â¿Â½n si no hay data exacta mensual de gastos guardada historica)
+                                                                        // Estimación simplificada de gastos mensuales (proporcional solo para visualización si no hay data exacta mensual de gastos guardada historica)
                                                                         // En una real app, se calcularÃ¯Â¿Â½a real desde expenses.
                                                                         // Como `expenses` tiene fecha, podemos calcularlo.
                                                                         const monthExpenses = expenses.filter(e => e.date.startsWith(m.date)).reduce((acc, c) => acc + c.amount, 0)
@@ -6370,7 +6370,7 @@ function App() {
                                                                         </div>
                                                                     </div>
                                                                 ) : (
-                                                                    <p className="text-slate-600">Todos los productos tienen buena rotaciÃ¯Â¿Â½n.</p>
+                                                                    <p className="text-slate-600">Todos los productos tienen buena rotación.</p>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -6511,7 +6511,7 @@ function App() {
                                                         {/* Formulario de Compra Unificado */}
                                                         <div className="bg-white border border-slate-200 rounded-[2.5rem] mb-10 shadow-xl overflow-hidden relative">
 
-                                                            {/* Header / Solo ReposiciÃ¯Â¿Â½n de Stock */}
+                                                            {/* Header / Solo Reposición de Stock */}
                                                             <div className="flex border-b border-slate-100">
                                                                 <div className="flex-1 p-6 text-center font-bold tracking-wider bg-orange-50 text-orange-600">
                                                                     <Package className="w-5 h-5 inline-block mr-2" /> REGISTRAR REPOSICIÃ¯Â¿Â½N DE STOCK
@@ -6526,7 +6526,7 @@ function App() {
 
                                                                     return (
                                                                         <div className="space-y-6 animate-fade-in">
-                                                                            {/* Preview del Producto Seleccionado (REMOVIDO de aquÃ¯Â¿Â½ para moverlo junto al input) */}
+                                                                            {/* Preview del Producto Seleccionado (REMOVIDO de aquí para moverlo junto al input) */}
 
                                                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                                                 <div className="md:col-span-2">
@@ -6582,7 +6582,7 @@ function App() {
                                                                             const selectedProd = products.find(p => p.id === newPurchase.productId);
                                                                             const targetProductName = selectedProd?.name || "Desconocido";
 
-                                                                            // Auto-calcular costo: precio de compra Ã¯Â¿Â½ cantidad
+                                                                            // Auto-calcular costo: precio de compra - cantidad
                                                                             const productPrice = selectedProd?.purchasePrice || selectedProd?.basePrice || 0;
                                                                             const calculatedCost = productPrice * newPurchase.quantity;
 
@@ -6612,7 +6612,7 @@ function App() {
 
                                                                         } catch (e) {
                                                                             console.error("Error stock update:", e);
-                                                                            showToast("Error: " + (e.message || "OperaciÃ¯Â¿Â½n fallida"), "error");
+                                                                            showToast("Error: " + (e.message || "Operación fallida"), "error");
                                                                         }
                                                                     }}
                                                                     className="w-full mt-8 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black py-5 rounded-2xl shadow-xl transition transform hover:scale-[1.01] flex items-center justify-center gap-3 text-lg"
@@ -6722,7 +6722,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Modal EdiciÃ¯Â¿Â½n Compra */}
+                                                        {/* Modal Edición Compra */}
                                                         {editingPurchase && (
                                                             <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
                                                                 <div className="bg-white border border-slate-200 rounded-3xl p-8 w-full max-w-lg shadow-2xl relative">
@@ -6732,7 +6732,7 @@ function App() {
                                                                     <div className="space-y-4">
                                                                         <div>
                                                                             <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Cantidad comprada</label>
-                                                                            <div className="text-xs text-yellow-500 mb-2">? Modificar esto ajustarÃ¯Â¿Â½ el stock del producto automÃ¯Â¿Â½ticamente.</div>
+                                                                            <div className="text-xs text-yellow-500 mb-2">? Modificar esto ajustarÃ¯Â¿Â½ el stock del producto automáticamente.</div>
                                                                             <input type="number" className="input-cyber w-full p-3" value={editingPurchase.quantity} onChange={e => setEditingPurchase({ ...editingPurchase, quantity: parseInt(e.target.value) || 0 })} />
                                                                         </div>
                                                                         <div>
@@ -6850,7 +6850,7 @@ function App() {
                                                                 </h3>
                                                                 <div className="space-y-4">
                                                                     <div>
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">DescripciÃƒÂ³n</label>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
                                                                         <input className="input-cyber w-full p-4" placeholder="Ej: Pago de Internet, Alquiler..." value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} />
                                                                     </div>
                                                                     <div className="grid grid-cols-2 gap-4">
@@ -6942,9 +6942,9 @@ function App() {
                                                             <div className="flex justify-between items-center mb-8">
                                                                 <div>
                                                                     <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                                                                        <DollarSign className="w-8 h-8 text-green-500" /> DistribuciÃ¯Â¿Â½n de Ganancias
+                                                                        <DollarSign className="w-8 h-8 text-green-500" /> Distribución de Ganancias
                                                                     </h2>
-                                                                    <p className="text-slate-500 mt-1">CÃ¯Â¿Â½lculo automÃ¯Â¿Â½tico basado en las inversiones registradas.</p>
+                                                                    <p className="text-slate-500 mt-1">CÃ¯Â¿Â½lculo automático basado en las inversiones registradas.</p>
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Beneficio Neto</p>
@@ -6958,7 +6958,7 @@ function App() {
                                                             <div className="flex flex-col gap-8 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                 {(() => {
                                                                     const team = settings?.team || [];
-                                                                    // Calcular Total Invertido por Miembro desde la colecciÃ¯Â¿Â½n 'investments'
+                                                                    // Calcular Total Invertido por Miembro desde la colección 'investments'
                                                                     const memberInvestments = team.map(member => {
                                                                         // Use manual investment value from settings
                                                                         const totalInv = Number(member.investment) || 0;
@@ -6967,11 +6967,11 @@ function App() {
 
                                                                     const totalCapital = memberInvestments.reduce((acc, m) => acc + m.totalInv, 0);
 
-                                                                    if (totalCapital === 0) return <p className="text-slate-500 text-center py-12">Registra inversiones para ver la distribuciÃ¯Â¿Â½n de ganancias.</p>;
+                                                                    if (totalCapital === 0) return <p className="text-slate-500 text-center py-12">Registra inversiones para ver la distribución de ganancias.</p>;
 
                                                                     return (
                                                                         <>
-                                                                            {/* Barra de Progreso DistribuciÃ¯Â¿Â½n */}
+                                                                            {/* Barra de Progreso Distribución */}
                                                                             <div className="w-full h-8 bg-slate-900 rounded-full flex overflow-hidden">
                                                                                 {memberInvestments.map((member, idx) => {
                                                                                     const pct = totalCapital > 0 ? (member.totalInv / totalCapital) * 100 : 0;
@@ -6983,7 +6983,7 @@ function App() {
                                                                                 })}
                                                                             </div>
 
-                                                                            {/* Tabla de DistribuciÃ¯Â¿Â½n */}
+                                                                            {/* Tabla de Distribución */}
                                                                             <div className="overflow-x-auto">
                                                                                 <table className="w-full text-left border-collapse">
                                                                                     <thead>
@@ -7046,7 +7046,7 @@ function App() {
                                                     </div>
                                                 )}
 
-                                                {/* TAB: CUPONES (GESTIÃ¯Â¿Â½N AVANZADA) */}
+                                                {/* TAB: CUPONES (GESTIÓN AVANZADA) */}
                                                 {adminTab === 'coupons' && (
                                                     <div className="max-w-[1600px] mx-auto animate-fade-up pb-20 relative">
 
@@ -7061,7 +7061,7 @@ function App() {
                                                                         <Lock className="w-10 h-10 text-purple-400" />
                                                                     </div>
                                                                     <h3 className="text-2xl font-black text-white mb-4">Cupones Bloqueados</h3>
-                                                                    <p className="text-slate-400 mb-6">Los cupones de descuento estÃ¯Â¿Â½n disponibles a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>.</p>
+                                                                    <p className="text-slate-400 mb-6">Los cupones de descuento están disponibles a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>.</p>
                                                                     <p className="text-sm text-white/60 group-hover:text-white transition">Clic para ver planes disponibles</p>
                                                                 </div>
                                                             </button>
@@ -7069,7 +7069,7 @@ function App() {
 
                                                         <h1 className="text-3xl font-black text-slate-900 mb-8">GestiÃ¯Â¿Â½n de Cupones</h1>
 
-                                                        {/* Formulario de CreaciÃ¯Â¿Â½n */}
+                                                        {/* Formulario de Creación */}
                                                         <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
                                                             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                                 <Plus className="w-5 h-5 text-purple-400" /> Crear Nuevo CupÃ¯Â¿Â½n
@@ -7350,7 +7350,7 @@ function App() {
                                                                                             <button
                                                                                                 onClick={() => setViewUserEdit(u)}
                                                                                                 className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-orange-400 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all shadow-xl group"
-                                                                                                title="Gestiónar Perfil"
+                                                                                                title="gestionar Perfil"
                                                                                             >
                                                                                                 <Edit className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                                                                             </button>
@@ -7671,7 +7671,7 @@ function App() {
                                                                 <h3 className="text-2xl font-black text-slate-900 mb-2">LÃ¯Â¿Â½mite de Promos Alcanzado</h3>
                                                                 <p className="text-slate-500 max-w-md mb-8">
                                                                     Tu plan actual te permite tener hasta <strong className="text-slate-900">1 promo activa</strong>.
-                                                                    Para crear mÃ¯Â¿Â½s promociones ilimitadas, actualiza tu plan.
+                                                                    Para crear más promociones ilimitadas, actualiza tu plan.
                                                                 </p>
                                                                 <button
                                                                     onClick={() => setShowPlansModal(true)}
@@ -7773,7 +7773,7 @@ function App() {
                                                                                     <Edit className="w-3.5 h-3.5" /> Editar
                                                                                 </button>
                                                                                 <button
-                                                                                    onClick={() => openConfirm('Eliminar Promo', 'Ã¯Â¿Â½EstÃ¯Â¿Â½s seguro? Esto no se puede deshacer.', async () => {
+                                                                                    onClick={() => openConfirm('Eliminar Promo', '¿Estés seguro? Esto no se puede deshacer.', async () => {
                                                                                         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'promos', promo.id));
                                                                                         showToast("Promo eliminada", "info");
                                                                                     })}
@@ -7847,14 +7847,14 @@ function App() {
                                                                                 <a
                                                                                     href={(() => {
                                                                                         let phone = o.customer.phone.replace(/\D/g, '');
-                                                                                        // NormalizaciÃ¯Â¿Â½n para Argentina
+                                                                                        // Normalización para Argentina
                                                                                         if (phone.startsWith('0')) phone = phone.substring(1);
                                                                                         if (phone.startsWith('15')) phone = phone.substring(2); // Si el usuario puso 15... (casos raros sin area code previo, pero comunmente es area+15)
                                                                                         // Mejor: Si empieza con 54 y no 549, agregar 9. Si no empieza con 54, agregar 549.
 
                                                                                         // Logica robusta simplificada:
                                                                                         if (phone.startsWith('549')) {
-                                                                                            // Ya estÃ¯Â¿Â½ bien
+                                                                                            // Ya está bien
                                                                                         } else if (phone.startsWith('54')) {
                                                                                             // Tiene 54 pero falta 9 (asumiendo movil)
                                                                                             phone = '549' + phone.substring(2);
@@ -7908,7 +7908,7 @@ function App() {
                                                                     return (
                                                                         <p className={`text-sm font-bold mt-1 ${isNearLimit ? 'text-yellow-400' : 'text-slate-500'}`}>
                                                                             {current} / {limit} productos
-                                                                            {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">? Cerca del lÃ¯Â¿Â½mite</span>}
+                                                                            {isNearLimit && plan !== 'premium' && <span className="text-yellow-500 ml-2">? Cerca del límite</span>}
                                                                         </p>
                                                                     );
                                                                 })()}
@@ -7923,7 +7923,7 @@ function App() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Banner de advertencia si hay productos desactivados por lÃ¯Â¿Â½mite de plan */}
+                                                        {/* Banner de advertencia si hay productos desactivados por límite de plan */}
                                                         {(() => {
                                                             const deactivatedByPlan = products.filter(p => p.isActive === false && p.deactivatedByPlan);
                                                             const deactivatedManually = products.filter(p => p.isActive === false && !p.deactivatedByPlan);
@@ -7939,7 +7939,7 @@ function App() {
                                                                                     {totalDeactivated.length} producto(s) desactivado(s)
                                                                                 </p>
                                                                                 <p className="text-sm text-yellow-200/70">
-                                                                                    {deactivatedByPlan.length > 0 && `${deactivatedByPlan.length} por lÃ¯Â¿Â½mite de plan. `}
+                                                                                    {deactivatedByPlan.length > 0 && `${deactivatedByPlan.length} por límite de plan. `}
                                                                                     {deactivatedManually.length > 0 && `${deactivatedManually.length} desactivado(s) manualmente. `}
                                                                                     Los productos desactivados no se muestran en la tienda.
                                                                                 </p>
@@ -7974,12 +7974,12 @@ function App() {
                                                                         </div>
                                                                         <div className="space-y-2">
                                                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
-                                                                                CategorÃƒÂ­as (Selecciona una o mÃ¯Â¿Â½s)
+                                                                                CategorÃƒÂ­as (Selecciona una o más)
                                                                             </label>
                                                                             <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
                                                                                 {(settings?.categories || []).length === 0 ? (
                                                                                     <p className="text-center text-slate-600 py-4 text-sm">
-                                                                                        No hay categorÃ¯Â¿Â½as disponibles. AgrÃ¯Â¿Â½galas abajo.
+                                                                                        No hay categorías disponibles. AgrÃ¯Â¿Â½galas abajo.
                                                                                     </p>
                                                                                 ) : (
                                                                                     (settings?.categories || []).map(cat => {
@@ -7999,7 +7999,7 @@ function App() {
                                                                                                     checked={isSelected}
                                                                                                     onChange={(e) => {
                                                                                                         if (e.target.checked) {
-                                                                                                            // Agregar categorÃ¯Â¿Â½a
+                                                                                                            // Agregar categoría
                                                                                                             const current = Array.isArray(newProduct.categories)
                                                                                                                 ? newProduct.categories
                                                                                                                 : (newProduct.category ? [newProduct.category] : []);
@@ -8009,7 +8009,7 @@ function App() {
                                                                                                                 category: undefined // Eliminar el campo antiguo
                                                                                                             });
                                                                                                         } else {
-                                                                                                            // Remover categorÃ¯Â¿Â½a
+                                                                                                            // Remover categoría
                                                                                                             const updated = Array.isArray(newProduct.categories)
                                                                                                                 ? newProduct.categories.filter(c => c !== cat)
                                                                                                                 : [];
@@ -8035,7 +8035,7 @@ function App() {
                                                                                     })
                                                                                 )}
                                                                             </div>
-                                                                            {/* Mostrar categorÃ¯Â¿Â½as seleccionadas como tags */}
+                                                                            {/* Mostrar categorías seleccionadas como tags */}
                                                                             {newProduct.categories && newProduct.categories.length > 0 && (
                                                                                 <div className="flex flex-wrap gap-2 mt-3">
                                                                                     {newProduct.categories.map(cat => (
@@ -8107,7 +8107,7 @@ function App() {
                                                                     </div>
                                                                 </div>
 
-                                                                <textarea className="input-cyber w-full h-32 p-4 mb-6 resize-none" placeholder="DescripciÃƒÂ³n detallada del producto..." value={newProduct.description || ''} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
+                                                                <textarea className="input-cyber w-full h-32 p-4 mb-6 resize-none" placeholder="Descripción detallada del producto..." value={newProduct.description || ''} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
 
                                                                 <div className="flex gap-4 justify-end">
                                                                     <button onClick={() => setShowProductForm(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition">Cancelar</button>
@@ -8142,7 +8142,7 @@ function App() {
                                                                             <p className="text-xs text-slate-500 font-mono">
                                                                                 Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
                                                                                 <span className="text-orange-400 font-bold ml-2" title="Precio Venta">${Number(p.basePrice).toLocaleString()}</span> |
-                                                                                <span className="text-slate-500 ml-2 font-mono" title="Costo AdquisiciÃ¯Â¿Â½n">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
+                                                                                <span className="text-slate-500 ml-2 font-mono" title="Costo Adquisición">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
                                                                                 {Number(p.basePrice) > 0 && (
                                                                                     <span className={`ml-2 text-[10px] font-black px-1.5 py-0.5 rounded border ${((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) < 0.3 ? 'bg-red-900/20 text-red-400 border-red-500/20' : 'bg-green-900/20 text-green-400 border-green-500/20'}`}>
                                                                                         {(((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) * 100).toFixed(0)}%
@@ -8213,7 +8213,7 @@ function App() {
                                                             {[
                                                                 { id: 'identity', label: 'Identidad', icon: Fingerprint },
                                                                 { id: 'features', label: 'Funcionalidades', icon: Zap },
-                                                                { id: 'legal', label: 'Legal y PolÃ¯Â¿Â½ticas', icon: ShieldCheck },
+                                                                { id: 'legal', label: 'Legal y Políticas', icon: ShieldCheck },
                                                                 { id: 'advanced', label: 'Avanzado', icon: Cog },
                                                                 // Only show Subscription tab to Super Admin
                                                                 ...(currentUser?.email === SUPER_ADMIN_EMAIL ? [{ id: 'subscription', label: 'Suscripciones', icon: Key }] : [])
@@ -8234,14 +8234,14 @@ function App() {
                                                                 <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(249,115,22,0.1)]">
                                                                     <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
                                                                         <Zap className="w-6 h-6 text-yellow-500 fill-current" />
-                                                                        Modelos de SuscripciÃ¯Â¿Â½n
+                                                                        Modelos de Suscripción
                                                                     </h3>
 
                                                                     <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center gap-4">
                                                                         <AlertTriangle className="w-8 h-8 text-yellow-500" />
                                                                         <div>
                                                                             <p className="font-bold text-yellow-500">Zona de Peligro: Super Admin</p>
-                                                                            <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los lÃ¯Â¿Â½mites y funcionalidades de la tienda.</p>
+                                                                            <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los límites y funcionalidades de la tienda.</p>
                                                                         </div>
                                                                     </div>
 
@@ -8285,8 +8285,8 @@ function App() {
 
                                                                             <ul className="space-y-2 text-sm text-slate-300">
                                                                                 <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
-                                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> PersonalizaciÃ¯Â¿Â½n Visual</li>
-                                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> BotÃ¯Â¿Â½n WhatsApp</li>
+                                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
+                                                                                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp</li>
                                                                             </ul>
                                                                         </button>
 
@@ -8316,7 +8316,7 @@ function App() {
                                                                     {/* Billing Cycle Selection */}
                                                                     <div className="mt-8 pt-8 border-t border-slate-800/50">
                                                                         <h4 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
-                                                                            <Calendar className="w-5 h-5 text-green-400" /> Ciclo de FacturaciÃ¯Â¿Â½n
+                                                                            <Calendar className="w-5 h-5 text-green-400" /> Ciclo de Facturación
                                                                         </h4>
                                                                         <div className="grid grid-cols-3 gap-4">
                                                                             {[
@@ -8347,7 +8347,7 @@ function App() {
                                                                 {/* INFORMACIÃ¯Â¿Â½N BÃ¯Â¿Â½SICA (Originalmente en 'store') */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Store className="w-5 h-5 text-orange-400" /> InformaciÃƒÂ³n de la Tienda
+                                                                        <Store className="w-5 h-5 text-orange-400" /> Información de la Tienda
                                                                     </h3>
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                                         <div>
@@ -8379,7 +8379,7 @@ function App() {
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">DirecciÃ¯Â¿Â½n</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Dirección</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.storeAddress || ''}
@@ -8520,7 +8520,7 @@ function App() {
                                                                                             setSettings({ ...settings, heroImages: newImages });
                                                                                         }}
                                                                                     >
-                                                                                        <option value="">Sin vinculaciÃ¯Â¿Â½n</option>
+                                                                                        <option value="">Sin vinculación</option>
                                                                                         <optgroup label="Productos">
                                                                                             {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                                                                         </optgroup>
@@ -8569,7 +8569,7 @@ function App() {
                                                                         </div>
                                                                         <div>
                                                                             <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2 mb-4">
-                                                                                <Maximize2 className="w-3 h-3" /> Altura de VisualizaciÃ¯Â¿Â½n
+                                                                                <Maximize2 className="w-3 h-3" /> Altura de Visualización
                                                                             </label>
                                                                             <div className="grid grid-cols-2 gap-2">
                                                                                 {[
@@ -8612,7 +8612,7 @@ function App() {
                                                                             className="input-cyber w-full p-4"
                                                                             value={settings?.tickerText || ''}
                                                                             onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
-                                                                            placeholder="ENVÃ¯Â¿Â½OS A TODO EL PAÃ¯Â¿Â½S Ã¯Â¿Â½ CALIDAD PREMIUM Ã¯Â¿Â½ 12 CUOTAS"
+                                                                            placeholder="ENVÃ¯Â¿Â½OS A TODO EL PAÃ¯Â¿Â½S - CALIDAD PREMIUM - 12 CUOTAS"
                                                                         />
                                                                     </div>
                                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
@@ -8623,7 +8623,7 @@ function App() {
                                                                             className="input-cyber w-full p-4"
                                                                             value={settings?.announcementMessage || ''}
                                                                             onChange={e => setSettings({ ...settings, announcementMessage: e.target.value })}
-                                                                            placeholder="?? Ã¯Â¿Â½PROMO LANZAMIENTO! - 20% OFF en toda la tienda"
+                                                                            placeholder="?? -PROMO LANZAMIENTO! - 20% OFF en toda la tienda"
                                                                         />
                                                                         <p className="text-[10px] text-slate-500 mt-2">Visible en la parte superior. Dejar vacÃ¯Â¿Â½o para ocultar.</p>
                                                                     </div>
@@ -8664,7 +8664,7 @@ function App() {
                                                                                     className="input-cyber w-full p-3 text-xs h-16 resize-none"
                                                                                     value={settings?.[`guideStep${num}Text`] || ''}
                                                                                     onChange={e => setSettings({ ...settings, [`guideStep${num}Text`]: e.target.value })}
-                                                                                    placeholder="Describe este paÃƒÂ­so de la compra..."
+                                                                                    placeholder="Describe este paso de la compra..."
                                                                                 />
                                                                             </div>
                                                                         ))}
@@ -8677,7 +8677,7 @@ function App() {
                                                                 {/* COPYRIGHT SETTINGS */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <FileText className="w-5 h-5 text-slate-400" /> InformaciÃƒÂ³n Legal y Copyright
+                                                                        <FileText className="w-5 h-5 text-slate-400" /> Información Legal y Copyright
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         <div>
@@ -8692,8 +8692,8 @@ function App() {
                                                                         <div className="p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
                                                                             <div className="flex items-center justify-between mb-4">
                                                                                 <div>
-                                                                                    <p className="font-bold text-white">PolÃ¯Â¿Â½tica de Privacidad</p>
-                                                                                    <p className="text-xs text-slate-500">Habilitar pÃ¯Â¿Â½gina y link en footer</p>
+                                                                                    <p className="font-bold text-white">Política de Privacidad</p>
+                                                                                    <p className="text-xs text-slate-500">Habilitar página y link en footer</p>
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => setSettings({ ...settings, showPrivacyPolicy: !settings?.showPrivacyPolicy })}
@@ -8704,8 +8704,8 @@ function App() {
                                                                             </div>
                                                                             <div className="flex items-center justify-between">
                                                                                 <div>
-                                                                                    <p className="font-bold text-white">TÃ¯Â¿Â½rminos y Condiciones</p>
-                                                                                    <p className="text-xs text-slate-500">Habilitar pÃ¯Â¿Â½gina y link en footer</p>
+                                                                                    <p className="font-bold text-white">Términos y Condiciones</p>
+                                                                                    <p className="text-xs text-slate-500">Habilitar página y link en footer</p>
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => setSettings({ ...settings, showTermsOfService: !settings?.showTermsOfService })}
@@ -8736,7 +8736,7 @@ function App() {
                                                                                 <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-6' : 'left-0.5'}`}></div>
                                                                             </button>
                                                                         </div>
-                                                                        <p className="text-xs text-slate-500">Si se activa, los clientes verÃ¯Â¿Â½n una pÃ¯Â¿Â½gina de "Volvemos pronto".</p>
+                                                                        <p className="text-xs text-slate-500">Si se activa, los clientes verÃ¯Â¿Â½n una página de "Volvemos pronto".</p>
                                                                     </div>
                                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                         <div className="flex items-center justify-between mb-6">
@@ -8761,7 +8761,7 @@ function App() {
                                                                     </h3>
                                                                     <div className="space-y-4">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">TÃ¯Â¿Â½tulo de la PÃ¯Â¿Â½gina (Meta Title)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">TÃ¯Â¿Â½tulo de la Página (Meta Title)</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoTitle || ''}
@@ -8770,7 +8770,7 @@ function App() {
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">DescripciÃƒÂ³n (Meta Description)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción (Meta Description)</label>
                                                                             <textarea
                                                                                 className="input-cyber w-full p-4 h-24 resize-none"
                                                                                 value={settings?.seoDescription || ''}
@@ -8826,14 +8826,14 @@ function App() {
                                                                             <p className="text-xs text-slate-500 mt-1">Aparece en la pestaÃ¯Â¿Â½a del navegador</p>
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta DescripciÃƒÂ³n</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta Descripción</label>
                                                                             <textarea
                                                                                 className="input-cyber w-full p-4 h-20 resize-none"
                                                                                 value={settings?.seoDescription || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
-                                                                                placeholder="Tienda online de productos de alta calidad. EnvÃ¯Â¿Â½os a todo el paÃ¯Â¿Â½s. Ã¯Â¿Â½VisÃƒÂ­tanos!"
+                                                                                placeholder="Tienda online de productos de alta calidad. Envíos a todo el país. ¡VisÃƒÂ­tanos!"
                                                                             />
-                                                                            <p className="text-xs text-slate-500 mt-1">DescripciÃƒÂ³n que aparece en Google (max 160 caracteres)</p>
+                                                                            <p className="text-xs text-slate-500 mt-1">Descripción que aparece en Google (max 160 caracteres)</p>
                                                                         </div>
                                                                         <div>
                                                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Palabras Clave</label>
@@ -8846,9 +8846,9 @@ function App() {
                                                                             <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
                                                                         </div>
 
-                                                                        {/* URL CanÃ¯Â¿Â½nica */}
+                                                                        {/* URL Canúnica */}
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (CanÃ¯Â¿Â½nica)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Canúnica)</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoUrl || ''}
@@ -8893,7 +8893,7 @@ function App() {
                                                                                 </div>
                                                                                 <div className="flex-1">
                                                                                     <p className="text-sm text-slate-400 mb-2">Sube una imagen atractiva (ej: logo con fondo, banner).</p>
-                                                                                    <p className="text-xs text-slate-600">Recomendado: 1200x630 pÃ¯Â¿Â½xeles para mejor visualizaciÃ¯Â¿Â½n en Facebook/WhatsApp.</p>
+                                                                                    <p className="text-xs text-slate-600">Recomendado: 1200x630 píxeles para mejor visualización en Facebook/WhatsApp.</p>
                                                                                     {settings?.seoImage && (
                                                                                         <button
                                                                                             onClick={() => setSettings({ ...settings, seoImage: '' })}
@@ -8940,7 +8940,7 @@ function App() {
                                                                         <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div>
                                                                                 <p className="font-bold text-white">Modo Mantenimiento</p>
-                                                                                <p className="text-xs text-slate-500">Mostrar pÃ¯Â¿Â½gina de "Volvemos pronto"</p>
+                                                                                <p className="text-xs text-slate-500">Mostrar página de "Volvemos pronto"</p>
                                                                             </div>
                                                                             <button
                                                                                 onClick={() => setSettings({ ...settings, maintenanceMode: !settings?.maintenanceMode })}
@@ -9000,7 +9000,7 @@ function App() {
                                                                                 >
                                                                                     <Trash2 className="w-4 h-4" /> Forzar Limpieza de CachÃ¯Â¿Â½ y Recargar
                                                                                 </button>
-                                                                                <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores grÃ¯Â¿Â½ficos o versiones antiguas.</p>
+                                                                                <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores gráficos o versiones antiguas.</p>
                                                                             </div>
                                                                         </div>
 
@@ -9008,7 +9008,7 @@ function App() {
                                                                         <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div className="mb-3">
                                                                                 <p className="font-bold text-white">Texto de Carga</p>
-                                                                                <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la pÃ¯Â¿Â½gina</p>
+                                                                                <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la página</p>
                                                                             </div>
                                                                             <input
                                                                                 className="input-cyber w-full p-3"
@@ -9092,7 +9092,7 @@ function App() {
                                                                         <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
                                                                             <div className="flex items-center justify-between mb-4">
                                                                                 <div>
-                                                                                    <p className="font-bold text-white">BotÃ¯Â¿Â½n WhatsApp en Carrito</p>
+                                                                                    <p className="font-bold text-white">Botón WhatsApp en Carrito</p>
                                                                                     <p className="text-xs text-slate-500">Permitir enviar pedido por WhatsApp</p>
                                                                                 </div>
                                                                                 <button
@@ -9104,7 +9104,7 @@ function App() {
                                                                             </div>
                                                                             {settings?.whatsappCartEnabled !== false && (
                                                                                 <div>
-                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Texto del BotÃ¯Â¿Â½n</label>
+                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Texto del Botón</label>
                                                                                     <input
                                                                                         className="input-cyber w-full p-3"
                                                                                         value={settings?.whatsappCartText || 'Compra por WhatsApp'}
@@ -9326,7 +9326,7 @@ function App() {
                                                                 {/* AI Config Block (SustIA) */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Sparkles className="w-5 h-5 text-yellow-500" /> PersonalizaciÃ¯Â¿Â½n IA
+                                                                        <Sparkles className="w-5 h-5 text-yellow-500" /> Personalización IA
                                                                     </h3>
                                                                     <div className="flex items-center gap-6">
                                                                         <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-dashed border-slate-700 hover:border-yellow-500 transition flex items-center justify-center overflow-hidden cursor-pointer shrink-0 shadow-xl">
@@ -9398,7 +9398,7 @@ function App() {
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                                                         <Users className="w-5 h-5 text-purple-400" /> Equipo y Accesos
                                                                     </h3>
-                                                                    <p className="text-slate-500 mb-6">Gestióna los miembros del equipo, sus roles de acceso y participaciÃ¯Â¿Â½n en ganancias.</p>
+                                                                    <p className="text-slate-500 mb-6">Gestióna los miembros del equipo, sus roles de acceso y participación en ganancias.</p>
 
                                                                     <div className="space-y-4 mb-6">
                                                                         {(settings?.team || []).map((member, idx) => (
@@ -9591,31 +9591,31 @@ function App() {
                                 <div className="glass p-12 rounded-[3rem] border border-slate-800">
                                     <div className="prose prose-invert max-w-none">
                                         <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                            PolÃ¯Â¿Â½tica de <span className="text-orange-500 text-6xl">Privacidad</span>
+                                            Política de <span className="text-orange-500 text-6xl">Privacidad</span>
                                         </h1>
                                         <p className="text-slate-400 text-lg leading-relaxed">
-                                            En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta polÃ¯Â¿Â½tica describe cÃ¯Â¿Â½mo recolectamos, usamos y resguardamos tu informaciÃ¯Â¿Â½n.
+                                            En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cÃ¯Â¿Â½mo recolectamos, usamos y resguardamos tu información.
                                         </p>
-                                        <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. InformaciÃƒÂ³n Recolectada</h2>
-                                        <p className="text-slate-500 leadind-relaxed">
-                                            Recolectamos datos bÃ¯Â¿Â½sicos como nombre, correo electrÃ¯Â¿Â½nico y nÃ¯Â¿Â½mero de telÃ¯Â¿Â½fono Ã¯Â¿Â½nicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
+                                        <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
+                                        <p className="text-slate-500 leading-relaxed">
+                                            Recolectamos datos bÃ¯Â¿Â½sicos como nombre, correo electrónico y número de teléfono únicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
                                         </p>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">2. Uso de los Datos</h2>
-                                        <p className="text-slate-500 leadind-relaxed">
-                                            Tu informaciÃ¯Â¿Â½n se utiliza exclusivamente para:
+                                        <p className="text-slate-500 leading-relaxed">
+                                            Tu información se utiliza exclusivamente para:
                                         </p>
                                         <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                            <li>Gestiónar tus pedidos y entregas.</li>
+                                            <li>gestionar tus pedidos y entregas.</li>
                                             <li>Enviar actualizaciones sobre el estado de tu compra.</li>
                                             <li>Mejorar nuestros servicios y experiencia de usuario.</li>
                                         </ul>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
-                                        <p className="text-slate-500 leadind-relaxed">
-                                            Implementamos medidas de seguridad robustas y encriptaciÃ¯Â¿Â½n de datos para asegurar que tu informaciÃ¯Â¿Â½n estÃ¯Â¿Â½ protegida contra accesos no autorizados.
+                                        <p className="text-slate-500 leading-relaxed">
+                                            Implementamos medidas de seguridad robustas y encriptación de datos para asegurar que tu información está protegida contra accesos no autorizados.
                                         </p>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
-                                        <p className="text-slate-500 leadind-relaxed mb-12">
-                                            Si tienes dudas sobre nuestra polÃ¯Â¿Â½tica de privacidad, contÃ¯Â¿Â½ctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
+                                        <p className="text-slate-500 leading-relaxed mb-12">
+                                            Si tienes dudas sobre nuestra política de privacidad, contÃ¯Â¿Â½ctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
                                         </p>
                                         <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
                                             <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
@@ -9625,7 +9625,7 @@ function App() {
                             </div>
                         )
                     }
-                    {/* 9. VISTA TÃ¯Â¿Â½RMINOS Y CONDICIONES */}
+                    {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
                     {
                         view === 'terms' && (
                             <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
@@ -9634,51 +9634,51 @@ function App() {
                                         <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
                                             Condiciones de <span className="text-orange-500 text-6xl">Uso</span>
                                         </h1>
-                                        <p className="text-slate-400 font-bold mb-8">Ã¯Â¿Â½ltima actualizaciÃ¯Â¿Â½n: 07 de enero de 2026</p>
+                                        <p className="text-slate-400 font-bold mb-8">última actualización: 07 de enero de 2026</p>
 
-                                        <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÃ¯Â¿Â½RMINOS LEGALES</h3>
+                                        <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÉRMINOS LEGALES</h3>
                                         <p className="text-slate-500 leading-relaxed mb-4">
                                             Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
                                         </p>
                                         <p className="text-slate-500 leading-relaxed mb-4">
-                                            Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), asÃ¯Â¿Â½ como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos tÃ¯Â¿Â½rminos legales (los "<strong>TÃ¯Â¿Â½rminos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
+                                            Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
                                         </p>
                                         <p className="text-slate-500 leading-relaxed mb-4">
-                                            Puede contactarnos por correo electrÃ¯Â¿Â½nico a la direcciÃ¯Â¿Â½n proporcionada al final de este documento.
+                                            Puede contactarnos por correo electrónico a la dirección proporcionada al final de este documento.
                                         </p>
                                         <p className="text-slate-500 leading-relaxed mb-4">
-                                            Estos TÃ¯Â¿Â½rminos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relaciÃ¯Â¿Â½n con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leÃ¯Â¿Â½do, comprendido y aceptado estar sujeto a todos estos TÃ¯Â¿Â½rminos Legales. <strong className="text-red-400">SI NO ESTÃ¯Â¿Â½ DE ACUERDO CON TODOS ESTOS TÃ¯Â¿Â½RMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
+                                            Estos Términos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relación con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leído, comprendido y aceptado estar sujeto a todos estos Términos Legales. <strong className="text-red-400">SI NO ESTÁ DE ACUERDO CON TODOS ESTOS TÉRMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
                                         </p>
 
                                         <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 my-10">
-                                            <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">Ã¯Â¿Â½NDICE</h3>
+                                            <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">ÍNDICE</h3>
                                             <ul className="space-y-2 text-sm text-orange-400 font-medium">
                                                 <li><a href="#section1" className="hover:text-orange-300 transition">1. NUESTROS SERVICIOS</a></li>
                                                 <li><a href="#section2" className="hover:text-orange-300 transition">2. DERECHOS DE PROPIEDAD INTELECTUAL</a></li>
                                                 <li><a href="#section3" className="hover:text-orange-300 transition">3. REPRESENTACIONES DE USUARIOS</a></li>
                                                 <li><a href="#section4" className="hover:text-orange-300 transition">4. ACTIVIDADES PROHIBIDAS</a></li>
                                                 <li><a href="#section5" className="hover:text-orange-300 transition">5. CONTRIBUCIONES GENERADAS POR EL USUARIO</a></li>
-                                                <li><a href="#section6" className="hover:text-orange-300 transition">6. LICENCIA DE CONTRIBUCIÃ¯Â¿Â½N</a></li>
-                                                <li><a href="#section7" className="hover:text-orange-300 transition">7. GESTIÃ¯Â¿Â½N DE SERVICIOS</a></li>
-                                                <li><a href="#section8" className="hover:text-orange-300 transition">8. PLAZO Y TERMINACIÃ¯Â¿Â½N</a></li>
+                                                <li><a href="#section6" className="hover:text-orange-300 transition">6. LICENCIA DE CONTRIBUCIÓN</a></li>
+                                                <li><a href="#section7" className="hover:text-orange-300 transition">7. GESTIÓN DE SERVICIOS</a></li>
+                                                <li><a href="#section8" className="hover:text-orange-300 transition">8. PLAZO Y TERMINACIÓN</a></li>
                                                 <li><a href="#section9" className="hover:text-orange-300 transition">9. MODIFICACIONES E INTERRUPCIONES</a></li>
                                                 <li><a href="#section10" className="hover:text-orange-300 transition">10. LEY APLICABLE</a></li>
-                                                <li><a href="#section11" className="hover:text-orange-300 transition">11. RESOLUCIÃ¯Â¿Â½N DE DISPUTAS</a></li>
+                                                <li><a href="#section11" className="hover:text-orange-300 transition">11. RESOLUCIÓN DE DISPUTAS</a></li>
                                                 <li><a href="#section12" className="hover:text-orange-300 transition">12. CORRECCIONES</a></li>
                                                 <li><a href="#section13" className="hover:text-orange-300 transition">13. DESCARGO DE RESPONSABILIDAD</a></li>
                                                 <li><a href="#section14" className="hover:text-orange-300 transition">14. LIMITACIONES DE RESPONSABILIDAD</a></li>
-                                                <li><a href="#section15" className="hover:text-orange-300 transition">15. INDEMNIZACIÃ¯Â¿Â½N</a></li>
+                                                <li><a href="#section15" className="hover:text-orange-300 transition">15. INDEMNIZACIÓN</a></li>
                                                 <li><a href="#section16" className="hover:text-orange-300 transition">16. DATOS DEL USUARIO</a></li>
-                                                <li><a href="#section17" className="hover:text-orange-300 transition">17. COMUNICACIONES ELECTRÃ¯Â¿Â½NICAS</a></li>
+                                                <li><a href="#section17" className="hover:text-orange-300 transition">17. COMUNICACIONES ELECTRÓNICAS</a></li>
                                                 <li><a href="#section18" className="hover:text-orange-300 transition">18. VARIOS</a></li>
-                                                <li><a href="#section19" className="hover:text-orange-300 transition">19. CONTÃ¯Â¿Â½CTENOS</a></li>
+                                                <li><a href="#section19" className="hover:text-orange-300 transition">19. CONTÁCTENOS</a></li>
                                             </ul>
                                         </div>
 
                                         <section id="section1" className="mb-12">
                                             <h2 className="text-2xl font-bold text-white mb-4">1. NUESTROS SERVICIOS</h2>
                                             <p className="text-slate-500 leading-relaxed">
-                                                La informaciÃ¯Â¿Â½n proporcionada al utilizar los Servicios no estÃ¯Â¿Â½ destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicciÃ¯Â¿Â½n o paÃ¯Â¿Â½s donde dicha distribuciÃ¯Â¿Â½n o uso serÃ¯Â¿Â½a contrario a la ley o regulaciÃ¯Â¿Â½n o que nos someterÃ¯Â¿Â½a a cualquier requisito de registro dentro de dicha jurisdicciÃ¯Â¿Â½n o paÃ¯Â¿Â½s. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las Ã¯Â¿Â½nicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
+                                                La información proporcionada al utilizar los Servicios no está destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicción o país donde dicha distribución o uso sería contrario a la ley o regulación o que nos sometería a cualquier requisito de registro dentro de dicha jurisdicción o país. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las únicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
                                             </p>
                                         </section>
 
@@ -9686,51 +9686,51 @@ function App() {
                                             <h2 className="text-2xl font-bold text-white mb-4">2. DERECHOS DE PROPIEDAD INTELECTUAL</h2>
                                             <h3 className="text-lg font-bold text-white mt-6 mb-2">Nuestra propiedad intelectual</h3>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el cÃ¯Â¿Â½digo fuente, bases de datos, funcionalidad, software, diseÃ¯Â¿Â½os de sitios web, audio, video, texto, fotografÃ¯Â¿Â½as y grÃ¯Â¿Â½ficos de los Servicios (colectivamente, el "Contenido"), asÃ¯Â¿Â½ como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
+                                                Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el código fuente, bases de datos, funcionalidad, software, diseños de sitios web, audio, video, texto, fotografías y gráficos de los Servicios (colectivamente, el "Contenido"), así como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
                                             </p>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Nuestro Contenido y Marcas estÃ¯Â¿Â½n protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
+                                                Nuestro Contenido y Marcas están protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
                                             </p>
                                             <p className="text-slate-500 leading-relaxed">
-                                                El Contenido y las Marcas se proporcionan en o a travÃ¯Â¿Â½s de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
+                                                El Contenido y las Marcas se proporcionan en o a través de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
                                             </p>
 
                                             <h3 className="text-lg font-bold text-white mt-6 mb-2">Su uso de nuestros Servicios</h3>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Sujeto a su cumplimiento de estos TÃ¯Â¿Â½rminos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la secciÃ¯Â¿Â½n siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
+                                                Sujeto a su cumplimiento de estos Términos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la sección siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
                                             </p>
                                             <ul className="list-disc pl-6 text-slate-500 space-y-2 mb-4">
                                                 <li>acceder a los Servicios; y</li>
                                                 <li>descargar o imprimir una copia de cualquier parte del Contenido al que haya obtenido acceso correctamente,</li>
                                             </ul>
-                                            <p className="text-slate-500 leading-relaxed mb-4">Ã¯Â¿Â½nicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
+                                            <p className="text-slate-500 leading-relaxed mb-4">únicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Salvo lo establecido en esta secciÃ¯Â¿Â½n o en otra parte de nuestros TÃ¯Â¿Â½rminos Legales, ninguna parte de los Servicios ni ningÃ¯Â¿Â½n Contenido o Marca podrÃ¯Â¿Â½n copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado pÃ¯Â¿Â½blicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
+                                                Salvo lo establecido en esta sección o en otra parte de nuestros Términos Legales, ninguna parte de los Servicios ni ningún Contenido o Marca podrán copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado públicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
                                             </p>
                                             <p className="text-slate-500 leading-relaxed">
-                                                Si desea hacer algÃ¯Â¿Â½n uso de los Servicios, Contenido o Marcas que no sea el establecido en esta secciÃ¯Â¿Â½n o en otra parte de nuestros TÃ¯Â¿Â½rminos Legales, dirija su solicitud a nuestro correo de contacto.
+                                                Si desea hacer algún uso de los Servicios, Contenido o Marcas que no sea el establecido en esta sección o en otra parte de nuestros Términos Legales, dirija su solicitud a nuestro correo de contacto.
                                             </p>
                                         </section>
 
                                         <section id="section3" className="mb-12">
                                             <h2 className="text-2xl font-bold text-white mb-4">3. REPRESENTACIONES DE USUARIOS</h2>
                                             <p className="text-slate-500 leading-relaxed">
-                                                Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos TÃ¯Â¿Â½rminos Legales; (2) no eres un menor de edad en la jurisdicciÃ¯Â¿Â½n en la que usted reside; (3) no accederÃ¯Â¿Â½s a los Servicios a travÃ¯Â¿Â½s de medios automatizados o no humanos, ya sea a travÃ¯Â¿Â½s de un bot, script o de otro modo; (4) no utilizarÃ¯Â¿Â½ los Servicios para ninguna actividad ilegal o no autorizado propÃ¯Â¿Â½sito; y (5) su uso de los Servicios no violarÃ¯Â¿Â½ ninguna ley o regulaciÃ¯Â¿Â½n aplicable.
+                                                Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos Términos Legales; (2) no eres un menor de edad en la jurisdicción en la que usted reside; (3) no accederás a los Servicios a través de medios automatizados o no humanos, ya sea a través de un bot, script o de otro modo; (4) no utilizará los Servicios para ninguna actividad ilegal o no autorizado propósito; y (5) su uso de los Servicios no violará ninguna ley o regulación aplicable.
                                             </p>
                                         </section>
 
                                         <section id="section4" className="mb-12">
                                             <h2 className="text-2xl font-bold text-white mb-4">4. ACTIVIDADES PROHIBIDAS</h2>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                No puede acceder ni utilizar los Servicios para ningÃ¯Â¿Â½n otro propÃ¯Â¿Â½sito que no sea aquel para el cual los ponemos a disposiciÃ¯Â¿Â½n. Los Servicios no podrÃ¯Â¿Â½n utilizarse en relaciÃ¯Â¿Â½n con ningÃ¯Â¿Â½n negocio comercial esfuerzo excepto aquellos que estÃ¯Â¿Â½n especÃ¯Â¿Â½ficamente respaldados o aprobados por nosotros.
+                                                No puede acceder ni utilizar los Servicios para ningún otro propósito que no sea aquel para el cual los ponemos a disposición. Los Servicios no podrán utilizarse en relación con ningún negocio comercial esfuerzo excepto aquellos que están específicamente respaldados o aprobados por nosotros.
                                             </p>
                                             <p className="text-slate-500 leading-relaxed mb-4">Como usuario de los Servicios, usted acepta no:</p>
                                             <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                                <li>Recuperar sistemÃ¯Â¿Â½ticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colecciÃ¯Â¿Â½n, compilaciÃ¯Â¿Â½n, base de datos o directorio sin nuestro permiso por escrito.</li>
-                                                <li>EngaÃ¯Â¿Â½arnos, defraudarnos o engaÃ¯Â¿Â½arnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener informaciÃ¯Â¿Â½n confidencial de la cuenta, como las contraseñas de los usuarios.</li>
-                                                <li>Eludir, deshabilitar o interferir de otro modo con las caracterÃ¯Â¿Â½sticas relacionadas con la seguridad de los Servicios.</li>
-                                                <li>Menospreciar, empaÃ¯Â¿Â½ar o daÃ¯Â¿Â½ar de otro modo, en nuestra opiniÃ¯Â¿Â½n, a nosotros y/o a los Servicios.</li>
-                                                <li>Utilizar cualquier informaciÃ¯Â¿Â½n obtenida de los Servicios para acosar, abusar o daÃ¯Â¿Â½ar a otra persona.</li>
+                                                <li>Recuperar sistemáticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colección, compilación, base de datos o directorio sin nuestro permiso por escrito.</li>
+                                                <li>Engañarnos, defraudarnos o engañarnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener información confidencial de la cuenta, como las contraseñas de los usuarios.</li>
+                                                <li>Eludir, deshabilitar o interferir de otro modo con las características relacionadas con la seguridad de los Servicios.</li>
+                                                <li>Menospreciar, empañar o dañar de otro modo, en nuestra opinión, a nosotros y/o a los Servicios.</li>
+                                                <li>Utilizar cualquier información obtenida de los Servicios para acosar, abusar o dañar a otra persona.</li>
                                                 <li>Hacer un uso indebido de nuestros servicios de soporte o presentar informes falsos de abuso o mala conducta.</li>
                                                 <li>Utilice los Servicios de una manera incompatible con las leyes o regulaciones aplicables.</li>
                                             </ul>
@@ -9739,14 +9739,14 @@ function App() {
                                         <section id="section13" className="mb-12">
                                             <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
                                             <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
-                                                LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÃ¯Â¿Â½N ESTÃ¯Â¿Â½ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÃ¯Â¿Â½ BAJO SU PROPIO RIESGO. EN LA MÃ¯Â¿Â½XIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÃ¯Â¿Â½AS, EXPRESAS O IMPLÃ¯Â¿Â½CITAS, EN RELACIÃ¯Â¿Â½N CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
+                                                LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÁ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
                                             </p>
                                         </section>
 
                                         <section id="section19" className="mb-12">
-                                            <h2 className="text-2xl font-bold text-white mb-4">19. CONTÃ¯Â¿Â½CTENOS</h2>
+                                            <h2 className="text-2xl font-bold text-white mb-4">19. CONTÁCTENOS</h2>
                                             <p className="text-slate-500 leading-relaxed mb-4">
-                                                Para resolver una queja con respecto a los Servicios o para recibir mÃ¯Â¿Â½s informaciÃ¯Â¿Â½n sobre el uso de los Servicios, contÃ¯Â¿Â½ctenos en:
+                                                Para resolver una queja con respecto a los Servicios o para recibir más información sobre el uso de los Servicios, contáctenos en:
                                             </p>
                                             <p className="text-2xl font-black text-orange-400">
                                                 {settings?.storeEmail || 'soporte@tuempresa.com'}
@@ -9771,7 +9771,7 @@ function App() {
                             className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}
                             style={{ backgroundColor: darkMode ? '#050505' : '#ffffff' }}
                         >
-                            {/* DecoraciÃ¯Â¿Â½n de Fondo */}
+                            {/* Decoración de Fondo */}
                             <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
                             <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
 
@@ -9783,7 +9783,7 @@ function App() {
                                         <span className="text-orange-500">{settings?.footerSuffix || '.SF'}</span>
                                     </h2>
                                     <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
-                                        {settings?.footerDescription || 'Tu destino premium para tecnologÃ¯Â¿Â½a de vanguardia. Ofrecemos los mejores productos con garantÃ¯Â¿Â½a y soporte especializado. Elevamos tu experiencia digital.'}
+                                        {settings?.footerDescription || 'Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.'}
                                     </p>
                                     <div className="flex gap-3 pt-2 flex-wrap">
                                         {settings?.showInstagram !== false && settings?.instagramLink && (
@@ -9860,7 +9860,7 @@ function App() {
                                             {settings?.footerContactTitle || 'Contacto'}
                                         </h3>
                                         <p className="text-slate-500 text-sm leading-relaxed mb-4">
-                                            {settings?.footerContactDescription || 'Ã¯Â¿Â½Tienes alguna duda? Estamos aquÃ¯Â¿Â½ para ayudarte.'}
+                                            {settings?.footerContactDescription || '¿Tienes alguna duda? Estamos aquí para ayudarte.'}
                                         </p>
                                         <button
                                             onClick={() => {
@@ -9895,7 +9895,7 @@ function App() {
                             <div className={`border-t ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-white'}`}>
                                 <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                                     <p className="text-slate-600 text-xs font-mono">
-                                        Ã¯Â¿Â½ 2026 Sustore. Todos los derechos reservados.
+                                        © 2026 Sustore. Todos los derechos reservados.
                                     </p>
                                     <div className="flex gap-6">
                                         {settings?.showPrivacyPolicy !== false && (
@@ -9925,7 +9925,7 @@ function App() {
                                     value={newCategory}
                                     onChange={(e) => setNewCategory(e.target.value)}
                                     className={`w-full p-4 mb-6 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`}
-                                    placeholder="Nombre de la categorÃ¯Â¿Â½a"
+                                    placeholder="Nombre de la categoría"
                                     autoFocus
                                 />
                                 <div className="flex gap-3">
@@ -10108,8 +10108,8 @@ function App() {
                                                 <div className="space-y-3 mb-6 flex-1">
                                                     <div className="space-y-2 text-sm text-slate-300">
                                                         <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Carga de hasta <strong className="text-white">30 productos</strong></span></div>
-                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>IntegraciÃ¯Â¿Â½n <strong className="text-white">Mercado Pago</strong></span></div>
-                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">1 promociÃ¯Â¿Â½n</strong> activa</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Integración <strong className="text-white">Mercado Pago</strong></span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">1 promoción</strong> activa</span></div>
                                                     </div>
                                                 </div>
 
@@ -10121,8 +10121,8 @@ function App() {
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                                         {[
                                                             { cycle: 'Semanal', price: '$2.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                            { cycle: 'Mensual', price: '$7.000', label: 'Pago Mensual', sub: 'MÃ¯Â¿Â½s equilibrado' },
-                                                            { cycle: 'Anual', price: '$70.000', label: 'Pago Anual', sub: 'AhorrÃ¯Â¿Â½s $14.000 ??' }
+                                                            { cycle: 'Mensual', price: '$7.000', label: 'Pago Mensual', sub: 'Más equilibrado' },
+                                                            { cycle: 'Anual', price: '$70.000', label: 'Pago Anual', sub: 'Ahorrás $14.000 ??' }
                                                         ].map((opt) => (
                                                             <div
                                                                 key={opt.cycle}
@@ -10177,9 +10177,9 @@ function App() {
                                                 <div className="space-y-3 mb-6 flex-1">
                                                     <div className="space-y-2 text-sm text-slate-300">
                                                         <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span>Hasta <strong className="text-white">50 productos</strong></span></div>
-                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">5 promociones</strong> simultÃ¯Â¿Â½neas</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">5 promociones</strong> simultáneas</span></div>
                                                         <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Cupones</strong> de descuento</span></div>
-                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">AnalÃ¯Â¿Â½tica</strong> de clientes</span></div>
+                                                        <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Analítica</strong> de clientes</span></div>
                                                     </div>
                                                 </div>
 
@@ -10303,20 +10303,20 @@ function App() {
                                                 <div>
                                                     <h3 className="text-xl font-bold text-white mb-1">
                                                         {selectedPlanOption
-                                                            ? `Ã¯Â¿Â½Excelente elecciÃ¯Â¿Â½n! ??`
-                                                            : 'SeleccionÃ¯Â¿Â½ una opciÃ¯Â¿Â½n para continuar'}
+                                                            ? `¡Excelente elección! ??`
+                                                            : 'Seleccioná una opción para continuar'}
                                                     </h3>
                                                     <p className={`text-sm ${selectedPlanOption ? 'text-green-300' : 'text-slate-400'}`}>
                                                         {selectedPlanOption
-                                                            ? <span>EstÃ¯Â¿Â½s a un paÃƒÂ­so de activar tu <strong>Plan {selectedPlanOption.plan}</strong> con pago <strong>{selectedPlanOption.cycle}</strong>.</span>
-                                                            : 'HacÃ¯Â¿Â½ clic en una de las opciones de arriba para ver los detalles.'}
+                                                            ? <span>Estés a un paso de activar tu <strong>Plan {selectedPlanOption.plan}</strong> con pago <strong>{selectedPlanOption.cycle}</strong>.</span>
+                                                            : 'Hacé clic en una de las opciones de arriba para ver los detalles.'}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             {selectedPlanOption && (
                                                 <a
-                                                    href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero suscribirme al *Plan ${selectedPlanOption.plan}* con pago *${selectedPlanOption.cycle}* de ${selectedPlanOption.price}. Ã¯Â¿Â½CÃ¯Â¿Â½mo seguimos?`)}`}
+                                                    href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero suscribirme al *Plan ${selectedPlanOption.plan}* con pago *${selectedPlanOption.cycle}* de ${selectedPlanOption.price}. ¿Cómo seguimos?`)}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="w-full md:w-auto px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-black text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30 flex items-center justify-center gap-2 animate-bounce-subtle"
@@ -10430,7 +10430,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
     const [activePlanId, setActivePlanId] = React.useState(null);
     const [selectedOption, setSelectedOption] = React.useState(null);
 
-    // Clases de color estÃ¯Â¿Â½ticas para Tailwind (no interpolar)
+    // Clases de color estáticas para Tailwind (no interpolar)
     const colorClasses = {
         purple: {
             iconBg: 'bg-purple-600',
@@ -10468,20 +10468,20 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
         {
             id: 'entrepreneur',
             name: 'Plan Emprendedor',
-            emoji: '??',
+            emoji: '✅',
             subtitle: 'El impulso que tu negocio necesita para despegar.',
             price: '$7.000',
             features: [
-                '?? Carga de hasta 30 productos',
-                '?? IntegraciÃ¯Â¿Â½n con Mercado Pago',
-                '?? 1 PromociÃ¯Â¿Â½n activa',
-                '?? Panel de Control completo',
-                '?? Soporte tÃ¯Â¿Â½cnico vÃ¯Â¿Â½a Gmail'
+                '✅ Carga de hasta 30 productos',
+                '✅ Integración con Mercado Pago',
+                '✅ 1 Promoción activa',
+                '✅ Panel de Control completo',
+                '✅ Soporte técnico vía Gmail'
             ],
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$2.000', sub: 'Flexibilidad total' },
-                { id: 'monthly', label: 'Mensual', price: '$7.000', sub: 'OpciÃ¯Â¿Â½n equilibrada' },
-                { id: 'annual', label: 'Anual', price: '$70.000', sub: '?? 2 MESES GRATIS' }
+                { id: 'monthly', label: 'Mensual', price: '$7.000', sub: 'Opción equilibrada' },
+                { id: 'annual', label: 'Anual', price: '$70.000', sub: '✅ 2 MESES GRATIS' }
             ],
             color: 'orange',
             icon: Store
@@ -10489,16 +10489,16 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
         {
             id: 'business',
             name: 'Plan Negocio',
-            emoji: '??',
+            emoji: '✅',
             subtitle: 'Para marcas con identidad que buscan escalar.',
             price: '$13.000',
             popular: true,
             features: [
-                '?? Hasta 50 productos',
-                '?? 5 Promociones simultÃ¯Â¿Â½neas',
-                '?? Sistema de cupones',
-                '?? AnalÃ¯Â¿Â½tica de clientes',
-                '?? BotÃ¯Â¿Â½n WhatsApp flotante'
+                '✅ Hasta 50 productos',
+                '✅ 5 Promociones simultáneas',
+                '✅ Sistema de cupones',
+                '✅ Analítica de clientes',
+                '✅ Botón WhatsApp flotante'
             ],
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },
@@ -10511,11 +10511,11 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
         {
             id: 'premium',
             name: 'Plan Premium',
-            emoji: '??',
-            subtitle: 'AutomatizaciÃ¯Â¿Â½n total y cero preocupaciones.',
+            emoji: '✅',
+            subtitle: 'Automatización total y cero preocupaciones.',
             price: '$22.000',
             features: [
-                'Ã°Å¸Å¡â‚¬ Productos ilimitados',
+                '🚀 Productos ilimitados',
                 'Ã°Å¸Â¤â€“ Asistente IA 24/7',
                 '✅ Carga VIP (10 productos)',
                 '✅ Mantenimiento mensual',
@@ -10658,12 +10658,12 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
                             <div className="text-center sm:text-left">
                                 <p className="text-white text-sm sm:text-base font-bold">
-                                    {selectedOption.emoji} {selectedOption.plan} Ã¯Â¿Â½ <span className="text-green-400">{selectedOption.cycle}</span>
+                                    {selectedOption.emoji} {selectedOption.plan} - <span className="text-green-400">{selectedOption.cycle}</span>
                                 </p>
-                                <p className="text-slate-400 text-xs">{selectedOption.sub} Ã¯Â¿Â½ {selectedOption.price}</p>
+                                <p className="text-slate-400 text-xs">{selectedOption.sub} - {selectedOption.price}</p>
                             </div>
                             <a
-                                href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero contratar el *${selectedOption.plan}* con pago *${selectedOption.cycle}* (${selectedOption.price}). Ã¯Â¿Â½CÃ¯Â¿Â½mo sigo?`)}`}
+                                href={`https://wa.me/5493425906300?text=${encodeURIComponent(`Hola! Quiero contratar el *${selectedOption.plan}* con pago *${selectedOption.cycle}* (${selectedOption.price}). ¿Cómo sigo?`)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-full sm:w-auto px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-black text-sm sm:text-base rounded-xl transition shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
@@ -10843,7 +10843,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
 
 
 
-// Componente Modal de SelecciÃ¯Â¿Â½n de Cupones
+// Componente Modal de Selección de Cupones
 const CouponSelectorModal = ({ isOpen, onClose, coupons, currentUser, cartSubtotal, selectCoupon, darkMode }) => {
     if (!isOpen) return null;
 
@@ -11052,7 +11052,7 @@ const ManualSaleModal = ({ showManualSaleModal, setShowManualSaleModal, saleData
     );
 };
 
-// Modal de AnalÃ¯Â¿Â½ticas
+// Modal de Analíticas
 const MetricsDetailModal = ({ metricsDetail, setMetricsDetail, dashboardMetrics, darkMode }) => {
     const [timeframe, setTimeframe] = useState('monthly');
     if (!metricsDetail) return null;
@@ -11082,7 +11082,7 @@ const MetricsDetailModal = ({ metricsDetail, setMetricsDetail, dashboardMetrics,
     );
 };
 
-// Drawer de AdministraciÃ¯Â¿Â½n de Usuarios
+// Drawer de Administración de Usuarios
 const AdminUserDrawer = ({ viewUserCart, setViewUserCart, viewUserEdit, setViewUserEdit, currentUser, setCurrentUser, db, appId, darkMode, showToast, openConfirm }) => {
     const [active, setActive] = useState(false);
     const [type, setType] = useState('cart');
@@ -11124,7 +11124,7 @@ const AdminUserDrawer = ({ viewUserCart, setViewUserCart, viewUserEdit, setViewU
         try {
             const update = { ...formData, updatedAt: new Date().toISOString(), lastModifiedBy: currentUser.email };
             delete update.newPassword;
-            if (formData.newPassword) update.paÃƒÂ­ssword = formData.newPassword;
+            if (formData.newPassword) update.password = formData.newPassword;
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), update);
             showToast("Actualizado!", "success");
             close();
@@ -11154,7 +11154,7 @@ const AdminUserDrawer = ({ viewUserCart, setViewUserCart, viewUserEdit, setViewU
                         <form onSubmit={handleEdit} className="space-y-6">
                             <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Nombre" />
                             <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="Email" />
-                            <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" type="paÃƒÂ­ssword" onChange={e => setFormData({ ...formData, newPassword: e.target.value })} placeholder="Nueva ContraseÃ¯Â¿Â½a" />
+                            <input className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white" type="password" onChange={e => setFormData({ ...formData, newPassword: e.target.value })} placeholder="Nueva Contraseña" />
                             <button className="w-full bg-orange-600 py-4 rounded-xl font-bold uppercase text-white">Guardar</button>
                         </form>
                     )}
