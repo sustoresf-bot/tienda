@@ -9324,7 +9324,18 @@ function App() {
                                                                     </h3>
                                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2"><Instagram className="w-3 h-3 text-pink-500" /> Instagram</label>
+                                                                            <div className="flex justify-between items-center mb-2">
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                                                                    <Instagram className="w-3 h-3 text-pink-500" /> Instagram
+                                                                                </label>
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, showInstagram: !settings?.showInstagram })}
+                                                                                    className={`w-10 h-5 rounded-full transition relative ${settings?.showInstagram ? 'bg-pink-500' : 'bg-slate-700'}`}
+                                                                                    title={settings?.showInstagram ? 'Ocultar' : 'Mostrar'}
+                                                                                >
+                                                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition ${settings?.showInstagram ? 'left-6' : 'left-1'}`}></div>
+                                                                                </button>
+                                                                            </div>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.instagramLink || ''}
@@ -9333,16 +9344,44 @@ function App() {
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2"><MessageCircle className="w-3 h-3 text-green-500" /> WhatsApp</label>
+                                                                            <div className="flex justify-between items-center mb-2">
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                                                                    <MessageCircle className="w-3 h-3 text-green-500" /> WhatsApp
+                                                                                </label>
+                                                                                <div className="flex gap-2">
+                                                                                    <button
+                                                                                        onClick={() => setSettings({ ...settings, showWhatsapp: !settings?.showWhatsapp })}
+                                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showWhatsapp ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                                        title="Mostrar en Footer"
+                                                                                    >
+                                                                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition ${settings?.showWhatsapp ? 'left-6' : 'left-1'}`}></div>
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => setSettings({ ...settings, showFloatingWhatsapp: !settings?.showFloatingWhatsapp })}
+                                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showFloatingWhatsapp ? 'bg-green-400' : 'bg-slate-700'}`}
+                                                                                        title="Mostrar Flotante"
+                                                                                    >
+                                                                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition ${settings?.showFloatingWhatsapp ? 'left-6' : 'left-1'}`}></div>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.whatsappLink || ''}
                                                                                 onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
                                                                                 placeholder="https://wa.me/..."
                                                                             />
+                                                                            <div className="flex justify-between mt-1 px-1">
+                                                                                <span className={`text-[10px] ${settings?.showWhatsapp ? 'text-green-500 font-bold' : 'text-slate-600'}`}>Footer</span>
+                                                                                <span className={`text-[10px] ${settings?.showFloatingWhatsapp ? 'text-green-400 font-bold' : 'text-slate-600'}`}>Flotante</span>
+                                                                            </div>
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2"><Facebook className="w-3 h-3 text-blue-500" /> Facebook</label>
+                                                                            <div className="flex justify-between items-center mb-2">
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                                                                    <Facebook className="w-3 h-3 text-blue-500" /> Facebook
+                                                                                </label>
+                                                                            </div>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.facebookLink || ''}
