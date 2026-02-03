@@ -4536,7 +4536,7 @@ function App() {
 
     // 6.4. Image Upload Handler (Base64 for Vercel)
     // 6.4. Image Upload Handler (Optimized with Canvas Resize)
-    const handleImageUpload = (e, setTargetState, imageField = 'image', maxWidth = 800) => {
+    const handleImageUpload = (e, setTargetState, imageField = 'image', maxWidth = 800, isArray = false) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -4572,7 +4572,14 @@ function App() {
                 ctx.drawImage(img, 0, 0, width, height);
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                setTargetState(prev => ({ ...prev, [imageField]: dataUrl }));
+                if (isArray) {
+                    setTargetState(prev => ({
+                        ...prev,
+                        [imageField]: [...(Array.isArray(prev[imageField]) ? prev[imageField] : []), { url: dataUrl }]
+                    }));
+                } else {
+                    setTargetState(prev => ({ ...prev, [imageField]: dataUrl }));
+                }
                 showToast("Imagen optimizada y cargada.", "success");
             };
             img.src = event.target.result;
@@ -9400,7 +9407,7 @@ function App() {
                                                                             <label className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-800 hover:border-orange-500 rounded-[2rem] cursor-pointer transition bg-slate-900/20 group">
                                                                                 <Plus className="w-10 h-10 text-slate-700 group-hover:text-orange-500 mb-2 transition" />
                                                                                 <span className="text-slate-500 font-bold group-hover:text-slate-300">Agregar imagen</span>
-                                                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, setSettings, 'heroImages', 1920)} />
+                                                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, setSettings, 'heroImages', 1920, true)} />
                                                                             </label>
                                                                         )}
                                                                     </div>
