@@ -347,7 +347,7 @@ const defaultSettings = {
 
 // TEMPORALMENTE DESHABILITADO PARA DEBUG
 // Componente de Imagen con Lazy Loading
-const LazyImage = ({ src, alt, className, placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFhMWExYSIvPjwvc3ZnPg==' }) => {
+function LazyImage({ src, alt, className, placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFhMWExYSIvPjwvc3ZnPg==' }) {
     // Image with native lazy loading and fade-in effect
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -360,10 +360,10 @@ const LazyImage = ({ src, alt, className, placeholder = 'data:image/svg+xml;base
             loading="lazy"
         />
     );
-};
+}
 
 // Componente de Notificación (Toast)
-const Toast = ({ message, type, onClose }) => {
+function Toast({ message, type, onClose }) {
     let containerClass = "fixed top-24 right-4 z-[9999] flex items-center gap-4 p-5 rounded-2xl border-l-4 backdrop-blur-xl animate-fade-up shadow-2xl transition-all duration-300";
     let iconContainerClass = "p-2 rounded-full";
     let IconComponent = Info;
@@ -399,15 +399,15 @@ const Toast = ({ message, type, onClose }) => {
             <div>
                 <p className="font-bold text-sm tracking-wide">{message}</p>
             </div>
-            <button onClick={onClose} className="ml-2 text-white/50 hover:text-white transition">
-                <X className="w-4 h-4" />
+            <button onClick={onClose} className="ml-auto p-1 hover:bg-white/10 rounded-full transition">
+                <X className="w-4 h-4 opacity-50 hover:opacity-100" />
             </button>
         </div>
     );
-};
+}
 
 // Componente Modal de Confirmación
-const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDangerous = false, darkMode }) => {
+function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDangerous = false, darkMode }) {
     if (!isOpen) return null;
     return (
         <div className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-md animate-fade-up ${darkMode ? 'bg-black/90' : 'bg-black/50'}`}>
@@ -424,7 +424,7 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText
             </div>
         </div>
     );
-};
+}
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -455,7 +455,7 @@ class ErrorBoundary extends React.Component {
 }
 
 // Componente Auxiliar para Botón de Agregar Rápido
-const QuickAddButton = ({ product, onAdd, darkMode }) => {
+function QuickAddButton({ product, onAdd, darkMode }) {
     const [qty, setQty] = useState(1);
     const [added, setAdded] = useState(false);
 
@@ -507,26 +507,28 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
             </button>
         </div>
     );
-};
+}
 
 // Componente AccessDenied Refactorizado y Movido
-const AccessDenied = ({ onBack, darkMode }) => (
-    <div className={`min-h-screen flex items-center justify-center p-4 animate-fade-in ${darkMode ? 'bg-black' : 'bg-slate-50'}`}>
-        <div className="text-center max-w-md">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border ${darkMode ? 'bg-red-900/20 text-red-500 border-red-900/50' : 'bg-red-100 text-red-500 border-red-200'}`}>
-                <Shield className="w-10 h-10" />
+function AccessDenied({ onBack, darkMode }) {
+    return (
+        <div className={`min-h-screen flex items-center justify-center p-4 animate-fade-in ${darkMode ? 'bg-black' : 'bg-slate-50'}`}>
+            <div className="text-center max-w-md">
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border ${darkMode ? 'bg-red-900/20 text-red-500 border-red-900/50' : 'bg-red-100 text-red-500 border-red-200'}`}>
+                    <Shield className="w-10 h-10" />
+                </div>
+                <h1 className={`text-3xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>ACCESO DENEGADO</h1>
+                <p className={`mb-8 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>No tienes los permisos necesarios para acceder al Panel de Administración.</p>
+                <button onClick={onBack} className={`px-8 py-3 rounded-xl font-bold transition flex items-center gap-2 mx-auto border ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'}`}>
+                    <ArrowLeft className="w-4 h-4" /> Volver a la Tienda
+                </button>
             </div>
-            <h1 className={`text-3xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>ACCESO DENEGADO</h1>
-            <p className={`mb-8 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>No tienes los permisos necesarios para acceder al Panel de Administración.</p>
-            <button onClick={onBack} className={`px-8 py-3 rounded-xl font-bold transition flex items-center gap-2 mx-auto border ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'}`}>
-                <ArrowLeft className="w-4 h-4" /> Volver a la Tienda
-            </button>
         </div>
-    </div>
-);
+    );
+}
 
 // --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
-const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode }) => {
+function ProductCard({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode }) {
     // Clases dinÃ¯Â¿Â½micas basadas en el tema
     const cardBg = darkMode ? 'bg-[#0a0a0a]' : 'bg-white';
     const cardBorder = darkMode ? 'border-slate-800/50' : 'border-slate-200';
@@ -666,11 +668,11 @@ const ProductCard = ({ p, settings, currentUser, toggleFavorite, setSelectedProd
             </div>
         </div>
     );
-};
+}
 
 
 // --- Bot Product Card Component ---
-const BotProductCard = ({ product, onAdd, darkMode }) => {
+function BotProductCard({ product, onAdd, darkMode }) {
     const [qty, setQty] = useState(1);
     const hasStock = product.stock > 0;
 
@@ -723,7 +725,7 @@ const BotProductCard = ({ product, onAdd, darkMode }) => {
             </div>
         </div>
     );
-};
+}
 
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
 function SustIABot({ settings, products, addToCart, controlPanel, coupons, darkMode }) {
