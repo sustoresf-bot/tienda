@@ -1422,14 +1422,14 @@ function App() {
         // Si hay productos/cupones a desactivar, mostrar confirmación
         if (productsToDeactivate.length > 0 || couponsToDeactivate.length > 0) {
             const message = `
-                ${productsToDeactivate.length > 0 ? `Ã¯Â¿Â½ ${productsToDeactivate.length} producto(s) serÃ¯Â¿Â½n desactivados (se conservan los ${newLimit} más vendidos)\n` : ''}
-                ${couponsToDeactivate.length > 0 ? `Ã¯Â¿Â½ ${couponsToDeactivate.length} cupÃ¯Â¿Â½n(es) serÃ¯Â¿Â½n desactivados (el plan ${newPlan === 'entrepreneur' ? 'Emprendedor' : ''} no incluye cupones)\n` : ''}
+                ${productsToDeactivate.length > 0 ? `⚠️ ${productsToDeactivate.length} producto(s) serán desactivados (se conservan los ${newLimit} más vendidos)\n` : ''}
+                ${couponsToDeactivate.length > 0 ? `⚠️ ${couponsToDeactivate.length} cupón(es) serán desactivados (el plan ${newPlan === 'entrepreneur' ? 'Emprendedor' : ''} no incluye cupones)\n` : ''}
                 
-                Los productos y cupones NO se eliminarÃ¯Â¿Â½n, solo se desactivarÃ¯Â¿Â½n. PodrÃ¯Â¿Â½s reactivarlos manualmente si mejoras tu plan.
+                Los productos y cupones NO se eliminarán, solo se desactivarán. Podrás reactivarlos manualmente si mejoras tu plan.
             `;
 
             openConfirm(
-                '?? Cambio de Plan - Atención',
+                '⚠️ Cambio de Plan - Atención',
                 message,
                 async () => {
                     try {
@@ -3035,26 +3035,26 @@ function App() {
 
     const finalTotal = Math.max(0, cartSubtotal - discountAmount + shippingFee);
 
-    // Selección de CupÃ¯Â¿Â½n
+    // Selección de Cupón
     const selectCoupon = async (coupon) => {
         // Validaciones previas
         if (coupon.targetType === 'specific_email' && currentUser) {
             if (coupon.targetUser && coupon.targetUser.toLowerCase() !== currentUser.email.toLowerCase()) {
-                return showToast("Este cupÃ¯Â¿Â½n no está disponible para tu cuenta.", "error");
+                return showToast("Este cupón no está disponible para tu cuenta.", "error");
             }
         }
         if (new Date(coupon.expirationDate) < new Date()) {
-            return showToast("Este cupÃ¯Â¿Â½n ha vencido.", "error");
+            return showToast("Este cupón ha vencido.", "error");
         }
         if (coupon.usageLimit && coupon.usedBy && coupon.usedBy.length >= coupon.usageLimit) {
-            return showToast("Este cupÃ¯Â¿Â½n ha agotado sus usos totales.", "error");
+            return showToast("Este cupón ha agotado sus usos totales.", "error");
         }
         if (cartSubtotal < (coupon.minPurchase || 0)) {
-            return showToast(`El monto mínimo para este cupÃ¯Â¿Â½n es $${coupon.minPurchase}.`, "warning");
+            return showToast(`El monto mínimo para este cupón es $${coupon.minPurchase}.`, "warning");
         }
 
-        // VALIDACIÃ¯Â¿Â½N RIGUROSA: Un uso por DNI
-        // Buscamos en 'orders' si alguna orden de este DNI usÃ¯Â¿Â½ este código de cupÃ¯Â¿Â½n
+        // VALIDACIÓN RIGUROSA: Un uso por DNI
+        // Buscamos en 'orders' si alguna orden de este DNI usó este código de cupón
         if (currentUser && currentUser.dni) {
             try {
                 // Nota: Query compleja. Requiere -ndice compuesto posiblemente.
@@ -3068,11 +3068,11 @@ function App() {
                 const matchSnap = await getDocs(qDniCoupon);
 
                 if (!matchSnap.empty) {
-                    return showToast("Ya utilizaste este cupÃ¯Â¿Â½n en una compra anterior (Verif. por DNI).", "error");
+                    return showToast("Ya utilizaste este cupón en una compra anterior (Verif. por DNI).", "error");
                 }
 
             } catch (err) {
-                console.warn("Error validando cupÃ¯Â¿Â½n por DNI:", err);
+                console.warn("Error validando cupón por DNI:", err);
                 // Fallback seguro: Si no podemos validar historial, permitimos (o bloqueamos según politica).
                 // Bloqueamos por precaución.
                 // return showToast("Error verificando historial de cupones.", "error");
@@ -3084,7 +3084,7 @@ function App() {
         setAppliedCoupon(coupon);
         setShowCouponModal(false);
 
-        let msg = "¿CupÃ¯Â¿Â½n aplicado correctamente!";
+        let msg = "¡Cupón aplicado correctamente!";
         if (coupon.type === 'percentage' && coupon.maxDiscount > 0) {
             msg += ` (Tope de reintegro: $${coupon.maxDiscount})`;
         }
@@ -3660,7 +3660,7 @@ function App() {
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
-            return showToast("Por favor selecciona una imagen vÃ¯Â¿Â½lida.", "warning");
+            return showToast("Por favor selecciona una imagen válida.", "warning");
         }
 
         const reader = new FileReader();
@@ -3716,7 +3716,7 @@ function App() {
     const handleManualSale = (product) => {
         if (product.stock <= 0) return showToast("No hay stock para vender.", "warning");
 
-        openConfirm("Venta Manual", `Ã¯Â¿Â½Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
+        openConfirm("Venta Manual", `¿Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
                     stock: increment(-1)
@@ -3731,7 +3731,7 @@ function App() {
 
     // 6.7. Gestión de Pedidos (Finalizar/Eliminar)
     const finalizeOrderFn = (orderId) => {
-        openConfirm("Finalizar Pedido", "Ã¯Â¿Â½Marcar este pedido como REALIZADO/ENTREGADO?", async () => {
+        openConfirm("Finalizar Pedido", "¿Marcar este pedido como REALIZADO/ENTREGADO?", async () => {
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId), {
                     status: 'Realizado',
@@ -3746,7 +3746,7 @@ function App() {
     };
 
     const deleteOrderFn = (orderId) => {
-        openConfirm("Eliminar Pedido", "Ã¯Â¿Â½Eliminar este pedido permanentemente? El stock de los productos serÃ¯Â¿Â½ devuelto al inventario.", async () => {
+        openConfirm("Eliminar Pedido", "¿Eliminar este pedido permanentemente? El stock de los productos será devuelto al inventario.", async () => {
             try {
                 // 1. Obtener datos del pedido antes de eliminar
                 const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
@@ -4491,7 +4491,7 @@ function App() {
                     </nav>
                 )}
 
-                {/* --- MENÃƒÅ¡ MÃƒâ€œVIL (DETALLADO Y EXPLÃƒÂCITO) --- */}
+                {/* --- MENÚ MÓVIL (DETALLADO Y EXPLÍCITO) --- */}
                 {isMenuOpen && (
                     <div className="fixed inset-0 z-[10000] flex justify-start">
                         {/* Backdrop */}
@@ -4500,7 +4500,7 @@ function App() {
                         {/* Panel Lateral */}
                         <div className={`relative w-72 sm:w-80 h-full p-6 sm:p-8 animate-fade-in-right flex flex-col shadow-2xl z-[10001] ${darkMode ? 'bg-[#0a0a0a] border-r border-slate-800' : 'bg-white border-r border-slate-200'}`} data-lenis-prevent>
                             <div className={`flex justify-between items-center mb-8 sm:mb-10 border-b pb-4 sm:pb-6 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                                <h2 className={`text-2xl sm:text-3xl font-black tracking-tight drop-shadow-md ${darkMode ? 'text-white' : 'text-slate-900'}`}>MENÃƒÅ¡</h2>
+                                <h2 className={`text-2xl sm:text-3xl font-black tracking-tight drop-shadow-md ${darkMode ? 'text-white' : 'text-slate-900'}`}>MENÚ</h2>
                                 <button onClick={() => setIsMenuOpen(false)} className={`p-2 sm:p-3 rounded-full transition border ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
                                     <X className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </button>
@@ -4683,7 +4683,7 @@ function App() {
                                                                 className={`font-black rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn 
                                                                     ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'px-4 py-2 text-xs' : 'px-8 py-4'}
                                                                     ${darkMode ? 'bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.1)]' : 'bg-slate-900 text-white shadow-xl hover:bg-slate-800'}`}>
-                                                                VER CATÃƒÂLOGO <ArrowRight className={`${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'w-3 h-3' : 'w-5 h-5'} group-hover/btn:translate-x-1 transition`} />
+                                                                VER CATÁLOGO <ArrowRight className={`${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'w-3 h-3' : 'w-5 h-5'} group-hover/btn:translate-x-1 transition`} />
                                                             </button>
                                                             <button
                                                                 onClick={() => setView('guide')}
@@ -4785,7 +4785,7 @@ function App() {
                                 >
                                     <Filter className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
 
-                                    {/* BOTÃƒâ€œN PROMOS (SPECIAL) */}
+                                    {/* BOTÓN PROMOS (SPECIAL) */}
                                     <button
                                         onClick={() => setSelectedCategory('Promos')}
                                         className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : darkMode ? 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100 hover:border-purple-300'}`}
@@ -4794,7 +4794,7 @@ function App() {
                                         <span className="relative z-10 flex items-center gap-1.5 sm:gap-2"><Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> PROMOS</span>
                                     </button>
 
-                                    {/* BOTÃƒâ€œN OFERTAS (SPECIAL) */}
+                                    {/* BOTÓN OFERTAS (SPECIAL) */}
                                     <button
                                         onClick={() => setSelectedCategory('Ofertas')}
                                         className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-500 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50' : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'}`}
@@ -4814,8 +4814,8 @@ function App() {
                             </div>
 
 
-                            {/* SECCIÃƒâ€œN PROMOS (NUEVO) */}
-                            {/* SECCIÃƒâ€œN PROMOS (TAB VIEW) */}
+                            {/* SECCIÓN PROMOS (NUEVO) */}
+                            {/* SECCIÓN PROMOS (TAB VIEW) */}
                             {selectedCategory === 'Promos' && (
                                 <div className="mb-16 animate-fade-in">
                                     {promos.length > 0 ? (
