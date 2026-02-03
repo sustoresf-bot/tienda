@@ -18,8 +18,8 @@ import {
 } from 'firebase/firestore';
 import Lenis from 'lenis';
 
-// --- CONFIGURACIÃ¯Â¿Â½N FIREBASE (PROYECTO: sustore-63266) ---
-// Nota: esta es la configuración pÃ¯Â¿Â½blica del SDK web. NO incluyas aquí el JSON de service account.
+// --- CONFIGURACIÓN FIREBASE (PROYECTO: sustore-63266) ---
+// Nota: esta es la configuración pública del SDK web. NO incluyas aquí el JSON de service account.
 const firebaseConfig = {
     apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
     authDomain: "sustore-63266.firebaseapp.com",
@@ -37,7 +37,7 @@ const db = getFirestore(app);
 const appId = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
 
-// === SEGURIDAD: Email de Super Admin ofuscado (mÃ¯Â¿Â½ltiples capaÃƒÂ­s) ===
+// === SEGURIDAD: Email de Super Admin ofuscado (múltiples capas) ===
 const _sa = ['bGF1dGFyb2NvcmF6emE2M0BnbWFpbC5jb20=']; // Base64
 const SUPER_ADMIN_EMAIL = (() => { try { return atob(_sa[0]); } catch (e) { return ''; } })();
 
@@ -49,14 +49,14 @@ const SecurityManager = {
     lockoutTime: 300000, // 5 minutos
     integrityChecks: {},
 
-    // Salt dinÃ¯Â¿Â½mico basado en timestamp (más seguro que salt fijo)
+    // Salt dinámico basado en timestamp (más seguro que salt fijo)
     _generateSalt() {
         const base = 'tienda_secure_2024';
         const timestamp = Math.floor(Date.now() / 86400000); // Cambia cada día
         return base + '_' + timestamp;
     },
 
-    // Hash seguro para contraseñas (SHA-256 con salt dinÃ¯Â¿Â½mico)
+    // Hash seguro para contraseñas (SHA-256 con salt dinámico)
     async hashPassword(password) {
         const encoder = new TextEncoder();
         const salt = this._generateSalt();
@@ -121,7 +121,7 @@ const SecurityManager = {
         delete this.loginAttempts[key];
     },
 
-    // Generar token de sesiÃ¯Â¿Â½n con firma criptogrÃ¯Â¿Â½fica
+    // Generar token de sesión con firma criptográfica
     generateSessionToken(userId) {
         const payload = {
             uid: userId,
@@ -149,7 +149,7 @@ const SecurityManager = {
         return Math.abs(hash).toString(36);
     },
 
-    // Verificar token de sesiÃ¯Â¿Â½n con validación de expiración
+    // Verificar token de sesión con validación de expiración
     verifySession() {
         const stored = sessionStorage.getItem('_st');
         if (!stored || stored !== this.sessionToken) return false;
@@ -168,7 +168,7 @@ const SecurityManager = {
         }
     },
 
-    // Invalidar sesiÃ¯Â¿Â½n
+    // Invalidar sesión
     invalidateSession() {
         this.sessionToken = null;
         sessionStorage.removeItem('_st');
@@ -298,7 +298,7 @@ const SecurityManager = {
 // Inicializar protecciones de seguridad
 SecurityManager.init();
 
-// ConfiguraciÃƒÂ³n por defecto
+// Configuración por defecto
 const defaultSettings = {
     // --- Identidad de la Tienda ---
     storeName: "Tienda Online",
@@ -318,13 +318,13 @@ const defaultSettings = {
     showFloatingWhatsapp: false,
     showInstagram: false,
 
-    // --- ImÃ¯Â¿Â½genes ---
+    // --- Imágenes ---
     logoUrl: "",
     heroImages: [], // Array de { url, linkedProductId?, linkedPromoId? }
     heroCarouselInterval: 5000, // Intervalo en ms
     carouselHeight: "slim", // default to slim as requested by user ("mucho mas chico")
 
-    // --- ConfiguraciÃƒÂ³n de Tienda ---
+    // --- Configuración de Tienda ---
     markupPercentage: 0,
     announcementMessage: "",
     categories: ["General"],
@@ -454,7 +454,7 @@ class ErrorBoundary extends React.Component {
     }
 }
 
-// Componente Auxiliar para Botón de Agregar RÃ¯Â¿Â½pido
+// Componente Auxiliar para Botón de Agregar Rápido
 const QuickAddButton = ({ product, onAdd, darkMode }) => {
     const [qty, setQty] = useState(1);
     const [added, setAdded] = useState(false);
@@ -740,7 +740,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [lastContext, setLastContext] = useState(null); // Para manejar contexto (SÃ¯Â¿Â½/No)
+    const [lastContext, setLastContext] = useState(null); // Para manejar contexto (Sí/No)
     const messagesEndRef = useRef(null);
 
     // Auto-scroll al último mensaje
@@ -748,7 +748,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
-    // --- HERRAMIENTA DE BÃ¯Â¿Â½SQUEDA INTELIGENTE (FUZZY) ---
+    // --- HERRAMIENTA DE BÚSQUEDA INTELIGENTE (FUZZY) ---
     const fuzzySearch = (text, query) => {
         if (!query || typeof query !== 'string') return false;
         if (!text || typeof text !== 'string') return false;
@@ -828,7 +828,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 setLastContext(null);
                 if (ctx.type === 'suggest_cross_sell') {
                     return {
-                        text: "¡Excelente! Mira estas oportunidades que seleccionÃ¯Â¿Â½ para ti: ??",
+                        text: "¡Excelente! Mira estas oportunidades que seleccioná para ti: ??",
                         products: ctx.data
                     };
                 }
@@ -866,7 +866,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             if (text.includes(betweenMatch[2] + ' mil') || text.includes(betweenMatch[2] + 'k')) maxPrice *= 1000;
         }
 
-        // 3. Detectar CategorÃƒÂ­a (Fuzzy)
+        // 3. Detectar Categoría (Fuzzy)
         const availableCategories = [...new Set(products.filter(p => p.category && typeof p.category === 'string').map(p => p.category))];
         const detectedCategoryVal = availableCategories.find(c => fuzzySearch(c, text) || fuzzySearch(text, c));
         const targetCategory = detectedCategoryVal ? detectedCategoryVal.toLowerCase() : null;
@@ -1132,7 +1132,7 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
                     <X className="w-6 h-6" />
                 </button>
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                    <FolderPlus className="w-6 h-6 text-orange-400" /> gestionar CategorÃƒÂ­as
+                    <FolderPlus className="w-6 h-6 text-orange-400" /> gestionar Categorías
                 </h3>
 
                 <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
@@ -1202,7 +1202,7 @@ const SmoothScroll = ({ enabled = true }) => {
 
 // --- APLICACIÃ¯Â¿Â½N PRINCIPAL ---
 function App() {
-    // VersiÃ¯Â¿Â½n del Sistema para Auto-Updates
+    // Versión del Sistema para Auto-Updates
     const APP_VERSION = '3.0.0';
 
     // --- GESTIÓN DE ESTADO (EXPANDIDA) ---
@@ -1275,7 +1275,7 @@ function App() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
 
-    // --- DRAG TO SCROLL (CategorÃƒÂ­as) ---
+    // --- DRAG TO SCROLL (Categorías) ---
     const categoriesScrollRef = useRef(null);
     const [isDraggingCategories, setIsDraggingCategories] = useState(false);
     const [startXCategories, setStartXCategories] = useState(0);
@@ -1345,7 +1345,7 @@ function App() {
     // Estado para Carrito de Compras (Pedidos Mayoristas)
     const [purchaseCart, setPurchaseCart] = useState([]);
 
-    // Estado para Modal de Crear CategorÃƒÂ­a
+    // Estado para Modal de Crear Categoría
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
     // Estado para Detalle de Producto / Promo (Zoom)
@@ -1538,7 +1538,7 @@ function App() {
         name: '',
         basePrice: '',
         stock: '',
-        categories: [], // Cambio: Ahora es un array para mÃ¯Â¿Â½ltiples categorías
+        categories: [], // Cambio: Ahora es un array para múltiples categorías
         image: '',
         description: '',
         discount: 0,
@@ -1584,7 +1584,7 @@ function App() {
     // Estado para EDICIÃ¯Â¿Â½N DE COMPRAS
     const [editingPurchase, setEditingPurchase] = useState(null);
 
-    // ConfiguraciÃƒÂ³n y Equipo
+    // Configuración y Equipo
     const [aboutText, setAboutText] = useState('');
 
     const [newCategory, setNewCategory] = useState('');
@@ -2075,8 +2075,8 @@ function App() {
             }, (error) => {
                 console.error("Error fetching products:", error);
                 if (error.code === 'permission-denied' || error.message.includes('permission')) {
-                    showToast("Error de permisos. Reiniciando sesiÃ¯Â¿Â½n...", "warning");
-                    // Intentar recuperar sesiÃ¯Â¿Â½n
+                    showToast("Error de permisos. Reiniciando sesión...", "warning");
+                    // Intentar recuperar sesión
                     setTimeout(() => {
                         auth.signOut().then(() => window.location.reload());
                     }, 2000);
@@ -2162,7 +2162,7 @@ function App() {
                 }
             }),
 
-            // ConfiguraciÃƒÂ³n Global (con Auto-Migración)
+            // Configuración Global (con Auto-Migración)
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), async (snapshot) => {
                 // 1. Buscar si existe el documento 'config'
                 const configDoc = snapshot.docs.find(d => d.id === 'config');
@@ -2385,7 +2385,7 @@ function App() {
             }
         };
 
-        // 1. TÃ¯Â¿Â½tulo de la PestaÃ¯Â¿Â½a
+        // 1. Título de la PestaÃ¯Â¿Â½a
         const pageTitle = settings.seoTitle || (settings.storeName ? `${settings.storeName} - Tienda Online` : 'Tienda Online');
         document.title = pageTitle;
 
@@ -2614,10 +2614,10 @@ function App() {
     }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
 
-    // ?? [PAUSA POR SEGURIDAD] - El código continÃ¯Â¿Â½a con la lÃ¯Â¿Â½gica expandida. Escribe "continuar" para la siguiente parte.
-    // --- LÃ¯Â¿Â½GICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
+    // ?? [PAUSA POR SEGURIDAD] - El código continúa con la lÃ¯Â¿Â½gica expandida. Escribe "continuar" para la siguiente parte.
+    // --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
-    // 1. LÃ¯Â¿Â½gica de Autenticación (Registro y Login Detallado) - SEGURIDAD MEJORADA
+    // 1. Lógica de Autenticación (Registro y Login Detallado) - SEGURIDAD MEJORADA
     const handleAuth = async (isRegister) => {
         setIsLoading(true);
         try {
@@ -2639,7 +2639,7 @@ function App() {
                 if (!authData.email || !authData.email.includes('@')) throw new Error("Email invÃ¯Â¿Â½lido.");
                 if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
 
-                // DNI y TelÃ¯Â¿Â½fono SIEMPRE obligatorios (necesarios para checkout)
+                // DNI y Teléfono SIEMPRE obligatorios (necesarios para checkout)
                 if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dÃ¯Â¿Â½gitos).");
                 if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dÃ¯Â¿Â½gitos).");
 
@@ -2683,7 +2683,7 @@ function App() {
 
                 const docRef = await addDoc(usersRef, newUser);
 
-                // === SEGURIDAD: Generar token de sesiÃ¯Â¿Â½n ===
+                // === SEGURIDAD: Generar token de sesión ===
                 SecurityManager.generateSessionToken(docRef.id);
 
                 // No almacenar contraseña en estado del cliente
@@ -2756,9 +2756,9 @@ function App() {
                         }
 
                         if (!matchedDoc && isFirebaseAuthUser) {
-                            // Caso raro: Auth OK, pero sin datos en DB. Usamos datos bÃ¯Â¿Â½sicos.
-                            // Creamos un objeto "fake doc" para que paÃƒÂ­se la lÃ¯Â¿Â½gica siguiente o lo manejamos aquí
-                            // Para simplificar, si Auth paÃƒÂ­sÃ¯Â¿Â½, es vÃ¯Â¿Â½lido.
+                            // Caso raro: Auth OK, pero sin datos en DB. Usamos datos básicos.
+                            // Creamos un objeto "fake doc" para que paíse la lÃ¯Â¿Â½gica siguiente o lo manejamos aquí
+                            // Para simplificar, si Auth paísÃ¯Â¿Â½, es vÃ¯Â¿Â½lido.
                             const basicData = {
                                 id: authUid,
                                 email: normalizedInput,
@@ -2888,7 +2888,7 @@ function App() {
             await sendPasswordResetEmail(auth, authData.email);
             showToast("¡Listo! Revisa tu email (y spam) para restablecer tu contraseña.", "success");
         } catch (e) {
-            console.error("Error reset paÃƒÂ­ss:", e);
+            console.error("Error reset paíss:", e);
             if (e.code === 'auth/user-not-found') {
                 showToast("No existe una cuenta registrada con este email.", "error");
             } else {
@@ -2902,7 +2902,7 @@ function App() {
     // 2. GestiÃ¯Â¿Â½n de Favoritos (Wishlist)
     const toggleFavorite = async (product) => {
         if (!currentUser) {
-            showToast("Debes iniciar sesiÃ¯Â¿Â½n para guardar favoritos.", "info");
+            showToast("Debes iniciar sesión para guardar favoritos.", "info");
             return;
         }
 
@@ -3129,13 +3129,13 @@ function App() {
         // Validaciones de Checkout
         if (!currentUser) {
             setView('login');
-            return showToast("Por favor inicia sesiÃ¯Â¿Â½n para finalizar la compra.", "info");
+            return showToast("Por favor inicia sesión para finalizar la compra.", "info");
         }
 
         // Validar que el usuario tenga todos sus datos completos
         if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
             setView('profile');
-            return showToast("Por favor completa tus datos personales (Nombre, TelÃ¯Â¿Â½fono y DNI) en tu perfil antes de comprar.", "warning");
+            return showToast("Por favor completa tus datos personales (Nombre, Teléfono y DNI) en tu perfil antes de comprar.", "warning");
         }
 
         if (checkoutData.shippingMethod === 'Delivery' && (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode)) {
@@ -3833,7 +3833,7 @@ function App() {
 
         // Validación: Debe tener al menos UN método de contacto
         if (!newSupplier.phone && !newSupplier.ig) {
-            return showToast("Debes ingresar al menos un método de contacto (TelÃ¯Â¿Â½fono o Instagram).", "warning");
+            return showToast("Debes ingresar al menos un método de contacto (Teléfono o Instagram).", "warning");
         }
 
         const supplierData = {
@@ -3865,7 +3865,7 @@ function App() {
         }
     };
 
-    // 9. ConfiguraciÃƒÂ³n y Equipo (Settings)
+    // 9. Configuración y Equipo (Settings)
 
 
     // 10. GestiÃ¯Â¿Â½n de Compras (Editar/Eliminar con lÃ¯Â¿Â½gica de Stock)
@@ -3921,7 +3921,7 @@ function App() {
             });
             setNewCategory('');
             setShowCategoryModal(false);
-            showToast(`CategorÃƒÂ­a "${newCategory}" creada.`, "success");
+            showToast(`Categoría "${newCategory}" creada.`, "success");
         } catch (e) {
             console.error(e);
             showToast("Error al crear categoría.", "error");
@@ -4024,7 +4024,7 @@ function App() {
         }
     };
 
-    // --- CÃ¯Â¿Â½LCULOS DEL DASHBOARD (CENTRALIZADOS) ---
+    // --- CÁLCULOS DEL DASHBOARD (CENTRALIZADOS) ---
     const dashboardMetrics = useMemo(() => {
         // 1. Demanda en Vivo y Favoritos (Trending) + VENTAS REALES
         const productStats = {}; // { id: { cart: 0, fav: 0, sales: 0, total: 0 } }
@@ -4081,7 +4081,7 @@ function App() {
                         productMetadata[pid] = { name: i.title || i.name || 'Producto Desconocido', image: i.image };
                     }
 
-                    // Sumar a EstadÃ¯Â¿Â½sticas de Tendencia (Peso x5 para ventas reales)
+                    // Sumar a Estadísticas de Tendencia (Peso x5 para ventas reales)
                     initStats(pid);
                     productStats[pid].sales += qty;
                     productStats[pid].total += (qty * 5);
@@ -4089,7 +4089,7 @@ function App() {
             }
         });
 
-        // Ordenar productos por "calor" (total de interÃ¯Â¿Â½s)
+        // Ordenar productos por "calor" (total de interés)
         const trendingProducts = Object.entries(productStats)
             .map(([id, stats]) => {
                 // Intentar buscar en productos vivos, sino usar metadata del pedido
@@ -4138,7 +4138,7 @@ function App() {
         }
 
         // Menos Vendido (Peor Producto) - Buscar el mínimo entre TODOS los productos activos
-        // Nota: Solo consideramos productos que AÃ¯Â¿Â½N existen en inventario para "Menos Vendido"
+        // Nota: Solo consideramos productos que AÚN existen en inventario para "Menos Vendido"
         let leastSoldProductId = null;
         let minSales = Infinity;
 
@@ -4210,7 +4210,7 @@ function App() {
             ...validOrders.map(o => ({ id: o.id || o.orderId, type: 'income', category: 'Venta', date: o.date, amount: o.total, description: `Orden #${o.orderId}`, status: o.status })),
             ...expenses.map(e => ({ id: e.id, type: 'expense', category: e.category || 'Gasto', date: e.date, amount: e.amount, description: e.description, status: 'Pagado' })),
             ...(purchases || []).map(p => ({ id: p.id, type: 'expense', category: 'Compra Stock', date: p.date, amount: p.cost, description: `Prov: ${p.supplier || 'General'}`, status: 'Completado' })),
-            ...(investments || []).map(i => ({ id: i.id, type: 'income', category: 'InversiÃ¯Â¿Â½n', date: i.date, amount: i.amount, description: `Inv: ${i.investor}`, status: 'Recibido' }))
+            ...(investments || []).map(i => ({ id: i.id, type: 'income', category: 'Inversión', date: i.date, amount: i.amount, description: `Inv: ${i.investor}`, status: 'Recibido' }))
         ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 100);
 
         return {
@@ -4232,12 +4232,12 @@ function App() {
         };
     }, [orders, expenses, purchases, products, liveCarts, users, settings]);
 
-    // ?? [PAUSA POR SEGURIDAD] - El código continÃ¯Â¿Â½a con la Interfaz GrÃ¯Â¿Â½fica completa y detallada. Por favor escribe "continuar".
+    // ?? [PAUSA POR SEGURIDAD] - El código continúa con la Interfaz Gráfica completa y detallada. Por favor escribe "continuar".
     // --- COMPONENTES UI: MODALES DETALLADOS ---
 
     // Modal de Detalles de Pedido (Visor Completo)
 
-    // Modal de Detalle de Producto / Promo (VersiÃ¯Â¿Â½n Premium)
+    // Modal de Detalle de Producto / Promo (Versión Premium)
 
 
 
@@ -4282,27 +4282,27 @@ function App() {
         );
     }
 
-    // --- LÃ¯Â¿Â½GICA DE FILTRADO Y ORDENAMIENTO INTELIGENTE ---
+    // --- LÓGICA DE FILTRADO Y ORDENAMIENTO INTELIGENTE ---
     const filteredProducts = products
         .filter(p => {
-            // Excluir productos desactivados de la tienda pÃ¯Â¿Â½blica
+            // Excluir productos desactivados de la tienda pública
             if (p.isActive === false) return false;
 
             const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-            // LÃ¯Â¿Â½gica de CategorÃƒÂ­as Especiales
+            // Lógica de Categorías Especiales
             if (selectedCategory === 'Promos') return false; // El grid estándar se oculta para Promos
             if (selectedCategory === 'Ofertas') {
                 return matchesSearch && (p.discount > 0);
             }
 
-            // NUEVO: Soporte para mÃ¯Â¿Â½ltiples categorías
+            // NUEVO: Soporte para múltiples categorías
             // Verificar si el producto tiene el array categories o el campo legacy category
             const matchesCategory = (() => {
                 // Sin filtro seleccionado - mostrar todos
                 if (selectedCategory === '') return true;
 
-                // Producto con mÃ¯Â¿Â½ltiples categorías (nuevo sistema)
+                // Producto con múltiples categorías (nuevo sistema)
                 if (Array.isArray(p.categories)) {
                     return p.categories.includes(selectedCategory);
                 }
@@ -4397,10 +4397,10 @@ function App() {
                     currentUser={currentUser}
                 />
 
-                {/* --- BARRA DE NAVEGACIÃ¯Â¿Â½N (NAVBAR) --- */}
+                {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
                 {view !== 'admin' && (
                     <nav className={`fixed top-0 w-full h-16 sm:h-20 z-50 px-3 sm:px-6 md:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 ${darkMode ? 'glass border-b border-slate-800/50' : 'bg-white/95 border-b border-slate-200 shadow-sm'}`}>
-                        {/* Logo y MenÃ¯Â¿Â½ */}
+                        {/* Logo y Menú */}
                         <div className="flex items-center gap-2 sm:gap-6">
                             <button onClick={() => setIsMenuOpen(true)} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
                                 <Menu className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
@@ -4449,7 +4449,7 @@ function App() {
                                 )}
                             </div>
 
-                            {/* BotÃƒÂ³n Modo Claro/Oscuro */}
+                            {/* Botón Modo Claro/Oscuro */}
                             <button
                                 onClick={() => setDarkMode(!darkMode)}
                                 className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group overflow-hidden border ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
@@ -4463,7 +4463,7 @@ function App() {
                                 </div>
                             </button>
 
-                            {/* BotÃƒÂ³n Carrito */}
+                            {/* Botón Carrito */}
                             <button onClick={() => setView('cart')} className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50 hover:border-orange-500/30' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200 hover:border-orange-400'}`}>
                                 <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                                 {cart.length > 0 && (
@@ -4473,7 +4473,7 @@ function App() {
                                 )}
                             </button>
 
-                            {/* Perfil / Login - Solo mostrar perfil si el usuario tiene datos vÃƒÂ¡lidos */}
+                            {/* Perfil / Login - Solo mostrar perfil si el usuario tiene datos válidos */}
                             {currentUser && currentUser.id && currentUser.email && currentUser.name ? (
                                 <button onClick={() => setView('profile')} className={`flex items-center gap-2 sm:gap-3 pl-2 pr-3 sm:pr-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border transition group ${darkMode ? 'bg-slate-900/50 border-slate-700/50 hover:border-orange-500/50' : 'bg-slate-100 border-slate-200 hover:border-orange-400'}`}>
                                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold shadow-lg text-xs sm:text-sm group-hover:scale-105 transition">
@@ -4534,7 +4534,7 @@ function App() {
 
                                 {settings?.showGuideLink !== false && (
                                     <button onClick={() => { setView('guide'); setIsMenuOpen(false) }} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border border-transparent ${darkMode ? 'text-slate-300 hover:text-orange-400 hover:bg-slate-900/50 hover:border-slate-800' : 'text-slate-700 hover:text-orange-500 hover:bg-slate-100 hover:border-slate-200'}`}>
-                                        <FileQuestion className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> {settings?.guideTitle || 'CÃƒÂ³mo Comprar'}
+                                        <FileQuestion className={`w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} /> {settings?.guideTitle || 'Cómo Comprar'}
                                     </button>
                                 )}
 
@@ -4563,7 +4563,7 @@ function App() {
                     {view === 'store' && (
                         <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block">
 
-                            {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings estÃƒÂ©n cargados */}
+                            {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings estén cargados */}
                             {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
                                 <div className="w-full bg-gradient-to-r from-orange-900/20 to-red-900/20 border border-orange-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
                                     <div className="absolute inset-0 bg-white/5 skew-x-12 -translate-x-full group-hover:translate-x-full transition duration-1000"></div>
@@ -4573,15 +4573,15 @@ function App() {
                                 </div>
                             )}
 
-                            {/* Brand Ticker (Futuristic) - Solo mostrar cuando settings estÃƒÂ©n cargados */}
+                            {/* Brand Ticker (Futuristic) - Solo mostrar cuando settings estén cargados */}
                             {settingsLoaded && settings?.showBrandTicker !== false && (
                                 <div className={`mb-8 w-full overflow-hidden border-y backdrop-blur-sm py-2 ${darkMode ? 'border-slate-800/50 bg-[#0a0a0a]/50' : 'border-slate-200 bg-slate-100/50'}`}>
                                     <div className="ticker-wrap">
                                         <div className={`ticker-content font-mono text-xs md:text-sm tracking-[0.2em] md:tracking-[0.5em] uppercase flex items-center gap-6 md:gap-12 ${darkMode ? 'text-orange-500/50' : 'text-orange-600/70'}`}>
                                             {[1, 2, 3, 4].map((i) => (
                                                 <React.Fragment key={i}>
-                                                    <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} Tech Ã¢â‚¬Â¢ Futuro Ã¢â‚¬Â¢ Calidad Premium Ã¢â‚¬Â¢ InnovaciÃƒÂ³n`}</span>
-                                                    <span>Ã¢â‚¬Â¢</span>
+                                                    <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} Tech • Futuro • Calidad Premium • Innovación`}</span>
+                                                    <span>•</span>
                                                 </React.Fragment>
                                             ))}
                                         </div>
@@ -4615,7 +4615,7 @@ function App() {
                                                 'h-[350px] sm:h-[500px] lg:h-[600px]'} ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
 
-                                        {/* ImÃƒÂ¡genes del Carrusel */}
+                                        {/* Imágenes del Carrusel */}
                                         {!settingsLoaded ? (
                                             <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
                                         ) : heroImages.length > 0 ? (
@@ -4633,7 +4633,7 @@ function App() {
                                                 </div>
                                             ))
                                         ) : (
-                                            // Fallback Hero Background si no hay imÃƒÂ¡genes
+                                            // Fallback Hero Background si no hay imágenes
                                             <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40 opacity-60">
                                                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
                                             </div>
@@ -4700,7 +4700,7 @@ function App() {
                                             </div>
                                         </div>
 
-                                        {/* Indicadores del Carrusel (dots) - Solo si hay mÃƒÂºltiples imÃƒÂ¡genes */}
+                                        {/* Indicadores del Carrusel (dots) - Solo si hay múltiples imágenes */}
                                         {hasMultipleImages && settingsLoaded && (
                                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
                                                 {heroImages.map((_, index) => (
@@ -4719,7 +4719,7 @@ function App() {
                             })()}
 
                             {/* Why Choose Us Section */}
-                            {/* Why Choose Us Section (Editable) - Respeta toggles de configuraciÃƒÂ³n */}
+                            {/* Why Choose Us Section (Editable) - Respeta toggles de configuración */}
                             {settingsLoaded && settings?.showFeaturesSection !== false && (
                                 <div className={`grid grid-cols-1 ${[settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 1 ? 'md:grid-cols-1 max-w-md mx-auto' :
                                     [settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 2 ? 'md:grid-cols-2 max-w-2xl mx-auto' :
@@ -4774,7 +4774,7 @@ function App() {
                                 </div>
                             )}
 
-                            {/* Filtros de CategorÃƒÂ­a */}
+                            {/* Filtros de Categoría */}
                             <div id="catalog" className={`sticky top-16 sm:top-20 z-40 backdrop-blur-xl py-3 sm:py-4 mb-6 sm:mb-8 -mx-4 px-4 border-y ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
                                 <div
                                     ref={categoriesScrollRef}
@@ -4885,7 +4885,7 @@ function App() {
                                                                     <button
                                                                         onClick={() => {
                                                                             if (!hasStock) return showToast("Sin stock disponible para esta promo.", "warning");
-                                                                            // LÃƒÂ³gica especial para agregar Promo al carrito
+                                                                            // Lógica especial para agregar Promo al carrito
                                                                             // Tratamos la promo como un "producto" pero con un flag especial
                                                                             const promoProduct = {
                                                                                 id: promo.id,
@@ -4917,27 +4917,27 @@ function App() {
                                                 <Tag className="w-16 h-16 text-slate-600" />
                                             </div>
                                             <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Sin Promociones Activas</h3>
-                                            <p className="text-slate-500 max-w-sm">No hay promociones disponibles en este momento. ¡VolvÃƒÂ© pronto!</p>
+                                            <p className="text-slate-500 max-w-sm">No hay promociones disponibles en este momento. ¡Volvé pronto!</p>
                                             <button
                                                 onClick={() => setSelectedCategory('')}
                                                 className="mt-6 px-6 py-3 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition border border-orange-500/20"
                                             >
-                                                Ver Todo el CatÃƒÂ¡logo
+                                                Ver Todo el Catálogo
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* Grid de Productos - Filtrando productos invÃƒÂ¡lidos (ej: tests) */}
+                            {/* Grid de Productos - Filtrando productos inválidos (ej: tests) */}
                             {products.filter(p => p.isActive !== false).length === 0 ? (
-                                // Empty State explÃƒÂ­cito (sin componente externo para "bulk")
+                                // Empty State explícito (sin componente externo para "bulk")
                                 <div className={`flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-300 bg-slate-50'}`}>
                                     <div className={`p-8 rounded-full mb-6 shadow-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                                         <Package className="w-16 h-16 text-slate-600" />
                                     </div>
-                                    <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>CatÃƒÂ¡logo VacÃƒÂ­o</h3>
-                                    <p className="text-slate-500 max-w-sm">No hay productos disponibles en este momento. Por favor revisa mÃƒÂ¡s tarde o contacta soporte.</p>
+                                    <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Catálogo Vacío</h3>
+                                    <p className="text-slate-500 max-w-sm">No hay productos disponibles en este momento. Por favor revisa más tarde o contacta soporte.</p>
                                 </div>
                             ) : (
                                 <>
@@ -4949,7 +4949,7 @@ function App() {
                                             <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>No se encontraron resultados</h3>
                                             <p className="text-slate-500 mb-6 max-w-md mx-auto">
                                                 No hay productos que coincidan con <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>"{searchQuery}"</span>
-                                                {selectedCategory && <span> en la categorÃƒÂ­a <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{selectedCategory}</span></span>}.
+                                                {selectedCategory && <span> en la categoría <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{selectedCategory}</span></span>}.
                                             </p>
                                             <button
                                                 onClick={() => { setSearchQuery(''); setSelectedCategory(''); }}
@@ -4999,7 +4999,7 @@ function App() {
                                         <div className={`p-6 rounded-full mb-4 shadow-xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <ShoppingCart className={`w-12 h-12 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
                                         </div>
-                                        <h3 className={`text-xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Tu carrito estÃƒÂ¡ vacÃƒÂ­o</h3>
+                                        <h3 className={`text-xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Tu carrito está vacío</h3>
                                         <p className="text-slate-500 text-sm max-w-xs mb-6 leading-relaxed">
                                             ¡Es un buen momento para buscar ese producto que tanto quieres!
                                         </p>
@@ -5061,7 +5061,7 @@ function App() {
                                                 <ShoppingBag className="w-5 h-5 text-orange-500" /> Resumen
                                             </h3>
 
-                                            {/* CupÃƒÂ³n Compacto */}
+                                            {/* Cupón Compacto */}
                                             <div className="mb-6">
                                                 {appliedCoupon ? (
                                                     <div className="bg-purple-900/20 border border-purple-500/30 p-3 rounded-xl flex justify-between items-center relative overflow-hidden group">
@@ -5077,7 +5077,7 @@ function App() {
                                                     </div>
                                                 ) : (
                                                     <button onClick={() => setShowCouponModal(true)} className="w-full py-3 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 text-slate-400 hover:text-purple-300 rounded-xl transition flex items-center justify-center gap-2 text-xs font-bold">
-                                                        <Ticket className="w-4 h-4" /> Tengo un cupÃƒÂ³n
+                                                        <Ticket className="w-4 h-4" /> Tengo un cupón
                                                     </button>
                                                 )}
                                             </div>
@@ -5102,13 +5102,13 @@ function App() {
                                                 </div>
                                             </div>
 
-                                            {/* Botones de AcciÃƒÂ³n */}
+                                            {/* Botones de Acción */}
                                             <div className="space-y-3">
                                                 <button onClick={() => setView('checkout')} className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-4 text-white font-bold text-base rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2">
                                                     Iniciar Compra <ArrowRight className="w-5 h-5" />
                                                 </button>
 
-                                                {/* BotÃƒÂ³n WhatsApp Configurable */}
+                                                {/* Botón WhatsApp Configurable */}
                                                 {settings?.whatsappCartEnabled && (
                                                     <button
                                                         onClick={() => {
@@ -5126,7 +5126,7 @@ function App() {
                                                                     if (cleanPhone.length === 12 && !cleanPhone.startsWith('549')) cleanPhone = '549' + cleanPhone.substring(2);
                                                                 }
 
-                                                                const itemsList = cart.map(i => `Ã¢â‚¬Â¢ ${i.quantity}x ${i.product.name} $${calculateItemPrice(i.product.basePrice, i.product.discount).toLocaleString()}`).join('\n');
+                                                                const itemsList = cart.map(i => `• ${i.quantity}x ${i.product.name} $${calculateItemPrice(i.product.basePrice, i.product.discount).toLocaleString()}`).join('\n');
                                                                 const msg = `Hola! Quiero comprar lo siguiente:\n\n${itemsList}\n\n*Total: $${finalTotal.toLocaleString()}*\n\nÃ‚Â¿Como procedemos?`;
 
                                                                 window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -5163,7 +5163,7 @@ function App() {
                                         <div className={`border p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-bl-[100px] pointer-events-none"></div>
                                             <h2 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                                <Truck className="text-orange-500 w-6 h-6" /> MÃƒÂ©todo de Entrega
+                                                <Truck className="text-orange-500 w-6 h-6" /> Método de Entrega
                                             </h2>
                                             <div className="grid grid-cols-2 gap-4 relative z-10 mb-6">
                                                 {settings?.shippingPickup?.enabled && (
@@ -5183,7 +5183,7 @@ function App() {
                                                     >
                                                         {checkoutData.shippingMethod === 'Delivery' && <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-orange-500" />}
                                                         <Truck className="w-8 h-8 group-hover:scale-110 transition" />
-                                                        <span className="text-xs font-black uppercase">EnvÃƒÂ­o a Domicilio</span>
+                                                        <span className="text-xs font-black uppercase">Envío a Domicilio</span>
                                                     </button>
                                                 )}
                                             </div>
@@ -5191,7 +5191,7 @@ function App() {
                                             {checkoutData.shippingMethod === 'Pickup' && (
                                                 <div className="p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl animate-fade-up flex gap-3">
                                                     <Info className="w-5 h-5 text-orange-400 shrink-0" />
-                                                    <p className="text-xs text-orange-200">Retira tu pedido en: <span className="font-bold">{settings?.shippingPickup?.address || 'DirecciÃƒÂ³n a coordinar'}</span></p>
+                                                    <p className="text-xs text-orange-200">Retira tu pedido en: <span className="font-bold">{settings?.shippingPickup?.address || 'Dirección a coordinar'}</span></p>
                                                 </div>
                                             )}
 
@@ -5199,7 +5199,7 @@ function App() {
                                                 <div className="space-y-5 relative z-10 animate-fade-up mt-4">
                                                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest pl-2">Datos de Destino</h3>
                                                     <div>
-                                                        <label htmlFor="address" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">DirecciÃƒÂ³n y Altura</label>
+                                                        <label htmlFor="address" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Dirección y Altura</label>
                                                         <input
                                                             id="address"
                                                             name="address"
@@ -5237,7 +5237,7 @@ function App() {
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label htmlFor="zipCode" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">CÃƒÂ³digo Postal</label>
+                                                        <label htmlFor="zipCode" className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Código Postal</label>
                                                         <input
                                                             id="zipCode"
                                                             name="zipCode"
@@ -5252,11 +5252,11 @@ function App() {
                                             )}
                                         </div>
 
-                                        {/* MÃƒÂ©todo de Pago */}
+                                        {/* Método de Pago */}
                                         <div className={`border p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-bl-[100px] pointer-events-none"></div>
                                             <h2 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                                <CreditCard className="text-orange-500 w-6 h-6" /> MÃƒÂ©todo de Pago
+                                                <CreditCard className="text-orange-500 w-6 h-6" /> Método de Pago
                                             </h2>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                                                 {settings?.paymentMercadoPago?.enabled && (
@@ -5338,7 +5338,7 @@ function App() {
                                                         <div className={`mt-4 p-4 rounded-xl flex items-start gap-3 ${darkMode ? 'bg-orange-900/20 border border-orange-500/20' : 'bg-orange-100'}`}>
                                                             <Info className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                                                             <p className={`text-xs leading-relaxed ${darkMode ? 'text-orange-200' : 'text-orange-700'}`}>
-                                                                RealizÃƒÂ¡ la transferencia y luego confirmÃƒÂ¡ tu pedido. Te enviaremos un email con los detalles.
+                                                                Realizá la transferencia y luego confirmá tu pedido. Te enviaremos un email con los detalles.
                                                             </p>
                                                         </div>
                                                     </div>
@@ -5351,10 +5351,10 @@ function App() {
                                                     <div className="bg-slate-900/50 p-6 rounded-2xl border border-orange-500/30">
                                                         <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                                                             <CreditCard className="w-5 h-5 text-orange-400" />
-                                                            IngresÃƒÂ¡ los datos de tu tarjeta
+                                                            Ingresá los datos de tu tarjeta
                                                         </h3>
                                                         <p className="text-slate-400 text-sm mb-4">
-                                                            PagÃƒÂ¡ de forma segura con Visa, MasterCard, AMEX y mÃƒÂ¡s.
+                                                            Pagá de forma segura con Visa, MasterCard, AMEX y más.
                                                         </p>
 
                                                         {/* Mensaje de Seguridad */}
@@ -5363,7 +5363,7 @@ function App() {
                                                             <div>
                                                                 <p className="text-green-400 text-sm font-bold mb-1">Pago 100% Seguro</p>
                                                                 <p className="text-xs text-green-200/80 leading-relaxed">
-                                                                    Tus datos son procesados de forma encriptada por Mercado Pago. No almacenamos informaciÃƒÂ³n de tu tarjeta.
+                                                                    Tus datos son procesados de forma encriptada por Mercado Pago. No almacenamos información de tu tarjeta.
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -5373,7 +5373,7 @@ function App() {
                                                             <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                                                             <p className="text-xs text-orange-200 leading-relaxed font-medium">
                                                                 <strong className="text-orange-400 block mb-1">ATENCIÃƒâ€œN:</strong>
-                                                                Si tenÃƒÂ©s activado un <span className="text-white font-bold">AdBlocker/Bloqueador de Anuncios</span>, por favor desactivalo temporalmente.
+                                                                Si tenés activado un <span className="text-white font-bold">AdBlocker/Bloqueador de Anuncios</span>, por favor desactivalo temporalmente.
                                                                 Es posible que el pago no se concrete si el bloqueador interfiere con la seguridad del banco.
                                                             </p>
                                                         </div>
@@ -5405,7 +5405,7 @@ function App() {
                                                         {isPaymentProcessing && (
                                                             <div className="mt-4 p-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-orange-400 text-sm flex items-center gap-3">
                                                                 <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
-                                                                Procesando tu pago, por favor esperÃƒÂ¡...
+                                                                Procesando tu pago, por favor esperá...
                                                             </div>
                                                         )}
                                                     </div>
@@ -5414,7 +5414,7 @@ function App() {
                                         </div>
                                     </div>
 
-                                    {/* Columna Derecha: ConfirmaciÃƒÂ³n */}
+                                    {/* Columna Derecha: Confirmación */}
                                     <div className="md:col-span-2">
                                         <div className={`border p-8 rounded-[2.5rem] sticky top-28 shadow-2xl ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <h3 className={`font-black mb-8 text-xl border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-100'}`}>Resumen Final</h3>
@@ -5440,7 +5440,7 @@ function App() {
                                                 </div>
                                             </div>
 
-                                            {/* BotÃƒÂ³n Confirmar - Solo para Efectivo o Transferencia (NO para Tarjeta) */}
+                                            {/* Botón Confirmar - Solo para Efectivo o Transferencia (NO para Tarjeta) */}
                                             {checkoutData.paymentChoice && checkoutData.paymentChoice !== 'Tarjeta' ? (
                                                 <>
                                                     <button
@@ -5453,17 +5453,17 @@ function App() {
                                                     </button>
 
                                                     <p className="text-center text-slate-600 text-xs mt-6 leading-relaxed px-4">
-                                                        Al confirmar, aceptas nuestros tÃƒÂ©rminos de servicio y polÃƒÂ­tica de privacidad.
+                                                        Al confirmar, aceptas nuestros términos de servicio y política de privacidad.
                                                     </p>
                                                 </>
                                             ) : checkoutData.paymentChoice === 'Tarjeta' ? (
                                                 <div className="bg-orange-900/10 border border-orange-500/20 p-4 rounded-2xl text-center">
                                                     <p className="text-orange-400 text-sm font-medium flex items-center justify-center gap-2">
                                                         <CreditCard className="w-4 h-4" />
-                                                        CompletÃƒÂ¡ los datos de tu tarjeta arriba para pagar
+                                                        Completá los datos de tu tarjeta arriba para pagar
                                                     </p>
                                                     <p className="text-slate-500 text-xs mt-2">
-                                                        Tu compra quedarÃƒÂ¡ confirmada automÃƒÂ¡ticamente al procesar el pago.
+                                                        Tu compra quedará confirmada automáticamente al procesar el pago.
                                                     </p>
                                                 </div>
                                             ) : null}
@@ -5474,14 +5474,14 @@ function App() {
                         )
                     }
 
-                    {/* 4. VISTA DE PERFIL (HISTORIAL Y FAVORITOS) - Solo si el usuario tiene datos vÃƒÂ¡lidos */}
+                    {/* 4. VISTA DE PERFIL (HISTORIAL Y FAVORITOS) - Solo si el usuario tiene datos válidos */}
                     {
                         view === 'profile' && currentUser && currentUser.id && currentUser.email && currentUser.name && (
                             <div className="max-w-6xl mx-auto pt-8 animate-fade-up px-4 md:px-8 pb-20">
                                 {/* Tarjeta de Usuario */}
                                 {/* Tarjeta de Usuario */}
                                 <div className={`border p-8 md:p-12 rounded-[3rem] mb-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
-                                    {/* DecoraciÃƒÂ³n Fondo */}
+                                    {/* Decoración Fondo */}
                                     <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-[120px] pointer-events-none"></div>
                                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -5501,7 +5501,7 @@ function App() {
                                                 <User className="w-3 h-3" /> {currentUser.dni || 'Sin DNI'}
                                             </span>
                                             <span className={`border px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2 ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
-                                                <Phone className="w-3 h-3" /> {currentUser.phone || 'Sin TelÃƒÂ©fono'}
+                                                <Phone className="w-3 h-3" /> {currentUser.phone || 'Sin Teléfono'}
                                             </span>
                                             <span className={`border px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2 ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
                                                 <Shield className="w-3 h-3" /> {getRole(currentUser.email).toUpperCase()}
@@ -5517,7 +5517,7 @@ function App() {
                                             </button>
                                         )}
                                         <button onClick={() => { localStorage.removeItem('sustore_user_data'); setCurrentUser(null); setView('store') }} className={`px-6 py-4 border rounded-2xl font-bold transition flex items-center justify-center gap-2 ${darkMode ? 'bg-red-900/10 border-red-500/20 text-red-500 hover:bg-red-900/20' : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'}`}>
-                                            <LogOut className="w-5 h-5" /> Cerrar SesiÃƒÂ³n
+                                            <LogOut className="w-5 h-5" /> Cerrar Sesión
                                         </button>
                                     </div>
                                 </div>
@@ -5551,7 +5551,7 @@ function App() {
                                                         <button
                                                             onClick={() => {
                                                                 navigator.clipboard.writeText(c.code);
-                                                                showToast("CÃƒÂ³digo copiado", "success");
+                                                                showToast("Código copiado", "success");
                                                             }}
                                                             className="px-4 py-2 bg-purple-900/20 text-purple-400 rounded-lg text-xs font-bold hover:bg-purple-500 hover:text-white transition border border-purple-500/20"
                                                         >
@@ -5563,7 +5563,7 @@ function App() {
                                         </div>
 
                                         <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                                            <h4 className={`font-bold mb-4 text-sm uppercase tracking-wider ${darkMode ? 'text-white' : 'text-slate-900'}`}>Canjear CÃƒÂ³digo</h4>
+                                            <h4 className={`font-bold mb-4 text-sm uppercase tracking-wider ${darkMode ? 'text-white' : 'text-slate-900'}`}>Canjear Código</h4>
                                             <div className="flex gap-2">
                                                 <input
                                                     className={`flex-1 border rounded-xl p-3 focus:border-purple-500 outline-none uppercase font-mono ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
@@ -5576,9 +5576,9 @@ function App() {
                                                         if (!code) return showToast("Ingresa un código", "warning");
                                                         const coupon = coupons.find(c => c.code === code);
                                                         if (coupon) {
-                                                            showToast("¡CupÃƒÂ³n vÃƒÂ¡lido! ÃƒÅ¡salo en el checkout.", "success");
+                                                            showToast("¡Cupón válido! ÃƒÅ¡salo en el checkout.", "success");
                                                         } else {
-                                                            showToast("CupÃƒÂ³n no encontrado o invÃƒÂ¡lido", "error");
+                                                            showToast("Cupón no encontrado o inválido", "error");
                                                         }
                                                     }}
                                                     className="bg-purple-600 px-6 rounded-xl text-white font-bold hover:bg-purple-500 transition shadow-lg"
@@ -5587,7 +5587,7 @@ function App() {
                                                 </button>
                                             </div>
                                             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
-                                                Ingresa el código aquÃƒÂ­ para verificar si es vÃƒÂ¡lido. LlÃƒÂ©valo al checkout para aplicar el descuento.
+                                                Ingresa el código aquí para verificar si es válido. Llévalo al checkout para aplicar el descuento.
                                             </p>
                                         </div>
                                     </div>
@@ -5612,7 +5612,7 @@ function App() {
                                                 return (
                                                     <div className={`p-12 border-2 border-dashed rounded-[2rem] text-center ${darkMode ? 'border-slate-800 bg-slate-900/20 text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                                                         <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                                        <p className="font-bold">AÃƒÂºn no tienes compras.</p>
+                                                        <p className="font-bold">Aún no tienes compras.</p>
                                                         <button onClick={() => setView('store')} className="mt-4 text-orange-400 hover:underline text-sm font-bold">Ir a la tienda</button>
                                                     </div>
                                                 );
@@ -5656,24 +5656,24 @@ function App() {
                                                                 <span className={`font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>${order.total.toLocaleString()}</span>
                                                             </div>
 
-                                                            {/* BotÃƒÂ³n de WhatsApp para pedidos */}
+                                                            {/* Botón de WhatsApp para pedidos */}
                                                             <button
                                                                 onClick={() => {
                                                                     try {
-                                                                        // 1. Obtener nÃƒÂºmero de telÃƒÂ©fono limpio
+                                                                        // 1. Obtener número de teléfono limpio
                                                                         let phone = settings?.whatsappLink || '';
-                                                                        // Intentar extraer nÃƒÂºmero de un link tipo wa.me o usar el string directo
+                                                                        // Intentar extraer número de un link tipo wa.me o usar el string directo
                                                                         const match = phone.match(/\d+/g);
                                                                         let cleanPhone = match ? match.join('') : '';
 
-                                                                        // Si no hay nÃƒÂºmero en el link, intentar buscar en otros campos
+                                                                        // Si no hay número en el link, intentar buscar en otros campos
                                                                         if (!cleanPhone && settings?.phone) {
                                                                             const match2 = settings.phone.match(/\d+/g);
                                                                             cleanPhone = match2 ? match2.join('') : '';
                                                                         }
 
                                                                         if (!cleanPhone || cleanPhone.length < 5) {
-                                                                            return showToast("El nÃƒÂºmero de WhatsApp de la tienda no estÃƒÂ¡ configurado correctamente.", "error");
+                                                                            return showToast("El número de WhatsApp de la tienda no está configurado correctamente.", "error");
                                                                         }
 
                                                                         // LOGICA ARGENTINA ROBUSTA
@@ -5682,7 +5682,7 @@ function App() {
 
                                                                         // Si no empieza con 54, agregarlo
                                                                         if (!cleanPhone.startsWith('54')) {
-                                                                            // Si tiene 10 dÃƒÂ­gitos (ej: 3425906630), es movil sin 15 ni 0, necesita 9 despues del 54
+                                                                            // Si tiene 10 dígitos (ej: 3425906630), es movil sin 15 ni 0, necesita 9 despues del 54
                                                                             if (cleanPhone.length === 10) {
                                                                                 cleanPhone = '549' + cleanPhone;
                                                                             } else {
@@ -5698,7 +5698,7 @@ function App() {
                                                                         }
 
                                                                         // 2. Construir mensaje detallado
-                                                                        const itemsList = order.items.map(i => `Ã¢â‚¬Â¢ ${i.quantity}x ${i.title} ($${Number(i.unit_price).toLocaleString()})`).join('\n');
+                                                                        const itemsList = order.items.map(i => `• ${i.quantity}x ${i.title} ($${Number(i.unit_price).toLocaleString()})`).join('\n');
                                                                         const msg = `Hola! Hice un pedido en *${settings?.storeName || 'la tienda'}*:\n\n${itemsList}\n\n*Total: $${order.total.toLocaleString()}*\nPedido: #${order.id.slice(0, 8)}\n\nMi nombre es ${currentUser?.name || ''}.`;
 
                                                                         // 3. Abrir WhatsApp
@@ -5734,8 +5734,8 @@ function App() {
                                         {!currentUser.favorites || currentUser.favorites.length === 0 ? (
                                             <div className={`p-12 border-2 border-dashed rounded-[2rem] text-center ${darkMode ? 'border-slate-800 bg-slate-900/20 text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                                                 <Heart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                                <p className="font-bold">Tu lista de deseos estÃƒÂ¡ vacÃƒÂ­a.</p>
-                                                <p className="text-xs mt-2 max-w-xs mx-auto">Guarda productos haciendo click en el corazÃƒÂ³n de las tarjetas.</p>
+                                                <p className="font-bold">Tu lista de deseos está vacía.</p>
+                                                <p className="text-xs mt-2 max-w-xs mx-auto">Guarda productos haciendo click en el corazón de las tarjetas.</p>
                                             </div>
                                         ) : (
                                             <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
@@ -5780,14 +5780,14 @@ function App() {
                         )
                     }
 
-                    {/* Fallback: Si intenta acceder a profile sin usuario vÃƒÂ¡lido, mostrar login */}
+                    {/* Fallback: Si intenta acceder a profile sin usuario válido, mostrar login */}
                     {
                         view === 'profile' && (!currentUser || !currentUser.id || !currentUser.email || !currentUser.name) && (
                             <div className="max-w-md mx-auto pt-20 animate-fade-up px-4 text-center">
                                 <div className={`border p-8 rounded-[2rem] shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <User className="w-16 h-16 mx-auto mb-6 text-orange-500 opacity-50" />
-                                    <h2 className={`text-2xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Inicia SesiÃƒÂ³n</h2>
-                                    <p className={`mb-8 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Debes iniciar sesiÃƒÂ³n o registrarte para acceder a tu perfil.</p>
+                                    <h2 className={`text-2xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Inicia Sesión</h2>
+                                    <p className={`mb-8 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Debes iniciar sesión o registrarte para acceder a tu perfil.</p>
                                     <button
                                         onClick={() => setView('login')}
                                         className="w-full py-4 bg-gradient-to-r from-orange-500 to-blue-600 text-white rounded-2xl font-black hover:from-orange-400 hover:to-blue-500 transition shadow-lg"
@@ -5805,7 +5805,7 @@ function App() {
                             <div className={`fixed inset-0 z-[500] flex items-center justify-center p-4 animate-fade-up backdrop-blur-xl ${darkMode ? 'bg-[#050505]/95' : 'bg-white/90'}`}>
 
                                 <div className={`p-8 md:p-12 rounded-[3rem] w-full max-w-md shadow-2xl border relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
-                                    {/* BotÃƒÂ³n Cerrar (Dentro de la tarjeta) */}
+                                    {/* Botón Cerrar (Dentro de la tarjeta) */}
                                     <button onClick={() => setView('store')} className={`absolute top-6 right-6 p-2 rounded-full transition z-20 ${darkMode ? 'bg-slate-900/50 hover:bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900'}`}>
                                         <X className="w-6 h-6" />
                                     </button>
@@ -5826,14 +5826,14 @@ function App() {
                                                 <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder="Nombre de Usuario *" value={authData.username} onChange={e => setAuthData({ ...authData, username: e.target.value })} required />
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder="DNI *" value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} required />
-                                                    <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder="TelÃƒÂ©fono *" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required />
+                                                    <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder="Teléfono *" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required />
                                                 </div>
                                             </div>
                                         )}
 
                                         <div className="space-y-4">
                                             <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} placeholder={loginMode ? "Email o Usuario" : "Email *"} value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} required />
-                                            <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} type="password" placeholder={loginMode ? "ContraseÃƒÂ±a" : "ContraseÃƒÂ±a *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
+                                            <input className={`w-full p-4 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-800 text-white placeholder-slate-600 focus:border-orange-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-orange-500'}`} type="password" placeholder={loginMode ? "Contraseña" : "Contraseña *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
                                         </div>
 
                                         <button type="submit" className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-4 text-white rounded-xl font-bold mt-6 transition transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2">
@@ -5842,7 +5842,7 @@ function App() {
                                     </form>
 
                                     <button onClick={() => setLoginMode(!loginMode)} className={`w-full text-center text-sm mt-8 font-bold hover:text-orange-400 transition border-t pt-6 ${darkMode ? 'text-slate-500 border-slate-800' : 'text-slate-500 border-slate-200'}`}>
-                                        {loginMode ? 'Ã‚Â¿No tienes cuenta? RegÃƒÂ­strate gratis' : 'Ã‚Â¿Ya tienes cuenta? Inicia sesiÃƒÂ³n'}
+                                        {loginMode ? 'Ã‚Â¿No tienes cuenta? Regístrate gratis' : 'Ã‚Â¿Ya tienes cuenta? Inicia sesión'}
                                     </button>
                                 </div>
                             </div>
@@ -5864,11 +5864,11 @@ function App() {
                                     <div className={`mt-12 pt-12 border-t flex flex-col md:flex-row gap-8 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}><Shield className="text-orange-500" /></div>
-                                            <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>GarantÃƒÂ­a Oficial</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>En todos los productos</p></div>
+                                            <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Garantía Oficial</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>En todos los productos</p></div>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}><Truck className="text-purple-500" /></div>
-                                            <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>EnvÃƒÂ­os Seguros</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>A todo el paÃƒÂ­s</p></div>
+                                            <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Envíos Seguros</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>A todo el país</p></div>
                                         </div>
                                     </div>
                                 </div>
@@ -5881,17 +5881,17 @@ function App() {
                             <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
                                 <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
                                 <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                                    <FileQuestion className="text-orange-500 w-12 h-12" /> {settings?.guideTitle || 'CÃƒÂ³mo Comprar'}
+                                    <FileQuestion className="text-orange-500 w-12 h-12" /> {settings?.guideTitle || 'Cómo Comprar'}
                                 </h2>
                                 <div className={`border p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                                     {[
-                                        { title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catÃƒÂ¡logo y aÃƒÂ±ade lo que te guste al carrito con el botÃƒÂ³n '+'." },
-                                        { title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupÃƒÂ³n de descuento, ¡es el momento de usarlo!" },
-                                        { title: settings?.guideStep3Title || "Datos de EnvÃƒÂ­o", text: settings?.guideStep3Text || "Completa la informaciÃƒÂ³n de entrega. Hacemos envÃƒÂ­os a todo el paÃƒÂ­s." },
-                                        { title: settings?.guideStep4Title || "Pago y ConfirmaciÃƒÂ³n", text: settings?.guideStep4Text || "Elige tu mÃƒÂ©todo de pago preferido. Si es transferencia, recibirÃƒÂ¡s los datos por email." },
-                                        { title: settings?.guideStep5Title || "¡Listo!", text: settings?.guideStep5Text || "RecibirÃƒÂ¡s un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
+                                        { title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
+                                        { title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
+                                        { title: settings?.guideStep3Title || "Datos de Envío", text: settings?.guideStep3Text || "Completa la información de entrega. Hacemos envíos a todo el país." },
+                                        { title: settings?.guideStep4Title || "Pago y Confirmación", text: settings?.guideStep4Text || "Elige tu método de pago preferido. Si es transferencia, recibirás los datos por email." },
+                                        { title: settings?.guideStep5Title || "¡Listo!", text: settings?.guideStep5Text || "Recibirás un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
                                     ].filter((step, idx) => {
-                                        // Filtrar pasos que estÃƒÂ¡n desactivados
+                                        // Filtrar pasos que están desactivados
                                         if (idx === 0 && settings?.showGuideStep1 === false) return false;
                                         if (idx === 1 && settings?.showGuideStep2 === false) return false;
                                         if (idx === 2 && settings?.showGuideStep3 === false) return false;
@@ -5925,7 +5925,7 @@ function App() {
                                     <div className="prose prose-invert max-w-none">
                                         <p className={`text-sm mb-8 italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>última actualización: 07 de enero de 2026</p>
 
-                                        <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cÃ¯Â¿Â½mo y por quÃ¯Â¿Â½ podríamos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su información personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
+                                        <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cómo y por quÃ¯Â¿Â½ podríamos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su información personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
                                         <ul className="list-disc pl-5 space-y-2">
                                             <li>Visita nuestro sitio web en <a href="https://sustore.vercel.app" className="text-orange-500 hover:underline">https://sustore.vercel.app</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
                                             <li>InteractÃ¯Â¿Â½e con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
@@ -5996,7 +5996,7 @@ function App() {
                                 // === SEGURIDAD: Triple verificación de acceso ===
                                 // 1. Verificar que tiene permisos por rol
                                 // 2. Verificar que el usuario tiene un ID vÃ¯Â¿Â½lido
-                                // 3. Verificar que la sesiÃ¯Â¿Â½n no fue manipulada
+                                // 3. Verificar que la sesión no fue manipulada
                                 (hasAccess(currentUser?.email) &&
                                     currentUser?.id &&
                                     currentUser?.id.length >= 10 &&
@@ -6032,7 +6032,7 @@ function App() {
                                             </div>
 
                                             <nav className="flex-1 p-5 space-y-2 overflow-y-auto custom-scrollbar">
-                                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-3 mb-1 opacity-50">MenÃ¯Â¿Â½ Principal</p>
+                                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-3 mb-1 opacity-50">Menú Principal</p>
 
                                                 <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-4 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'dashboard' ? 'bg-orange-600 text-white shadow-[0_10px_30px_rgba(249,115,22,0.3)] border border-orange-400/50 scale-[1.02]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'}`}>
                                                     <LayoutDashboard className={`w-6 h-6 ${adminTab === 'dashboard' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Inicio
@@ -6080,7 +6080,7 @@ function App() {
                                                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 py-3 mt-8 mb-1 opacity-50">Sistema</p>
 
                                                         <button onClick={() => { setAdminTab('settings'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'settings' ? 'bg-orange-600 text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] border border-orange-400/30' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
-                                                            <Settings className={`w-5 h-5 ${adminTab === 'settings' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> ConfiguraciÃƒÂ³n
+                                                            <Settings className={`w-5 h-5 ${adminTab === 'settings' ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} /> Configuración
                                                         </button>
 
                                                         <button onClick={() => { setAdminTab('users'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-5 py-3.5 rounded-2xl flex items-center gap-4 font-bold text-sm transition-all duration-300 group ${adminTab === 'users' ? 'bg-pink-600 text-white shadow-[0_10px_20px_rgba(219,39,119,0.2)] border border-pink-400/30' : 'text-slate-400 hover:text-pink-400 hover:bg-pink-400/5 border border-transparent'}`}>
@@ -6142,7 +6142,7 @@ function App() {
                                             <div className="relative z-10 p-6 md:p-12 lg:p-16 max-w-[1700px] mx-auto">
                                                 <div className="md:hidden mb-8 flex items-center justify-between">
                                                     <button onClick={() => setIsAdminMenuOpen(true)} className="p-3 bg-white hover:bg-slate-50 rounded-2xl text-slate-900 border border-slate-200 flex items-center gap-3 font-black text-xs uppercase tracking-widest transition-all shadow-sm">
-                                                        <Menu className="w-5 h-5" /> MenÃ¯Â¿Â½
+                                                        <Menu className="w-5 h-5" /> Menú
                                                     </button>
                                                     <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
                                                         <Shield className="w-5 h-5" />
@@ -6204,7 +6204,7 @@ function App() {
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Lista GrÃ¯Â¿Â½fica (Ultimos 6 meses) */}
+                                                                {/* Lista Gráfica (Ultimos 6 meses) */}
                                                                 <div className="space-y-4 mt-8 border-t border-slate-100 pt-6">
                                                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Rendimiento Mensual</p>
                                                                     {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
@@ -6246,7 +6246,7 @@ function App() {
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Lista GrÃ¯Â¿Â½fica (Comparativa Ingreso vs Gasto) */}
+                                                                {/* Lista Gráfica (Comparativa Ingreso vs Gasto) */}
                                                                 <div className="space-y-4 mt-8 border-t border-slate-100 pt-6">
                                                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Ingresos vs Gastos (últimos Meses)</p>
                                                                     {dashboardMetrics.analytics.monthly.slice(-6).reverse().map((m, i) => {
@@ -6766,7 +6766,7 @@ function App() {
                                                             <div className="bg-[#0a0a0a] border border-orange-900/30 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-bl-[100px] pointer-events-none"></div>
                                                                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                    <TrendingUp className="w-5 h-5 text-orange-400" /> Registrar InversiÃ¯Â¿Â½n / Aporte
+                                                                    <TrendingUp className="w-5 h-5 text-orange-400" /> Registrar Inversión / Aporte
                                                                 </h3>
                                                                 <div className="space-y-4">
                                                                     <div>
@@ -6820,7 +6820,7 @@ function App() {
                                                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Notas (Opcional)</label>
                                                                         <input
                                                                             className="input-cyber w-full p-4"
-                                                                            placeholder="Ej: InversiÃ¯Â¿Â½n Inicial, Refuerzo de capital..."
+                                                                            placeholder="Ej: Inversión Inicial, Refuerzo de capital..."
                                                                             value={newInvestment.notes}
                                                                             onChange={e => setNewInvestment({ ...newInvestment, notes: e.target.value })}
                                                                         />
@@ -6833,7 +6833,7 @@ function App() {
                                                                                 timestamp: new Date().toISOString()
                                                                             });
                                                                             setNewInvestment({ investor: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
-                                                                            showToast("InversiÃ¯Â¿Â½n registrada correctamente.", "success");
+                                                                            showToast("Inversión registrada correctamente.", "success");
                                                                         }}
                                                                         className="w-full mt-2 bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-orange-500/20"
                                                                     >
@@ -6859,7 +6859,7 @@ function App() {
                                                                             <input type="number" className="input-cyber w-full p-4 font-mono font-bold text-red-400" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })} />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">CategorÃƒÂ­a</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
                                                                             <select className="input-cyber w-full p-4" value={newExpense.category} onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}>
                                                                                 <option>General</option>
                                                                                 <option>Servicios</option>
@@ -6904,7 +6904,7 @@ function App() {
                                                                                 </div>
                                                                                 <div className="flex items-center gap-4">
                                                                                     <p className="text-orange-400 font-mono font-bold">+${inv.amount.toLocaleString()}</p>
-                                                                                    <button onClick={() => openConfirm("Eliminar InversiÃ¯Â¿Â½n", "Ã¯Â¿Â½Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investments', inv.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
+                                                                                    <button onClick={() => openConfirm("Eliminar Inversión", "Ã¯Â¿Â½Deseas eliminar este registro?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investments', inv.id)))} className="text-slate-600 hover:text-red-400 p-2 hover:bg-slate-800 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
                                                                                 </div>
                                                                             </div>
                                                                         ))
@@ -7100,7 +7100,7 @@ function App() {
                                                                 <div className="space-y-4">
                                                                     <div className="flex gap-4">
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">MÃ¯Â¿Â½nimo de Compra</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mínimo de Compra</label>
                                                                             <input className="input-cyber w-full p-4" type="number" placeholder="$0" value={newCoupon.minPurchase} onChange={e => setNewCoupon({ ...newCoupon, minPurchase: e.target.value })} />
                                                                         </div>
                                                                         {newCoupon.type === 'percentage' && (
@@ -7498,7 +7498,7 @@ function App() {
 
                                                                                 <div className="grid grid-cols-2 gap-4 mb-6">
                                                                                     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                                                                        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Costo InversiÃ¯Â¿Â½n</p>
+                                                                                        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Costo Inversión</p>
                                                                                         <p className="text-2xl font-black text-slate-700 font-mono tracking-tight">
                                                                                             ${newPromo.items.reduce((acc, item) => {
                                                                                                 const p = products.find(prod => prod.id === item.productId);
@@ -7749,7 +7749,7 @@ function App() {
                                                                                     ></div>
                                                                                 </div>
                                                                                 <div className="flex justify-between mt-2 text-[10px] font-mono text-slate-500 uppercase">
-                                                                                    <span>InversiÃ¯Â¿Â½n: ${totalCost.toLocaleString()}</span>
+                                                                                    <span>Inversión: ${totalCost.toLocaleString()}</span>
                                                                                     <span>ROI: {totalCost > 0 ? ((profit / totalCost) * 100).toFixed(0) : 0}%</span>
                                                                                 </div>
                                                                             </div>
@@ -7915,7 +7915,7 @@ function App() {
                                                             </div>
                                                             <div className="flex gap-2">
                                                                 <button onClick={() => setShowCategoryModal(true)} className="bg-slate-800 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 border border-slate-700">
-                                                                    <FolderPlus className="w-5 h-5" /> CategorÃƒÂ­as
+                                                                    <FolderPlus className="w-5 h-5" /> Categorías
                                                                 </button>
                                                                 <button onClick={() => { setNewProduct({}); setEditingId(null); setShowProductForm(true) }} className="bg-orange-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-orange-500 transition transform hover:scale-105 active:scale-95">
                                                                     <Plus className="w-5 h-5" /> Agregar Producto
@@ -7974,7 +7974,7 @@ function App() {
                                                                         </div>
                                                                         <div className="space-y-2">
                                                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
-                                                                                CategorÃƒÂ­as (Selecciona una o más)
+                                                                                Categorías (Selecciona una o más)
                                                                             </label>
                                                                             <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
                                                                                 {(settings?.categories || []).length === 0 ? (
@@ -8066,7 +8066,7 @@ function App() {
                                                                             onClick={() => setShowCategoryModal(true)}
                                                                             className="w-full mt-2 py-2 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-orange-800"
                                                                         >
-                                                                            <FolderPlus className="w-4 h-4" /> Nueva CategorÃƒÂ­a
+                                                                            <FolderPlus className="w-4 h-4" /> Nueva Categoría
                                                                         </button>
                                                                     </div>
 
@@ -8137,7 +8137,7 @@ function App() {
                                                                             <p className="font-bold text-white text-lg flex items-center gap-2">
                                                                                 {p.name}
                                                                                 {p.isFeatured && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">DESTACADO</span>}
-                                                                                {p.isActive === false && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">OCULTO{p.deactivatedByPlan ? ' (LÃ¯Â¿Â½MITE)' : ''}</span>}
+                                                                                {p.isActive === false && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">OCULTO{p.deactivatedByPlan ? ' (LÍMITE)' : ''}</span>}
                                                                             </p>
                                                                             <p className="text-xs text-slate-500 font-mono">
                                                                                 Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
@@ -8205,7 +8205,7 @@ function App() {
                                                         {/* Only restricted sections like 'subscription' will remain restricted */}
 
                                                         <h1 className="text-4xl font-black text-slate-900 neon-text mb-8 flex items-center gap-3">
-                                                            <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> ConfiguraciÃƒÂ³n General
+                                                            <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
                                                         </h1>
 
                                                         {/* Sub-Navigation Tabs */}
@@ -8370,7 +8370,7 @@ function App() {
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">TelÃ¯Â¿Â½fono</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Teléfono</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.storePhone || ''}
@@ -8651,7 +8651,7 @@ function App() {
                                                                                         className="bg-transparent border-none text-white font-bold p-0 focus:ring-0 flex-1"
                                                                                         value={settings?.[`guideStep${num}Title`] || ''}
                                                                                         onChange={e => setSettings({ ...settings, [`guideStep${num}Title`]: e.target.value })}
-                                                                                        placeholder={`TÃ¯Â¿Â½tulo Paso ${num}`}
+                                                                                        placeholder={`Título Paso ${num}`}
                                                                                     />
                                                                                     <button
                                                                                         onClick={() => setSettings({ ...settings, [`showGuideStep${num}`]: !settings?.[`showGuideStep${num}`] })}
@@ -8741,7 +8741,7 @@ function App() {
                                                                     <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                         <div className="flex items-center justify-between mb-6">
                                                                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                                                                <Zap className="w-5 h-5 text-yellow-500" /> OptimizaciÃƒÂ³n (Lazy Load)
+                                                                                <Zap className="w-5 h-5 text-yellow-500" /> Optimización (Lazy Load)
                                                                             </h3>
                                                                             <button
                                                                                 onClick={() => setSettings({ ...settings, lazyLoad: settings?.lazyLoad !== false ? false : true })}
@@ -8750,7 +8750,7 @@ function App() {
                                                                                 <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.lazyLoad !== false ? 'left-6' : 'left-0.5'}`}></div>
                                                                             </button>
                                                                         </div>
-                                                                        <p className="text-xs text-slate-500">Carga imÃ¯Â¿Â½genes solo cuando son visibles para mejorar velocidad.</p>
+                                                                        <p className="text-xs text-slate-500">Carga imágenes solo cuando son visibles para mejorar velocidad.</p>
                                                                     </div>
                                                                 </div>
 
@@ -8761,7 +8761,7 @@ function App() {
                                                                     </h3>
                                                                     <div className="space-y-4">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">TÃ¯Â¿Â½tulo de la Página (Meta Title)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de la Página (Meta Title)</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoTitle || ''}
@@ -8784,7 +8784,7 @@ function App() {
                                                                 {/* CONFIGURACIÃ¯Â¿Â½N IA */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Cpu className="w-5 h-5 text-purple-400" /> ConfiguraciÃƒÂ³n Asistente IA
+                                                                        <Cpu className="w-5 h-5 text-purple-400" /> Configuración Asistente IA
                                                                     </h3>
                                                                     <div className="flex flex-col items-center gap-4">
                                                                         <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-purple-500/30 flex items-center justify-center overflow-hidden">
@@ -8812,18 +8812,18 @@ function App() {
                                                             <div className="space-y-6 animate-fade-up">
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Globe className="w-5 h-5 text-green-400" /> OptimizaciÃƒÂ³n SEO
+                                                                        <Globe className="w-5 h-5 text-green-400" /> Optimización SEO
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">TÃ¯Â¿Â½tulo del Sitio</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título del Sitio</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoTitle || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
                                                                                 placeholder="Mi Tienda Online | Los Mejores Productos"
                                                                             />
-                                                                            <p className="text-xs text-slate-500 mt-1">Aparece en la pestaÃ¯Â¿Â½a del navegador</p>
+                                                                            <p className="text-xs text-slate-500 mt-1">Aparece en la pestaña del navegador</p>
                                                                         </div>
                                                                         <div>
                                                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta Descripción</label>
@@ -8831,7 +8831,7 @@ function App() {
                                                                                 className="input-cyber w-full p-4 h-20 resize-none"
                                                                                 value={settings?.seoDescription || ''}
                                                                                 onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
-                                                                                placeholder="Tienda online de productos de alta calidad. Envíos a todo el país. ¡VisÃƒÂ­tanos!"
+                                                                                placeholder="Tienda online de productos de alta calidad. Envíos a todo el país. ¡Visítanos!"
                                                                             />
                                                                             <p className="text-xs text-slate-500 mt-1">Descripción que aparece en Google (max 160 caracteres)</p>
                                                                         </div>
@@ -8846,9 +8846,9 @@ function App() {
                                                                             <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
                                                                         </div>
 
-                                                                        {/* URL Canúnica */}
+                                                                        {/* URL Canónica */}
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Canúnica)</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Canónica)</label>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.seoUrl || ''}
@@ -8933,7 +8933,7 @@ function App() {
                                                             <div className="space-y-6 animate-fade-up">
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Cog className="w-5 h-5 text-slate-400" /> ConfiguraciÃƒÂ³n Avanzada
+                                                                        <Cog className="w-5 h-5 text-slate-400" /> Configuración Avanzada
                                                                     </h3>
                                                                     <div className="space-y-4">
                                                                         {/* Maintenance Mode */}
@@ -8958,7 +8958,7 @@ function App() {
                                                                             <div className="flex items-center justify-between">
                                                                                 <div>
                                                                                     <p className="font-bold text-white">Carga Diferida (Lazy Load)</p>
-                                                                                    <p className="text-xs text-slate-500">Mejora velocidad cargando imÃ¯Â¿Â½genes al hacer scroll</p>
+                                                                                    <p className="text-xs text-slate-500">Mejora velocidad cargando imágenes al hacer scroll</p>
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => setSettings({ ...settings, enableLazyLoad: settings?.enableLazyLoad === false ? true : false })}
@@ -8989,16 +8989,16 @@ function App() {
                                                                                         if ('caches' in window) {
                                                                                             caches.keys().then(names => {
                                                                                                 names.forEach(name => caches.delete(name));
-                                                                                                showToast('CachÃ¯Â¿Â½ limpiada. Recargando...', 'success');
+                                                                                                showToast('Caché limpiada. Recargando...', 'success');
                                                                                                 setTimeout(() => window.location.reload(), 1500);
                                                                                             });
                                                                                         } else {
-                                                                                            showToast('Tu navegador no soporta gestiÃ¯Â¿Â½n de cachÃ¯Â¿Â½', 'warning');
+                                                                                            showToast('Tu navegador no soporta gestión de cachÃ¯Â¿Â½', 'warning');
                                                                                         }
                                                                                     }}
                                                                                     className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
                                                                                 >
-                                                                                    <Trash2 className="w-4 h-4" /> Forzar Limpieza de CachÃ¯Â¿Â½ y Recargar
+                                                                                    <Trash2 className="w-4 h-4" /> Forzar Limpieza de Caché y Recargar
                                                                                 </button>
                                                                                 <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores gráficos o versiones antiguas.</p>
                                                                             </div>
@@ -9050,7 +9050,7 @@ function App() {
                                                                         <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div>
                                                                                 <p className="font-bold text-white">Mostrar Stock Disponible</p>
-                                                                                <p className="text-xs text-slate-500">Los clientes ven cuÃ¯Â¿Â½ntas unidades hay</p>
+                                                                                <p className="text-xs text-slate-500">Los clientes ven cuántas unidades hay</p>
                                                                             </div>
                                                                             <button
                                                                                 onClick={() => setSettings({ ...settings, showStockCount: settings?.showStockCount === false ? true : false })}
@@ -9063,7 +9063,7 @@ function App() {
                                                                         {/* Require Phone */}
                                                                         <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div>
-                                                                                <p className="font-bold text-white">Requerir TelÃ¯Â¿Â½fono</p>
+                                                                                <p className="font-bold text-white">Requerir Teléfono</p>
                                                                                 <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
                                                                             </div>
                                                                             <button
@@ -9137,7 +9137,7 @@ function App() {
                                                                 {/* === PAYMENTS (Moved from separate tab) === */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <CreditCard className="w-5 h-5 text-green-400" /> MÃƒÂ©todos de Pago
+                                                                        <CreditCard className="w-5 h-5 text-green-400" /> Métodos de Pago
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         {/* Transfer */}
@@ -9188,7 +9188,7 @@ function App() {
                                                                                         />
                                                                                     </div>
                                                                                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
-                                                                                        <AlertCircle className="w-3 h-3" /> Estos datos se mostrarÃƒÂ¡n al cliente al elegir pagar por transferencia
+                                                                                        <AlertCircle className="w-3 h-3" /> Estos datos se mostrarán al cliente al elegir pagar por transferencia
                                                                                     </p>
                                                                                 </div>
                                                                             )}
@@ -9208,7 +9208,7 @@ function App() {
                                                                                     onClick={() => {
                                                                                         // Validar que Retiro en Local est activo
                                                                                         if (!settings?.shippingPickup?.enabled) {
-                                                                                            showToast('Debes activar "Retiro en Local" (EnvÃƒÂ­os) para habilitar efectivo.', 'warning');
+                                                                                            showToast('Debes activar "Retiro en Local" (Envíos) para habilitar efectivo.', 'warning');
                                                                                             return;
                                                                                         }
                                                                                         setSettings({ ...settings, paymentCash: !settings?.paymentCash });
@@ -9249,7 +9249,7 @@ function App() {
                                                                 {/* === SHIPPING (Moved from separate tab) === */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <Truck className="w-5 h-5 text-orange-400" /> Opciones de EnvÃƒÂ­o
+                                                                        <Truck className="w-5 h-5 text-orange-400" /> Opciones de Envío
                                                                     </h3>
                                                                     <div className="space-y-6">
                                                                         {/* Pickup */}
@@ -9274,7 +9274,7 @@ function App() {
                                                                                     className="input-cyber w-full p-4"
                                                                                     value={settings?.shippingPickup?.address || ''}
                                                                                     onChange={e => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, address: e.target.value } })}
-                                                                                    placeholder="DirecciÃƒÂ³n de retiro: Av. Corrientes 1234"
+                                                                                    placeholder="Dirección de retiro: Av. Corrientes 1234"
                                                                                 />
                                                                             )}
                                                                         </div>
@@ -9285,8 +9285,8 @@ function App() {
                                                                                 <div className="flex items-center gap-3">
                                                                                     <Package className="w-6 h-6 text-purple-400" />
                                                                                     <div>
-                                                                                        <p className="font-bold text-white">EnvÃƒÂ­o a Domicilio</p>
-                                                                                        <p className="text-xs text-slate-500">Delivery estÃƒÂ¡ndar</p>
+                                                                                        <p className="font-bold text-white">Envío a Domicilio</p>
+                                                                                        <p className="text-xs text-slate-500">Delivery estándar</p>
                                                                                     </div>
                                                                                 </div>
                                                                                 <button
@@ -9299,7 +9299,7 @@ function App() {
                                                                             {settings?.shippingDelivery?.enabled && (
                                                                                 <div className="grid grid-cols-2 gap-4">
                                                                                     <div>
-                                                                                        <label className="text-xs text-slate-500 mb-1 block">Costo de EnvÃƒÂ­o ($)</label>
+                                                                                        <label className="text-xs text-slate-500 mb-1 block">Costo de Envío ($)</label>
                                                                                         <input
                                                                                             type="number"
                                                                                             className="input-cyber w-full p-4"
@@ -9366,7 +9366,7 @@ function App() {
 
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                        <FolderPlus className="w-5 h-5 text-orange-400" /> CategorÃƒÂ­as de Productos
+                                                                        <FolderPlus className="w-5 h-5 text-orange-400" /> Categorías de Productos
                                                                     </h3>
                                                                     <div className="flex flex-wrap gap-2 mb-4">
                                                                         {(settings?.categories || []).map((cat, idx) => (
@@ -9385,7 +9385,7 @@ function App() {
                                                                         onClick={() => setShowCategoryModal(true)}
                                                                         className="px-4 py-2 bg-orange-900/20 text-orange-400 rounded-lg font-bold text-sm border border-orange-500/30 hover:bg-orange-900/40 transition flex items-center gap-2"
                                                                     >
-                                                                        <Plus className="w-4 h-4" /> Agregar CategorÃƒÂ­a
+                                                                        <Plus className="w-4 h-4" /> Agregar Categoría
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -9497,7 +9497,7 @@ function App() {
                                                                         setIsLoading(true);
                                                                         const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
                                                                         await setDoc(settingsRef, settings, { merge: true });
-                                                                        showToast("ConfiguraciÃƒÂ³n guardada exitosamente", "success");
+                                                                        showToast("Configuración guardada exitosamente", "success");
                                                                     } catch (e) {
                                                                         console.error(e);
                                                                         showToast("Error al guardar", "error");
@@ -9529,7 +9529,7 @@ function App() {
                                                                         <input className="input-cyber w-full p-4" placeholder="Nombre del Contacto" value={newSupplier.contact} onChange={e => setNewSupplier({ ...newSupplier, contact: e.target.value })} />
 
                                                                         <div className="grid grid-cols-2 gap-4">
-                                                                            <input className="input-cyber w-full p-4" placeholder="TelÃ¯Â¿Â½fono" value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} />
+                                                                            <input className="input-cyber w-full p-4" placeholder="Teléfono" value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} />
                                                                             <input className="input-cyber w-full p-4" placeholder="Instagram (sin @)" value={newSupplier.ig} onChange={e => setNewSupplier({ ...newSupplier, ig: e.target.value })} />
                                                                         </div>
 
@@ -9584,7 +9584,7 @@ function App() {
                         )
                     }
 
-                    {/* 8. VISTA POLÃ¯Â¿Â½TICA DE PRIVACIDAD */}
+                    {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
                     {
                         view === 'privacy' && (
                             <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
@@ -9594,11 +9594,11 @@ function App() {
                                             Política de <span className="text-orange-500 text-6xl">Privacidad</span>
                                         </h1>
                                         <p className="text-slate-400 text-lg leading-relaxed">
-                                            En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cÃ¯Â¿Â½mo recolectamos, usamos y resguardamos tu información.
+                                            En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cómo recolectamos, usamos y resguardamos tu información.
                                         </p>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
                                         <p className="text-slate-500 leading-relaxed">
-                                            Recolectamos datos bÃ¯Â¿Â½sicos como nombre, correo electrónico y número de teléfono únicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
+                                            Recolectamos datos básicos como nombre, correo electrónico y número de teléfono únicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
                                         </p>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">2. Uso de los Datos</h2>
                                         <p className="text-slate-500 leading-relaxed">
@@ -9615,7 +9615,7 @@ function App() {
                                         </p>
                                         <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
                                         <p className="text-slate-500 leading-relaxed mb-12">
-                                            Si tienes dudas sobre nuestra política de privacidad, contÃ¯Â¿Â½ctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
+                                            Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
                                         </p>
                                         <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
                                             <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
@@ -9833,7 +9833,7 @@ function App() {
 
                                 {/* Columna 2: Quick Links */}
                                 <div className="space-y-6">
-                                    <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>Enlaces RÃ¯Â¿Â½pidos</h3>
+                                    <h3 className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold uppercase tracking-widest text-xs`}>Enlaces Rápidos</h3>
                                     <ul className="space-y-3 text-sm text-slate-500 font-medium">
                                         <li>
                                             <button onClick={() => setView('store')} className="hover:text-orange-400 transition flex items-center gap-2 group">
@@ -9919,7 +9919,7 @@ function App() {
                                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${darkMode ? 'bg-orange-900/20 text-orange-500' : 'bg-orange-100 text-orange-600'}`}>
                                     <FolderPlus className="w-8 h-8" />
                                 </div>
-                                <h3 className={`text-2xl font-black text-center mb-6 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Nueva CategorÃƒÂ­a</h3>
+                                <h3 className={`text-2xl font-black text-center mb-6 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Nueva Categoría</h3>
                                 <input
                                     type="text"
                                     value={newCategory}
@@ -9983,7 +9983,7 @@ function App() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>MÃ¯Â¿Â½todo de Pago</label>
+                                        <label className={`text-[10px] font-bold uppercase mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Método de Pago</label>
                                         <select
                                             className={`w-full p-3 rounded-xl outline-none border transition ${darkMode ? 'bg-slate-900/50 border-slate-700 text-white focus:border-green-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-green-500'}`}
                                             value={saleData.paymentMethod}
@@ -10020,7 +10020,7 @@ function App() {
                         </div>
                     )
                 }
-                {/* BOTÃ¯Â¿Â½N FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
+                {/* BOTÓN FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
                 {
                     settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
                         <button
@@ -10046,7 +10046,7 @@ function App() {
                 }
 
 
-                {/* MODAL: VER PLANES DE SUSCRIPCIÃ¯Â¿Â½N */}
+                {/* MODAL: VER PLANES DE SUSCRIPCIÓN */}
                 {
                     showPlansModal && (
                         <PlansModalContent settings={settings} onClose={() => setShowPlansModal(false)} darkMode={darkMode} />
@@ -10115,7 +10115,7 @@ function App() {
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-orange-500/50 open:shadow-[0_0_20px_rgba(249,115,22,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-orange-400">?? ElegÃ¯Â¿Â½ tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-orange-400">?? Elegí tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-orange-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
@@ -10151,7 +10151,7 @@ function App() {
                                             ? 'bg-gradient-to-b from-purple-950/40 to-slate-950 border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.25)]'
                                             : 'bg-gradient-to-b from-slate-900/50 to-[#050505] border-slate-800 hover:border-purple-500/50'
                                             }`}>
-                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">? MÃ¯Â¿Â½S POPULAR</div>
+                                            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 animate-pulse">? MÁS POPULAR</div>
                                             <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                                             {settings?.subscriptionPlan === 'business' && (
@@ -10185,13 +10185,13 @@ function App() {
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-purple-500/50 open:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-purple-400">?? ElegÃ¯Â¿Â½ tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-purple-400">?? Elegí tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-purple-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                                         {[
                                                             { cycle: 'Semanal', price: '$4.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                            { cycle: 'Mensual', price: '$13.000', label: 'Pago Mensual', sub: 'Ideal gestiÃ¯Â¿Â½n mensual' },
+                                                            { cycle: 'Mensual', price: '$13.000', label: 'Pago Mensual', sub: 'Ideal gestión mensual' },
                                                             { cycle: 'Anual', price: '$117.000', label: 'Pago Anual', sub: '3 MESES GRATIS ??' }
                                                         ].map((opt) => (
                                                             <div
@@ -10255,7 +10255,7 @@ function App() {
 
                                                 <details className="group/payment bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 open:bg-slate-900 open:border-yellow-500/50 open:shadow-[0_0_20px_rgba(234,179,8,0.15)]">
                                                     <summary className="flex items-center justify-between p-4 list-none font-bold text-white text-sm hover:bg-slate-800/50 transition">
-                                                        <span className="flex items-center gap-2 text-yellow-400">?? ElegÃ¯Â¿Â½ tu plan de pago</span>
+                                                        <span className="flex items-center gap-2 text-yellow-400">?? Elegí tu plan de pago</span>
                                                         <ChevronDown className="w-5 h-5 text-yellow-400 transition-transform duration-300 group-open/payment:rotate-180" />
                                                     </summary>
                                                     <div className="px-3 pb-3 space-y-2 animate-fade-in">
@@ -10503,7 +10503,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },
                 { id: 'monthly', label: 'Mensual', price: '$13.000', sub: 'Equilibrio perfecto' },
-                { id: 'annual', label: 'Anual', price: '$117.000', sub: 'ðŸŽ Â¡3 MESES GRATIS' }
+                { id: 'annual', label: 'Anual', price: '$117.000', sub: '🎁 Â¡3 MESES GRATIS' }
             ],
             color: 'purple',
             icon: Briefcase
@@ -10516,7 +10516,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
             price: '$22.000',
             features: [
                 '🚀 Productos ilimitados',
-                'Ã°Å¸Â¤â€“ Asistente IA 24/7',
+                '🤖 Asistente IA 24/7',
                 '✅ Carga VIP (10 productos)',
                 '✅ Mantenimiento mensual',
                 '✅ Omnicanalidad total'
@@ -10541,7 +10541,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                         <h2 className={`text-xl sm:text-3xl font-black flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                             <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-current" /> Planes Disponibles
                         </h2>
-                        <p className={`text-xs sm:text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>ElegÃ¯Â¿Â½ un plan y seleccionÃ¯Â¿Â½ tu forma de pago</p>
+                        <p className={`text-xs sm:text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>Elegí un plan y seleccioná tu forma de pago</p>
                     </div>
                     <button onClick={onClose} className={`p-2 sm:p-3 rounded-full transition-all hover:rotate-90 ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>
                         <X className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -10613,7 +10613,7 @@ const PlansModalContent = ({ settings, onClose, darkMode }) => {
                                             className={`w-full py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2
                                                 ${isActive ? 'bg-white/5 text-white' : (darkMode ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50' : 'bg-slate-100 text-slate-500 hover:bg-slate-200')}`}
                                         >
-                                            {isActive ? 'ElegÃ¯Â¿Â½ tu forma de pago' : 'Ver opciones de pago'}
+                                            {isActive ? 'Elegí tu forma de pago' : 'Ver opciones de pago'}
                                             <ChevronDown className={`w-4 h-4 transition-transform ${isActive ? 'rotate-180' : ''}`} />
                                         </button>
 
@@ -10720,7 +10720,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
                             <div>
                                 <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Estado Actual</p>
                                 <p className={`text-xl font-black ${order.status === 'Realizado' ? 'text-green-400' : 'text-yellow-400'}`}>
-                                    {order.status === 'Realizado' ? 'Entregado / Finalizado' : 'Pendiente de Pago/EnvÃ¯Â¿Â½o'}
+                                    {order.status === 'Realizado' ? 'Entregado / Finalizado' : 'Pendiente de Pago/Envío'}
                                 </p>
                             </div>
                         </div>
@@ -10742,7 +10742,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
                                     )}
                                     {order.customer.phone && (
                                         <p className="flex justify-between border-b border-dashed border-slate-700/20 pb-1">
-                                            <span className="text-slate-500">TelÃ¯Â¿Â½fono:</span>
+                                            <span className="text-slate-500">Teléfono:</span>
                                             <a href={`https://wa.me/549${order.customer.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-green-500 font-bold hover:underline flex items-center gap-1">
                                                 <MessageCircle className="w-3 h-3" /> {order.customer.phone}
                                             </a>
@@ -10759,7 +10759,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
 
                         <div className={`p-6 rounded-2xl border transition ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:border-slate-700' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}>
                             <h4 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-slate-800/20 pb-2">
-                                <Truck className="w-4 h-4" /> EnvÃ¯Â¿Â½o / Entrega
+                                <Truck className="w-4 h-4" /> Envío / Entrega
                             </h4>
                             <div className="space-y-3">
                                 <p className={`font-medium text-sm leading-relaxed min-h-[3rem] ${darkMode ? 'text-white' : 'text-slate-800'}`}>
@@ -10767,7 +10767,7 @@ const OrderDetailsModal = ({ order, onClose, darkMode }) => {
                                     {order.delivery?.city && <span><br />{order.delivery.city}, {order.delivery.zip}</span>}
                                 </p>
                                 <div className="pt-2 mt-2 border-t border-slate-800/20">
-                                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">MÃ¯Â¿Â½todo de Pago</p>
+                                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Método de Pago</p>
                                     <div className="flex items-center gap-2">
                                         <CreditCard className="w-4 h-4 text-orange-400" />
                                         <p className="text-orange-400 font-black text-sm uppercase">{order.paymentMethod || 'Efectivo'}</p>
@@ -10874,8 +10874,8 @@ const CouponSelectorModal = ({ isOpen, onClose, coupons, currentUser, cartSubtot
                                     <span className={`text-lg font-black ${isDisabled ? 'text-slate-400' : 'text-orange-500'}`}>{coupon.code}</span>
                                     <span className="text-xs font-bold px-2 py-1 bg-orange-500/10 text-orange-500 rounded-lg">-{coupon.discount}%</span>
                                 </div>
-                                <p className="text-xs text-slate-500 font-medium">{coupon.description || 'VÃ¯Â¿Â½lido para toda la tienda.'}</p>
-                                {minNotMet && <p className="text-[10px] text-red-400 mt-2 font-bold uppercase tracking-wider">MÃ¯Â¿Â½nimo: ${coupon.minPurchase.toLocaleString()}</p>}
+                                <p className="text-xs text-slate-500 font-medium">{coupon.description || 'Válido para toda la tienda.'}</p>
+                                {minNotMet && <p className="text-[10px] text-red-400 mt-2 font-bold uppercase tracking-wider">Mínimo: ${coupon.minPurchase.toLocaleString()}</p>}
                             </button>
                         );
                     })}
@@ -10885,7 +10885,7 @@ const CouponSelectorModal = ({ isOpen, onClose, coupons, currentUser, cartSubtot
     );
 };
 
-// Modal de Detalle de Producto / Promo (VersiÃ¯Â¿Â½n Premium)
+// Modal de Detalle de Producto / Promo (Versión Premium)
 const ProductDetailModal = ({ selectedProduct, setSelectedProduct, cart, manageCart, products, calculateItemPrice, darkMode, showToast, toggleFavorite, currentUser, settings }) => {
     const [qty, setQty] = useState(1);
     const [added, setAdded] = useState(false);
@@ -10970,7 +10970,7 @@ const ProductDetailModal = ({ selectedProduct, setSelectedProduct, cart, manageC
                                 <p className="text-4xl font-black text-white font-mono">${displayPrice.toLocaleString()}</p>
                             </div>
                             <div className={`px-3 py-1 rounded-full text-[10px] font-bold ${hasStock ? (isMaxInCart ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400') : 'bg-red-500/20 text-red-500'}`}>
-                                {hasStock ? (isMaxInCart ? 'LÃ¯Â¿Â½MITE ALCANZADO' : `DISPONIBLES: ${availableToAdd}`) : 'SIN STOCK'}
+                                {hasStock ? (isMaxInCart ? 'LÍMITE ALCANZADO' : `DISPONIBLES: ${availableToAdd}`) : 'SIN STOCK'}
                             </div>
                         </div>
 
@@ -11061,7 +11061,7 @@ const MetricsDetailModal = ({ metricsDetail, setMetricsDetail, dashboardMetrics,
         <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
             <div className={`rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col border p-8 ${darkMode ? 'bg-[#050505] border-slate-800' : 'bg-white'}`}>
                 <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-2xl font-black text-white uppercase tracking-widest">EstadÃ¯Â¿Â½sticas Detalladas</h3>
+                    <h3 className="text-2xl font-black text-white uppercase tracking-widest">Estadísticas Detalladas</h3>
                     <button onClick={() => setMetricsDetail(null)}><X className="text-white" /></button>
                 </div>
                 <div className="flex gap-4 mb-8">
