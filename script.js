@@ -3436,13 +3436,16 @@ function App() {
         };
     }, [orders, view, adminTab, soundEnabled, currentUser]);
 
-    // 5. Rotacin Automtica Carrusel Hero
+    // 5. Rotación Automática Carrusel Hero
     useEffect(() => {
-        const heroImages = settings?.heroImages?.length ? settings.heroImages :
+        const heroImages = Array.isArray(settings?.heroImages) && settings.heroImages.length ? settings.heroImages :
             (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
         const hasMultipleImages = heroImages.length > 1;
 
-        if (!hasMultipleImages) return;
+        if (!hasMultipleImages) {
+            setCurrentHeroSlide(0); // Reset to 0 if only one image or none
+            return;
+        }
 
         const interval = setInterval(() => {
             setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
