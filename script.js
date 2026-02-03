@@ -35,7 +35,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 // ID interno de la app (no es el appId de Firebase). Puedes cambiarlo si quieres diferenciar entornos.
 const appId = "sustore-63266-prod";
-const APP_VERSION = "3.0.0";
+const APP_VERSION = "3.0.1";
 
 // === SEGURIDAD: Email de Super Admin ofuscado (múltiples capas) ===
 const _sa = ['bGF1dGFyb2NvcmF6emE2M0BnbWFpbC5jb20=']; // Base64
