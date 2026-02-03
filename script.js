@@ -2346,6 +2346,72 @@ function App() {
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('all');
 
+    // --- MEMOIZED DATA FOR ADMIN TABS (Optimización para evitar "Expected static flag was missing") ---
+    const filteredUsers = useMemo(() => {
+        return users.filter(u => {
+            const query = userSearch.toLowerCase();
+            const matchesSearch = (u.name || '').toLowerCase().includes(query) ||
+                (u.email || '').toLowerCase().includes(query) ||
+                (u.username || '').toLowerCase().includes(query);
+            const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
+            return matchesSearch && matchesRole;
+        });
+    }, [users, userSearch, userRoleFilter]);
+
+    const distributionData = useMemo(() => {
+        const team = settings?.team || [];
+        const memberInvestments = team.map(member => {
+            const totalInv = Number(member.investment) || 0;
+            return { ...member, totalInv };
+        });
+        const totalCapital = memberInvestments.reduce((acc, m) => acc + m.totalInv, 0);
+        return { memberInvestments, totalCapital };
+    }, [settings?.team]);
+
+    const planLimits = useMemo(() => {
+        const plan = settings?.subscriptionPlan || 'entrepreneur';
+        const limitCount = plan === 'premium' ? 999999 : plan === 'business' ? 50 : 30;
+        const current = products.length;
+        const isNearLimit = plan !== 'premium' && current >= limitCount * 0.8;
+        const deactivatedByPlan = products.filter(p => !p.isActive && p.deactivatedByPlan);
+        const deactivatedManually = products.filter(p => !p.isActive && !p.deactivatedByPlan);
+        const totalDeactivated = products.filter(p => !p.isActive);
+        return { plan, limitCount, current, isNearLimit, deactivatedByPlan, deactivatedManually, totalDeactivated };
+    }, [settings?.subscriptionPlan, products]);
+
+    const userProfileData = useMemo(() => {
+        if (!currentUser) return { myCoupons: [], myOrders: [] };
+        const myCoupons = coupons.filter(c =>
+            (c.targetType === 'global') ||
+            (c.targetType === 'specific_email' && c.targetUser === currentUser.email)
+        );
+        const myOrders = orders.filter(o => o.userId === currentUser.id).sort((a, b) => new Date(b.date) - new Date(a.date));
+        return { myCoupons, myOrders };
+    }, [coupons, orders, currentUser]);
+
+    const heroCarouselData = useMemo(() => {
+        const heroImages = settings?.heroImages?.length ? settings.heroImages :
+            (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
+        const hasMultipleImages = heroImages.length > 1;
+        return { heroImages, hasMultipleImages };
+    }, [settings?.heroImages, settings?.heroUrl]);
+
+    const purchaseFormData = useMemo(() => {
+        const selectedProd = products.find(p => p.id === newPurchase.productId);
+        const productPrice = selectedProd?.purchasePrice || selectedProd?.basePrice || 0;
+        const autoCost = productPrice * newPurchase.quantity;
+        return { selectedProd, productPrice, autoCost };
+    }, [products, newPurchase.productId, newPurchase.quantity]);
+
+    const handleHeroClick = useCallback((image) => {
+        if (image?.linkedProductId) {
+            const product = products.find(p => p.id === image.linkedProductId);
+            if (product) setSelectedProduct(product);
+        } else if (image?.linkedPromoId) {
+            setSelectedCategory('Promos');
+        }
+    }, [products]);
+
     // Estado para Modal de Planes (cuando hacen clic en el overlay de restricción)
     const [showPlansModal, setShowPlansModal] = useState(false);
     const [selectedPlanOption, setSelectedPlanOption] = useState(null); // { plan: 'Emprendedor', cycle: 'Mensual', price: '$7.000' }
@@ -5367,131 +5433,103 @@ function App() {
 
 
                             {/* Banner Hero - Carrusel */}
-                            {(() => {
-                                // Compatibilidad: usar heroImages o fallback a heroUrl
-                                const heroImages = settings?.heroImages?.length ? settings.heroImages :
-                                    (settings?.heroUrl ? [{ url: settings.heroUrl }] : []);
-                                const hasMultipleImages = heroImages.length > 1;
+                            <div className={`relative w-full rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-all duration-500 ${settings?.carouselHeight === 'slim' ? 'h-[80px] sm:h-[120px] lg:h-[140px]' :
+                                (!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'h-[120px] sm:h-[160px] lg:h-[180px]' :
+                                    settings?.carouselHeight === 'medium' ? 'h-[200px] sm:h-[280px] lg:h-[350px]' :
+                                        'h-[350px] sm:h-[500px] lg:h-[600px]'} ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
 
-                                // Handler para click en imagen (ir a producto/promo)
-                                const handleHeroClick = (image) => {
-                                    if (image?.linkedProductId) {
-                                        const product = products.find(p => p.id === image.linkedProductId);
-                                        if (product) setSelectedProduct(product);
-                                    } else if (image?.linkedPromoId) {
-                                        setSelectedCategory('Promos');
-                                    }
-                                };
+                                {/* Imágenes del Carrusel */}
+                                {!settingsLoaded ? (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
+                                ) : heroCarouselData.heroImages.length > 0 ? (
+                                    heroCarouselData.heroImages.map((image, index) => (
+                                        <div
+                                            key={index}
+                                            onClick={() => handleHeroClick(image)}
+                                            className={`absolute inset-0 transition-opacity duration-700 ${image?.linkedProductId || image?.linkedPromoId ? 'cursor-pointer' : ''} ${currentHeroSlide === index ? 'opacity-100 z-[1]' : 'opacity-0 z-0'}`}
+                                        >
+                                            <img
+                                                src={image.url}
+                                                className="absolute inset-0 w-full h-full object-contain opacity-60 transition-transform duration-1000 group-hover:scale-105"
+                                                alt={`Hero ${index + 1}`}
+                                            />
+                                        </div>
+                                    ))
+                                ) : (
+                                    // Fallback Hero Background si no hay imágenes
+                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40 opacity-60">
+                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                                    </div>
+                                )
+                                }
 
-                                return (
-                                    <div className={`relative w-full rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv transition-all duration-500 ${settings?.carouselHeight === 'slim' ? 'h-[80px] sm:h-[120px] lg:h-[140px]' :
-                                        (!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'h-[120px] sm:h-[160px] lg:h-[180px]' :
-                                            settings?.carouselHeight === 'medium' ? 'h-[200px] sm:h-[280px] lg:h-[350px]' :
-                                                'h-[350px] sm:h-[500px] lg:h-[600px]'} ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
-                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
-
-                                        {/* Imágenes del Carrusel */}
-                                        {!settingsLoaded ? (
-                                            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
-                                        ) : heroImages.length > 0 ? (
-                                            heroImages.map((image, index) => (
-                                                <div
-                                                    key={index}
-                                                    onClick={() => handleHeroClick(image)}
-                                                    className={`absolute inset-0 transition-opacity duration-700 ${image?.linkedProductId || image?.linkedPromoId ? 'cursor-pointer' : ''} ${currentHeroSlide === index ? 'opacity-100 z-[1]' : 'opacity-0 z-0'}`}
-                                                >
-                                                    <img
-                                                        src={image.url}
-                                                        className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105"
-                                                        alt={`Hero ${index + 1}`}
-                                                    />
-                                                </div>
-                                            ))
+                                {/* Overlay de Texto - Solo en primera imagen (slide 0) */}
+                                <div className={`absolute inset-0 z-10 flex flex-col justify-center transition-all duration-500 
+                                            ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'px-6 sm:px-12 md:px-16 lg:px-20' : 'px-8 sm:px-16 md:px-24'}`}>
+                                    <div className={`transition-all duration-700 transform ${currentHeroSlide === 0 ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
+                                        {/* Si hay un overlay per-image, lo mostramos (vanguardia) */}
+                                        {heroCarouselData.heroImages[0]?.textOverlay ? (
+                                            <>
+                                                <div dangerouslySetInnerHTML={{ __html: heroCarouselData.heroImages[0].textOverlay }} />
+                                            </>
                                         ) : (
-                                            // Fallback Hero Background si no hay imágenes
-                                            <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40 opacity-60">
-                                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                                            </div>
-                                        )
-                                        }
-
-                                        {/* Overlay de Texto - Solo en primera imagen (slide 0) */}
-                                        <div className={`absolute inset-0 flex flex-col justify-center z-10 bg-gradient-to-t md:bg-gradient-to-r transition-all duration-500 
-                                            ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'px-6 md:px-12 p-4 md:p-6' : 'px-8 md:px-20 p-12'}
-                                            ${darkMode ? 'from-[#050505] via-[#050505]/60 to-transparent' : 'from-white via-white/50 to-transparent'} 
-                                            ${currentHeroSlide === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                                            <div className="max-w-2xl animate-fade-up">
-                                                {!settingsLoaded ? (
-                                                    <>
-                                                        <div className="h-6 w-32 bg-slate-700/50 rounded-md mb-4 animate-pulse"></div>
-                                                        <div className="h-12 md:h-16 w-64 md:w-80 bg-slate-700/50 rounded-lg mb-2 animate-pulse"></div>
-                                                        <div className="h-12 md:h-16 w-48 md:w-64 bg-slate-700/50 rounded-lg mb-4 animate-pulse"></div>
-                                                        <div className="h-4 w-72 bg-slate-700/50 rounded mb-2 animate-pulse"></div>
-                                                        <div className="h-4 w-56 bg-slate-700/50 rounded mb-6 animate-pulse"></div>
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="h-12 w-40 bg-slate-700/50 rounded-xl animate-pulse"></div>
-                                                            <div className="h-10 w-24 bg-slate-700/50 rounded-xl animate-pulse"></div>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <span className={`bg-orange-500 text-black px-2 py-0.5 rounded-md font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] inline-block
+                                            <>
+                                                <span className={`bg-orange-500 text-black px-2 py-0.5 rounded-md font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] inline-block
                                                             ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'text-[8px] mb-1' : 'text-[10px] mb-4'}`}>
-                                                            {settings?.heroBadge || ''}
-                                                        </span>
-                                                        <h1 className={`text-tv-huge font-black leading-[0.9] drop-shadow-2xl transition-all duration-300 
+                                                    {settings?.heroBadge || ''}
+                                                </span>
+                                                <h1 className={`text-tv-huge font-black leading-[0.9] drop-shadow-2xl transition-all duration-300 
                                                             ${settings?.carouselHeight === 'slim' ? 'text-xs md:text-sm lg:text-base mb-0' :
-                                                                (!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'text-lg md:text-2xl lg:text-3xl mb-1' :
-                                                                    'text-3xl md:text-5xl lg:text-6xl mb-4'}
+                                                        (!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'text-lg md:text-2xl lg:text-3xl mb-1' :
+                                                            'text-3xl md:text-5xl lg:text-6xl mb-4'}
                                                             ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                                                            {settings?.heroTitle1 || ''} <br />
-                                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-blue-600">
-                                                                {settings?.heroTitle2 || ''}
-                                                            </span>
-                                                        </h1>
-                                                        {(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? null : (
-                                                            <p className={`text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium transition-colors ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                                {settings?.heroSubtitle || ''}
-                                                            </p>
-                                                        )}
-                                                        <div className={`flex items-center transition-all ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'gap-2 mt-2' : 'gap-4'}`}>
-                                                            <button
-                                                                onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })}
-                                                                className={`font-black rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn 
+                                                    {settings?.heroTitle1 || ''} <br />
+                                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-blue-600">
+                                                        {settings?.heroTitle2 || ''}
+                                                    </span>
+                                                </h1>
+                                                {(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? null : (
+                                                    <p className={`text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium transition-colors ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                        {settings?.heroSubtitle || ''}
+                                                    </p>
+                                                )}
+                                                <div className={`flex items-center transition-all ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'gap-2 mt-2' : 'gap-4'}`}>
+                                                    <button
+                                                        onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })}
+                                                        className={`font-black rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn 
                                                                     ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'px-4 py-2 text-xs' : 'px-8 py-4'}
                                                                     ${darkMode ? 'bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.1)]' : 'bg-slate-900 text-white shadow-xl hover:bg-slate-800'}`}>
-                                                                VER CATÁLOGO <ArrowRight className={`${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'w-3 h-3' : 'w-5 h-5'} group-hover/btn:translate-x-1 transition`} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setView('guide')}
-                                                                className={`backdrop-blur-md border rounded-xl flex items-center transition font-bold group
+                                                        VER CATÁLOGO <ArrowRight className={`${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'w-3 h-3' : 'w-5 h-5'} group-hover/btn:translate-x-1 transition`} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setView('guide')}
+                                                        className={`backdrop-blur-md border rounded-xl flex items-center transition font-bold group
                                                                     ${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'px-3 py-2 text-[10px] gap-1' : 'px-6 py-2.5 text-xs gap-2'}
                                                                     ${darkMode ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'}`}>
-                                                                <Info className={`${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'w-3 h-3' : 'w-4 h-4'} text-orange-400`} /> Ayuda
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Indicadores del Carrusel (dots) - Solo si hay múltiples imágenes */}
-                                        {hasMultipleImages && settingsLoaded && (
-                                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-                                                {heroImages.map((_, index) => (
-                                                    <button
-                                                        key={index}
-                                                        onClick={() => setCurrentHeroSlide(index)}
-                                                        className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${currentHeroSlide === index
-                                                            ? 'bg-orange-500 w-6'
-                                                            : (darkMode ? 'bg-white/30 hover:bg-white/50' : 'bg-slate-900/30 hover:bg-slate-900/50')}`}
-                                                    />
-                                                ))}
-                                            </div>
+                                                        <Info className={`${(!settings?.carouselHeight || settings?.carouselHeight === 'small') ? 'w-3 h-3' : 'w-4 h-4'} text-orange-400`} /> Ayuda
+                                                    </button>
+                                                </div>
+                                            </>
                                         )}
                                     </div>
-                                );
-                            })()}
+                                </div>
+
+                                {/* Indicadores del Carrusel (dots) - Solo si hay múltiples imágenes */}
+                                {heroCarouselData.hasMultipleImages && settingsLoaded && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                                        {heroCarouselData.heroImages.map((_, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => setCurrentHeroSlide(index)}
+                                                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${currentHeroSlide === index
+                                                    ? 'bg-orange-500 w-6'
+                                                    : (darkMode ? 'bg-white/30 hover:bg-white/50' : 'bg-slate-900/30 hover:bg-slate-900/50')}`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Why Choose Us Section */}
                             {/* Why Choose Us Section (Editable) - Respeta toggles de configuración */}
@@ -6306,15 +6344,10 @@ function App() {
                                     <div className="grid md:grid-cols-2 gap-8">
                                         <div className="space-y-4">
                                             {/* Mostrar cupones GLOBALES (targetType='global') y ESPECIFICOS para este usuario */}
-                                            {(() => {
-                                                const myCoupons = coupons.filter(c =>
-                                                    (c.targetType === 'global') ||
-                                                    (c.targetType === 'specific_email' && c.targetUser === currentUser.email)
-                                                );
-
-                                                if (myCoupons.length === 0) return <p className="text-slate-500 italic">No tienes cupones disponibles en este momento.</p>;
-
-                                                return myCoupons.map(c => (
+                                            {userProfileData.myCoupons.length === 0 ? (
+                                                <p className="text-slate-500 italic">No tienes cupones disponibles en este momento.</p>
+                                            ) : (
+                                                userProfileData.myCoupons.map(c => (
                                                     <div key={c.id} className={`border p-4 rounded-xl flex items-center justify-between group transition ${darkMode ? 'bg-slate-900/50 border-slate-800 hover:border-purple-500/30' : 'bg-slate-50 border-slate-200 hover:border-purple-400'}`}>
                                                         <div>
                                                             <p className={`font-black text-lg tracking-widest ${darkMode ? 'text-white' : 'text-slate-900'}`}>{c.code}</p>
@@ -6326,15 +6359,16 @@ function App() {
                                                         <button
                                                             onClick={() => {
                                                                 navigator.clipboard.writeText(c.code);
-                                                                showToast("Código copiado", "success");
+                                                                alert("¡Código copiado!");
                                                             }}
-                                                            className="px-4 py-2 bg-purple-900/20 text-purple-400 rounded-lg text-xs font-bold hover:bg-purple-500 hover:text-white transition border border-purple-500/20"
+                                                            className={`p-3 rounded-lg flex items-center gap-2 hover:bg-purple-500 hover:text-white transition ${darkMode ? 'bg-purple-500/10 text-purple-400' : 'bg-purple-50 text-purple-600'}`}
                                                         >
-                                                            COPIAR
+                                                            <Copy className="w-4 h-4" />
+                                                            <span className="text-xs font-bold uppercase">Copiar</span>
                                                         </button>
                                                     </div>
-                                                ));
-                                            })()}
+                                                ))
+                                            )}
                                         </div>
 
                                         <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
@@ -7743,91 +7777,79 @@ function App() {
 
                                                             {/* GrÃ¯Â¿Â½fico y Tabla */}
                                                             <div className="flex flex-col gap-8 bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                                {(() => {
-                                                                    const team = settings?.team || [];
-                                                                    // Calcular Total Invertido por Miembro desde la colección 'investments'
-                                                                    const memberInvestments = team.map(member => {
-                                                                        // Use manual investment value from settings
-                                                                        const totalInv = Number(member.investment) || 0;
-                                                                        return { ...member, totalInv };
-                                                                    });
+                                                                {distributionData.totalCapital === 0 ? (
+                                                                    <p className="text-slate-500 text-center py-12">Registra inversiones para ver la distribución de ganancias.</p>
+                                                                ) : (
+                                                                    <>
+                                                                        {/* Barra de Progreso Distribución */}
+                                                                        <div className="w-full h-8 bg-slate-900 rounded-full flex overflow-hidden">
+                                                                            {distributionData.memberInvestments.map((member, idx) => {
+                                                                                const pct = distributionData.totalCapital > 0 ? (member.totalInv / distributionData.totalCapital) * 100 : 0;
+                                                                                const colors = ['bg-green-500', 'bg-orange-500', 'bg-purple-500', 'bg-pink-500', 'bg-yellow-500', 'bg-red-500'];
+                                                                                if (pct <= 0) return null;
+                                                                                return (
+                                                                                    <div key={idx} className={`${colors[idx % colors.length]} h-full transition-all duration-500`} style={{ width: `${pct}%` }} title={`${member.name}: ${pct.toFixed(1)}%`}></div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
 
-                                                                    const totalCapital = memberInvestments.reduce((acc, m) => acc + m.totalInv, 0);
+                                                                        {/* Tabla de Distribución */}
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse">
+                                                                                <thead>
+                                                                                    <tr className="bg-slate-900/50 border-b border-slate-800">
+                                                                                        <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Socio</th>
+                                                                                        <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Capital Aportado</th>
+                                                                                        <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-center">% Part.</th>
+                                                                                        <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right text-green-500">Ganancia Est.</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody className="divide-y divide-slate-800/50">
+                                                                                    {distributionData.memberInvestments.map((member, idx) => {
+                                                                                        const sharePercentage = distributionData.totalCapital > 0 ? ((member.totalInv / distributionData.totalCapital) * 100) : 0;
+                                                                                        const memberProfit = (dashboardMetrics.netIncome * sharePercentage) / 100;
+                                                                                        const colors = ['text-green-500', 'text-orange-500', 'text-purple-500', 'text-pink-500', 'text-yellow-500', 'text-red-500'];
 
-                                                                    if (totalCapital === 0) return <p className="text-slate-500 text-center py-12">Registra inversiones para ver la distribución de ganancias.</p>;
-
-                                                                    return (
-                                                                        <>
-                                                                            {/* Barra de Progreso Distribución */}
-                                                                            <div className="w-full h-8 bg-slate-900 rounded-full flex overflow-hidden">
-                                                                                {memberInvestments.map((member, idx) => {
-                                                                                    const pct = totalCapital > 0 ? (member.totalInv / totalCapital) * 100 : 0;
-                                                                                    const colors = ['bg-green-500', 'bg-orange-500', 'bg-purple-500', 'bg-pink-500', 'bg-yellow-500', 'bg-red-500'];
-                                                                                    if (pct <= 0) return null;
-                                                                                    return (
-                                                                                        <div key={idx} className={`${colors[idx % colors.length]} h-full transition-all duration-500`} style={{ width: `${pct}%` }} title={`${member.name}: ${pct.toFixed(1)}%`}></div>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-
-                                                                            {/* Tabla de Distribución */}
-                                                                            <div className="overflow-x-auto">
-                                                                                <table className="w-full text-left border-collapse">
-                                                                                    <thead>
-                                                                                        <tr className="bg-slate-900/50 border-b border-slate-800">
-                                                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest">Socio</th>
-                                                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Capital Aportado</th>
-                                                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-center">% Part.</th>
-                                                                                            <th className="p-6 text-xs font-black text-slate-500 uppercase tracking-widest text-right text-green-500">Ganancia Est.</th>
-                                                                                        </tr>
-                                                                                    </thead>
-                                                                                    <tbody className="divide-y divide-slate-800/50">
-                                                                                        {memberInvestments.map((member, idx) => {
-                                                                                            const sharePercentage = totalCapital > 0 ? ((member.totalInv / totalCapital) * 100) : 0;
-                                                                                            const memberProfit = (dashboardMetrics.netIncome * sharePercentage) / 100;
-                                                                                            const colors = ['text-green-500', 'text-orange-500', 'text-purple-500', 'text-pink-500', 'text-yellow-500', 'text-red-500'];
-
-                                                                                            return (
-                                                                                                <tr key={idx} className="hover:bg-slate-900/20 transition">
-                                                                                                    <td className="p-5">
-                                                                                                        <div className="flex items-center gap-3">
-                                                                                                            <div className={`w-3 h-3 rounded-full ${colors[idx % colors.length].replace('text-', 'bg-')}`}></div>
-                                                                                                            <div>
-                                                                                                                <p className="font-bold text-white">{member.name || 'Sin Nombre'}</p>
-                                                                                                                <p className="text-xs text-slate-500">{member.email}</p>
-                                                                                                            </div>
+                                                                                        return (
+                                                                                            <tr key={idx} className="hover:bg-slate-900/20 transition">
+                                                                                                <td className="p-5">
+                                                                                                    <div className="flex items-center gap-3">
+                                                                                                        <div className={`w-3 h-3 rounded-full ${colors[idx % colors.length].replace('text-', 'bg-')}`}></div>
+                                                                                                        <div>
+                                                                                                            <p className="font-bold text-white">{member.name || 'Sin Nombre'}</p>
+                                                                                                            <p className="text-xs text-slate-500">{member.email}</p>
                                                                                                         </div>
-                                                                                                    </td>
-                                                                                                    <td className="p-6 text-right font-mono font-bold text-white">
-                                                                                                        ${member.totalInv.toLocaleString()}
-                                                                                                    </td>
-                                                                                                    <td className="p-6 text-center font-mono text-slate-300 font-bold">
-                                                                                                        {sharePercentage.toFixed(1)}%
-                                                                                                    </td>
-                                                                                                    <td className="p-6 text-right font-mono font-black text-green-400 text-lg">
-                                                                                                        ${memberProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                                                    </td>
-                                                                                                </tr>
-                                                                                            );
-                                                                                        })}
-                                                                                    </tbody>
-                                                                                    <tfoot className="bg-slate-900/30 border-t border-slate-800">
-                                                                                        <tr>
-                                                                                            <td className="p-6 font-black text-white text-right">TOTAL CAPITAL</td>
-                                                                                            <td className="p-6 text-right font-black text-orange-400 text-lg">
-                                                                                                ${totalCapital.toLocaleString()}
-                                                                                            </td>
-                                                                                            <td className="p-6 text-center font-bold text-slate-500">100%</td>
-                                                                                            <td className="p-6 text-right font-black text-green-500 text-xl">
-                                                                                                ${dashboardMetrics.netIncome.toLocaleString()}
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    </tfoot>
-                                                                                </table>
-                                                                            </div>
-                                                                        </>
-                                                                    );
-                                                                })()}
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                                <td className="p-6 text-right font-mono font-bold text-white">
+                                                                                                    ${member.totalInv.toLocaleString()}
+                                                                                                </td>
+                                                                                                <td className="p-6 text-center font-mono text-slate-300 font-bold">
+                                                                                                    {sharePercentage.toFixed(1)}%
+                                                                                                </td>
+                                                                                                <td className="p-6 text-right font-mono font-black text-green-400 text-lg">
+                                                                                                    ${memberProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        );
+                                                                                    })}
+                                                                                </tbody>
+                                                                                <tfoot className="bg-slate-900/30 border-t border-slate-800">
+                                                                                    <tr>
+                                                                                        <td className="p-6 font-black text-white text-right">TOTAL CAPITAL</td>
+                                                                                        <td className="p-6 text-right font-black text-orange-400 text-lg">
+                                                                                            ${distributionData.totalCapital.toLocaleString()}
+                                                                                        </td>
+                                                                                        <td className="p-6 text-center font-bold text-slate-500">100%</td>
+                                                                                        <td className="p-6 text-right font-black text-green-500 text-xl">
+                                                                                            ${dashboardMetrics.netIncome.toLocaleString()}
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tfoot>
+                                                                            </table>
+                                                                        </div>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -7999,169 +8021,158 @@ function App() {
 
                                                 {/* TAB: USERS (NUEVO) */}
 
-                                                {adminTab === 'users' && (() => {
-                                                    const filteredUsers = users.filter(u => {
-                                                        const query = userSearch.toLowerCase();
-                                                        const matchesSearch = (u.name || '').toLowerCase().includes(query) ||
-                                                            (u.email || '').toLowerCase().includes(query) ||
-                                                            (u.username || '').toLowerCase().includes(query);
-                                                        const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
-                                                        return matchesSearch && matchesRole;
-                                                    });
-
-                                                    return (
-                                                        <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
-                                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-                                                                <div>
-                                                                    <h1 className="text-4xl font-black text-slate-900 tracking-tighter flex items-center gap-4">
-                                                                        <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
-                                                                            <Users className="w-6 h-6 text-pink-400" />
-                                                                        </div>
-                                                                        Gestión de Usuarios
-                                                                    </h1>
-                                                                    <p className="text-slate-500 mt-2 font-medium">Control total sobre cuentas, roles y auditoría de carritos.</p>
-                                                                </div>
-
-                                                                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                                                                    <div className="relative w-full sm:w-64 group">
-                                                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-orange-400 transition" />
-                                                                        <input
-                                                                            className="input-cyber w-full pl-11 pr-4 py-3 text-sm"
-                                                                            placeholder="Buscar por nombre, email..."
-                                                                            value={userSearch}
-                                                                            onChange={e => setUserSearch(e.target.value)}
-                                                                        />
+                                                {adminTab === 'users' && (
+                                                    <div className="max-w-[1600px] mx-auto animate-fade-up pb-20">
+                                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                                                            <div>
+                                                                <h1 className="text-4xl font-black text-slate-900 tracking-tighter flex items-center gap-4">
+                                                                    <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
+                                                                        <Users className="w-6 h-6 text-pink-400" />
                                                                     </div>
-                                                                    <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5">
-                                                                        {['all', 'admin', 'user'].map(role => (
-                                                                            <button
-                                                                                key={role}
-                                                                                onClick={() => setUserRoleFilter(role)}
-                                                                                className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${userRoleFilter === role ? 'bg-white/10 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-                                                                            >
-                                                                                {role === 'all' ? 'Todos' : role}
-                                                                            </button>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
+                                                                    Gestión de Usuarios
+                                                                </h1>
+                                                                <p className="text-slate-500 mt-2 font-medium">Control total sobre cuentas, roles y auditoría de carritos.</p>
                                                             </div>
 
-                                                            <div className="bg-[#050505] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                                                                <div className="overflow-x-auto overflow-y-visible">
-                                                                    <table className="w-full text-left border-collapse">
-                                                                        <thead>
-                                                                            <tr className="bg-white/[0.02] border-b border-white/5">
-                                                                                <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Identidad</th>
-                                                                                <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Actividad & Stats</th>
-                                                                                <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Rango</th>
-                                                                                <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Acciones</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody className="divide-y divide-white/5">
-                                                                            {filteredUsers.length === 0 ? (
-                                                                                <tr>
-                                                                                    <td colSpan="4" className="p-20 text-center">
-                                                                                        <div className="flex flex-col items-center gap-4 opacity-20">
-                                                                                            <UserPlus className="w-16 h-16" />
-                                                                                            <p className="font-black uppercase tracking-widest">No se encontraron usuarios</p>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                </tr>
-                                                                            ) : filteredUsers.map((u, idx) => (
-                                                                                <tr key={u.id} style={{ animationDelay: `${idx * 0.03}s` }} className="group hover:bg-white/[0.01] transition-all animate-fade-up">
-                                                                                    <td className="p-5">
-                                                                                        <div className="flex items-center gap-5">
-                                                                                            <div className="relative group/avatar">
-                                                                                                <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl blur-lg opacity-20 group-hover/avatar:opacity-40 transition" />
-                                                                                                <div className="relative w-14 h-14 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center text-xl font-black text-white overflow-hidden shadow-xl">
-                                                                                                    {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : (u.name || '?').charAt(0).toUpperCase()}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <div>
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <p className="font-bold text-white text-lg tracking-tight">{u.name}</p>
-                                                                                                    {u.isVerified && <CheckCircle className="w-4 h-4 text-orange-400" />}
-                                                                                                </div>
-                                                                                                <p className="text-xs text-slate-500 font-mono">{u.email}</p>
-                                                                                                <div className="flex items-center gap-3 mt-2">
-                                                                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md">ID: {u.id.slice(-6)}</span>
-                                                                                                    <span className="text-[9px] font-bold text-slate-500 uppercase">INC. {new Date(u.joinDate).toLocaleDateString()}</span>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td className="p-8 relative">
-                                                                                        {/* Blur Overlay for Entrepreneur Plan */}
-                                                                                        {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
-                                                                                            <button
-                                                                                                onClick={() => setShowPlansModal(true)}
-                                                                                                className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-black/70 transition group"
-                                                                                            >
-                                                                                                <div className="text-center">
-                                                                                                    <Lock className="w-6 h-6 text-yellow-500 mx-auto mb-2 group-hover:scale-110 transition" />
-                                                                                                    <p className="text-xs font-black text-yellow-400 uppercase tracking-wider">Plan Negocio</p>
-                                                                                                    <p className="text-[10px] text-slate-400 group-hover:text-white transition">Clic para ver planes</p>
-                                                                                                </div>
-                                                                                            </button>
-                                                                                        )}
-                                                                                        <div className={`flex flex-col items-center gap-3 ${(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) ? 'filter blur-sm pointer-events-none' : ''}`}>
-                                                                                            <div className="flex gap-2">
-                                                                                                <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3" title="Favoritos">
-                                                                                                    <Heart className={`w-4 h-4 ${u.favorites?.length > 0 ? 'text-pink-500 fill-pink-500' : 'text-slate-600'}`} />
-                                                                                                    <span className="text-sm font-black text-white">{u.favorites ? u.favorites.length : 0}</span>
-                                                                                                </div>
-                                                                                                <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3" title="Pedidos Realizados">
-                                                                                                    <ShoppingBag className="w-4 h-4 text-orange-500" />
-                                                                                                    <span className="text-sm font-black text-white">{u.ordersCount || 0}</span>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <button
-                                                                                                onClick={() => setViewUserCart(u)}
-                                                                                                className="w-full py-2.5 rounded-xl border border-orange-500/20 bg-orange-500/5 text-orange-400 hover:bg-orange-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-                                                                                            >
-                                                                                                <Maximize2 className="w-3 h-3" /> Ver Carrito en Vivo
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td className="p-8">
-                                                                                        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] border shadow-inner ${u.role === 'admin'
-                                                                                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-                                                                                            : 'bg-slate-900/50 text-slate-500 border-white/5'
-                                                                                            }`}>
-                                                                                            {u.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                                                                                            {u.role}
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td className="p-8">
-                                                                                        <div className="flex justify-end gap-3 translate-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                                                            <button
-                                                                                                onClick={() => setViewUserEdit(u)}
-                                                                                                className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-orange-400 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all shadow-xl group"
-                                                                                                title="gestionar Perfil"
-                                                                                            >
-                                                                                                <Edit className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                                                                            </button>
-                                                                                            <button
-                                                                                                onClick={() => {
-                                                                                                    setNewAdminPassword('');
-                                                                                                    setUserPassModal(u);
-                                                                                                }}
-                                                                                                className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-pink-400 hover:border-pink-500/40 hover:bg-pink-500/5 transition-all shadow-xl group"
-                                                                                                title="Seguridad & Acceso"
-                                                                                            >
-                                                                                                <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                </tr>
-                                                                            ))}
-                                                                        </tbody>
-                                                                    </table>
+                                                            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                                                                <div className="relative w-full sm:w-64 group">
+                                                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-orange-400 transition" />
+                                                                    <input
+                                                                        className="input-cyber w-full pl-11 pr-4 py-3 text-sm"
+                                                                        placeholder="Buscar por nombre, email..."
+                                                                        value={userSearch}
+                                                                        onChange={e => setUserSearch(e.target.value)}
+                                                                    />
+                                                                </div>
+                                                                <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5">
+                                                                    {['all', 'admin', 'user'].map(role => (
+                                                                        <button
+                                                                            key={role}
+                                                                            onClick={() => setUserRoleFilter(role)}
+                                                                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${userRoleFilter === role ? 'bg-white/10 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                                                                        >
+                                                                            {role === 'all' ? 'Todos' : role}
+                                                                        </button>
+                                                                    ))}
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    );
-                                                })()}
+
+                                                        <div className="bg-[#050505] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                                                            <div className="overflow-x-auto overflow-y-visible">
+                                                                <table className="w-full text-left border-collapse">
+                                                                    <thead>
+                                                                        <tr className="bg-white/[0.02] border-b border-white/5">
+                                                                            <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Identidad</th>
+                                                                            <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Actividad & Stats</th>
+                                                                            <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Rango</th>
+                                                                            <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Acciones</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody className="divide-y divide-white/5">
+                                                                        {filteredUsers.length === 0 ? (
+                                                                            <tr>
+                                                                                <td colSpan="4" className="p-20 text-center">
+                                                                                    <div className="flex flex-col items-center gap-4 opacity-20">
+                                                                                        <UserPlus className="w-16 h-16" />
+                                                                                        <p className="font-black uppercase tracking-widest">No se encontraron usuarios</p>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        ) : filteredUsers.map((u, idx) => (
+                                                                            <tr key={u.id} style={{ animationDelay: `${idx * 0.03}s` }} className="group hover:bg-white/[0.01] transition-all animate-fade-up">
+                                                                                <td className="p-5">
+                                                                                    <div className="flex items-center gap-5">
+                                                                                        <div className="relative group/avatar">
+                                                                                            <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl blur-lg opacity-20 group-hover/avatar:opacity-40 transition" />
+                                                                                            <div className="relative w-14 h-14 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center text-xl font-black text-white overflow-hidden shadow-xl">
+                                                                                                {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : (u.name || '?').charAt(0).toUpperCase()}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <p className="font-bold text-white text-lg tracking-tight">{u.name}</p>
+                                                                                                {u.isVerified && <CheckCircle className="w-4 h-4 text-orange-400" />}
+                                                                                            </div>
+                                                                                            <p className="text-xs text-slate-500 font-mono">{u.email}</p>
+                                                                                            <div className="flex items-center gap-3 mt-2">
+                                                                                                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md">ID: {u.id.slice(-6)}</span>
+                                                                                                <span className="text-[9px] font-bold text-slate-500 uppercase">INC. {new Date(u.joinDate).toLocaleDateString()}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td className="p-8 relative">
+                                                                                    {/* Blur Overlay for Entrepreneur Plan */}
+                                                                                    {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
+                                                                                        <button
+                                                                                            onClick={() => setShowPlansModal(true)}
+                                                                                            className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-black/70 transition group"
+                                                                                        >
+                                                                                            <div className="text-center">
+                                                                                                <Lock className="w-6 h-6 text-yellow-500 mx-auto mb-2 group-hover:scale-110 transition" />
+                                                                                                <p className="text-xs font-black text-yellow-400 uppercase tracking-wider">Plan Negocio</p>
+                                                                                                <p className="text-[10px] text-slate-400 group-hover:text-white transition">Clic para ver planes</p>
+                                                                                            </div>
+                                                                                        </button>
+                                                                                    )}
+                                                                                    <div className={`flex flex-col items-center gap-3 ${(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) ? 'filter blur-sm pointer-events-none' : ''}`}>
+                                                                                        <div className="flex gap-2">
+                                                                                            <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3" title="Favoritos">
+                                                                                                <Heart className={`w-4 h-4 ${u.favorites?.length > 0 ? 'text-pink-500 fill-pink-500' : 'text-slate-600'}`} />
+                                                                                                <span className="text-sm font-black text-white">{u.favorites ? u.favorites.length : 0}</span>
+                                                                                            </div>
+                                                                                            <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3" title="Pedidos Realizados">
+                                                                                                <ShoppingBag className="w-4 h-4 text-orange-500" />
+                                                                                                <span className="text-sm font-black text-white">{u.ordersCount || 0}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <button
+                                                                                            onClick={() => setViewUserCart(u)}
+                                                                                            className="w-full py-2.5 rounded-xl border border-orange-500/20 bg-orange-500/5 text-orange-400 hover:bg-orange-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                                                                        >
+                                                                                            <Maximize2 className="w-3 h-3" /> Ver Carrito en Vivo
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td className="p-8">
+                                                                                    <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] border shadow-inner ${u.role === 'admin'
+                                                                                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                                                                                        : 'bg-slate-900/50 text-slate-500 border-white/5'
+                                                                                        }`}>
+                                                                                        {u.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                                                                                        {u.role}
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td className="p-8">
+                                                                                    <div className="flex justify-end gap-3 translate-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                                                        <button
+                                                                                            onClick={() => setViewUserEdit(u)}
+                                                                                            className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-orange-400 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all shadow-xl group"
+                                                                                            title="gestionar Perfil"
+                                                                                        >
+                                                                                            <Edit className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                                                                        </button>
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                setNewAdminPassword('');
+                                                                                                setUserPassModal(u);
+                                                                                            }}
+                                                                                            className="w-11 h-11 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-2xl text-slate-400 hover:text-pink-400 hover:border-pink-500/40 hover:bg-pink-500/5 transition-all shadow-xl group"
+                                                                                            title="Seguridad & Acceso"
+                                                                                        >
+                                                                                            <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
 
 
                                                 {/* TAB: PROMOS (NUEVO) */}
