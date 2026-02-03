@@ -35,7 +35,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 // ID interno de la app (no es el appId de Firebase). Puedes cambiarlo si quieres diferenciar entornos.
 const appId = "sustore-63266-prod";
-const APP_VERSION = "3.0.1";
+const APP_VERSION = "3.0.2";
 
 // === SEGURIDAD: Email de Super Admin ofuscado (múltiples capas) ===
 const _sa = ['bGF1dGFyb2NvcmF6emE2M0BnbWFpbC5jb20=']; // Base64
@@ -1224,7 +1224,7 @@ function App() {
             const userData = JSON.parse(saved);
 
             // Validar que el usuario tenga los campos mínimos requeridos
-            // Si no tiene id, email o name, es un usuario invÃ¯Â¿Â½lido o corrupto
+            // Si no tiene id, email o name, es un usuario inválido o corrupto
             if (!userData || !userData.id || !userData.email || !userData.name) {
                 // Limpiar datos corruptos o incompletos
                 localStorage.removeItem('sustore_user_data');
@@ -1358,7 +1358,7 @@ function App() {
         });
     };
 
-    // --- FUNCIÃ¯Â¿Â½N PARA MANEJAR CAMBIO DE PLAN (DOWNGRADE) ---
+    // --- FUNCIÓN PARA MANEJAR CAMBIO DE PLAN (DOWNGRADE) ---
     const getPlanLimit = (plan) => {
         switch (plan) {
             case 'premium': return Infinity;
@@ -1380,7 +1380,7 @@ function App() {
         // Si es upgrade (más productos permitidos), simplemente cambiar
         if (newLimit >= currentLimit) {
             setSettings({ ...settings, subscriptionPlan: newPlan });
-            showToast(`Ã¯Â¿Â½Plan actualizado a ${newPlan === 'premium' ? 'Premium' : newPlan === 'business' ? 'Negocio' : 'Emprendedor'}!`, 'success');
+            showToast(`¡Plan actualizado a ${newPlan === 'premium' ? 'Premium' : newPlan === 'business' ? 'Negocio' : 'Emprendedor'}!`, 'success');
             return;
         }
 
@@ -1455,7 +1455,7 @@ function App() {
                             newPlan: newPlan
                         });
 
-                        showToast(`Plan cambiado. ${productsToDeactivate.length} producto(s) y ${couponsToDeactivate.length} cupÃ¯Â¿Â½n(es) fueron desactivados.`, 'warning');
+                        showToast(`Plan cambiado. ${productsToDeactivate.length} producto(s) y ${couponsToDeactivate.length} cupón(es) fueron desactivados.`, 'warning');
                     } catch (error) {
                         console.error('Error al cambiar de plan:', error);
                         showToast('Error al cambiar de plan', 'error');
@@ -1523,9 +1523,9 @@ function App() {
 
 
 
-    // --- ESTADOS DE ADMINISTRACIÃ¯Â¿Â½N (DETALLADOS) ---
+    // --- ESTADOS DE ADMINISTRACIÓN (DETALLADOS) ---
 
-    // GestiÃ¯Â¿Â½n de Productos
+    // Gestión de Productos
     const [newProduct, setNewProduct] = useState({
         name: '',
         basePrice: '',
@@ -1540,7 +1540,7 @@ function App() {
     const [showProductForm, setShowProductForm] = useState(false);
     const [settingsTab, setSettingsTab] = useState('identity'); // identity, features, legal, advanced, subscription
 
-    // GestiÃ¯Â¿Â½n de Promos
+    // Gestión de Promos
     const [newPromo, setNewPromo] = useState({
         name: '',
         price: '',
@@ -1555,7 +1555,7 @@ function App() {
     const [isEditingPromo, setIsEditingPromo] = useState(false);
     const [editingPromoId, setEditingPromoId] = useState(null);
 
-    // GestiÃ¯Â¿Â½n Avanzada de Cupones (Restaurada la complejidad)
+    // Gestión Avanzada de Cupones (Restaurada la complejidad)
     const [newCoupon, setNewCoupon] = useState({
         code: '',
         type: 'percentage', // percentage, fixed
@@ -1564,7 +1564,7 @@ function App() {
         maxDiscount: 0,
         expirationDate: '',
         targetType: 'global', // global, specific_user, specific_email
-        targetUser: '', // username o email especÃ¯Â¿Â½fico
+        targetUser: '', // username o email específico
         usageLimit: '', // Limite total de usos
         perUserLimit: 1, // Limite por usuario
         isActive: true
@@ -1600,7 +1600,7 @@ function App() {
         notes: 'Venta presencial'
     });
 
-    // --- NUEVOS ESTADOS PARA GESTIÓN DE USUARIOS (CARRITO, PASS Y EDICIÃ¯Â¿Â½N) ---
+    // --- NUEVOS ESTADOS PARA GESTIÓN DE USUARIOS (CARRITO, PASS Y EDICIÓN) ---
     const [viewUserCart, setViewUserCart] = useState(null); // Usuario seleccionado para ver carrito
     const [userPassModal, setUserPassModal] = useState(null); // Usuario a cambiar contraseña
     const [viewUserEdit, setViewUserEdit] = useState(null); // Usuario a editar perfil
@@ -1850,7 +1850,7 @@ function App() {
             if (snap.exists()) {
                 const data = snap.data();
                 if (data.version && data.version !== APP_VERSION) {
-                    console.log(`Nueva versiÃ¯Â¿Â½n detectada: ${data.version}. Actualizando...`);
+                    console.log(`Nueva versión detectada: ${data.version}. Actualizando...`);
                     window.location.reload();
                 }
             }
@@ -1910,7 +1910,7 @@ function App() {
                     } catch (err) {
                         const errMsg = (err.message || err.toString() || '').toLowerCase();
                         if (errMsg.includes('offline') || errMsg.includes('unavailable') || errMsg.includes('network')) {
-                            console.debug("Modo offline detectado: Usando datos en cachÃ¯Â¿Â½.");
+                            console.debug("Modo offline detectado: Usando datos en caché.");
                         } else {
                             console.warn("No se pudo refrescar usuario al inicio:", err);
                         }
@@ -1926,7 +1926,7 @@ function App() {
         // Listener de Auth State
         return onAuthStateChanged(auth, (user) => {
             setSystemUser(user);
-            // Delay reducido para transiciones más rÃ¯Â¿Â½pidas
+            // Delay reducido para transiciones más rápidas
             setTimeout(() => setIsLoading(false), 300);
         });
     }, []);
@@ -2203,7 +2203,7 @@ function App() {
                         categories: data.categories || defaultSettings.categories
                     };
 
-                    // Si estamos leyendo de un legacy, forzamos la escritura en 'config' para la prÃ¯Â¿Â½xima
+                    // Si estamos leyendo de un legacy, forzamos la escritura en 'config' para la próxima
                     if (effectiveDoc.id !== 'config') {
                         setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), mergedSettings);
                     }
@@ -2212,9 +2212,9 @@ function App() {
                     setSettingsLoaded(true); // Marcar que los settings ya se cargaron
                     setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
 
-                    // Si ya migramos y leÃ¯Â¿Â½mos exitosamente, podríamos borrar el legacy para evitar fantasmas
+                    // Si ya migramos y leímos exitosamente, podríamos borrar el legacy para evitar fantasmas
                     if (configDoc && legacyDocs.length > 0) {
-                        // MIGRACIÃ¯Â¿Â½N DE CATEGORÃ¯Â¿Â½AS ESPECÃ¯Â¿Â½FICA (Rescate)
+                        // MIGRACIÓN DE CATEGORÍAS ESPECÍFICA (Rescate)
                         const legacyData = legacyDocs[0].data();
                         if (legacyData.categories && legacyData.categories.length > 0) {
                             // Si el config tiene las default y el legacy tiene custom, pisar config
@@ -2240,7 +2240,7 @@ function App() {
         return () => unsubscribeFunctions.forEach(unsub => unsub());
     }, [systemUser]);
 
-    // --- VALIDACIÃ¯Â¿Â½N INTELIGENTE DEL CARRITO ---
+    // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
     // Elimina automáticamente productos que ya no existen o no tienen stock
     useEffect(() => {
         // Solo ejecutar si hay productos cargados y un usuario con carrito
@@ -2259,7 +2259,7 @@ function App() {
                     return false;
                 }
 
-                // 2. Verificar si está Activo (Borrado lÃ¯Â¿Â½gico / Pausado)
+                // 2. Verificar si está Activo (Borrado lógico / Pausado)
                 if (productInStore.isActive === false) {
                     hasChanges = true;
                     removedItems.push(`${item.product.name} (No disponible actualmente)`);
@@ -2295,12 +2295,12 @@ function App() {
                 // Actualizar datos del producto (precio actualizado, imagen nueva) siempre
                 const productInStore = products.find(p => p.id === item.product.id);
 
-                // Si cambiÃ¯Â¿Â½ el precio, detectamos el cambio para guardar en DB
+                // Si cambió el precio, detectamos el cambio para guardar en DB
                 if (productInStore && ((item.product?.basePrice ?? 0) !== productInStore.basePrice || (item.product?.discount ?? 0) !== productInStore.discount)) {
                     hasChanges = true;
                 }
 
-                // Usar siempre la versiÃ¯Â¿Â½n más fresca del producto
+                // Usar siempre la versión más fresca del producto
                 return { ...item, product: productInStore || item.product };
             });
 
@@ -2317,13 +2317,13 @@ function App() {
                 }, { merge: true });
 
                 if (removedItems.length > 0) {
-                    showToast(`Tu carrito se actualizÃ¯Â¿Â½: ${removedItems.join(', ')}`, 'info');
+                    showToast(`Tu carrito se actualizó: ${removedItems.join(', ')}`, 'info');
                 }
             }
         }
     }, [products, currentUser, cart]); // Se ejecuta cuando productos, usuario o EL CARRITO cambian
 
-    // --- EFECTO VISUAL: SEO, FAVICON Y TÃ¯Â¿Â½TULO DINÃ¯Â¿Â½MICO ---
+    // --- EFECTO VISUAL: SEO, FAVICON Y TÍTULO DINÁMICO ---
 
     const lastSavedSettingsRef = useRef(null);
 
@@ -2377,7 +2377,7 @@ function App() {
             }
         };
 
-        // 1. Título de la PestaÃ¯Â¿Â½a
+        // 1. Título de la Pestaña
         const pageTitle = settings.seoTitle || (settings.storeName ? `${settings.storeName} - Tienda Online` : 'Tienda Online');
         document.title = pageTitle;
 
@@ -2627,15 +2627,15 @@ function App() {
             }
 
             if (isRegister) {
-                // Validaciones explÃ¯Â¿Â½citas para Registro
+                // Validaciones explícitas para Registro
                 if (!authData.name || authData.name.length < 3) throw new Error("El nombre es muy corto.");
                 if (!authData.username) throw new Error("Debes elegir un nombre de usuario.");
-                if (!authData.email || !authData.email.includes('@')) throw new Error("Email invÃ¯Â¿Â½lido.");
+                if (!authData.email || !authData.email.includes('@')) throw new Error("Email inválido.");
                 if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
 
                 // DNI y Teléfono SIEMPRE obligatorios (necesarios para checkout)
-                if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dÃ¯Â¿Â½gitos).");
-                if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dÃ¯Â¿Â½gitos).");
+                if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dígitos).");
+                if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dígitos).");
 
                 // Verificar duplicados (Email) - Buscar por emailLower para case-insensitive
                 const allUsersSnap = await getDocs(usersRef);
@@ -2685,7 +2685,7 @@ function App() {
                 delete safeUserData.password;
 
                 setCurrentUser(safeUserData);
-                showToast("¿Cuenta creada exitosamente! Bienvenido.", "success");
+                showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
 
             } else {
                 // Validaciones para Login
@@ -2721,7 +2721,7 @@ function App() {
 
                     const adminUserData = { ...matchedDoc.data(), id: matchedDoc.id, role: 'admin' };
                     setCurrentUser(adminUserData);
-                    showToast(`Ã¯Â¿Â½Bienvenido Admin!`, "success");
+                    showToast(`¡Bienvenido Admin!`, "success");
                     setView('store');
                     setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
                     setIsLoading(false);
@@ -2751,15 +2751,15 @@ function App() {
 
                         if (!matchedDoc && isFirebaseAuthUser) {
                             // Caso raro: Auth OK, pero sin datos en DB. Usamos datos básicos.
-                            // Creamos un objeto "fake doc" para que paíse la lÃ¯Â¿Â½gica siguiente o lo manejamos aquí
-                            // Para simplificar, si Auth paísÃ¯Â¿Â½, es vÃ¯Â¿Â½lido.
+                            // Creamos un objeto "fake doc" para que pase la lógica siguiente o lo manejamos aquí
+                            // Para simplificar, si Auth pasó, es válido.
                             const basicData = {
                                 id: authUid,
                                 email: normalizedInput,
                                 name: userCredential.user.displayName || 'Usuario',
                                 role: 'user'
                             };
-                            // Guardamos/Restauramos perfil bÃ¯Â¿Â½sico
+                            // Guardamos/Restauramos perfil básico
                             await setDoc(userDocRef, basicData, { merge: true });
                             matchedDoc = await getDoc(userDocRef);
                         }
@@ -2789,8 +2789,8 @@ function App() {
                 }
 
                 if (!matchedDoc) {
-                    // DIAGNÃ¯Â¿Â½STICO INTELIGENTE:
-                    // Si llegamos a que no hay "matchedDoc" vÃ¯Â¿Â½lido para login manual,
+                    // DIAGNÓSTICO INTELIGENTE:
+                    // Si llegamos a que no hay "matchedDoc" válido para login manual,
                     // pero quizás el documento EXISTE en la DB y solo le faltan credenciales (password) para el login manual
                     // O el Auth falló con user-not-found.
 
@@ -2855,7 +2855,7 @@ function App() {
                 }
 
                 setCurrentUser(safeUserData);
-                showToast(`Ã¯Â¿Â½Hola de nuevo, ${userData.name || 'Usuario'}!`, "success");
+                showToast(`¡Hola de nuevo, ${userData.name || 'Usuario'}!`, "success");
             }
 
             // Redirigir a tienda tras éxito
@@ -2882,7 +2882,7 @@ function App() {
             await sendPasswordResetEmail(auth, authData.email);
             showToast("¡Listo! Revisa tu email (y spam) para restablecer tu contraseña.", "success");
         } catch (e) {
-            console.error("Error reset paíss:", e);
+            console.error("Error reset pass:", e);
             if (e.code === 'auth/user-not-found') {
                 showToast("No existe una cuenta registrada con este email.", "error");
             } else {
@@ -2911,10 +2911,10 @@ function App() {
         } else {
             // Agregar a favoritos
             newFavs = [...currentFavs, product.id];
-            showToast("Ã¯Â¿Â½Guardado en favoritos!", "success");
+            showToast("¡Guardado en favoritos!", "success");
         }
 
-        // Actualización Optimista (UI instantÃ¯Â¿Â½nea)
+        // Actualización Optimista (UI instantánea)
         setCurrentUser(prev => ({ ...prev, favorites: newFavs }));
 
         // Persistencia en Firebase
@@ -2952,7 +2952,7 @@ function App() {
             }
 
             if (newQuantity > currentStock) {
-                showToast(`Lo sentimos, el stock mÃ¯Â¿Â½ximo disponible es ${currentStock}.`, "warning");
+                showToast(`Lo sentimos, el stock máximo disponible es ${currentStock}.`, "warning");
                 return prevCart;
             }
 
@@ -2973,13 +2973,13 @@ function App() {
                 return updatedCart;
             } else {
                 // Agregar nuevo item
-                showToast("Ã¯Â¿Â½Producto agregado al carrito!", "success");
+                showToast("¡Producto agregado al carrito!", "success");
                 return [...prevCart, { product: product, quantity: newQuantity }];
             }
         });
     };
 
-    // 4. CÃ¯Â¿Â½lculos de Precios y Descuentos
+    // 4. Cálculos de Precios y Descuentos
     const calculateItemPrice = (basePrice, discount) => {
         if (!discount || discount <= 0) return Number(basePrice);
         const discounted = Number(basePrice) * (1 - discount / 100);
@@ -2993,7 +2993,7 @@ function App() {
         }, 0);
     }, [cart]);
 
-    // Aplicar lÃ¯Â¿Â½gica compleja de cupones
+    // Aplicar lógica compleja de cupones
     const calculateDiscountAmount = (total, coupon) => {
         if (!coupon) return 0;
 
@@ -3244,11 +3244,11 @@ function App() {
             setCart([]);
             setAppliedCoupon(null);
             setView('profile');
-            showToast("Ã¯Â¿Â½Pedido realizado con éxito! Te hemos enviado un email con el detalle.", "success");
+            showToast("¡Pedido realizado con éxito! Te hemos enviado un email con el detalle.", "success");
 
         } catch (e) {
             console.error("Error al procesar pedido:", e);
-            showToast("OcurriÃ¯Â¿Â½ un error al procesar el pedido. Intenta nuevamente.", "error");
+            showToast("Ocurrió un error al procesar el pedido. Intenta nuevamente.", "error");
         } finally {
             setIsProcessingOrder(false);
         }
@@ -3275,7 +3275,7 @@ function App() {
         // Sanitizar el monto total para evitar errores de precisiÃ¯Â¿Â½n flotante
         const safeAmount = Number(parseFloat(finalTotal).toFixed(2));
         if (isNaN(safeAmount) || safeAmount <= 0) {
-            console.error('? Error: Monto invÃ¯Â¿Â½lido para pago:', finalTotal);
+            console.error('? Error: Monto inválido para pago:', finalTotal);
             return;
         }
 
@@ -3284,7 +3284,7 @@ function App() {
 
         isInitializingBrick.current = true;
 
-        // Timeout de seguridad: si en 10 segundos no cargÃ¯Â¿Â½, permitir reintentar
+        // Timeout de seguridad: si en 10 segundos no cargó, permitir reintentar
         const safetyTimeout = setTimeout(() => {
             if (isInitializingBrick.current) {
                 console.warn('?? Mercado Pago: La inicialización está tardando demasiado. Liberando bloqueo...');
@@ -3302,7 +3302,7 @@ function App() {
             setMpBrickController(null);
         }
 
-        // Limpiar el contenedor fÃ¯Â¿Â½sicamente por si quedaron restos
+        // Limpiar el contenedor físicamente por si quedaron restos
         const containerElem = document.getElementById('cardPaymentBrick_container');
         if (containerElem) {
             containerElem.innerHTML = '';
@@ -3315,7 +3315,7 @@ function App() {
         // Limpiar errores previos
         setPaymentError(null);
 
-        // CREDENCIALES DE PRODUCCIÃ¯Â¿Â½N
+        // CREDENCIALES DE PRODUCCIÓN
         const publicKey = 'APP_USR-6c7ba3ec-c928-42a9-a137-5f355dfc5366';
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
@@ -3359,10 +3359,10 @@ function App() {
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
 
-                        // Validar datos crÃ¯Â¿Â½ticos antes de enviar
+                        // Validar datos críticos antes de enviar
                         if (!cardFormData.token) {
                             setIsPaymentProcessing(false);
-                            setPaymentError('Error en los datos de la tarjeta. Por favor intentÃ¯Â¿Â½ nuevamente.');
+                            setPaymentError('Error en los datos de la tarjeta. Por favor intentá nuevamente.');
                             showToast('Error al procesar los datos de la tarjeta.', 'error');
                             return;
                         }
@@ -3394,10 +3394,10 @@ function App() {
 
                             if (result.status === 'approved' || result.status === 'in_process' || result.status === 'pending') {
                                 await confirmOrderAfterPayment(result.id);
-                                showToast('¿Compra realizada!', 'success');
+                                showToast('¡Compra realizada!', 'success');
                                 setIsPaymentProcessing(false);
                                 isInitializingBrick.current = false;
-                                // Limpiar controlador de MP para que la prÃ¯Â¿Â½xima compra reinicie de cero
+                                // Limpiar controlador de MP para que la próxima compra reinicie de cero
                                 if (mpBrickController) {
                                     try {
                                         await mpBrickController.unmount();
@@ -3405,17 +3405,17 @@ function App() {
                                     setMpBrickController(null);
                                 }
                             } else {
-                                // ERROR DE NEGOCIO (Pago rechazado, tarjeta invÃ¯Â¿Â½lida, etc)
+                                // ERROR DE NEGOCIO (Pago rechazado, tarjeta inválida, etc)
                                 const mpErrorMap = {
                                     'cc_rejected_high_risk': 'El pago fue rechazado por controles de seguridad de Mercado Pago. Te recomendamos probar con otra tarjeta o medio de pago.',
                                     'cc_rejected_insufficient_amount': 'Tu tarjeta no tiene fondos suficientes.',
-                                    'cc_rejected_bad_filled_other': 'RevisÃ¯Â¿Â½ los datos de tu tarjeta.',
+                                    'cc_rejected_bad_filled_other': 'Revisá los datos de tu tarjeta.',
                                     'cc_rejected_bad_filled_date': 'La fecha de vencimiento es incorrecta.',
                                     'cc_rejected_bad_filled_security_code': 'El código de seguridad es incorrecto.',
-                                    'cc_rejected_call_for_authorize': 'DebÃ¯Â¿Â½s autorizar el pago llamando a tu banco.',
-                                    'cc_rejected_card_disabled': 'Tu tarjeta está inactiva. LlamÃ¯Â¿Â½ a tu banco para activarla.',
-                                    'cc_rejected_max_attempts': 'Llegaste al límite de intentos permitidos. UsÃ¯Â¿Â½ otra tarjeta.',
-                                    'cc_rejected_duplicated_payment': 'Ya hiciste un pago similar recientemente. EsperÃ¯Â¿Â½ unos minutos.'
+                                    'cc_rejected_call_for_authorize': 'Debés autorizar el pago llamando a tu banco.',
+                                    'cc_rejected_card_disabled': 'Tu tarjeta está inactiva. Llamá a tu banco para activarla.',
+                                    'cc_rejected_max_attempts': 'Llegaste al límite de intentos permitidos. Usá otra tarjeta.',
+                                    'cc_rejected_duplicated_payment': 'Ya hiciste un pago similar recientemente. Esperá unos minutos.'
                                 };
                                 const detailedError = mpErrorMap[result.status_detail] || result.status_detail || result.error || 'Pago rechazado';
                                 console.error('? Motivo del rechazo:', detailedError);
@@ -3430,16 +3430,16 @@ function App() {
                                 isInitializingBrick.current = false;
 
                                 setIsPaymentProcessing(false);
-                                // Mensaje de mÃ¯Â¿Â½xima tranquilidad para el cliente
+                                // Mensaje de máxima tranquilidad para el cliente
                                 setPaymentError(`${detailedError}`); // Mensaje limpio y directo
-                                showToast('El pago no se pudo completar. RevisÃ¯Â¿Â½ los detalles.', 'error');
+                                showToast('El pago no se pudo completar. Revisá los detalles.', 'error');
                             }
                         } catch (error) {
-                            // ERROR DE CONEXIÃ¯Â¿Â½N
-                            console.error('? Error de conexiÃ¯Â¿Â½n:', error);
+                            // ERROR DE CONEXIÓN
+                            console.error('? Error de conexión:', error);
                             setIsPaymentProcessing(false);
-                            setPaymentError('Error de conexiÃ¯Â¿Â½n con el servidor. RevisÃ¯Â¿Â½ tu internet e intentÃ¯Â¿Â½ de nuevo.');
-                            showToast('Error de conexiÃ¯Â¿Â½n.', 'error');
+                            setPaymentError('Error de conexión con el servidor. Revisá tu internet e intentá de nuevo.');
+                            showToast('Error de conexión.', 'error');
                         }
                     },
                     onError: (error) => {
@@ -3448,7 +3448,7 @@ function App() {
                         clearTimeout(safetyTimeout);
                         // No mostrar error si es solo por AdBlock
                         if (error && error.message && error.message.includes('melidata')) return;
-                        setPaymentError('Error en el formulario. VerificÃ¯Â¿Â½ tus claves de producción.');
+                        setPaymentError('Error en el formulario. Verificá tus claves de producción.');
                     },
                 },
             });
@@ -3540,7 +3540,7 @@ function App() {
                 }
             });
 
-            // Registrar uso de cupÃ¯Â¿Â½n si se usÃ¯Â¿Â½
+            // Registrar uso de cupón si se usó
             if (appliedCoupon) {
                 const couponRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
                 const couponDoc = await getDoc(couponRef);
@@ -3579,11 +3579,11 @@ function App() {
 
 
 
-    // --- FUNCIONES DE ADMINISTRACIÃ¯Â¿Â½N ---
+    // --- FUNCIONES DE ADMINISTRACIÓN ---
 
     // 6. Guardar Producto
     const saveProductFn = async () => {
-        // Validaciones bÃ¯Â¿Â½sicas
+        // Validaciones básicas
         if (!newProduct.name) return showToast("El nombre del producto es obligatorio.", "warning");
 
         // --- PRODUCT LIMIT CHECK (SUBSCRIPTION) ---
@@ -3697,7 +3697,7 @@ function App() {
 
     // 6.5. Eliminar Producto
     const deleteProductFn = (product) => {
-        openConfirm("Eliminar Producto", `¿Estés seguro de eliminar el producto "${product.name}"?`, async () => {
+        openConfirm("Eliminar Producto", `¿Estás seguro de eliminar el producto "${product.name}"?`, async () => {
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id));
                 showToast("Producto eliminado correctamente.", "success");
@@ -3765,7 +3765,7 @@ function App() {
                                 });
                             } catch (ignore) {
                                 // Si el producto ya no existe, ignoramos el error para permitir borrar el pedido
-                                console.warn(`Producto ${item.productId} no encontrado, no se restaurÃ¯Â¿Â½ stock.`);
+                                console.warn(`Producto ${item.productId} no encontrado, no se restauró stock.`);
                             }
                         }
                     }
@@ -3781,16 +3781,16 @@ function App() {
         });
     };
 
-    // 7. Guardar CupÃ¯Â¿Â½n (COMPLEJO y DETALLADO)
+    // 7. Guardar Cupón (COMPLEJO y DETALLADO)
     const saveCouponFn = async () => {
         // Validaciones exhaustivas
-        if (!newCoupon.code || newCoupon.code.length < 3) return showToast("El código del cupÃ¯Â¿Â½n debe tener al menos 3 caracteres.", "warning");
+        if (!newCoupon.code || newCoupon.code.length < 3) return showToast("El código del cupón debe tener al menos 3 caracteres.", "warning");
         if (!newCoupon.value || Number(newCoupon.value) <= 0) return showToast("El valor del descuento debe ser mayor a 0.", "warning");
 
         if (newCoupon.type === 'percentage' && Number(newCoupon.value) > 100) return showToast("El porcentaje no puede ser mayor a 100%.", "warning");
 
         if (newCoupon.targetType === 'specific_user' && !newCoupon.targetUser.includes('@')) {
-            return showToast("Si el cupÃ¯Â¿Â½n es para un usuario especÃ¯Â¿Â½fico, ingresa un email vÃ¯Â¿Â½lido.", "warning");
+            return showToast("Si el cupón es para un usuario específico, ingresa un email válido.", "warning");
         }
 
         try {
@@ -3814,10 +3814,10 @@ function App() {
                 code: '', type: 'percentage', value: 0, minPurchase: 0, maxDiscount: 0,
                 expirationDate: '', targetType: 'global', targetUser: '', usageLimit: '', perUserLimit: 1
             });
-            showToast("CupÃ¯Â¿Â½n de descuento creado exitosamente.", "success");
+            showToast("Cupón de descuento creado exitosamente.", "success");
         } catch (e) {
             console.error(e);
-            showToast("Error al crear el cupÃ¯Â¿Â½n.", "error");
+            showToast("Error al crear el cupón.", "error");
         }
     };
 
@@ -3862,9 +3862,9 @@ function App() {
     // 9. Configuración y Equipo (Settings)
 
 
-    // 10. GestiÃ¯Â¿Â½n de Compras (Editar/Eliminar con lÃ¯Â¿Â½gica de Stock)
+    // 10. Gestión de Compras (Editar/Eliminar con lógica de Stock)
     const deletePurchaseFn = (purchase) => {
-        openConfirm("Eliminar Compra", `Ã¯Â¿Â½Eliminar registro de compra? Se descontarÃ¯Â¿Â½n ${purchase.quantity} unidades del stock del producto.`, async () => {
+        openConfirm("Eliminar Compra", `¿Eliminar registro de compra? Se descontarán ${purchase.quantity} unidades del stock del producto.`, async () => {
             try {
                 // 1. Descontar Stock
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', purchase.productId), {
@@ -3884,7 +3884,7 @@ function App() {
         const qtyDiff = (newData.quantity || 0) - (oldData.quantity || 0);
 
         try {
-            // 1. Actualizar Stock si cambiÃ¯Â¿Â½ la cantidad
+            // 1. Actualizar Stock si cambió la cantidad
             if (qtyDiff !== 0) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', oldData.productId), {
                     stock: increment(qtyDiff)
@@ -3904,7 +3904,7 @@ function App() {
         }
     };
 
-    // --- FUNCIONES PARA GESTIÓN DE CATEGORÃ¯Â¿Â½AS ---
+    // --- FUNCIONES PARA GESTIÓN DE CATEGORÍAS ---
     const createCategoryFn = async () => {
         if (!newCategory.trim()) return showToast("Ingresa un nombre para la categoría.", "warning");
 
@@ -3976,7 +3976,7 @@ function App() {
 
     const finalizePurchaseOrder = async () => {
         if (purchaseCart.length === 0) {
-            return showToast("El carrito de compras está vacÃ¯Â¿Â½o.", "warning");
+            return showToast("El carrito de compras está vacío.", "warning");
         }
 
         try {
@@ -5121,7 +5121,7 @@ function App() {
                                                                 }
 
                                                                 const itemsList = cart.map(i => `• ${i.quantity}x ${i.product.name} $${calculateItemPrice(i.product.basePrice, i.product.discount).toLocaleString()}`).join('\n');
-                                                                const msg = `Hola! Quiero comprar lo siguiente:\n\n${itemsList}\n\n*Total: $${finalTotal.toLocaleString()}*\n\nÃ‚Â¿Como procedemos?`;
+                                                                const msg = `Hola! Quiero comprar lo siguiente:\n\n${itemsList}\n\n*Total: $${finalTotal.toLocaleString()}*\n\n¿Cómo procedemos?`;
 
                                                                 window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
                                                             } catch (e) {
@@ -5366,7 +5366,7 @@ function App() {
                                                         <div className="mb-6 p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
                                                             <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                                                             <p className="text-xs text-orange-200 leading-relaxed font-medium">
-                                                                <strong className="text-orange-400 block mb-1">ATENCIÃƒâ€œN:</strong>
+                                                                <strong className="text-orange-400 block mb-1">ATENCIÓN:</strong>
                                                                 Si tenés activado un <span className="text-white font-bold">AdBlocker/Bloqueador de Anuncios</span>, por favor desactivalo temporalmente.
                                                                 Es posible que el pago no se concrete si el bloqueador interfiere con la seguridad del banco.
                                                             </p>
