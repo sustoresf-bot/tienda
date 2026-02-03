@@ -4036,6 +4036,37 @@ function App() {
         }
     };
 
+    // Manejar Clic en Hero Carousel
+    const handleHeroClick = (image) => {
+        if (!image) return;
+
+        // Caso 1: Producto Vinculado
+        if (image.linkedProductId) {
+            const product = products.find(p => p.id === image.linkedProductId);
+            if (product) {
+                // Abrir modal de detalle
+                setSelectedProduct(product);
+                return;
+            } else {
+                showToast("El producto vinculado no está disponible.", "info");
+            }
+        }
+
+        // Caso 2: Promo Vinculada
+        if (image.linkedPromoId) {
+            const promo = promos.find(p => p.id === image.linkedPromoId);
+            if (promo) {
+                setSelectedCategory('Promos');
+                // Scroll al catálogo
+                const catalog = document.getElementById('catalog');
+                if (catalog) catalog.scrollIntoView({ behavior: 'smooth' });
+                return;
+            } else {
+                showToast("La promoción vinculada ha expirado.", "info");
+            }
+        }
+    };
+
     // 5. Confirmación de Pedido (Checkout)
     const confirmOrder = async () => {
         if (isProcessingOrder) return;
@@ -5344,28 +5375,28 @@ function App() {
                         </div>
 
                         {/* Barra de Búsqueda (Visible en Desktop) */}
-                        <div className={`hidden lg:flex items-center rounded-2xl px-6 py-3 w-1/3 transition shadow-inner group ${darkMode ? 'bg-slate-900/50 border border-slate-700/50 focus-within:border-orange-500/50 focus-within:bg-slate-900' : 'bg-slate-100 border border-slate-200 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-md'}`}>
-                            <Search className={`w-5 h-5 mr-3 group-focus-within:text-orange-500 transition ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+                        <div className={`hidden lg:flex items-center rounded-2xl px-4 py-2.5 w-[240px] lg:w-[320px] transition shadow-inner group ${darkMode ? 'bg-slate-900/50 border border-slate-700/50 focus-within:border-orange-500/50 focus-within:bg-slate-900' : 'bg-slate-100 border border-slate-200 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-md'}`}>
+                            <Search className={`w-4 h-4 mr-2 group-focus-within:text-orange-500 transition ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                             <input
-                                className={`bg-transparent outline-none text-sm w-full font-medium ${darkMode ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
-                                placeholder={'\u00BFQu\u00E9 est\u00E1s buscando hoy?'}
+                                className={`bg-transparent outline-none text-xs sm:text-sm w-full font-medium ${darkMode ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
+                                placeholder={'\u00BFQu\u00E9 buscas?'}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                         </div>
 
                         {/* Acciones de Usuario */}
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3 md:gap-4">
                             {/* Botones de Contacto */}
                             <div className="hidden md:flex items-center gap-2">
                                 {settings?.showWhatsapp !== false && settings?.whatsappLink && (
-                                    <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                                        <MessageCircle className="w-5 h-5" /> WhatsApp
+                                    <button onClick={() => window.open(settings?.whatsappLink, '_blank')} title="WhatsApp" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                                        <MessageCircle className="w-5 h-5" /> <span className="hidden xl:inline">WhatsApp</span>
                                     </button>
                                 )}
                                 {settings?.showInstagram !== false && settings?.instagramLink && (
-                                    <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.3)]">
-                                        <Instagram className="w-5 h-5" /> Instagram
+                                    <button onClick={() => window.open(settings?.instagramLink, '_blank')} title="Instagram" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+                                        <Instagram className="w-5 h-5" /> <span className="hidden xl:inline">Instagram</span>
                                     </button>
                                 )}
                             </div>
