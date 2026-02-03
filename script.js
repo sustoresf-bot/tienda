@@ -3310,6 +3310,8 @@ function App() {
         const audio = audioRef.current;
         if (!audio) return;
 
+        console.log("[Audio] Attempting to unlock audio system...");
+
         // Intentamos reproducir y pausar inmediatamente un sonido silencioso
         // Esto le dice al navegador que el usuario permite audio en este sitio
         audio.volume = 0;
@@ -3318,37 +3320,56 @@ function App() {
             audio.currentTime = 0;
             audio.volume = 0.5;
             isAudioUnlocked.current = true;
-            console.log("[Audio] System unlocked and ready.");
-        }).catch(() => {
+            console.log("✅ [Audio] System unlocked and ready!");
+            showToast("🔊 Notificaciones sonoras activadas", "success");
+        }).catch((e) => {
+            console.warn("[Audio] Failed to unlock:", e.name);
             // Aún bloqueado (posible si el click no fue lo suficientemente claro para el navegador)
         });
     }, []);
 
-    // Desbloquear audio al interactuar con el Admin Panel
+    // Desbloquear audio al interactuar con CUALQUIER parte de la página (para admins y editores)
     useEffect(() => {
-        if (view === 'admin') {
-            const handleInteraction = () => {
-                unlockAudio();
-                window.removeEventListener('mousedown', handleInteraction);
-                window.removeEventListener('keydown', handleInteraction);
-                window.removeEventListener('touchstart', handleInteraction);
-            };
-            window.addEventListener('mousedown', handleInteraction);
-            window.addEventListener('keydown', handleInteraction);
-            window.addEventListener('touchstart', handleInteraction);
-            return () => {
-                window.removeEventListener('mousedown', handleInteraction);
-                window.removeEventListener('keydown', handleInteraction);
-                window.removeEventListener('touchstart', handleInteraction);
-            };
-        }
-    }, [view, unlockAudio]);
+        // Solo configurar el sistema de audio para admins y editores
+        const userRole = currentUser?.role;
+        const isAdminOrEditor = userRole === 'admin' || userRole === 'editor';
+
+        if (!isAdminOrEditor) return;
+
+        const handleInteraction = () => {
+            unlockAudio();
+            // No removemos los listeners para intentar varias veces si falla
+        };
+
+        // Agregar eventos de interacción en TODA la página
+        window.addEventListener('click', handleInteraction);
+        window.addEventListener('mousedown', handleInteraction);
+        window.addEventListener('keydown', handleInteraction);
+        window.addEventListener('touchstart', handleInteraction);
+
+        // Intentar desbloquear inmediatamente si ya hubo interacción previa
+        setTimeout(() => unlockAudio(), 100);
+
+        return () => {
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('mousedown', handleInteraction);
+            window.removeEventListener('keydown', handleInteraction);
+            window.removeEventListener('touchstart', handleInteraction);
+        };
+    }, [currentUser?.role, unlockAudio]);
 
     useEffect(() => {
-        if (!isAdmin(currentUser?.email)) return;
+        // Verificar si el usuario actual es admin o editor
+        const userRole = currentUser?.role;
+        const isAdminOrEditor = userRole === 'admin' || userRole === 'editor';
+
+        // Solo ejecutar para admins y editores
+        if (!isAdminOrEditor) return;
 
         const lastViewedCount = parseInt(localStorage.getItem('sustore_last_viewed_orders') || '0');
         const currentCount = orders.length;
+
+        console.log('[Notifications] Debug:', { currentCount, lastViewedCount, soundEnabled, view, adminTab, userRole });
 
         // Si estamos en la bandeja de pedidos, actualizamos visto y DETENEMOS el sonido
         if (view === 'admin' && adminTab === 'orders') {
@@ -3360,28 +3381,44 @@ function App() {
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0;
+                console.log('[Notifications] Stopped notification sound (viewing orders)');
             }
         }
         // Si hay nuevos pedidos y NO estamos viendo la bandeja, notificar y reproducir sonido
         else if (currentCount > lastViewedCount) {
             if (currentCount > lastNotifiedCountRef.current) {
+                console.log('[Notifications] New order detected! Playing sound...');
+
                 if (soundEnabled) {
                     try {
                         const audio = audioRef.current;
+                        // Asegurar que el audio esté listo
+                        audio.pause();
+                        audio.currentTime = 0;
                         audio.loop = true; // REPETIR HASTA QUE SE VEA
                         audio.volume = 0.5;
-                        audio.play().catch(e => {
-                            if (e.name === 'NotAllowedError') {
-                                isAudioUnlocked.current = false;
-                                console.warn("[Audio] Blocked by browser. User interaction required.");
-                                showToast("🔊 Haz clic en la página para activar las alertas sonoras", "warning");
-                            } else {
-                                console.error("Error playing sound:", e);
-                            }
-                        });
+
+                        // Intentar reproducir
+                        const playPromise = audio.play();
+
+                        if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                                console.log('[Notifications] ✅ Sound playing successfully!');
+                            }).catch(e => {
+                                if (e.name === 'NotAllowedError') {
+                                    isAudioUnlocked.current = false;
+                                    console.warn("[Audio] ❌ Blocked by browser. User interaction required.");
+                                    showToast("🔊 Haz clic en la página para activar las alertas sonoras", "warning");
+                                } else {
+                                    console.error("[Audio] ❌ Error playing sound:", e);
+                                }
+                            });
+                        }
                     } catch (e) {
-                        console.error('Error handling notification sound:', e);
+                        console.error('[Notifications] ❌ Error handling notification sound:', e);
                     }
+                } else {
+                    console.log('[Notifications] Sound disabled, skipping audio');
                 }
 
                 const newOrdersCount = currentCount - lastViewedCount;
@@ -6927,19 +6964,39 @@ function App() {
                                                         localStorage.setItem('sustore_sound_enabled', JSON.stringify(newState));
 
                                                         if (newState) {
-                                                            // Usar el mismo audioRef para probar y desbloquear
+                                                            // ACTIVANDO: Reproducir sonido de prueba
                                                             try {
                                                                 const audio = audioRef.current;
+                                                                // Detener cualquier reproducción previa
+                                                                audio.pause();
+                                                                audio.currentTime = 0;
                                                                 audio.loop = false;
                                                                 audio.volume = 0.5;
-                                                                audio.play().catch(() => {
+
+                                                                // Reproducir sonido breve de confirmación
+                                                                audio.play().then(() => {
+                                                                    // Asegurar que el audio se detenga después de reproducirse una vez
+                                                                    setTimeout(() => {
+                                                                        audio.pause();
+                                                                        audio.currentTime = 0;
+                                                                    }, 1000); // Detener después de 1 segundo
+
+                                                                    if (!isAudioUnlocked.current) {
+                                                                        isAudioUnlocked.current = true;
+                                                                        console.log("[Audio] Unlocked via settings toggle");
+                                                                    }
+                                                                }).catch((e) => {
+                                                                    console.warn("[Audio] Blocked by browser:", e);
                                                                     showToast("🔊 Haz clic aquí de nuevo para confirmar sonido", "warning");
                                                                 });
+
                                                                 showToast("Sonido activado 🔔", "success");
                                                             } catch (e) {
+                                                                console.error("[Audio] Error toggling sound:", e);
                                                                 showToast("Sonido activado 🔔", "success");
                                                             }
                                                         } else {
+                                                            // DESACTIVANDO: Solo detener audio y mostrar mensaje silencioso
                                                             if (audioRef.current) {
                                                                 audioRef.current.pause();
                                                                 audioRef.current.currentTime = 0;
@@ -7545,13 +7602,13 @@ function App() {
 
                                                                     <div className="space-y-4">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Cantidad comprada</label>
+                                                                            <label htmlFor="purchase-quantity" className="text-xs font-bold text-slate-500 uppercase block mb-1">Cantidad comprada</label>
                                                                             <div className="text-xs text-yellow-500 mb-2">? Modificar esto ajustará el stock del producto automáticamente.</div>
-                                                                            <input type="number" className="input-cyber w-full p-3" value={editingPurchase.quantity} onChange={e => setEditingPurchase({ ...editingPurchase, quantity: parseInt(e.target.value) || 0 })} />
+                                                                            <input id="purchase-quantity" type="number" className="input-cyber w-full p-3" value={editingPurchase.quantity} onChange={e => setEditingPurchase({ ...editingPurchase, quantity: parseInt(e.target.value) || 0 })} />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Costo Total ($)</label>
-                                                                            <input type="number" className="input-cyber w-full p-3" value={editingPurchase.cost} onChange={e => setEditingPurchase({ ...editingPurchase, cost: parseFloat(e.target.value) || 0 })} />
+                                                                            <label htmlFor="purchase-cost" className="text-xs font-bold text-slate-500 uppercase block mb-1">Costo Total ($)</label>
+                                                                            <input id="purchase-cost" type="number" className="input-cyber w-full p-3" value={editingPurchase.cost} onChange={e => setEditingPurchase({ ...editingPurchase, cost: parseFloat(e.target.value) || 0 })} />
                                                                         </div>
                                                                     </div>
 
@@ -7584,10 +7641,11 @@ function App() {
                                                                 </h3>
                                                                 <div className="space-y-4">
                                                                     <div>
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Inversor (Socio)</label>
+                                                                        <label htmlFor="investment-investor" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Inversor (Socio)</label>
                                                                         <div className="relative">
                                                                             <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
                                                                             <select
+                                                                                id="investment-investor"
                                                                                 className="input-cyber w-full pl-12 p-4 appearance-none"
                                                                                 value={newInvestment.investor}
                                                                                 onChange={e => setNewInvestment({ ...newInvestment, investor: e.target.value })}
@@ -7611,8 +7669,9 @@ function App() {
                                                                     </div>
                                                                     <div className="grid grid-cols-2 gap-4">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Monto ($)</label>
+                                                                            <label htmlFor="investment-amount" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Monto ($)</label>
                                                                             <input
+                                                                                id="investment-amount"
                                                                                 type="number"
                                                                                 className="input-cyber w-full p-4 font-mono font-bold text-orange-400"
                                                                                 placeholder="0.00"
@@ -7621,8 +7680,9 @@ function App() {
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Fecha</label>
+                                                                            <label htmlFor="investment-date" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Fecha</label>
                                                                             <input
+                                                                                id="investment-date"
                                                                                 type="date"
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={newInvestment.date}
@@ -7631,8 +7691,9 @@ function App() {
                                                                         </div>
                                                                     </div>
                                                                     <div>
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Notas (Opcional)</label>
+                                                                        <label htmlFor="investment-notes" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Notas (Opcional)</label>
                                                                         <input
+                                                                            id="investment-notes"
                                                                             className="input-cyber w-full p-4"
                                                                             placeholder="Ej: Inversión Inicial, Refuerzo de capital..."
                                                                             value={newInvestment.notes}
@@ -7664,17 +7725,17 @@ function App() {
                                                                 </h3>
                                                                 <div className="space-y-4">
                                                                     <div>
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
-                                                                        <input className="input-cyber w-full p-4" placeholder="Ej: Pago de Internet, Alquiler..." value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} />
+                                                                        <label htmlFor="expense-description" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                                        <input id="expense-description" className="input-cyber w-full p-4" placeholder="Ej: Pago de Internet, Alquiler..." value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} />
                                                                     </div>
                                                                     <div className="grid grid-cols-2 gap-4">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Monto ($)</label>
-                                                                            <input type="number" className="input-cyber w-full p-4 font-mono font-bold text-red-400" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })} />
+                                                                            <label htmlFor="expense-amount" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Monto ($)</label>
+                                                                            <input id="expense-amount" type="number" className="input-cyber w-full p-4 font-mono font-bold text-red-400" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })} />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
-                                                                            <select className="input-cyber w-full p-4" value={newExpense.category} onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}>
+                                                                            <label htmlFor="expense-category" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Categoría</label>
+                                                                            <select id="expense-category" className="input-cyber w-full p-4" value={newExpense.category} onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}>
                                                                                 <option>General</option>
                                                                                 <option>Servicios</option>
                                                                                 <option>Impuestos</option>
@@ -7880,20 +7941,20 @@ function App() {
                                                                 {/* Columna 1 */}
                                                                 <div className="space-y-4">
                                                                     <div>
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Código del Cupón</label>
-                                                                        <input className="input-cyber w-full p-4 font-mono text-lg uppercase tracking-widest" placeholder="Ej: VERANO2024" value={newCoupon.code} onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })} />
+                                                                        <label htmlFor="coupon-code" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Código del Cupón</label>
+                                                                        <input id="coupon-code" className="input-cyber w-full p-4 font-mono text-lg uppercase tracking-widest" placeholder="Ej: VERANO2024" value={newCoupon.code} onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })} />
                                                                     </div>
                                                                     <div className="flex gap-4">
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo</label>
-                                                                            <select className="input-cyber w-full p-4" value={newCoupon.type} onChange={e => setNewCoupon({ ...newCoupon, type: e.target.value })}>
+                                                                            <label htmlFor="coupon-type" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo</label>
+                                                                            <select id="coupon-type" className="input-cyber w-full p-4" value={newCoupon.type} onChange={e => setNewCoupon({ ...newCoupon, type: e.target.value })}>
                                                                                 <option value="percentage">Porcentaje (%)</option>
                                                                                 <option value="fixed">Fijo ($)</option>
                                                                             </select>
                                                                         </div>
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Valor</label>
-                                                                            <input className="input-cyber w-full p-4" type="number" placeholder="0" value={newCoupon.value} onChange={e => setNewCoupon({ ...newCoupon, value: e.target.value })} />
+                                                                            <label htmlFor="coupon-value" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Valor</label>
+                                                                            <input id="coupon-value" className="input-cyber w-full p-4" type="number" placeholder="0" value={newCoupon.value} onChange={e => setNewCoupon({ ...newCoupon, value: e.target.value })} />
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -7902,33 +7963,34 @@ function App() {
                                                                 <div className="space-y-4">
                                                                     <div className="flex gap-4">
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mínimo de Compra</label>
-                                                                            <input className="input-cyber w-full p-4" type="number" placeholder="$0" value={newCoupon.minPurchase} onChange={e => setNewCoupon({ ...newCoupon, minPurchase: e.target.value })} />
+                                                                            <label htmlFor="coupon-minPurchase" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mínimo de Compra</label>
+                                                                            <input id="coupon-minPurchase" className="input-cyber w-full p-4" type="number" placeholder="$0" value={newCoupon.minPurchase} onChange={e => setNewCoupon({ ...newCoupon, minPurchase: e.target.value })} />
                                                                         </div>
                                                                         {newCoupon.type === 'percentage' && (
                                                                             <div className="flex-1">
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tope Reintegro</label>
-                                                                                <input className="input-cyber w-full p-4" type="number" placeholder="$0 (Opcional)" value={newCoupon.maxDiscount} onChange={e => setNewCoupon({ ...newCoupon, maxDiscount: e.target.value })} />
+                                                                                <label htmlFor="coupon-maxDiscount" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tope Reintegro</label>
+                                                                                <input id="coupon-maxDiscount" className="input-cyber w-full p-4" type="number" placeholder="$0 (Opcional)" value={newCoupon.maxDiscount} onChange={e => setNewCoupon({ ...newCoupon, maxDiscount: e.target.value })} />
                                                                             </div>
                                                                         )}
                                                                     </div>
 
                                                                     <div className="flex gap-4">
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Límite Usos (Total)</label>
-                                                                            <input className="input-cyber w-full p-4" type="number" placeholder="Ej: 100" value={newCoupon.usageLimit} onChange={e => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })} />
+                                                                            <label htmlFor="coupon-usageLimit" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Límite Usos (Total)</label>
+                                                                            <input id="coupon-usageLimit" className="input-cyber w-full p-4" type="number" placeholder="Ej: 100" value={newCoupon.usageLimit} onChange={e => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })} />
                                                                         </div>
                                                                         <div className="flex-1">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Vencimiento</label>
-                                                                            <input className="input-cyber w-full p-4" type="date" value={newCoupon.expirationDate} onChange={e => setNewCoupon({ ...newCoupon, expirationDate: e.target.value })} />
+                                                                            <label htmlFor="coupon-expirationDate" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Vencimiento</label>
+                                                                            <input id="coupon-expirationDate" className="input-cyber w-full p-4" type="date" value={newCoupon.expirationDate} onChange={e => setNewCoupon({ ...newCoupon, expirationDate: e.target.value })} />
                                                                         </div>
                                                                     </div>
 
                                                                     <div className="md:col-span-2">
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        <label htmlFor="coupon-targetType" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
                                                                             Tipo de Cupón
                                                                         </label>
                                                                         <select
+                                                                            id="coupon-targetType"
                                                                             className="input-cyber w-full p-4"
                                                                             value={newCoupon.targetType}
                                                                             onChange={e => setNewCoupon({ ...newCoupon, targetType: e.target.value })}
@@ -7940,10 +8002,11 @@ function App() {
 
                                                                     {newCoupon.targetType === 'specific_email' && (
                                                                         <div className="md:col-span-2">
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                            <label htmlFor="coupon-targetUser" className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
                                                                                 Email del Usuario
                                                                             </label>
                                                                             <input
+                                                                                id="coupon-targetUser"
                                                                                 type="email"
                                                                                 className="input-cyber w-full p-4"
                                                                                 placeholder="usuario@ejemplo.com"
@@ -8208,8 +8271,9 @@ function App() {
                                                                         {/* Left Column: General Info */}
                                                                         <div className="space-y-8">
                                                                             <div>
-                                                                                <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3 block ml-1">Nombre del Combo</label>
+                                                                                <label htmlFor="promo-name" className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3 block ml-1">Nombre del Combo</label>
                                                                                 <input
+                                                                                    id="promo-name"
                                                                                     type="text"
                                                                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 font-bold text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400"
                                                                                     placeholder="Ej: Starter Pack Gaming"
@@ -8220,10 +8284,11 @@ function App() {
 
                                                                             <div className="grid grid-cols-2 gap-6">
                                                                                 <div>
-                                                                                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3 block ml-1">Precio Promocional</label>
+                                                                                    <label htmlFor="promo-price" className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3 block ml-1">Precio Promocional</label>
                                                                                     <div className="relative">
                                                                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                                                                         <input
+                                                                                            id="promo-price"
                                                                                             type="number"
                                                                                             className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 pl-8 text-slate-900 font-black text-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder:text-slate-300"
                                                                                             placeholder="0"
@@ -8262,9 +8327,9 @@ function App() {
                                                                                     </div>
                                                                                     <div className="flex-1">
                                                                                         <p className="text-xs text-slate-500 font-medium mb-3">Sube una imagen atractiva (PNG/JPG)</p>
-                                                                                        <label className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 font-bold text-xs rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 cursor-pointer transition-colors">
+                                                                                        <label htmlFor="promo-image" className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 font-bold text-xs rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 cursor-pointer transition-colors">
                                                                                             <Upload className="w-3.5 h-3.5" /> Seleccionar Archivo
-                                                                                            <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, setNewPromo)} />
+                                                                                            <input id="promo-image" type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, setNewPromo)} />
                                                                                         </label>
                                                                                     </div>
                                                                                 </div>
