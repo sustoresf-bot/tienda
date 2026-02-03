@@ -9522,6 +9522,56 @@ function App() {
                                                                     </div>
                                                                 </div>
 
+                                                                {/* PERSONALIZACIÓN DEL HERO */}
+                                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                        <Layout className="w-5 h-5 text-orange-400" /> Personalización del Hero (Portada)
+                                                                    </h3>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                        {/* Badge */}
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Badge / Etiqueta</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-4"
+                                                                                value={settings?.heroBadge || ''}
+                                                                                onChange={e => setSettings({ ...settings, heroBadge: e.target.value })}
+                                                                                placeholder="ABIERTO 24/7"
+                                                                            />
+                                                                        </div>
+                                                                        {/* Subtitle */}
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Subtítulo</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-4"
+                                                                                value={settings?.heroSubtitle || ''}
+                                                                                onChange={e => setSettings({ ...settings, heroSubtitle: e.target.value })}
+                                                                                placeholder="La mejor calidad..."
+                                                                            />
+                                                                        </div>
+                                                                        {/* Title 1 */}
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Principal (Línea 1)</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-4"
+                                                                                value={settings?.heroTitle1 || ''}
+                                                                                onChange={e => setSettings({ ...settings, heroTitle1: e.target.value })}
+                                                                                placeholder="TU ALMACÉN"
+                                                                            />
+                                                                        </div>
+                                                                        {/* Title 2 */}
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Destacado (Línea 2)</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-4"
+                                                                                value={settings?.heroTitle2 || ''}
+                                                                                onChange={e => setSettings({ ...settings, heroTitle2: e.target.value })}
+                                                                                placeholder="DE CONFIANZA"
+                                                                            />
+                                                                            <p className="text-xs text-slate-500 mt-1">Se mostrará con degradado de color.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
                                                                 {/* PERSONALIZACIÓN DEL FOOTER */}
                                                                 <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
                                                                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
