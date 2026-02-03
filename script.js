@@ -1015,9 +1015,9 @@ function SustIABot({ settings, products, addToCart, controlPanel, coupons, darkM
 
 
     return (
-        <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end pointer-events-none">
+        <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end pointer-events-none max-h-[calc(100vh-100px)]">
             {isOpen && (
-                <div className={`pointer-events-auto border rounded-2xl w-80 md:w-96 h-[550px] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden font-sans ${darkMode ? 'bg-[#0a0a0a] border-yellow-500/30' : 'bg-white border-yellow-400/50'}`}>
+                <div className={`pointer-events-auto border rounded-2xl w-80 md:w-96 max-h-[calc(100vh-120px)] h-[500px] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden font-sans ${darkMode ? 'bg-[#0a0a0a] border-yellow-500/30' : 'bg-white border-yellow-400/50'}`}>
                     <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center shadow-md">
                         <div className="flex items-center gap-3">
                             <div className="p-1 bg-white/10 rounded-full backdrop-blur-sm overflow-hidden border border-white/20">
@@ -5489,7 +5489,7 @@ function App() {
                                         >
                                             <img
                                                 src={image.url}
-                                                className="absolute inset-0 w-full h-full object-contain opacity-60 transition-transform duration-1000 group-hover:scale-105"
+                                                className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105"
                                                 alt={`Hero ${index + 1}`}
                                             />
                                         </div>
