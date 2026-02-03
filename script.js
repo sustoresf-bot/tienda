@@ -309,14 +309,46 @@ const defaultSettings = {
     admins: SUPER_ADMIN_EMAIL,
     team: [{ email: SUPER_ADMIN_EMAIL, role: "admin", name: "Administrador" }],
 
-    // --- Contacto ---
+    // --- Contacto y Redes Sociales ---
     sellerEmail: "",
+    storeEmail: "",
+    storePhone: "",
+    storeAddress: "",
+
+    // Instagram
     instagramUser: "",
     instagramLink: "",
+    showInstagram: false,
+
+    // WhatsApp
     whatsappLink: "",
     showWhatsapp: false,
     showFloatingWhatsapp: false,
-    showInstagram: false,
+
+    // Facebook
+    facebookLink: "",
+    showFacebook: false,
+
+    // Twitter
+    twitterLink: "",
+    showTwitter: false,
+
+    // TikTok
+    tiktokLink: "",
+    showTiktok: false,
+
+    // YouTube
+    youtubeLink: "",
+    showYoutube: false,
+
+    // --- Footer ---
+    footerSuffix: ".SF",
+    footerDescription: "Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.",
+    footerCopyright: "",
+    showFooterContact: true,
+    footerContactTitle: "Contacto",
+    footerContactDescription: "¿Tienes alguna duda? Estamos aquí para ayudarte.",
+    footerContactType: "whatsapp", // whatsapp | email
 
     // --- Imágenes ---
     logoUrl: "",
@@ -9381,13 +9413,168 @@ function App() {
                                                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                                                                                     <Facebook className="w-3 h-3 text-blue-500" /> Facebook
                                                                                 </label>
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, showFacebook: !settings?.showFacebook })}
+                                                                                    className={`w-10 h-5 rounded-full transition relative ${settings?.showFacebook ? 'bg-blue-500' : 'bg-slate-700'}`}
+                                                                                    title={settings?.showFacebook ? 'Ocultar' : 'Mostrar'}
+                                                                                >
+                                                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition ${settings?.showFacebook ? 'left-6' : 'left-1'}`}></div>
+                                                                                </button>
                                                                             </div>
                                                                             <input
                                                                                 className="input-cyber w-full p-4"
                                                                                 value={settings?.facebookLink || ''}
                                                                                 onChange={e => setSettings({ ...settings, facebookLink: e.target.value })}
-                                                                                placeholder="https://facebook.com/..."
+                                                                                placeholder="https://facebook.com/mitienda"
                                                                             />
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="flex justify-between items-center mb-2">
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                                                                    <Twitter className="w-3 h-3 text-sky-500" /> Twitter / X
+                                                                                </label>
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, showTwitter: !settings?.showTwitter })}
+                                                                                    className={`w-10 h-5 rounded-full transition relative ${settings?.showTwitter ? 'bg-sky-500' : 'bg-slate-700'}`}
+                                                                                    title={settings?.showTwitter ? 'Ocultar' : 'Mostrar'}
+                                                                                >
+                                                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition ${settings?.showTwitter ? 'left-6' : 'left-1'}`}></div>
+                                                                                </button>
+                                                                            </div>
+                                                                            <input
+                                                                                className="input-cyber w-full p-4"
+                                                                                value={settings?.twitterLink || ''}
+                                                                                onChange={e => setSettings({ ...settings, twitterLink: e.target.value })}
+                                                                                placeholder="https://twitter.com/mitienda"
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="flex justify-between items-center mb-2">
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                                                                    <Music className="w-3 h-3 text-rose-500" /> TikTok
+                                                                                </label>
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, showTiktok: !settings?.showTiktok })}
+                                                                                    className={`w-10 h-5 rounded-full transition relative ${settings?.showTiktok ? 'bg-rose-500' : 'bg-slate-700'}`}
+                                                                                    title={settings?.showTiktok ? 'Ocultar' : 'Mostrar'}
+                                                                                >
+                                                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition ${settings?.showTiktok ? 'left-6' : 'left-1'}`}></div>
+                                                                                </button>
+                                                                            </div>
+                                                                            <input
+                                                                                className="input-cyber w-full p-4"
+                                                                                value={settings?.tiktokLink || ''}
+                                                                                onChange={e => setSettings({ ...settings, tiktokLink: e.target.value })}
+                                                                                placeholder="https://tiktok.com/@mitienda"
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="flex justify-between items-center mb-2">
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                                                                    <Youtube className="w-3 h-3 text-red-500" /> YouTube
+                                                                                </label>
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, showYoutube: !settings?.showYoutube })}
+                                                                                    className={`w-10 h-5 rounded-full transition relative ${settings?.showYoutube ? 'bg-red-500' : 'bg-slate-700'}`}
+                                                                                    title={settings?.showYoutube ? 'Ocultar' : 'Mostrar'}
+                                                                                >
+                                                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition ${settings?.showYoutube ? 'left-6' : 'left-1'}`}></div>
+                                                                                </button>
+                                                                            </div>
+                                                                            <input
+                                                                                className="input-cyber w-full p-4"
+                                                                                value={settings?.youtubeLink || ''}
+                                                                                onChange={e => setSettings({ ...settings, youtubeLink: e.target.value })}
+                                                                                placeholder="https://youtube.com/@mitienda"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* PERSONALIZACIÓN DEL FOOTER */}
+                                                                <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                        <Layout className="w-5 h-5 text-orange-400" /> Personalización del Footer
+                                                                    </h3>
+                                                                    <div className="space-y-6">
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Sufijo del Logo</label>
+                                                                                <input
+                                                                                    className="input-cyber w-full p-4"
+                                                                                    value={settings?.footerSuffix || ''}
+                                                                                    onChange={e => setSettings({ ...settings, footerSuffix: e.target.value })}
+                                                                                    placeholder=".SF"
+                                                                                />
+                                                                                <p className="text-xs text-slate-500 mt-1">Aparece después del nombre (ej: SUSTORE<span className="text-orange-500">.SF</span>)</p>
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright</label>
+                                                                                <input
+                                                                                    className="input-cyber w-full p-4"
+                                                                                    value={settings?.footerCopyright || ''}
+                                                                                    onChange={e => setSettings({ ...settings, footerCopyright: e.target.value })}
+                                                                                    placeholder="© 2024 SUSTORE. Todos los derechos reservados."
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción del Footer</label>
+                                                                            <textarea
+                                                                                className="input-cyber w-full p-4 h-20 resize-none"
+                                                                                value={settings?.footerDescription || ''}
+                                                                                onChange={e => setSettings({ ...settings, footerDescription: e.target.value })}
+                                                                                placeholder="Tu destino premium para tecnología de vanguardia..."
+                                                                            />
+                                                                        </div>
+
+                                                                        {/* Sección de Contacto en Footer */}
+                                                                        <div className="pt-6 border-t border-slate-800">
+                                                                            <div className="flex items-center justify-between mb-4">
+                                                                                <h4 className="text-sm font-bold text-white">Sección de Contacto</h4>
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, showFooterContact: !settings?.showFooterContact })}
+                                                                                    className={`w-10 h-5 rounded-full transition relative ${settings?.showFooterContact !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                                                                >
+                                                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition ${settings?.showFooterContact !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                                </button>
+                                                                            </div>
+                                                                            {settings?.showFooterContact !== false && (
+                                                                                <div className="space-y-4">
+                                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                        <div>
+                                                                                            <label className="text-xs text-slate-500 mb-1 block">Título</label>
+                                                                                            <input
+                                                                                                className="input-cyber w-full p-3"
+                                                                                                value={settings?.footerContactTitle || ''}
+                                                                                                onChange={e => setSettings({ ...settings, footerContactTitle: e.target.value })}
+                                                                                                placeholder="Contacto"
+                                                                                            />
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <label className="text-xs text-slate-500 mb-1 block">Tipo de Contacto</label>
+                                                                                            <select
+                                                                                                className="input-cyber w-full p-3"
+                                                                                                value={settings?.footerContactType || 'whatsapp'}
+                                                                                                onChange={e => setSettings({ ...settings, footerContactType: e.target.value })}
+                                                                                            >
+                                                                                                <option value="whatsapp">WhatsApp</option>
+                                                                                                <option value="email">Email</option>
+                                                                                            </select>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <label className="text-xs text-slate-500 mb-1 block">Descripción</label>
+                                                                                        <input
+                                                                                            className="input-cyber w-full p-3"
+                                                                                            value={settings?.footerContactDescription || ''}
+                                                                                            onChange={e => setSettings({ ...settings, footerContactDescription: e.target.value })}
+                                                                                            placeholder="¿Tienes alguna duda? Estamos aquí para ayudarte."
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -9910,6 +10097,43 @@ function App() {
                                                                         </div>
 
                                                                         {/* Loading Text */}
+                                                                        {/* Margen/Markup */}
+                                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                            <div className="flex items-center gap-6 mb-4">
+                                                                                <div className="flex-1">
+                                                                                    <p className="font-bold text-white mb-1">Margen de Ganancia (%)</p>
+                                                                                    <p className="text-xs text-slate-500">Porcentaje automático agregado al precio de costo</p>
+                                                                                </div>
+                                                                                <div className="text-center">
+                                                                                    <div className="text-3xl font-black text-green-400">{settings?.markupPercentage || 0}%</div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <input
+                                                                                type="number"
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.markupPercentage || 0}
+                                                                                onChange={e => setSettings({ ...settings, markupPercentage: parseFloat(e.target.value) || 0 })}
+                                                                                placeholder="0"
+                                                                                min="0"
+                                                                                step="1"
+                                                                            />
+                                                                        </div>
+
+                                                                        {/* Loading Title */}
+                                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                            <div className="mb-3">
+                                                                                <p className="font-bold text-white">Título de Carga</p>
+                                                                                <p className="text-xs text-slate-500">Título principal de la pantalla de carga (dejá vacío para nombre de tienda)</p>
+                                                                            </div>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={settings?.loadingTitle || ''}
+                                                                                onChange={e => setSettings({ ...settings, loadingTitle: e.target.value })}
+                                                                                placeholder={settings?.storeName || "Nombre de la tienda"}
+                                                                            />
+                                                                        </div>
+
+                                                                        {/* Loading Text */}
                                                                         <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                             <div className="mb-3">
                                                                                 <p className="font-bold text-white">Texto de Carga</p>
@@ -9920,6 +10144,20 @@ function App() {
                                                                                 value={settings?.loadingText || ''}
                                                                                 onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
                                                                                 placeholder="Cargando sistema..."
+                                                                            />
+                                                                        </div>
+
+                                                                        {/* About Us */}
+                                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                            <div className="mb-3">
+                                                                                <p className="font-bold text-white">Sobre Nosotros</p>
+                                                                                <p className="text-xs text-slate-500">Descripción de la tienda para la sección "Acerca de"</p>
+                                                                            </div>
+                                                                            <textarea
+                                                                                className="input-cyber w-full p-3 h-24 resize-none"
+                                                                                value={settings?.aboutUsText || ''}
+                                                                                onChange={e => setSettings({ ...settings, aboutUsText: e.target.value })}
+                                                                                placeholder="Bienvenido a nuestra tienda. Ofrecemos productos de calidad con envío a todo el país."
                                                                             />
                                                                         </div>
 
