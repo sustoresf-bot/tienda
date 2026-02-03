@@ -7651,7 +7651,7 @@ function App() {
                                                                                 onChange={e => setNewInvestment({ ...newInvestment, investor: e.target.value })}
                                                                             >
                                                                                 <option value="">Seleccionar Socio...</option>
-                                                                                {(settings?.team || []).map((member, idx) => (
+                                                                                {(Array.isArray(settings?.team) ? settings.team : []).map((member, idx) => (
                                                                                     <option key={idx} value={member.name || member.email}>
                                                                                         {member.name || member.email}
                                                                                     </option>
@@ -8838,7 +8838,7 @@ function App() {
                                                                                         No hay categorías disponibles. Agrégalas abajo.
                                                                                     </p>
                                                                                 ) : (
-                                                                                    (settings?.categories || []).map(cat => {
+                                                                                    (Array.isArray(settings?.categories) ? settings.categories : []).map(cat => {
                                                                                         // Soporte retrocompatible: verificar tanto categories (array) como category (string)
                                                                                         const isSelected = Array.isArray(newProduct.categories)
                                                                                             ? newProduct.categories.includes(cat)
@@ -9353,7 +9353,7 @@ function App() {
                                                                     </h3>
 
                                                                     <div className="space-y-4 mb-6">
-                                                                        {(settings?.heroImages || []).map((image, index) => (
+                                                                        {(Array.isArray(settings?.heroImages) ? settings.heroImages : []).map((image, index) => (
                                                                             <div key={index} className="flex items-center gap-4 p-4 bg-slate-900/50 rounded-xl border border-slate-800 transition hover:border-slate-600">
                                                                                 <div className="w-24 h-16 rounded-lg overflow-hidden border border-slate-700 flex-shrink-0">
                                                                                     <img src={image.url} className="w-full h-full object-cover" alt={`Slide ${index + 1}`} />
@@ -10225,7 +10225,7 @@ function App() {
                                                                         <FolderPlus className="w-5 h-5 text-orange-400" /> Categorías de Productos
                                                                     </h3>
                                                                     <div className="flex flex-wrap gap-2 mb-4">
-                                                                        {(settings?.categories || []).map((cat, idx) => (
+                                                                        {(Array.isArray(settings?.categories) ? settings.categories : []).map((cat, idx) => (
                                                                             <div key={idx} className="bg-slate-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-700">
                                                                                 <span>{cat}</span>
                                                                                 <button
@@ -10257,7 +10257,7 @@ function App() {
                                                                     <p className="text-slate-500 mb-6">Gestióna los miembros del equipo, sus roles de acceso y participación en ganancias.</p>
 
                                                                     <div className="space-y-4 mb-6">
-                                                                        {(settings?.team || []).map((member, idx) => (
+                                                                        {(Array.isArray(settings?.team) ? settings.team : []).map((member, idx) => (
                                                                             <div key={idx} className="flex flex-col md:flex-row md:items-center gap-4 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
                                                                                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                                                                                     {member.name?.charAt(0)?.toUpperCase() || '?'}
