@@ -10889,7 +10889,7 @@ function App() {
                                                                         </button>
                                                                     </div>
                                                                 </div>
-
+                                                        )}
 
                                                         {/* 7.3 Modal Proveedores (Selector Visual) */}
                                                         {
@@ -11733,8 +11733,9 @@ function App() {
                                                     )
                                                 }
                                             </div>
+                                        </div>
                                         </React.Fragment>
-                                        );
+                                    );
 }
 
                                         // Renderizado Final
