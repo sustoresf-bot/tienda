@@ -10962,6 +10962,7 @@ function App() {
                                                                                         </button>
                                                                                     </div>
                                                                                 </div>
+                                                    )}
 
                                                                                 {/* 7.3 Modal Proveedores (Selector Visual) */}
                                                                                 {showSupplierModal && (
