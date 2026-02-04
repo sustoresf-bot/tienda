@@ -11167,7 +11167,7 @@ function App() {
                                                                                                     </section>
 
                                                                                                     <section id="section13" className="mb-12">
-<h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
+                                                                                                    <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
                                                                                                         <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
                                                                                                             LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÁ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
                                                                                                         </p>
@@ -11189,12 +11189,13 @@ function App() {
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
-                                                                                    ) : null
-                                                                                }
-
+                                                                                    )
+                                                                                    : null}
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
+                                    </div>
+                                    </div>
                                     </main>
 
                                     {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
