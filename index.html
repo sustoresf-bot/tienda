@@ -177,18 +177,25 @@
     </script>
 
     <!-- KILL SWITCH v3.0 (Tiempo Real + Contacto) -->
-    <script src="https://controlador-de-paginas.vercel.app/kill-switch.js" defer></script>
     <script>
-        // Initialize KillSwitch after page load
-        window.addEventListener('load', function () {
-            if (window.KillSwitch) {
-                KillSwitch.init({
-                    controllerUrl: 'https://controlador-de-paginas.vercel.app',
-                    contactEmail: 'soporte@tienda.com',
-                    whatsapp: ''
-                });
-            }
-        });
+        (function () {
+            const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            if (isLocal) return;
+
+            const script = document.createElement('script');
+            script.src = 'https://controlador-de-paginas.vercel.app/kill-switch.js';
+            script.defer = true;
+            script.onload = function () {
+                if (window.KillSwitch) {
+                    KillSwitch.init({
+                        controllerUrl: 'https://controlador-de-paginas.vercel.app',
+                        contactEmail: 'soporte@tienda.com',
+                        whatsapp: ''
+                    });
+                }
+            };
+            document.body.appendChild(script);
+        })();
     </script>
 
     <!-- Service Worker Registration -->
