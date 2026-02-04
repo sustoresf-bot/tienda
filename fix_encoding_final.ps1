@@ -6,9 +6,9 @@ $content = Get-Content $path -Raw
 
 # 1. Fix Notification Toast (Replace '??' or similar garbage with Bell)
 # We assume the code logic from Step 212 is structurally there, just text broke.
-$content = $content -replace "showToast\(`.. \${", "showToast(`🔔 ${"
-$content = $content -replace "\?Nuevo Pedido!", "¡Nuevo Pedido!"
-$content = $content -replace "`\?`\${newOrdersCount} Nuevos Pedidos!`", "`¡${newOrdersCount} Nuevos Pedidos!`"
+$content = $content -replace 'showToast\(``.. \$\{', 'showToast(``🔔 ${'
+$content = $content -replace '\?Nuevo Pedido!', '¡Nuevo Pedido!'
+$content = $content -replace '``\?``\$\{newOrdersCount\} Nuevos Pedidos!``', '``¡${newOrdersCount} Nuevos Pedidos!``'
 
 # 2. Fix Search Placeholder
 $content = $content -replace "placeholder=`"Qu. est.s buscando hoy\?`"", "placeholder=`"¿Qué estás buscando hoy?`""
