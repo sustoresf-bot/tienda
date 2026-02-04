@@ -11027,177 +11027,181 @@ function App() {
 
                                                                                 {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
 
-                                                                                {view === 'privacy' && (
-                                                                                <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
-                                                                                    <div className="glass p-12 rounded-[3rem] border border-slate-800">
-                                                                                        <div className="prose prose-invert max-w-none">
-                                                                                            <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                                                                                Política de <span className="text-orange-500 text-6xl">Privacidad</span>
-                                                                                            </h1>
-                                                                                            <p className="text-slate-400 text-lg leading-relaxed">
-                                                                                                En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cómo recolectamos, usamos y resguardamos tu información.
-                                                                                            </p>
-                                                                                            <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
-                                                                                            <p className="text-slate-500 leading-relaxed">
-                                                                                                Tu información se utiliza exclusivamente para:
-                                                                                            </p>
-                                                                                            <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                                                                                <li>gestionar tus pedidos y entregas.</li>
-                                                                                                <li>Enviar actualizaciones sobre el estado de tu compra.</li>
-                                                                                                <li>Mejorar nuestros servicios y experiencia de usuario.</li>
-                                                                                            </ul>
-                                                                                            <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
-                                                                                            <p className="text-slate-500 leading-relaxed">
-                                                                                                Implementamos medidas de seguridad robustas y encriptación de datos para asegurar que tu información está protegida contra accesos no autorizados.
-                                                                                            </p>
-                                                                                            <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
-                                                                                            <p className="text-slate-500 leading-relaxed mb-12">
-                                                                                                Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
-                                                                                            </p>
-                                                                                            <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
-                                                                                                <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
-                                                                                            </button>
+                                                                                {view === 'privacy'
+                                                                                    ? (
+                                                                                        <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
+                                                                                            <div className="glass p-12 rounded-[3rem] border border-slate-800">
+                                                                                                <div className="prose prose-invert max-w-none">
+                                                                                                    <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
+                                                                                                        Política de <span className="text-orange-500 text-6xl">Privacidad</span>
+                                                                                                    </h1>
+                                                                                                    <p className="text-slate-400 text-lg leading-relaxed">
+                                                                                                        En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cómo recolectamos, usamos y resguardamos tu información.
+                                                                                                    </p>
+                                                                                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
+                                                                                                    <p className="text-slate-500 leading-relaxed">
+                                                                                                        Tu información se utiliza exclusivamente para:
+                                                                                                    </p>
+                                                                                                    <ul className="list-disc pl-6 text-slate-500 space-y-2">
+                                                                                                        <li>gestionar tus pedidos y entregas.</li>
+                                                                                                        <li>Enviar actualizaciones sobre el estado de tu compra.</li>
+                                                                                                        <li>Mejorar nuestros servicios y experiencia de usuario.</li>
+                                                                                                    </ul>
+                                                                                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
+                                                                                                    <p className="text-slate-500 leading-relaxed">
+                                                                                                        Implementamos medidas de seguridad robustas y encriptación de datos para asegurar que tu información está protegida contra accesos no autorizados.
+                                                                                                    </p>
+                                                                                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
+                                                                                                    <p className="text-slate-500 leading-relaxed mb-12">
+                                                                                                        Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
+                                                                                                    </p>
+                                                                                                    <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
+                                                                                                        <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            </div>
                                                                                         </div>
-                                                                                    </div>
-                                                                                </div>
-                                                        )}
+                                                                                    )
+                                                                                    : null}
 
 
                                                                                 {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
 
-                                                                                {view === 'terms' && (
-                                                                                <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
-                                                                                    <div className="glass p-12 rounded-[3rem] border border-slate-800">
-                                                                                        <div className="prose prose-invert max-w-none">
-                                                                                            <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                                                                                Condiciones de <span className="text-orange-500 text-6xl">Uso</span>
-                                                                                            </h1>
-                                                                                            <p className="text-slate-400 font-bold mb-8">última actualización: 07 de enero de 2026</p>
+                                                                                {view === 'terms'
+                                                                                    ? (
+                                                                                        <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
+                                                                                            <div className="glass p-12 rounded-[3rem] border border-slate-800">
+                                                                                                <div className="prose prose-invert max-w-none">
+                                                                                                    <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
+                                                                                                        Condiciones de <span className="text-orange-500 text-6xl">Uso</span>
+                                                                                                    </h1>
+                                                                                                    <p className="text-slate-400 font-bold mb-8">última actualización: 07 de enero de 2026</p>
 
-                                                                                            <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÉRMINOS LEGALES</h3>
-                                                                                            <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
-                                                                                            </p>
-                                                                                            <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
-                                                                                            </p>
-                                                                                            <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                Puede contactarnos por correo electrónico a la dirección proporcionada al final de este documento.
-                                                                                            </p>
-                                                                                            <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                Estos Términos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relación con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leído, comprendido y aceptado estar sujeto a todos estos Términos Legales. <strong className="text-red-400">SI NO ESTÁ DE ACUERDO CON TODOS ESTOS TÉRMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
-                                                                                            </p>
+                                                                                                    <h3 className="text-xl font-bold text-white mt-8 mb-4">ACUERDO CON NUESTROS TÉRMINOS LEGALES</h3>
+                                                                                                    <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                        Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
+                                                                                                    </p>
+                                                                                                    <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                        Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
+                                                                                                    </p>
+                                                                                                    <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                        Puede contactarnos por correo electrónico a la dirección proporcionada al final de este documento.
+                                                                                                    </p>
+                                                                                                    <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                        Estos Términos Legales constituyen un acuerdo legalmente vinculante celebrado entre usted, ya sea personalmente o en nombre de una entidad ("<strong>usted</strong>"), y Sustore, en relación con su acceso y uso de los Servicios. Usted acepta que al acceder a los Servicios, ha leído, comprendido y aceptado estar sujeto a todos estos Términos Legales. <strong className="text-red-400">SI NO ESTÁ DE ACUERDO CON TODOS ESTOS TÉRMINOS LEGALES, ENTONCES TIENE EXPRESAMENTE PROHIBIDO UTILIZAR LOS SERVICIOS Y DEBE DEJAR DE UTILIZARLOS INMEDIATAMENTE.</strong>
+                                                                                                    </p>
 
-                                                                                            <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 my-10">
-                                                                                                <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">ÍNDICE</h3>
-                                                                                                <ul className="space-y-2 text-sm text-orange-400 font-medium">
-                                                                                                    <li><a href="#section1" className="hover:text-orange-300 transition">1. NUESTROS SERVICIOS</a></li>
-                                                                                                    <li><a href="#section2" className="hover:text-orange-300 transition">2. DERECHOS DE PROPIEDAD INTELECTUAL</a></li>
-                                                                                                    <li><a href="#section3" className="hover:text-orange-300 transition">3. REPRESENTACIONES DE USUARIOS</a></li>
-                                                                                                    <li><a href="#section4" className="hover:text-orange-300 transition">4. ACTIVIDADES PROHIBIDAS</a></li>
-                                                                                                    <li><a href="#section5" className="hover:text-orange-300 transition">5. CONTRIBUCIONES GENERADAS POR EL USUARIO</a></li>
-                                                                                                    <li><a href="#section6" className="hover:text-orange-300 transition">6. LICENCIA DE CONTRIBUCIÓN</a></li>
-                                                                                                    <li><a href="#section7" className="hover:text-orange-300 transition">7. GESTIÓN DE SERVICIOS</a></li>
-                                                                                                    <li><a href="#section8" className="hover:text-orange-300 transition">8. PLAZO Y TERMINACIÓN</a></li>
-                                                                                                    <li><a href="#section9" className="hover:text-orange-300 transition">9. MODIFICACIONES E INTERRUPCIONES</a></li>
-                                                                                                    <li><a href="#section10" className="hover:text-orange-300 transition">10. LEY APLICABLE</a></li>
-                                                                                                    <li><a href="#section11" className="hover:text-orange-300 transition">11. RESOLUCIÓN DE DISPUTAS</a></li>
-                                                                                                    <li><a href="#section12" className="hover:text-orange-300 transition">12. CORRECCIONES</a></li>
-                                                                                                    <li><a href="#section13" className="hover:text-orange-300 transition">13. DESCARGO DE RESPONSABILIDAD</a></li>
-                                                                                                    <li><a href="#section14" className="hover:text-orange-300 transition">14. LIMITACIONES DE RESPONSABILIDAD</a></li>
-                                                                                                    <li><a href="#section15" className="hover:text-orange-300 transition">15. INDEMNIZACIÓN</a></li>
-                                                                                                    <li><a href="#section16" className="hover:text-orange-300 transition">16. DATOS DEL USUARIO</a></li>
-                                                                                                    <li><a href="#section17" className="hover:text-orange-300 transition">17. COMUNICACIONES ELECTRÓNICAS</a></li>
-                                                                                                    <li><a href="#section18" className="hover:text-orange-300 transition">18. VARIOS</a></li>
-                                                                                                    <li><a href="#section19" className="hover:text-orange-300 transition">19. CONTÁCTENOS</a></li>
-                                                                                                </ul>
+                                                                                                    <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 my-10">
+                                                                                                        <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">ÍNDICE</h3>
+                                                                                                        <ul className="space-y-2 text-sm text-orange-400 font-medium">
+                                                                                                            <li><a href="#section1" className="hover:text-orange-300 transition">1. NUESTROS SERVICIOS</a></li>
+                                                                                                            <li><a href="#section2" className="hover:text-orange-300 transition">2. DERECHOS DE PROPIEDAD INTELECTUAL</a></li>
+                                                                                                            <li><a href="#section3" className="hover:text-orange-300 transition">3. REPRESENTACIONES DE USUARIOS</a></li>
+                                                                                                            <li><a href="#section4" className="hover:text-orange-300 transition">4. ACTIVIDADES PROHIBIDAS</a></li>
+                                                                                                            <li><a href="#section5" className="hover:text-orange-300 transition">5. CONTRIBUCIONES GENERADAS POR EL USUARIO</a></li>
+                                                                                                            <li><a href="#section6" className="hover:text-orange-300 transition">6. LICENCIA DE CONTRIBUCIÓN</a></li>
+                                                                                                            <li><a href="#section7" className="hover:text-orange-300 transition">7. GESTIÓN DE SERVICIOS</a></li>
+                                                                                                            <li><a href="#section8" className="hover:text-orange-300 transition">8. PLAZO Y TERMINACIÓN</a></li>
+                                                                                                            <li><a href="#section9" className="hover:text-orange-300 transition">9. MODIFICACIONES E INTERRUPCIONES</a></li>
+                                                                                                            <li><a href="#section10" className="hover:text-orange-300 transition">10. LEY APLICABLE</a></li>
+                                                                                                            <li><a href="#section11" className="hover:text-orange-300 transition">11. RESOLUCIÓN DE DISPUTAS</a></li>
+                                                                                                            <li><a href="#section12" className="hover:text-orange-300 transition">12. CORRECCIONES</a></li>
+                                                                                                            <li><a href="#section13" className="hover:text-orange-300 transition">13. DESCARGO DE RESPONSABILIDAD</a></li>
+                                                                                                            <li><a href="#section14" className="hover:text-orange-300 transition">14. LIMITACIONES DE RESPONSABILIDAD</a></li>
+                                                                                                            <li><a href="#section15" className="hover:text-orange-300 transition">15. INDEMNIZACIÓN</a></li>
+                                                                                                            <li><a href="#section16" className="hover:text-orange-300 transition">16. DATOS DEL USUARIO</a></li>
+                                                                                                            <li><a href="#section17" className="hover:text-orange-300 transition">17. COMUNICACIONES ELECTRÓNICAS</a></li>
+                                                                                                            <li><a href="#section18" className="hover:text-orange-300 transition">18. VARIOS</a></li>
+                                                                                                            <li><a href="#section19" className="hover:text-orange-300 transition">19. CONTÁCTENOS</a></li>
+                                                                                                        </ul>
+                                                                                                    </div>
+
+                                                                                                    <section id="section1" className="mb-12">
+                                                                                                        <h2 className="text-2xl font-bold text-white mb-4">1. NUESTROS SERVICIOS</h2>
+                                                                                                        <p className="text-slate-500 leading-relaxed">
+                                                                                                            La información proporcionada al utilizar los Servicios no está destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicción o país donde dicha distribución o uso sería contrario a la ley o regulación o que nos sometería a cualquier requisito de registro dentro de dicha jurisdicción o país. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las únicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
+                                                                                                        </p>
+                                                                                                    </section>
+
+                                                                                                    <section id="section2" className="mb-12">
+                                                                                                        <h2 className="text-2xl font-bold text-white mb-4">2. DERECHOS DE PROPIEDAD INTELECTUAL</h2>
+                                                                                                        <h3 className="text-lg font-bold text-white mt-6 mb-2">Nuestra propiedad intelectual</h3>
+                                                                                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                            Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el código fuente, bases de datos, funcionalidad, software, diseños de sitios web, audio, video, texto, fotografías y gráficos de los Servicios (colectivamente, el "Contenido"), así como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
+                                                                                                        </p>
+                                                                                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                            Nuestro Contenido y Marcas están protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
+                                                                                                        </p>
+                                                                                                        <p className="text-slate-500 leading-relaxed">
+                                                                                                            El Contenido y las Marcas se proporcionan en o a través de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
+                                                                                                        </p>
+
+                                                                                                        <h3 className="text-lg font-bold text-white mt-6 mb-2">Su uso de nuestros Servicios</h3>
+                                                                                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                            Sujeto a su cumplimiento de estos Términos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la sección siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
+                                                                                                        </p>
+                                                                                                        <ul className="list-disc pl-6 text-slate-500 space-y-2 mb-4">
+                                                                                                            <li>acceder a los Servicios; y</li>
+                                                                                                            <li>descargar o imprimir una copia de cualquier parte del Contenido al que haya obtenido acceso correctamente,</li>
+                                                                                                        </ul>
+                                                                                                        <p className="text-slate-500 leading-relaxed mb-4">únicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
+                                                                                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                            Salvo lo establecido en esta sección o en otra parte de nuestros Términos Legales, ninguna parte de los Servicios ni ningún Contenido o Marca podrán copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado públicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
+                                                                                                        </p>
+                                                                                                        <p className="text-slate-500 leading-relaxed">
+                                                                                                            Si desea hacer algún uso de los Servicios, Contenido o Marcas que no sea el establecido en esta sección o en otra parte de nuestros Términos Legales, dirija su solicitud a nuestro correo de contacto.
+                                                                                                        </p>
+                                                                                                    </section>
+
+                                                                                                    <section id="section3" className="mb-12">
+                                                                                                        <h2 className="text-2xl font-bold text-white mb-4">3. REPRESENTACIONES DE USUARIOS</h2>
+                                                                                                        <p className="text-slate-500 leading-relaxed">
+                                                                                                            Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos Términos Legales; (2) no eres un menor de edad en la jurisdicción en la que usted reside; (3) no accederás a los Servicios a través de medios automatizados o no humanos, ya sea a través de un bot, script o de otro modo; (4) no utilizará los Servicios para ninguna actividad ilegal o no autorizado propósito; y (5) su uso de los Servicios no violará ninguna ley o regulación aplicable.
+                                                                                                        </p>
+                                                                                                    </section>
+
+                                                                                                    <section id="section4" className="mb-12">
+                                                                                                        <h2 className="text-2xl font-bold text-white mb-4">4. ACTIVIDADES PROHIBIDAS</h2>
+                                                                                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                            No puede acceder ni utilizar los Servicios para ningún otro propósito que no sea aquel para el cual los ponemos a disposición. Los Servicios no podrán utilizarse en relación con ningún negocio comercial esfuerzo excepto aquellos que están específicamente respaldados o aprobados por nosotros.
+                                                                                                        </p>
+                                                                                                        <p className="text-slate-500 leading-relaxed mb-4">Como usuario de los Servicios, usted acepta no:</p>
+                                                                                                        <ul className="list-disc pl-6 text-slate-500 space-y-2">
+                                                                                                            <li>Recuperar sistemáticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colección, compilación, base de datos o directorio sin nuestro permiso por escrito.</li>
+                                                                                                            <li>Engañarnos, defraudarnos o engañarnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener información confidencial de la cuenta, como las contraseñas de los usuarios.</li>
+                                                                                                            <li>Eludir, deshabilitar o interferir de otro modo con las características relacionadas con la seguridad de los Servicios.</li>
+                                                                                                            <li>Menospreciar, empañar o dañar de otro modo, en nuestra opinión, a nosotros y/o a los Servicios.</li>
+                                                                                                            <li>Utilizar cualquier información obtenida de los Servicios para acosar, abusar o dañar a otra persona.</li>
+                                                                                                            <li>Hacer un uso indebido de nuestros servicios de soporte o presentar informes falsos de abuso o mala conducta.</li>
+                                                                                                            <li>Utilice los Servicios de una manera incompatible con las leyes o regulaciones aplicables.</li>
+                                                                                                        </ul>
+                                                                                                    </section>
+
+                                                                                                    <section id="section13" className="mb-12">
+                                                                                                        <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
+                                                                                                        <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
+                                                                                                            LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÁ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
+                                                                                                        </p>
+                                                                                                    </section>
+
+                                                                                                    <section id="section19" className="mb-12">
+                                                                                                        <h2 className="text-2xl font-bold text-white mb-4">19. CONTÁCTENOS</h2>
+                                                                                                        <p className="text-slate-500 leading-relaxed mb-4">
+                                                                                                            Para resolver una queja con respecto a los Servicios o para recibir más información sobre el uso de los Servicios, contáctenos en:
+                                                                                                        </p>
+                                                                                                        <p className="text-2xl font-black text-orange-400">
+                                                                                                            {settings?.storeEmail || 'soporte@tuempresa.com'}
+                                                                                                        </p>
+                                                                                                    </section>
+
+                                                                                                    <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700 mt-12">
+                                                                                                        <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
+                                                                                                    </button>
+                                                                                                </div>
                                                                                             </div>
-
-                                                                                            <section id="section1" className="mb-12">
-                                                                                                <h2 className="text-2xl font-bold text-white mb-4">1. NUESTROS SERVICIOS</h2>
-                                                                                                <p className="text-slate-500 leading-relaxed">
-                                                                                                    La información proporcionada al utilizar los Servicios no está destinada a ser distribuida o utilizada por ninguna persona o entidad en ninguna jurisdicción o país donde dicha distribución o uso sería contrario a la ley o regulación o que nos sometería a cualquier requisito de registro dentro de dicha jurisdicción o país. En consecuencia, aquellas personas que eligen acceder a los Servicios desde otras ubicaciones lo hacen por iniciativa propia y son las únicas responsables del cumplimiento de las leyes locales, si y en la medida en que sean aplicables.
-                                                                                                </p>
-                                                                                            </section>
-
-                                                                                            <section id="section2" className="mb-12">
-                                                                                                <h2 className="text-2xl font-bold text-white mb-4">2. DERECHOS DE PROPIEDAD INTELECTUAL</h2>
-                                                                                                <h3 className="text-lg font-bold text-white mt-6 mb-2">Nuestra propiedad intelectual</h3>
-                                                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                    Somos propietarios o licenciatarios de todos los derechos de propiedad intelectual de nuestros Servicios, incluido todo el código fuente, bases de datos, funcionalidad, software, diseños de sitios web, audio, video, texto, fotografías y gráficos de los Servicios (colectivamente, el "Contenido"), así como las marcas comerciales, marcas de servicio y logotipos contenidos en ellas (las "Marcas").
-                                                                                                </p>
-                                                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                    Nuestro Contenido y Marcas están protegidos por leyes de derechos de autor y marcas registradas (y varias otras leyes de derechos de propiedad intelectual y competencia desleal) y tratados alrededor del mundo.
-                                                                                                </p>
-                                                                                                <p className="text-slate-500 leading-relaxed">
-                                                                                                    El Contenido y las Marcas se proporcionan en o a través de los Servicios "TAL CUAL" para su uso personal, no comercial o finalidad empresarial interna.
-                                                                                                </p>
-
-                                                                                                <h3 className="text-lg font-bold text-white mt-6 mb-2">Su uso de nuestros Servicios</h3>
-                                                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                    Sujeto a su cumplimiento de estos Términos Legales, incluidos los "ACTIVIDADES PROHIBIDAS" en la sección siguiente, le otorgamos un contrato no exclusivo, intransferible y revocable licencia para:
-                                                                                                </p>
-                                                                                                <ul className="list-disc pl-6 text-slate-500 space-y-2 mb-4">
-                                                                                                    <li>acceder a los Servicios; y</li>
-                                                                                                    <li>descargar o imprimir una copia de cualquier parte del Contenido al que haya obtenido acceso correctamente,</li>
-                                                                                                </ul>
-                                                                                                <p className="text-slate-500 leading-relaxed mb-4">únicamente para tu uso personal, no comercial o finalidad empresarial interna.</p>
-                                                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                    Salvo lo establecido en esta sección o en otra parte de nuestros Términos Legales, ninguna parte de los Servicios ni ningún Contenido o Marca podrán copiarse ni reproducirse, agregado, republicado, cargado, publicado, mostrado públicamente, codificado, traducido, transmitido, distribuido, vendido, licenciado o explotado de otro modo para cualquier fin comercial, sin nuestro expreso previo escrito permiso.
-                                                                                                </p>
-                                                                                                <p className="text-slate-500 leading-relaxed">
-                                                                                                    Si desea hacer algún uso de los Servicios, Contenido o Marcas que no sea el establecido en esta sección o en otra parte de nuestros Términos Legales, dirija su solicitud a nuestro correo de contacto.
-                                                                                                </p>
-                                                                                            </section>
-
-                                                                                            <section id="section3" className="mb-12">
-                                                                                                <h2 className="text-2xl font-bold text-white mb-4">3. REPRESENTACIONES DE USUARIOS</h2>
-                                                                                                <p className="text-slate-500 leading-relaxed">
-                                                                                                    Al utilizar los Servicios, usted declara y garantiza que: (1) usted tiene la capacidad legal y acepta cumplir con estos Términos Legales; (2) no eres un menor de edad en la jurisdicción en la que usted reside; (3) no accederás a los Servicios a través de medios automatizados o no humanos, ya sea a través de un bot, script o de otro modo; (4) no utilizará los Servicios para ninguna actividad ilegal o no autorizado propósito; y (5) su uso de los Servicios no violará ninguna ley o regulación aplicable.
-                                                                                                </p>
-                                                                                            </section>
-
-                                                                                            <section id="section4" className="mb-12">
-                                                                                                <h2 className="text-2xl font-bold text-white mb-4">4. ACTIVIDADES PROHIBIDAS</h2>
-                                                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                    No puede acceder ni utilizar los Servicios para ningún otro propósito que no sea aquel para el cual los ponemos a disposición. Los Servicios no podrán utilizarse en relación con ningún negocio comercial esfuerzo excepto aquellos que están específicamente respaldados o aprobados por nosotros.
-                                                                                                </p>
-                                                                                                <p className="text-slate-500 leading-relaxed mb-4">Como usuario de los Servicios, usted acepta no:</p>
-                                                                                                <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                                                                                    <li>Recuperar sistemáticamente datos u otro contenido de los Servicios para crear o compilar, directa o indirectamente, una colección, compilación, base de datos o directorio sin nuestro permiso por escrito.</li>
-                                                                                                    <li>Engañarnos, defraudarnos o engañarnos a nosotros y a otros usuarios, especialmente en cualquier intento de obtener información confidencial de la cuenta, como las contraseñas de los usuarios.</li>
-                                                                                                    <li>Eludir, deshabilitar o interferir de otro modo con las características relacionadas con la seguridad de los Servicios.</li>
-                                                                                                    <li>Menospreciar, empañar o dañar de otro modo, en nuestra opinión, a nosotros y/o a los Servicios.</li>
-                                                                                                    <li>Utilizar cualquier información obtenida de los Servicios para acosar, abusar o dañar a otra persona.</li>
-                                                                                                    <li>Hacer un uso indebido de nuestros servicios de soporte o presentar informes falsos de abuso o mala conducta.</li>
-                                                                                                    <li>Utilice los Servicios de una manera incompatible con las leyes o regulaciones aplicables.</li>
-                                                                                                </ul>
-                                                                                            </section>
-
-                                                                                            <section id="section13" className="mb-12">
-                                                                                                <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
-                                                                                                <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
-                                                                                                    LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÁ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
-                                                                                                </p>
-                                                                                            </section>
-
-                                                                                            <section id="section19" className="mb-12">
-                                                                                                <h2 className="text-2xl font-bold text-white mb-4">19. CONTÁCTENOS</h2>
-                                                                                                <p className="text-slate-500 leading-relaxed mb-4">
-                                                                                                    Para resolver una queja con respecto a los Servicios o para recibir más información sobre el uso de los Servicios, contáctenos en:
-                                                                                                </p>
-                                                                                                <p className="text-2xl font-black text-orange-400">
-                                                                                                    {settings?.storeEmail || 'soporte@tuempresa.com'}
-                                                                                                </p>
-                                                                                            </section>
-
-                                                                                            <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700 mt-12">
-                                                                                                <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
-                                                                                            </button>
                                                                                         </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                                )}
+                                                                                    )
+                                                                                    : null}
 
 
                                                                             </div>
