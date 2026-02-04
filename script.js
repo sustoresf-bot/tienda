@@ -11008,6 +11008,11 @@ function App() {
                                                                                 )}
 
 
+                                                    </div>
+                                                )}
+                                    </div>
+                        )}
+
                                                                                 {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
 
                                                                                 {view === 'privacy'
@@ -11185,13 +11190,6 @@ function App() {
                                                                                         </div>
                                                                                     )
                                                                                     : null}
-
-
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                    )}
 
                                                                 </main>
 
