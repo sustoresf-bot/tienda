@@ -11027,7 +11027,7 @@ function App() {
 
                                                                                 {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
 
-                                                                                view === 'privacy' && (
+                                                                                {view === 'privacy' && (
                                                                                 <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
                                                                                     <div className="glass p-12 rounded-[3rem] border border-slate-800">
                                                                                         <div className="prose prose-invert max-w-none">
@@ -11065,7 +11065,7 @@ function App() {
 
                                                                                 {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
 
-                                                                                view === 'terms' && (
+                                                                                {view === 'terms' && (
                                                                                 <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
                                                                                     <div className="glass p-12 rounded-[3rem] border border-slate-800">
                                                                                         <div className="prose prose-invert max-w-none">
@@ -11197,7 +11197,7 @@ function App() {
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                )
+                                                                                )}
 
 
                                                                             </div>
