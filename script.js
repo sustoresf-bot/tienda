@@ -5506,6 +5506,7 @@ function App() {
                                     <p className="text-orange-400 font-black text-xs md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3">
                                         <Flame className="w-4 h-4 text-orange-500" /> {settings.announcementMessage} <Flame className="w-4 h-4 text-orange-500" />
                                     </p>
+                                    
                                 </div>
                             )}
 
@@ -10003,7 +10004,6 @@ function App() {
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                             )}
 
                                                                                     {settingsTab === 'features' && (
                                                                                         <div className="space-y-6 animate-fade-up">
@@ -10945,7 +10945,6 @@ function App() {
                                                                                         </button>
                                                                                     </div>
                                                                                 </div>
-                                                    )}
 
                                                                                 {/* 7.3 Modal Proveedores (Selector Visual) */}
                                                                                 {showSupplierModal && (
@@ -11168,7 +11167,7 @@ function App() {
                                                                                                     </section>
 
                                                                                                     <section id="section13" className="mb-12">
-                                                                                                        <h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
+<h2 className="text-2xl font-bold text-white mb-4">13. DESCARGO DE RESPONSABILIDAD</h2>
                                                                                                         <p className="text-slate-500 leading-relaxed text-xs uppercase tracking-wide border-l-4 border-red-500/50 pl-4 py-2 bg-red-900/5">
                                                                                                             LOS SERVICIOS SE PRESTAN TAL CUAL Y SEGÚN ESTÁ DISPONIBLE. USTED ACEPTA QUE SU USO DE LOS SERVICIOS SERÁ BAJO SU PROPIO RIESGO. EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, RENUNCIAMOS A TODAS LAS GARANTÍAS, EXPRESAS O IMPLÍCITAS, EN RELACIÓN CON LOS SERVICIOS Y SU USO DE LOS MISMOS.
                                                                                                         </p>
@@ -11190,18 +11189,20 @@ function App() {
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
-                                                                                    )
-                                                                                    : null}
+                                                                                    ) : null
+                                                                                }
 
-                                                                </main>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </main>
 
-                                                                {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
-                                                                {
-                                                                    view !== 'admin' && view !== 'login' && view !== 'register' && (
-                                                                        <footer
-                                                                            className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}
-                                                                            style={{ backgroundColor: darkMode ? '#050505' : '#ffffff' }}
-                                                                        >
+                                    {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
+                                    {(view !== 'admin' && view !== 'login' && view !== 'register') && (
+                                        <footer
+                                            className={`${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-white border-slate-200'} border-t pt-16 pb-8 relative overflow-hidden transition-colors duration-300`}
+                                            style={{ backgroundColor: darkMode ? '#050505' : '#ffffff' }}
+                                        >
                                                                             {/* Decoración de Fondo */}
                                                                             <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent ${darkMode ? 'via-orange-900/50' : 'via-orange-500/20'} to-transparent`}></div>
                                                                             <div className={`absolute -top-40 -right-40 w-96 h-96 ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'} rounded-full blur-[100px] pointer-events-none`}></div>
@@ -11798,7 +11799,7 @@ function App() {
                                                                     )
                                                                 }
                                                             </div>
-                                                            </div>
+
         </React.Fragment>
                                             );
 }
