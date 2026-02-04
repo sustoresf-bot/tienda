@@ -8,6 +8,14 @@
   - En la práctica: agregar el `</div>` faltante o eliminar el `</div>` sobrante para que `</main>` cierre cuando no haya ningún `<div>` abierto.
 - Revisar `repair_script.py` porque hace reemplazos por regex sobre cierres de `</main>`/`</div>` ([repair_script.py:L7-L18](file:///c:/Users/Admin/Desktop/Tienda/CLIENTES/Sustore/repair_script.py#L7-L18)) y probablemente introdujo el desbalance; ajustar o retirar esa regla para que no vuelva a romperse.
 
+## Cambios aplicados
+- Se eliminó un cierre `)}` extra dentro del bloque `view === 'admin' && (...)` que generaba desbalance de llaves/paréntesis y errores en cascada.
+- Se normalizó el cierre del bloque `{settingsTab === 'features' && (...)}` para que cierre como `)}`.
+- Se corrigió el cierre JSX final del fragmento principal: `</React.Fragment >` → `</React.Fragment>`.
+
+## Validación automática
+- `npm run lint` (chequeos de estructura JSX + balance de `<div>` dentro de `<main>`).
+
 ## Verificación
 - Probar localmente levantando un server estático y cargando `index.html` para que el mismo Babel Standalone compile `script.js` (sin `Uncaught SyntaxError`).
 - Navegar al menos a: tienda, admin (si aplica), y abrir términos/privacidad para confirmar que renderizan sin romper.
