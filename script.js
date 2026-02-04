@@ -5493,6 +5493,7 @@ function App() {
                 {view !== 'admin' && <div className="h-16 sm:h-20 md:h-24"></div>}
 
                 {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
+                <>
                 <main className={`flex-grow relative z-10 ${view === 'admin' ? 'flex' : 'p-4 md:p-8'}`}>
 
                     {/* 1. VISTA TIENDA (HOME) */}
@@ -11328,6 +11329,7 @@ function App() {
                                                                         </footer>
                                                                     )
                                                                 }
+                </>
 
                                                                 {/* MODAL: CREAR CATEGORÍA */}
                                                                 {
