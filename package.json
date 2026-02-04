@@ -3,6 +3,10 @@
   "version": "3.0.0",
   "type": "module",
   "scripts": {
+    "lint:jsx": "node tools/lint-jsx-structure.mjs script.js",
+    "lint:divs": "node tools/find-unclosed-div.mjs",
+    "lint:structure": "node tools/lint-jsx-structure.mjs script.js && node tools/find-unclosed-div.mjs",
+    "lint": "npm run lint:structure",
     "serve": "node local-server.mjs"
   },
   "dependencies": {

@@ -10054,8 +10054,7 @@ function App() {
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
-                                                                                    )
-                                                                                    }
+                                                                                    )}
                                                                                     {settingsTab === 'legal' && (
                                                                                         <div className="space-y-6 animate-fade-up">
                                                                                             {/* COPYRIGHT SETTINGS */}
@@ -11011,7 +11010,6 @@ function App() {
 
                                                     </div>
                                                     </div>
-                                                )}
                                         </div>
                                     </div>
                                 )
@@ -11802,7 +11800,7 @@ function App() {
                                                                 }
                                                             </div>
                                                             </div>
-        </React.Fragment >
+        </React.Fragment>
                                             );
 }
 
