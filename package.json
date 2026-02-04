@@ -2,6 +2,9 @@
   "name": "sustore-app",
   "version": "3.0.0",
   "type": "module",
+  "scripts": {
+    "serve": "node local-server.mjs"
+  },
   "dependencies": {
     "firebase-admin": "^13.6.0",
     "mercadopago": "^2.12.0",

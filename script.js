@@ -2891,8 +2891,6 @@ function App() {
 
     // 4. Suscripciones a Colecciones (Snapshot Listeners)
     useEffect(() => {
-        if (!systemUser) return;
-
         const unsubscribeFunctions = [
             // Productos
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), (snapshot) => {
@@ -2913,51 +2911,6 @@ function App() {
                 } else {
                     showToast("Error al cargar productos: " + error.message, "error");
                 }
-            }),
-
-            // Pedidos (Ordenados por fecha descendente)
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), snapshot => {
-                const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                const sortedOrders = ordersData.sort((a, b) => new Date(b.date) - new Date(a.date));
-                setOrders(sortedOrders);
-            }),
-
-            // Usuarios
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
-                setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Cupones
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), snapshot => {
-                setCoupons(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Proveedores
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => {
-                setSuppliers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Gastos
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => {
-                setExpenses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Compras
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
-                setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Inversiones
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), snapshot => {
-                setInvestments(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Carritos en Vivo (Solo filtramos los que tienen items)
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'carts'), snapshot => {
-                const activeCarts = snapshot.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(c => c.items && c.items.length > 0);
-                setLiveCarts(activeCarts);
             }),
 
             // Promos
@@ -2994,89 +2947,119 @@ function App() {
 
             // Configuración Global (con Auto-Migración)
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), async (snapshot) => {
-                // 1. Buscar si existe el documento 'config'
-                const configDoc = snapshot.docs.find(d => d.id === 'config');
+                try {
+                    const configDoc = snapshot.docs.find(d => d.id === 'config');
+                    const legacyDocs = snapshot.docs.filter(d => d.id !== 'config');
 
-                // 2. Buscar si existen documentos "viejos" (Legacy)
-                const legacyDocs = snapshot.docs.filter(d => d.id !== 'config');
-
-                if (legacyDocs.length > 0 && !configDoc) {
-                    // CASO A: Solo existe legacy. Migrar TODO a 'config'.
-                    const oldData = legacyDocs[0].data();
-                    console.log("Migrating legacy settings to config...", oldData);
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), oldData);
-                    // Opcional: Borrar el viejo para limpiar (o dejarlo por seguridad un tiempo)
-                    // await deleteDoc(legacyDocs[0].ref);
-                }
-                else if (legacyDocs.length > 0 && configDoc) {
-                    // CASO B: Existen ambos. Verificar si necesitamos recuperar categorías del viejo.
-                    const oldData = legacyDocs[0].data();
-                    const newData = configDoc.data();
-
-                    // Si el viejo tiene categorías custom y el nuevo tiene las default, migrar categorías
-                    const oldCats = oldData.categories || [];
-                    const newCats = newData.categories || [];
-
-                    // Heurística simple: Si el viejo tiene más categorías o diferentes, asumimos que vale la pena fusionar
-                    // O simplemente si el usuario dice "se borraron", forzamos la copia de categorías del viejo al nuevo.
-                    if (oldCats.length > 0 && JSON.stringify(oldCats) !== JSON.stringify(newCats)) {
-                        // Solo migramos categorías si parecen perdidas (esto corre en cliente, ojo con bucles)
-                        // Para evitar bucles infinitos, comparamos antes de escribir.
-
-                        // NOTA: Para no complicar, solo leemos del 'config' para el Estado, 
-                        // pero si detectamos legacy, tratamos de consolidar UNA VEZ.
-                    }
-                }
-
-                // 3. Fuente de Verdad para el Estado: SIEMPRE 'config' (o el legacy si config aun no esta listo)
-                // Preferimos 'config'. Si no existe, usamos el legacy temporalmente.
-                const effectiveDoc = configDoc || legacyDocs[0];
-
-                if (effectiveDoc) {
-                    const data = effectiveDoc.data();
-                    const mergedSettings = {
-                        ...defaultSettings,
-                        ...data,
-                        team: data.team || defaultSettings.team,
-                        categories: data.categories || defaultSettings.categories
-                    };
-
-                    // Si estamos leyendo de un legacy, forzamos la escritura en 'config' para la próxima
-                    if (effectiveDoc.id !== 'config') {
-                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), mergedSettings);
+                    if (systemUser && legacyDocs.length > 0 && !configDoc) {
+                        const oldData = legacyDocs[0].data();
+                        console.log("Migrating legacy settings to config...", oldData);
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), oldData);
                     }
 
-                    setSettings(mergedSettings);
-                    setSettingsLoaded(true); // Marcar que los settings ya se cargaron
-                    setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
+                    const effectiveDoc = configDoc || legacyDocs[0];
 
-                    // Si ya migramos y leímos exitosamente, podríamos borrar el legacy para evitar fantasmas
-                    if (configDoc && legacyDocs.length > 0) {
-                        // MIGRACIÓN DE CATEGORÍAS ESPECÍFICA (Rescate)
-                        const legacyData = legacyDocs[0].data();
-                        if (legacyData.categories && legacyData.categories.length > 0) {
-                            // Si el config tiene las default y el legacy tiene custom, pisar config
-                            const isDefault = JSON.stringify(mergedSettings.categories) === JSON.stringify(defaultSettings.categories);
-                            const isLegacyCustom = JSON.stringify(legacyData.categories) !== JSON.stringify(defaultSettings.categories);
+                    if (effectiveDoc) {
+                        const data = effectiveDoc.data();
+                        const mergedSettings = {
+                            ...defaultSettings,
+                            ...data,
+                            team: data.team || defaultSettings.team,
+                            categories: data.categories || defaultSettings.categories
+                        };
 
-                            if (isDefault && isLegacyCustom) {
-                                console.log("Restoring categories from legacy...");
-                                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), {
-                                    categories: legacyData.categories
-                                });
+                        if (systemUser && effectiveDoc.id !== 'config') {
+                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), mergedSettings);
+                        }
+
+                        setSettings(mergedSettings);
+                        setSettingsLoaded(true);
+                        setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
+
+                        if (systemUser && configDoc && legacyDocs.length > 0) {
+                            const legacyData = legacyDocs[0].data();
+                            if (legacyData.categories && legacyData.categories.length > 0) {
+                                const isDefault = JSON.stringify(mergedSettings.categories) === JSON.stringify(defaultSettings.categories);
+                                const isLegacyCustom = JSON.stringify(legacyData.categories) !== JSON.stringify(defaultSettings.categories);
+
+                                if (isDefault && isLegacyCustom) {
+                                    console.log("Restoring categories from legacy...");
+                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), {
+                                        categories: legacyData.categories
+                                    });
+                                }
                             }
                         }
+                    } else {
+                        setSettings(defaultSettings);
+                        setSettingsLoaded(true);
+                        setAboutText(defaultSettings.aboutUsText);
+
+                        if (systemUser) {
+                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings);
+                        }
                     }
-                } else {
-                    // Nada existe, crear default en config
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings);
+                } catch (e) {
+                    console.error("Error cargando settings:", e);
+                    setSettings(defaultSettings);
+                    setSettingsLoaded(true);
+                    setAboutText(defaultSettings.aboutUsText);
                 }
             })
         ];
 
+        if (systemUser) {
+            unsubscribeFunctions.push(
+                // Pedidos (Ordenados por fecha descendente)
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), snapshot => {
+                    const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const sortedOrders = ordersData.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    setOrders(sortedOrders);
+                }),
+
+                // Usuarios
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
+                    setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                }),
+
+                // Cupones
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), snapshot => {
+                    setCoupons(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                }),
+
+                // Proveedores
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => {
+                    setSuppliers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                }),
+
+                // Gastos
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => {
+                    setExpenses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                }),
+
+                // Compras
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
+                    setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                }),
+
+                // Inversiones
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), snapshot => {
+                    setInvestments(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                }),
+
+                // Carritos en Vivo (Solo filtramos los que tienen items)
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'carts'), snapshot => {
+                    const activeCarts = snapshot.docs
+                        .map(d => ({ id: d.id, ...d.data() }))
+                        .filter(c => c.items && c.items.length > 0);
+                    setLiveCarts(activeCarts);
+                })
+            );
+        }
+
         // Limpiar suscripciones al desmontar
         return () => unsubscribeFunctions.forEach(unsub => unsub());
-    }, [systemUser]);
+    }, [systemUser, cart.length]);
 
     // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
     // Elimina automáticamente productos que ya no existen o no tienen stock
