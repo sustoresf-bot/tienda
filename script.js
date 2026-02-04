@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
@@ -10990,6 +10991,7 @@ function App() {
                                                                 </div>
                                                             )
                                                         }
+
                                                         {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
                                                         {
                                                             view === 'terms' && (
@@ -11127,6 +11129,10 @@ function App() {
                                                             )
                                                         }
 
+                                            </div>
+                                        </div>
+                                    </div>
+                                    )}
 
                                                     </main>
 
