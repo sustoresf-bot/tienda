@@ -23,8 +23,8 @@ Si el backend no tiene credenciales, vas a ver errores como “Unable to detect 
 Opciones de configuración:
 
 - **Opción A (simple):** `FIREBASE_SERVICE_ACCOUNT` con el JSON completo (en una sola línea).
+- **Opción A2 (más segura en local):** guardar el JSON como archivo `.firebase-service-account.json` y setear `FIREBASE_SERVICE_ACCOUNT_FILE=.firebase-service-account.json` (el archivo está ignorado por git).
 - **Opción B:** variables separadas:
   - `FIREBASE_PROJECT_ID`
   - `FIREBASE_CLIENT_EMAIL`
   - `FIREBASE_PRIVATE_KEY` (pegado con `\n` en lugar de saltos reales)
-
