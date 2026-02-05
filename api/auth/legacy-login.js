@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { getAdmin } from '../_firebaseAdmin.js';
-import { getStoreIdFromRequest } from '../_authz.js';
+import { getAdmin } from '../../lib/firebaseAdmin.js';
+import { getStoreIdFromRequest } from '../../lib/authz.js';
 
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX = 20;

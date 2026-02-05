@@ -35,6 +35,22 @@ const db = getFirestore(app);
 const DEFAULT_APP_ID = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
 
+let mpPublicKeyPromise = null;
+async function getMercadoPagoPublicKey() {
+    if (mpPublicKeyPromise) return mpPublicKeyPromise;
+    mpPublicKeyPromise = (async () => {
+        try {
+            const res = await fetch('/api/public-config', { method: 'GET' });
+            const data = await res.json().catch(() => ({}));
+            const key = String(data?.mpPublicKey || '').trim();
+            return key || null;
+        } catch (e) {
+            return null;
+        }
+    })();
+    return mpPublicKeyPromise;
+}
+
 const setupSmoothWheelScroll = () => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (window.__smoothWheelScrollEnabled) return;
@@ -4041,8 +4057,13 @@ function App() {
         // Limpiar errores previos
         setPaymentError(null);
 
-        // CREDENCIALES DE PRODUCCIÓN
-        const publicKey = 'APP_USR-6c7ba3ec-c928-42a9-a137-5f355dfc5366';
+        const publicKey = await getMercadoPagoPublicKey();
+        if (!publicKey) {
+            isInitializingBrick.current = false;
+            clearTimeout(safetyTimeout);
+            setPaymentError('Mercado Pago no está configurado. Verificá la clave pública en el servidor.');
+            return;
+        }
         const mp = new window.MercadoPago(publicKey, {
             locale: 'es-AR',
         });
@@ -5905,10 +5926,10 @@ function App() {
                 if (formData.newPassword) authUpdate.password = formData.newPassword;
 
                 if (Object.keys(authUpdate).length > 0) {
-                    const res = await fetch('/api/admin/update-user', {
+                    const res = await fetch('/api/admin/users', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ uid: user.id, ...authUpdate })
+                        body: JSON.stringify({ action: 'update', uid: user.id, ...authUpdate })
                     });
                     const result = await res.json();
                     if (!res.ok) throw new Error(result.error);
@@ -5955,10 +5976,10 @@ function App() {
                 try {
                     if (!auth.currentUser || auth.currentUser.isAnonymous) throw new Error('Sesión inválida');
                     const token = await auth.currentUser.getIdToken();
-                    const res = await fetch('/api/admin/delete-user', {
+                    const res = await fetch('/api/admin/users', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ uid: user.id })
+                        body: JSON.stringify({ action: 'delete', uid: user.id })
                     });
                     if (!res.ok) throw new Error("Error eliminando acceso de Auth");
 

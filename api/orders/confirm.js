@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
-import { getAdmin, verifyIdTokenFromRequest } from '../_firebaseAdmin.js';
-import { getStoreIdFromRequest } from '../_authz.js';
+import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
+import { getStoreIdFromRequest } from '../../lib/authz.js';
 
 function formatMoney(amount) {
     return `$${Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 0 })}`;

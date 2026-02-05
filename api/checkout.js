@@ -6,11 +6,29 @@ import { MercadoPagoConfig, Payment } from 'mercadopago';
 export default async function handler(req, res) {
     // Configurar CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
+    }
+
+    if (req.method === 'GET') {
+        try {
+            const base = `http://${req?.headers?.host || 'localhost'}`;
+            const url = new URL(String(req?.url || ''), base);
+            const action = String(url.searchParams.get('action') || '').trim();
+
+            if (action !== 'public_config') {
+                return res.status(400).json({ error: 'Invalid action' });
+            }
+
+            const mpPublicKey = String(process.env.MP_PUBLIC_KEY || '').trim();
+            res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400');
+            return res.status(200).json({ mpPublicKey: mpPublicKey || null });
+        } catch (error) {
+            return res.status(500).json({ error: 'Internal error' });
+        }
     }
 
     if (req.method !== 'POST') {

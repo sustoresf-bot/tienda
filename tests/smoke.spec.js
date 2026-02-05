@@ -22,10 +22,9 @@ test('endpoints críticos rechazan sin token', async ({ request }) => {
     const resOrders = await request.post('/api/orders/confirm', { data: {} });
     expect([401, 403]).toContain(resOrders.status());
 
-    const resUpdate = await request.post('/api/admin/update-user', { data: { uid: 'x' } });
+    const resUpdate = await request.post('/api/admin/users', { data: { action: 'update', uid: 'x', email: 'test@example.com' } });
     expect([401, 403]).toContain(resUpdate.status());
 
-    const resDelete = await request.post('/api/admin/delete-user', { data: { uid: 'x' } });
+    const resDelete = await request.post('/api/admin/users', { data: { action: 'delete', uid: 'x' } });
     expect([401, 403]).toContain(resDelete.status());
 });
-

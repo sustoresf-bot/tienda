@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
-import { verifyIdTokenFromRequest } from './_firebaseAdmin.js';
-import { getStoreIdFromRequest, isAdminEmail } from './_authz.js';
+import { verifyIdTokenFromRequest } from '../lib/firebaseAdmin.js';
+import { getStoreIdFromRequest, isAdminEmail } from '../lib/authz.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {

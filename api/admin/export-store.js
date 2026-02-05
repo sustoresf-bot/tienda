@@ -1,5 +1,5 @@
-import { getAdmin, verifyIdTokenFromRequest } from '../_firebaseAdmin.js';
-import { getStoreIdFromRequest, isAdminEmail } from '../_authz.js';
+import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
+import { getStoreIdFromRequest, isAdminEmail } from '../../lib/authz.js';
 
 const COLLECTIONS = [
     'products',

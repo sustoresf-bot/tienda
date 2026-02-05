@@ -72,6 +72,10 @@
     ],
     "rewrites": [
         {
+            "source": "/api/public-config",
+            "destination": "/api/checkout?action=public_config"
+        },
+        {
             "source": "/api/checkout",
             "destination": "/api/checkout"
         },

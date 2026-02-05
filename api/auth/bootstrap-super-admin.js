@@ -1,4 +1,4 @@
-import { getAdmin } from '../_firebaseAdmin.js';
+import { getAdmin } from '../../lib/firebaseAdmin.js';
 
 function isLocalRequest(req) {
     const host = String(req?.headers?.host || '').toLowerCase();
@@ -53,4 +53,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Internal error' });
     }
 }
-

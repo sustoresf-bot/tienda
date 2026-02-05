@@ -1,5 +1,5 @@
-import { getAdmin } from '../_firebaseAdmin.js';
-import { getStoreIdFromRequest } from '../_authz.js';
+import { getAdmin } from '../../lib/firebaseAdmin.js';
+import { getStoreIdFromRequest } from '../../lib/authz.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {

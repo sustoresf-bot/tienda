@@ -55,6 +55,10 @@ function createRes(res) {
 
 async function handleApi(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname === '/api/public-config') {
+        url.pathname = '/api/checkout';
+        if (!url.searchParams.get('action')) url.searchParams.set('action', 'public_config');
+    }
     const apiPath = url.pathname.replace(/^\/api\//, '');
 
     const candidates = [
@@ -90,7 +94,7 @@ async function handleApi(req, res) {
 
     const reqLike = {
         method: req.method,
-        url: req.url,
+        url: url.pathname + (url.search || ''),
         headers: req.headers,
         body,
         socket: req.socket,
@@ -138,4 +142,3 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
     console.log(`Dev server running on http://localhost:${PORT}`);
 });
-
