@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
     ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
@@ -532,7 +532,12 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
     }, [slides, activeIndex]);
 
     const activeSlide = slides[activeIndex] || null;
-    const imageClass = `absolute inset-0 w-full h-full object-cover transition-opacity duration-700 transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70 saturate-110 contrast-110'}`;
+    const hasTarget = (() => {
+        const type = activeSlide?.targetType || (activeSlide?.promoId ? 'promo' : activeSlide?.productId ? 'product' : 'none');
+        const id = activeSlide?.targetId || activeSlide?.promoId || activeSlide?.productId || '';
+        return type !== 'none' && !!id;
+    })();
+    const imageClass = `w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70 saturate-110 contrast-110'}`;
 
     const goPrev = () => {
         setActiveIndex(i => {
@@ -561,18 +566,21 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
 
     return (
         <div
-            className={`absolute inset-0 ${activeSlide?.productId ? 'cursor-pointer' : ''}`}
-            onClick={() => activeSlide?.productId && onBannerClick?.(activeSlide)}
+            className={`absolute inset-0 overflow-hidden ${hasTarget ? 'cursor-pointer' : ''}`}
+            onClick={() => hasTarget && onBannerClick?.(activeSlide)}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
-            {slides.map((slide, idx) => (
-                <img
-                    key={slide.id || `${idx}-${slide.productId || 'slide'}`}
-                    src={slide.imageUrl}
-                    className={`${imageClass} ${idx === activeIndex ? 'opacity-100' : 'opacity-0'}`}
-                />
-            ))}
+            <div
+                className="h-full w-full flex transition-transform duration-700 ease-in-out"
+                style={{ transform: `translate3d(-${activeIndex * 100}%, 0, 0)`, willChange: 'transform' }}
+            >
+                {slides.map((slide, idx) => (
+                    <div key={slide.id || `${idx}-${slide.targetId || slide.productId || slide.promoId || 'slide'}`} className="w-full h-full flex-shrink-0 relative">
+                        <img src={slide.imageUrl} className={imageClass} />
+                    </div>
+                ))}
+            </div>
 
             {slides.length > 1 && (
                 <>
@@ -1894,7 +1902,7 @@ function App() {
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
     const [newInvestment, setNewInvestment] = useState({ investor: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
     const [newPurchase, setNewPurchase] = useState({ productId: '', supplierId: '', quantity: 1, cost: 0, isNewProduct: false });
-    const [newHomeBanner, setNewHomeBanner] = useState({ imageUrl: '', productId: '', enabled: true, order: 0 });
+    const [newHomeBanner, setNewHomeBanner] = useState({ imageUrl: '', targetType: 'none', targetId: '', enabled: true, order: 0 });
     const [editingHomeBannerId, setEditingHomeBannerId] = useState(null);
 
     // Estado para Proveedores (Restaurado)
@@ -2362,15 +2370,40 @@ function App() {
     const removeToast = (id) => setToasts(p => p.filter(t => t.id !== id));
 
     const handleHomeBannerClick = (slide) => {
-        const productId = slide?.productId;
-        if (!productId) return;
-        const product = products.find(p => String(p.id).trim() === String(productId).trim());
-        if (product) {
-            setSelectedProduct(product);
+        const targetType = slide?.targetType || (slide?.promoId ? 'promo' : slide?.productId ? 'product' : 'none');
+        const targetId = slide?.targetId || slide?.promoId || slide?.productId || '';
+        if (!targetId || targetType === 'none') return;
+
+        if (targetType === 'product') {
+            const product = products.find(p => String(p.id).trim() === String(targetId).trim());
+            if (product) {
+                setSelectedProduct(product);
+                return;
+            }
+            showToast("Este banner apunta a un producto que ya no existe.", "warning");
+            document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
             return;
         }
-        showToast("Este banner apunta a un producto que ya no existe.", "warning");
-        document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+
+        if (targetType === 'promo') {
+            const promo = promos.find(p => String(p.id).trim() === String(targetId).trim());
+            if (!promo) {
+                showToast("Este banner apunta a una promo que ya no existe.", "warning");
+                document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
+            let maxPurchasable = Infinity;
+            (promo.items || []).forEach(item => {
+                const p = products.find(prod => prod.id === item.productId);
+                const pStock = p ? (Number(p.stock) || 0) : 0;
+                const maxForThisItem = Math.floor(pStock / (Number(item.quantity) || 1));
+                if (maxForThisItem < maxPurchasable) maxPurchasable = maxForThisItem;
+            });
+            if (!Number.isFinite(maxPurchasable)) maxPurchasable = 0;
+
+            setSelectedProduct({ ...promo, isPromo: true, stock: maxPurchasable });
+        }
     };
 
     // Validar acceso por rol
@@ -2416,7 +2449,7 @@ function App() {
         return role === 'admin' || role === 'editor' || role === 'employee';
     };
 
-    const isAdminUser = currentUser?.role === 'admin';
+    const isAdminUser = isAdmin(systemUser?.email || currentUser?.email);
     const isSuperAdminSession = !!(systemUser?.email && SUPER_ADMIN_EMAIL && systemUser.email.trim().toLowerCase() === SUPER_ADMIN_EMAIL.trim().toLowerCase());
     const latestOrderIso = useMemo(() => {
         if (!isAdminUser) return null;
@@ -3107,11 +3140,20 @@ function App() {
             const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
             const ordersQuery = isAdminUser
                 ? query(ordersRef, orderBy('date', 'desc'), limit(200))
-                : query(ordersRef, where('customerId', '==', systemUser.uid), orderBy('date', 'desc'), limit(50));
+                : query(ordersRef, where('customerId', '==', systemUser.uid), limit(50));
 
             unsubscribeFunctions.push(
                 onSnapshot(ordersQuery, (snapshot) => {
                     const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (!isAdminUser) {
+                        const getDateMs = (value) => {
+                            if (!value) return 0;
+                            if (typeof value?.toMillis === 'function') return value.toMillis();
+                            const ms = Date.parse(String(value));
+                            return Number.isFinite(ms) ? ms : 0;
+                        };
+                        ordersData.sort((a, b) => getDateMs(b.date) - getDateMs(a.date));
+                    }
                     setOrders(ordersData);
                 })
             );
@@ -3481,7 +3523,12 @@ function App() {
                 const profile = await fetchProfile(userCredential.user.uid);
                 if (!profile) throw new Error('No se pudo cargar el perfil');
 
-                setCurrentUser(profile);
+                const normalizedEmailLower = String(profile?.emailLower || profile?.email || '').trim().toLowerCase();
+                const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+                const normalizedProfile = superEmailLower && normalizedEmailLower === superEmailLower
+                    ? { ...profile, role: 'admin' }
+                    : profile;
+                setCurrentUser(normalizedProfile);
                 showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
             } else {
                 const input = authData.email.trim();
@@ -3563,11 +3610,14 @@ function App() {
                 if (!authUser) throw new Error('Error al iniciar sesión');
 
                 if (!usersPath) {
+                    const normalizedEmailLower = String(authUser.email || emailToUse).toLowerCase();
+                    const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
                     setCurrentUser({
                         id: authUser.uid,
                         name: authUser.displayName || 'Usuario',
                         email: authUser.email || emailToUse,
                         emailLower: (authUser.email || emailToUse).toLowerCase(),
+                        role: superEmailLower && normalizedEmailLower === superEmailLower ? 'admin' : 'user',
                     });
                     showToast('Sesión iniciada. Vinculá el dominio para cargar la tienda.', 'success');
                     setView('store');
@@ -3586,7 +3636,7 @@ function App() {
                         name: authUser.displayName || 'Usuario',
                         email: authUser.email || emailToUse,
                         emailLower: (authUser.email || emailToUse).toLowerCase(),
-                        role: 'user',
+                        role: String(authUser.email || emailToUse).trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase() ? 'admin' : 'user',
                         createdAt: new Date().toISOString()
                     };
                     await setDoc(doc(db, ...usersPath, authUser.uid), minimal, { merge: true });
@@ -3594,7 +3644,12 @@ function App() {
                 }
 
                 await updateDoc(doc(db, ...usersPath, authUser.uid), { lastLogin: new Date().toISOString() }).catch(() => { });
-                setCurrentUser(profile);
+                const normalizedEmailLower = String(profile?.emailLower || profile?.email || '').trim().toLowerCase();
+                const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+                const normalizedProfile = superEmailLower && normalizedEmailLower === superEmailLower
+                    ? { ...profile, role: 'admin' }
+                    : profile;
+                setCurrentUser(normalizedProfile);
                 showToast(`¡Hola de nuevo, ${profile?.name || 'Usuario'}!`, "success");
             }
 
@@ -4426,15 +4481,18 @@ function App() {
 
     const resetHomeBannerForm = () => {
         setEditingHomeBannerId(null);
-        setNewHomeBanner({ imageUrl: '', productId: '', enabled: true, order: 0 });
+        setNewHomeBanner({ imageUrl: '', targetType: 'none', targetId: '', enabled: true, order: 0 });
     };
 
     const editHomeBannerFn = (banner) => {
         if (!banner) return;
         setEditingHomeBannerId(banner.id);
+        const targetType = banner.targetType || (banner.promoId ? 'promo' : banner.productId ? 'product' : 'none');
+        const targetId = banner.targetId || banner.promoId || banner.productId || '';
         setNewHomeBanner({
             imageUrl: banner.imageUrl || '',
-            productId: banner.productId || '',
+            targetType,
+            targetId,
             enabled: banner.enabled !== false,
             order: Number.isFinite(Number(banner.order)) ? Number(banner.order) : 0,
         });
@@ -4442,14 +4500,19 @@ function App() {
 
     const saveHomeBannerFn = async () => {
         if (!newHomeBanner?.imageUrl) return showToast("Subí una imagen para el banner.", "warning");
-        if (!newHomeBanner?.productId) return showToast("Seleccioná un producto para el banner.", "warning");
+        const targetType = newHomeBanner?.targetType || 'none';
+        const targetId = newHomeBanner?.targetId || '';
+        if (targetType !== 'none' && !targetId) return showToast("Seleccioná el destino del banner.", "warning");
 
         const orderValue = Number.isFinite(Number(newHomeBanner.order)) ? Number(newHomeBanner.order) : 0;
         const payload = {
             imageUrl: newHomeBanner.imageUrl,
-            productId: String(newHomeBanner.productId),
             enabled: newHomeBanner.enabled !== false,
             order: orderValue,
+            targetType,
+            targetId: targetType === 'none' ? '' : String(targetId),
+            productId: targetType === 'product' ? String(targetId) : '',
+            promoId: targetType === 'promo' ? String(targetId) : '',
         };
 
         try {
@@ -10249,28 +10312,70 @@ function App() {
                                                                 <div className="lg:col-span-2 space-y-4">
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto al hacer click</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Acción al hacer click</label>
                                                                             <select
                                                                                 className="input-cyber w-full p-3"
-                                                                                value={newHomeBanner?.productId || ''}
-                                                                                onChange={(e) => setNewHomeBanner(prev => ({ ...prev, productId: e.target.value }))}
+                                                                                value={newHomeBanner?.targetType || 'none'}
+                                                                                onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetType: e.target.value, targetId: '' }))}
                                                                             >
-                                                                                <option value="">Seleccionar producto...</option>
-                                                                                {[...products].sort((a, b) => (a?.name || '').localeCompare(b?.name || '')).map(p => (
-                                                                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                                                                ))}
+                                                                                <option value="none">Solo mostrar (sin link)</option>
+                                                                                <option value="product">Abrir producto</option>
+                                                                                <option value="promo">Abrir promo</option>
                                                                             </select>
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Orden</label>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Orden (0 = primero)</label>
                                                                             <input
                                                                                 type="number"
                                                                                 className="input-cyber w-full p-3"
                                                                                 value={Number.isFinite(Number(newHomeBanner?.order)) ? Number(newHomeBanner.order) : 0}
                                                                                 onChange={(e) => setNewHomeBanner(prev => ({ ...prev, order: e.target.value }))}
                                                                             />
+                                                                            <p className="text-xs text-slate-500 mt-2">Menor número aparece primero (0, 1, 2...).</p>
                                                                         </div>
                                                                     </div>
+
+                                                                    {newHomeBanner?.targetType !== 'none' && (
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                                    {newHomeBanner?.targetType === 'promo' ? 'Promo al hacer click' : 'Producto al hacer click'}
+                                                                                </label>
+                                                                                <select
+                                                                                    className="input-cyber w-full p-3"
+                                                                                    value={newHomeBanner?.targetId || ''}
+                                                                                    onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetId: e.target.value }))}
+                                                                                >
+                                                                                    <option value="">Seleccionar...</option>
+                                                                                    {(newHomeBanner?.targetType === 'promo' ? [...promos] : [...products])
+                                                                                        .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''))
+                                                                                        .map(item => (
+                                                                                            <option key={item.id} value={item.id}>{item.name}</option>
+                                                                                        ))}
+                                                                                </select>
+                                                                            </div>
+                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 flex items-center gap-4">
+                                                                                {(() => {
+                                                                                    const isPromo = newHomeBanner?.targetType === 'promo';
+                                                                                    const item = isPromo
+                                                                                        ? promos.find(p => p.id === newHomeBanner?.targetId)
+                                                                                        : products.find(p => p.id === newHomeBanner?.targetId);
+                                                                                    const img = isPromo ? item?.image : item?.image;
+                                                                                    return (
+                                                                                        <>
+                                                                                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
+                                                                                                {img ? <img src={img} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon className="w-6 h-6 text-slate-600" />}
+                                                                                            </div>
+                                                                                            <div className="min-w-0">
+                                                                                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Vista previa</p>
+                                                                                                <p className="font-black text-white truncate">{item?.name || 'Sin selección'}</p>
+                                                                                            </div>
+                                                                                        </>
+                                                                                    );
+                                                                                })()}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
 
                                                                     <div className="flex flex-col md:flex-row md:items-center gap-4">
                                                                         <div className="flex items-center justify-between flex-1 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
@@ -10311,7 +10416,16 @@ function App() {
                                                                     <p className="text-slate-500 text-sm">Todavía no hay slides en el carrusel.</p>
                                                                 ) : (
                                                                     homeBanners.map(b => {
-                                                                        const productName = products.find(p => p.id === b.productId)?.name || 'Producto inexistente';
+                                                                        const targetType = b.targetType || (b.promoId ? 'promo' : b.productId ? 'product' : 'none');
+                                                                        const targetId = b.targetId || b.promoId || b.productId || '';
+                                                                        const targetItem = targetType === 'promo'
+                                                                            ? promos.find(p => p.id === targetId)
+                                                                            : targetType === 'product'
+                                                                                ? products.find(p => p.id === targetId)
+                                                                                : null;
+                                                                        const targetName = targetType === 'none'
+                                                                            ? 'Solo imagen'
+                                                                            : targetItem?.name || (targetType === 'promo' ? 'Promo inexistente' : 'Producto inexistente');
                                                                         const isEnabled = b?.enabled !== false;
                                                                         return (
                                                                             <div key={b.id} className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-slate-900/40 rounded-2xl border border-slate-800">
@@ -10321,16 +10435,22 @@ function App() {
                                                                                     ) : null}
                                                                                 </div>
                                                                                 <div className="flex-1 min-w-0">
-                                                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                                                        <p className="font-black text-white truncate">{productName}</p>
+                                                                                    <div className="flex items-center gap-3 flex-wrap">
+                                                                                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
+                                                                                            {targetItem?.image ? <img src={targetItem.image} className="w-full h-full object-cover" alt="Target" /> : <ImageIcon className="w-4 h-4 text-slate-600" />}
+                                                                                        </div>
+                                                                                        <p className="font-black text-white truncate">{targetName}</p>
                                                                                         <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${isEnabled ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-800/30'}`}>
                                                                                             {isEnabled ? 'ACTIVO' : 'PAUSADO'}
+                                                                                        </span>
+                                                                                        <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
+                                                                                            {targetType === 'promo' ? 'PROMO' : targetType === 'product' ? 'PRODUCTO' : 'SIN LINK'}
                                                                                         </span>
                                                                                         <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
                                                                                             ORDEN {Number.isFinite(Number(b.order)) ? Number(b.order) : 0}
                                                                                         </span>
                                                                                     </div>
-                                                                                    <p className="text-xs text-slate-500 mt-1 truncate">{b.productId || ''}</p>
+                                                                                    <p className="text-xs text-slate-500 mt-1 truncate">{targetType === 'none' ? 'Click desactivado' : targetId}</p>
                                                                                 </div>
                                                                                 <div className="flex items-center gap-2">
                                                                                     <button
