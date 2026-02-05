@@ -64,6 +64,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase();
+    const isProd = nodeEnv === 'production';
     const storeId = getStoreIdFromRequest(req);
     const clientKey = getClientKey(req);
     const now = Date.now();
@@ -163,6 +165,22 @@ export default async function handler(req, res) {
         const token = await adminSdk.auth().createCustomToken(uid);
         return res.status(200).json({ token });
     } catch (error) {
-        return res.status(500).json({ error: 'Internal error' });
+        const message = error && typeof error === 'object' && 'message' in error ? String(error.message || '') : '';
+        const normalizedMessage = message.toLowerCase();
+        const hints = [
+            'could not load the default credentials',
+            'default credentials',
+            'failed to determine project id',
+            'unable to detect a project id',
+            'missing or insufficient permissions',
+            'permission-denied',
+        ];
+        const isFirebaseAdminMisconfigured = hints.some((h) => normalizedMessage.includes(h));
+
+        return res.status(500).json({
+            error: isFirebaseAdminMisconfigured ? 'Backend no configurado (Firebase Admin)' : 'Internal error',
+            ...(isFirebaseAdminMisconfigured ? { code: 'firebase_admin_not_configured' } : {}),
+            ...(!isProd ? { details: { message } } : {}),
+        });
     }
 }

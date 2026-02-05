@@ -3413,6 +3413,8 @@ function App() {
         setIsLoading(true);
         try {
             const superAdminAttempt = String(authData.email || '').trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+            const normalizedHostname = String(window.location.hostname || '').trim().toLowerCase();
+            const isLocalhost = normalizedHostname === 'localhost' || normalizedHostname === '127.0.0.1' || normalizedHostname === '::1';
             if (!appId && !superAdminAttempt) {
                 throw new Error('Tienda no configurada para este dominio.');
             }
@@ -3514,7 +3516,13 @@ function App() {
                         });
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok || !data?.token) {
+                            if (data?.code === 'firebase_admin_not_configured') {
+                                throw new Error(data.error || 'Backend no configurado (Firebase Admin)');
+                            }
                             if (superAdminAttempt) {
+                                if (!isLocalhost) {
+                                    throw new Error('El Super Admin solo puede inicializarse en localhost.');
+                                }
                                 const bootRes = await fetch('/api/auth/bootstrap-super-admin', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -3523,6 +3531,9 @@ function App() {
                                 if (bootRes.ok) {
                                     const userCredential = await signInWithEmailAndPassword(auth, emailToUse, authData.password);
                                     authUser = userCredential.user;
+                                } else {
+                                    const bootData = await bootRes.json().catch(() => ({}));
+                                    throw new Error(bootData?.error || 'No se pudo inicializar el Super Admin');
                                 }
                             }
                             if (!authUser) {

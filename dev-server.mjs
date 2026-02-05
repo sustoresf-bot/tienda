@@ -5,6 +5,34 @@ import { fileURLToPath, pathToFileURL } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const ENV_FILES = ['.env.local', '.env'];
+
+function stripEnvQuotes(value) {
+    const v = String(value ?? '');
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+        return v.slice(1, -1);
+    }
+    return v;
+}
+
+async function loadEnvFile(fileName) {
+    try {
+        const filePath = path.join(__dirname, fileName);
+        const raw = await readFile(filePath, 'utf8');
+        raw.split(/\r?\n/).forEach((line) => {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) return;
+            const eq = trimmed.indexOf('=');
+            if (eq <= 0) return;
+            const key = trimmed.slice(0, eq).trim();
+            const value = stripEnvQuotes(trimmed.slice(eq + 1).trim());
+            if (!key) return;
+            if (process.env[key] == null || process.env[key] === '') process.env[key] = value;
+        });
+    } catch { }
+}
+
+await Promise.all(ENV_FILES.map(loadEnvFile));
 const PORT = Number(process.env.PORT) || 3000;
 
 const MIME = {
