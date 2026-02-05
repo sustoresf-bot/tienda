@@ -3514,10 +3514,16 @@ function App() {
                             headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '' },
                             body: JSON.stringify({ identifier: input, password: authData.password })
                         });
-                        const data = await res.json().catch(() => ({}));
+                        const raw = await res.text().catch(() => '');
+                        let data = {};
+                        try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
                         if (!res.ok || !data?.token) {
                             if (res.status === 401) {
-                                throw new Error('Tu despliegue está respondiendo 401 (Vercel protegido). Desactivá Deployment Protection / Vercel Authentication o hacé el sitio público.');
+                                const looksLikeVercel = /<html/i.test(raw) || /login\s*–\s*vercel/i.test(raw) || /vercel/i.test(raw);
+                                if (looksLikeVercel) {
+                                    throw new Error('Tu despliegue está respondiendo 401 (Vercel protegido). Desactivá Deployment Protection / Vercel Authentication o hacé el sitio público.');
+                                }
+                                throw new Error('Credenciales incorrectas.');
                             }
                             if (data?.code === 'firebase_admin_not_configured') {
                                 throw new Error(data.error || 'Backend no configurado (Firebase Admin)');
@@ -3540,7 +3546,6 @@ function App() {
                                 }
                             }
                             if (!authUser) {
-                                if (res.status === 401) throw new Error("Credenciales incorrectas.");
                                 throw new Error(data.error || 'No se pudo recuperar tu cuenta legacy');
                             }
                         }
