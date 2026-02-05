@@ -1998,20 +1998,25 @@ function App() {
             // Light mode styles
             lightModeStyle.textContent = `
                 /* Light Mode Overrides */
-                body, .bg-\\[\\#050505\\], .bg-\\[\\#0a0a0a\\], .bg-black {
+                body, .bg-\\[\\#050505\\], .bg-\\[\\#0a0a0a\\], .bg-\\[\\#080808\\], .bg-\\[\\#111\\], .bg-black {
                     background-color: #f8fafc !important;
                 }
+                .bg-\\[\\#1a1a1a\\], .bg-zinc-800 { background-color: #ffffff !important; }
+                .hover\\:bg-zinc-700:hover { background-color: #e2e8f0 !important; }
                 .bg-grid {
                     background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
                                       linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) !important;
                 }
                 .text-white { color: #0f172a !important; }
+                .text-white\\/50, .text-white\\/60, .text-white\\/70, .text-white\\/80 { color: #475569 !important; }
+                .text-slate-200 { color: #334155 !important; }
                 .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600 { color: #64748b !important; }
                 .bg-slate-900, .bg-slate-900\\/50, .bg-slate-800 { background-color: #ffffff !important; }
                 .bg-slate-900\\/30 { background-color: rgba(255,255,255,0.8) !important; }
                 .border-slate-700, .border-slate-700\\/50, .border-slate-800, .border-slate-800\\/50, .border-slate-900 { 
                     border-color: #e2e8f0 !important; 
                 }
+                .border-white\\/5, .border-white\\/10, .border-white\\/20 { border-color: #e2e8f0 !important; }
                 .glass {
                     background: rgba(255, 255, 255, 0.95) !important;
                     border-color: #e2e8f0 !important;
@@ -5139,22 +5144,22 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className="relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border border-slate-800 group relative bg-[#080808] container-tv">
-                            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0"></div>
+                        <div className={`relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group relative container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                            <div className={`absolute inset-0 bg-[url('/noise.svg')] z-0 ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
                             {/* Imagen de fondo - Solo mostrar cuando settings están cargados */}
                             {!settingsLoaded ? (
                                 <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
                             ) : settings?.heroUrl ? (
-                                <img src={settings.heroUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105" />
+                                <img src={settings.heroUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-40'}`} />
                             ) : (
                                 // Fallback Hero Background si no hay URL configurada
-                                <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40 opacity-60">
-                                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                                <div className={`absolute inset-0 opacity-60 ${darkMode ? 'bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40' : 'bg-gradient-to-br from-orange-200/60 via-white to-slate-200/60'}`}>
+                                    <div className={`absolute inset-0 bg-[url('/noise.svg')] ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
                                 </div>
                             )}
 
                             {/* Overlay de Texto */}
-                            <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent flex flex-col justify-center px-8 md:px-20 z-10 p-12">
+                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white via-white/85 to-transparent'}`}>
                                 <div className="max-w-2xl animate-fade-up">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
@@ -5174,21 +5179,21 @@ function App() {
                                             <span className="bg-orange-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
                                                 {settings?.heroBadge || ''}
                                             </span>
-                                            <h1 className="text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black text-white leading-[0.9] drop-shadow-2xl mb-4 neon-text">
+                                            <h1 className={`text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.9] mb-4 ${darkMode ? 'text-white drop-shadow-2xl neon-text' : 'text-slate-900'}`}>
                                                 {settings?.heroTitle1 || ''} <br />
-                                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-blue-600">
+                                                <span className={`text-transparent bg-clip-text bg-gradient-to-r ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || ''}
                                                 </span>
                                             </h1>
-                                            <p className="text-slate-400 text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium">
+                                            <p className={`text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                                 {settings?.heroSubtitle || ''}
                                             </p>
                                             <div className="flex items-center gap-4">
                                                 <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-orange-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn">
                                                     VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
-                                                <button onClick={() => setView('guide')} className="px-6 py-2.5 bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 transition font-bold text-xs group">
-                                                    <Info className="w-4 h-4 text-orange-400" /> Ayuda
+                                                <button onClick={() => setView('guide')} className={`px-6 py-2.5 rounded-xl flex items-center gap-2 transition font-bold text-xs group ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
+                                                    <Info className={`w-4 h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Ayuda
                                                 </button>
                                             </div>
                                         </>
@@ -10772,7 +10777,7 @@ function App() {
                                     ? 'bg-gradient-to-r from-green-900/80 to-emerald-900/80 border-green-500 shadow-[0_0_40px_rgba(34,197,94,0.3)]'
                                     : 'bg-slate-900 border-slate-700 opacity-90'
                                     }`}>
-                                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                                    <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20"></div>
 
                                     <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                                         <div className="flex items-center gap-4 text-left">
