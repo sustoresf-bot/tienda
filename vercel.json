@@ -109,6 +109,14 @@
         {
             "source": "/api/admin/:path*",
             "destination": "/api/admin/:path*"
+        },
+        {
+            "source": "/api/:path*",
+            "destination": "/api/:path*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
         }
     ]
 }

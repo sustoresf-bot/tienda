@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { getEnv } from './_utils/env.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -6,8 +7,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        console.log("📩 [Email Service] Recibiendo solicitud de confirmación de pedido...");
-
         // 1. Extracción de datos con Defaults seguros
         const {
             orderId,
@@ -32,24 +31,16 @@ export default async function handler(req, res) {
         const finalSubtotal = Number(subtotal) || 0;
         const finalTotal = Number(total) || 0;
 
-        // Logs de Debugging
-        console.log(`📋 Orden ID: ${orderId}`);
-        console.log(`👤 Cliente: ${customerName} (${customerEmail})`);
-        console.log(`📦 Ítems: ${items?.length || 0}`);
-        console.log(`🚚 Envío: ${shippingMethod} ($${finalShippingFee})`);
-
         // Validación Crítica
         if (!customerEmail) {
-            console.error("❌ ERROR CRÍTICO: No se recibió email del cliente. Abortando envío.");
-            // Podríamos enviar un email al admin alertando esto, pero por ahora solo logueamos.
             return res.status(400).json({ error: 'Falta email del cliente' });
         }
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+                user: getEnv('EMAIL_USER'),
+                pass: getEnv('EMAIL_PASS')
             }
         });
 
@@ -131,7 +122,7 @@ export default async function handler(req, res) {
                                 <!-- Status -->
                                 <tr>
                                     <td style="padding: 0 40px 40px; text-align: center;">
-                                        <div class="status-badge">⚡ PAGO EXTITOSO</div>
+                                        <div class="status-badge">⚡ PAGO EXITOSO</div>
                                         <p style="margin-top: 24px; color: #cbd5e1; font-size: 16px; line-height: 1.6;">
                                             ¡Hola <span style="font-weight: 700; color: #ffffff;">${customerName}</span>! Gracias por tu compra.
                                             <br>Ya estamos preparando tu pedido con el ID: <strong style="color: #22d3ee;">#${orderId}</strong>
@@ -249,19 +240,19 @@ export default async function handler(req, res) {
             </html>
         `;
 
+        const emailUser = getEnv('EMAIL_USER');
         await transporter.sendMail({
-            from: `"Sustore" <${process.env.EMAIL_USER}>`,
-            to: `${customerEmail}, ${process.env.EMAIL_USER}`,
-            replyTo: process.env.EMAIL_USER,
+            from: `"Sustore" <${emailUser}>`,
+            to: `${customerEmail}, ${emailUser}`,
+            replyTo: emailUser,
             subject: `✅ Pedido Confirmado #${orderId}`,
             html: mailContent
         });
 
-        console.log("✅ Correo enviado exitosamente.");
         res.status(200).json({ success: true });
 
     } catch (error) {
-        console.error("❌ Error enviando correo:", error);
+        console.error('[Email] Error enviando correo:', error?.message || error);
         res.status(500).json({ error: error.message });
     }
 }

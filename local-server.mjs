@@ -27,6 +27,13 @@ http
       let p = decodeURIComponent(u.pathname);
       if (p === '/') p = '/index.html';
 
+      if (p.startsWith('/.') || p.includes('/.')) {
+        console.log(t, 403, req.method, req.url);
+        res.statusCode = 403;
+        res.end('Forbidden');
+        return;
+      }
+
       const file = join(base, p);
       if (!existsSync(file)) {
         console.log(t, 404, req.method, req.url);

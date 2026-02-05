@@ -2,41 +2,63 @@
 // Esta función serverless procesa pagos de forma segura usando el SDK de Mercado Pago
 
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { getAllowedOrigins, getEnv } from './_utils/env.js';
 
 export default async function handler(req, res) {
-    // Configurar CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    const allowedOrigins = getAllowedOrigins();
+    const isAllowedOrigin = origin && allowedOrigins.includes(origin);
+
+    if (isAllowedOrigin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        if (origin && allowedOrigins.length > 0 && !isAllowedOrigin) {
+            return res.status(403).end();
+        }
+        return res.status(204).end();
     }
 
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Verificar que tenemos el Access Token configurado
-    if (!process.env.MP_ACCESS_TOKEN) {
-        console.error('MP_ACCESS_TOKEN not configured');
+    if (origin && allowedOrigins.length > 0 && !isAllowedOrigin) {
+        return res.status(403).json({ error: 'Origin not allowed' });
+    }
+
+    let accessToken;
+    try {
+        accessToken = getEnv('MP_ACCESS_TOKEN');
+    } catch {
         return res.status(500).json({ error: 'Payment service not configured' });
     }
 
-    // LOG DE SEGURIDAD PARA DEBUG (Solo mostramos el inicio del token)
-    console.log('Token prefix:', process.env.MP_ACCESS_TOKEN.substring(0, 15) + '...');
-
     // Configuración del cliente MP
     const client = new MercadoPagoConfig({
-        accessToken: process.env.MP_ACCESS_TOKEN,
+        accessToken,
     });
+    const payment = new Payment(client);
 
-    const { action, paymentData, payer } = req.body;
+    const { action, paymentData, payer } = req.body || {};
 
     try {
         if (action === 'process_payment') {
             if (!paymentData || isNaN(paymentData.transaction_amount) || Number(paymentData.transaction_amount) <= 0) {
                 return res.status(400).json({ error: 'Monto de transacción inválido' });
+            }
+            if (!paymentData.token || typeof paymentData.token !== 'string') {
+                return res.status(400).json({ error: 'Token de tarjeta inválido' });
+            }
+            if (!paymentData.payment_method_id || typeof paymentData.payment_method_id !== 'string') {
+                return res.status(400).json({ error: 'Método de pago inválido' });
+            }
+            if (!payer || typeof payer !== 'object' || !payer.email || typeof payer.email !== 'string') {
+                return res.status(400).json({ error: 'Email del pagador inválido' });
             }
 
             const paymentBody = {
@@ -60,7 +82,6 @@ export default async function handler(req, res) {
                 delete paymentBody.issuer_id;
             }
 
-            console.log('Enviando pago a MP:', JSON.stringify(paymentBody, null, 2));
             const paymentResponse = await payment.create({ body: paymentBody });
             console.log('Respuesta de MP:', JSON.stringify({
                 status: paymentResponse.status,
@@ -78,11 +99,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid action' });
 
     } catch (error) {
-        // Log detallado en la consola de Vercel (Esto lo podés ver vos en Vercel logs)
-        console.error('--- ERROR DETALLADO DE MERCADO PAGO ---');
-        console.error('Status:', error.status);
-        console.error('Message:', error.message);
-        console.error('Cause:', JSON.stringify(error.cause, null, 2));
+        console.error('[MP] Error:', {
+            status: error?.status,
+            message: error?.message
+        });
 
         let errorMessage = 'Error al procesar el pago';
         if (error.cause && Array.isArray(error.cause)) {
