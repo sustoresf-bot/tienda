@@ -3488,19 +3488,37 @@ function App() {
                     const userCredential = await signInWithEmailAndPassword(auth, emailToUse, authData.password);
                     authUser = userCredential.user;
                 } catch (e) {
-                    if (e.code === 'auth/user-not-found') {
+                    const code = e?.code || '';
+                    const invalidCredentialCodes = new Set(['auth/invalid-credential', 'auth/invalid-login-credentials']);
+                    if (code === 'auth/user-not-found' || invalidCredentialCodes.has(code)) {
                         const res = await fetch('/api/auth/legacy-login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '' },
                             body: JSON.stringify({ identifier: input, password: authData.password })
                         });
                         const data = await res.json().catch(() => ({}));
-                        if (!res.ok) throw new Error(data.error || 'No se pudo recuperar tu cuenta legacy');
+                        if (!res.ok || !data?.token) {
+                            if (superAdminAttempt) {
+                                const bootRes = await fetch('/api/auth/bootstrap-super-admin', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ email: emailToUse, password: authData.password })
+                                });
+                                if (bootRes.ok) {
+                                    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, authData.password);
+                                    authUser = userCredential.user;
+                                }
+                            }
+                            if (!authUser) {
+                                if (res.status === 401) throw new Error("Credenciales incorrectas.");
+                                throw new Error(data.error || 'No se pudo recuperar tu cuenta legacy');
+                            }
+                        }
                         const userCredential = await signInWithCustomToken(auth, data.token);
                         authUser = userCredential.user;
-                    } else if (e.code === 'auth/wrong-password') {
+                    } else if (code === 'auth/wrong-password') {
                         throw new Error("La contraseña es incorrecta.");
-                    } else if (e.code === 'auth/too-many-requests') {
+                    } else if (code === 'auth/too-many-requests') {
                         throw new Error("Demasiados intentos fallidos. Intenta más tarde o restablece tu contraseña.");
                     } else {
                         throw e;
