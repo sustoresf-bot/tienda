@@ -1,23 +1,17 @@
-
-import admin from 'firebase-admin';
-
-if (!admin.apps.length) {
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            }),
-        });
-    } catch (error) {
-        console.error('Firebase admin initialization error', error);
-    }
-}
+import { getAdmin, verifyIdTokenFromRequest } from '../_firebaseAdmin.js';
+import { isAdminEmail } from '../_authz.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const decoded = await verifyIdTokenFromRequest(req);
+    if (!decoded?.email) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    if (!(await isAdminEmail(decoded.email))) {
+        return res.status(403).json({ error: 'Forbidden' });
     }
 
     const { uid, email, password, role } = req.body;
@@ -27,6 +21,7 @@ export default async function handler(req, res) {
     }
 
     try {
+        const admin = getAdmin();
         const updateData = {};
         if (email) updateData.email = email;
         if (password) updateData.password = password;

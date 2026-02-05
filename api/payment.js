@@ -1,12 +1,24 @@
 import nodemailer from 'nodemailer';
+import { verifyIdTokenFromRequest } from './_firebaseAdmin.js';
+import { isAdminEmail } from './_authz.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
+    const decoded = await verifyIdTokenFromRequest(req);
+    if (!decoded?.email) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    if (!(await isAdminEmail(decoded.email))) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+
     try {
-        console.log("📩 [Email Service] Recibiendo solicitud de confirmación de pedido...");
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            return res.status(500).json({ error: 'Email service not configured' });
+        }
 
         // 1. Extracción de datos con Defaults seguros
         const {
@@ -31,12 +43,6 @@ export default async function handler(req, res) {
         const finalShippingFee = Number(shippingFee) || 0;
         const finalSubtotal = Number(subtotal) || 0;
         const finalTotal = Number(total) || 0;
-
-        // Logs de Debugging
-        console.log(`📋 Orden ID: ${orderId}`);
-        console.log(`👤 Cliente: ${customerName} (${customerEmail})`);
-        console.log(`📦 Ítems: ${items?.length || 0}`);
-        console.log(`🚚 Envío: ${shippingMethod} ($${finalShippingFee})`);
 
         // Validación Crítica
         if (!customerEmail) {

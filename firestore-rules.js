@@ -30,8 +30,8 @@ service cloud.firestore {
     function isTeamAdmin() {
       let configData = get(/databases/$(database)/documents/artifacts/sustore-63266-prod/public/data/settings/config).data;
       return request.auth != null &&
-        configData.team != null &&
-        configData.team.hasAny([{'email': request.auth.token.email, 'role': 'admin'}]);
+        configData.teamRoles != null &&
+        configData.teamRoles[request.auth.token.email] == 'admin';
     }
 
     // Verificar si es Admin (cualquier tipo)
@@ -61,7 +61,9 @@ service cloud.firestore {
              data.email is string &&
              data.email.size() <= 254 &&
              data.name is string &&
-             data.name.size() <= 100;
+             data.name.size() <= 100 &&
+             request.auth != null &&
+             data.email == request.auth.token.email;
     }
 
     // Validar campos requeridos para producto
@@ -158,6 +160,7 @@ service cloud.firestore {
       // ----------------------------------------
       allow create: if collectionName == 'users' &&
         isAuthenticated() &&
+        docId == request.auth.uid &&
         isValidUser() &&
         noPrivilegeEscalation();
 
@@ -177,14 +180,9 @@ service cloud.firestore {
 
       // ----------------------------------------
       // PEDIDOS (Orders):
-      // - Usuarios autenticados pueden CREAR pedidos
-      // - Solo admin puede ACTUALIZAR o ELIMINAR pedidos
+      // - Solo admin puede escribir pedidos (creación via servidor)
       // ----------------------------------------
-      allow create: if collectionName == 'orders' &&
-        isAuthenticated() &&
-        isValidOrder();
-
-      allow update, delete: if collectionName == 'orders' && isAdmin();
+      allow write: if collectionName == 'orders' && isAdmin();
     }
 
     // ========================================
@@ -231,4 +229,3 @@ service cloud.firestore {
 //    - Implementar límites adicionales en Cloud Functions
 //
 // ============================================
-

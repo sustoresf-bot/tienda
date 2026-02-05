@@ -23,9 +23,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Payment service not configured' });
     }
 
-    // LOG DE SEGURIDAD PARA DEBUG (Solo mostramos el inicio del token)
-    console.log('Token prefix:', process.env.MP_ACCESS_TOKEN.substring(0, 15) + '...');
-
     // Configuración del cliente MP
     const client = new MercadoPagoConfig({
         accessToken: process.env.MP_ACCESS_TOKEN,
@@ -58,13 +55,7 @@ export default async function handler(req, res) {
                 delete paymentBody.issuer_id;
             }
 
-            console.log('Enviando pago a MP:', JSON.stringify(paymentBody, null, 2));
             const paymentResponse = await payment.create({ body: paymentBody });
-            console.log('Respuesta de MP:', JSON.stringify({
-                status: paymentResponse.status,
-                status_detail: paymentResponse.status_detail,
-                id: paymentResponse.id
-            }));
 
             return res.status(200).json({
                 status: paymentResponse.status,

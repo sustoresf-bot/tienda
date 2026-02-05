@@ -1178,9 +1178,6 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
 
 // --- APLICACIÓN PRINCIPAL ---
 function App() {
-    // Versión del Sistema para Auto-Updates
-    const APP_VERSION = '1.0.0';
-
     // --- GESTIÓN DE ESTADO (EXPANDIDA) ---
 
     // Navegación y UI
@@ -1899,9 +1896,25 @@ function App() {
         initializeAuth();
 
         // Listener de Auth State
-        return onAuthStateChanged(auth, (user) => {
+        return onAuthStateChanged(auth, async (user) => {
             setSystemUser(user);
-            // Delay reducido para transiciones más rápidas
+
+            if (user && !user.isAnonymous) {
+                try {
+                    const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+                    const snap = await getDoc(userDocRef);
+                    if (snap.exists()) {
+                        setCurrentUser({ id: snap.id, ...snap.data() });
+                    } else {
+                        setCurrentUser(null);
+                    }
+                } catch {
+                    setCurrentUser(null);
+                }
+            } else {
+                setCurrentUser(null);
+            }
+
             setTimeout(() => setIsLoading(false), 300);
         });
     }, []);
@@ -2033,8 +2046,12 @@ function App() {
     useEffect(() => {
         if (!systemUser) return;
 
-        const unsubscribeFunctions = [
-            // Productos
+        const isAuthenticatedUser = systemUser && !systemUser.isAnonymous;
+        const isAdminUser = currentUser?.role === 'admin';
+
+        const unsubscribeFunctions = [];
+
+        unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), (snapshot) => {
                 const productsData = snapshot.docs.map(d => {
                     const data = d.data();
@@ -2046,176 +2063,124 @@ function App() {
                 console.error("Error fetching products:", error);
                 if (error.code === 'permission-denied' || error.message.includes('permission')) {
                     showToast("Error de permisos. Reiniciando sesión...", "warning");
-                    // Intentar recuperar sesión
                     setTimeout(() => {
                         auth.signOut().then(() => window.location.reload());
                     }, 2000);
                 } else {
                     showToast("Error al cargar productos: " + error.message, "error");
                 }
-            }),
+            })
+        );
 
-            // Pedidos (Ordenados por fecha descendente)
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), snapshot => {
-                const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                setOrders(ordersData.sort((a, b) => new Date(b.date) - new Date(a.date)));
-            }),
-
-            // Usuarios
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
-                setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Cupones
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), snapshot => {
-                setCoupons(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Proveedores
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => {
-                setSuppliers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Gastos
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => {
-                setExpenses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Compras
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
-                setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Inversiones
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), snapshot => {
-                setInvestments(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
-
-            // Carritos en Vivo (Solo filtramos los que tienen items)
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'carts'), snapshot => {
-                const activeCarts = snapshot.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(c => c.items && c.items.length > 0);
-                setLiveCarts(activeCarts);
-            }),
-
-            // Promos
+        unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), snapshot => {
                 setPromos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            }),
+            })
+        );
 
-            // SEO & Global Effects
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), snapshot => {
+                setCoupons(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            })
+        );
+
+        unsubscribeFunctions.push(
             onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), (snap) => {
                 if (snap.exists()) {
                     const data = snap.data();
-                    // Actualizar SEO
-                    if (data.seoTitle) document.title = data.seoTitle;
+                    const team = data.team || defaultSettings.team;
+                    const teamRoles = (data.teamRoles && typeof data.teamRoles === 'object')
+                        ? data.teamRoles
+                        : Object.fromEntries((team || []).filter(m => m?.email && m?.role).map(m => [m.email.trim().toLowerCase(), m.role]));
 
-                    // Actualizar Meta Description
-                    let metaDesc = document.querySelector('meta[name="description"]');
-                    if (!metaDesc) {
-                        metaDesc = document.createElement('meta');
-                        metaDesc.name = "description";
-                        document.head.appendChild(metaDesc);
-                    }
-                    metaDesc.content = data.seoDescription || '';
-
-                    // Actualizar Meta Keywords
-                    let metaKey = document.querySelector('meta[name="keywords"]');
-                    if (!metaKey) {
-                        metaKey = document.createElement('meta');
-                        metaKey.name = "keywords";
-                        document.head.appendChild(metaKey);
-                    }
-                    metaKey.content = data.seoKeywords || '';
-                }
-            }),
-
-            // Configuración Global (con Auto-Migración)
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), async (snapshot) => {
-                // 1. Buscar si existe el documento 'config'
-                const configDoc = snapshot.docs.find(d => d.id === 'config');
-
-                // 2. Buscar si existen documentos "viejos" (Legacy)
-                const legacyDocs = snapshot.docs.filter(d => d.id !== 'config');
-
-                if (legacyDocs.length > 0 && !configDoc) {
-                    // CASO A: Solo existe legacy. Migrar TODO a 'config'.
-                    const oldData = legacyDocs[0].data();
-                    console.log("Migrating legacy settings to config...", oldData);
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), oldData);
-                    // Opcional: Borrar el viejo para limpiar (o dejarlo por seguridad un tiempo)
-                    // await deleteDoc(legacyDocs[0].ref);
-                }
-                else if (legacyDocs.length > 0 && configDoc) {
-                    // CASO B: Existen ambos. Verificar si necesitamos recuperar categorías del viejo.
-                    const oldData = legacyDocs[0].data();
-                    const newData = configDoc.data();
-
-                    // Si el viejo tiene categorías custom y el nuevo tiene las default, migrar categorías
-                    const oldCats = oldData.categories || [];
-                    const newCats = newData.categories || [];
-
-                    // Heurística simple: Si el viejo tiene más categorías o diferentes, asumimos que vale la pena fusionar
-                    // O simplemente si el usuario dice "se borraron", forzamos la copia de categorías del viejo al nuevo.
-                    if (oldCats.length > 0 && JSON.stringify(oldCats) !== JSON.stringify(newCats)) {
-                        // Solo migramos categorías si parecen perdidas (esto corre en cliente, ojo con bucles)
-                        // Para evitar bucles infinitos, comparamos antes de escribir.
-
-                        // NOTA: Para no complicar, solo leemos del 'config' para el Estado, 
-                        // pero si detectamos legacy, tratamos de consolidar UNA VEZ.
-                    }
-                }
-
-                // 3. Fuente de Verdad para el Estado: SIEMPRE 'config' (o el legacy si config aun no esta listo)
-                // Preferimos 'config'. Si no existe, usamos el legacy temporalmente.
-                const effectiveDoc = configDoc || legacyDocs[0];
-
-                if (effectiveDoc) {
-                    const data = effectiveDoc.data();
                     const mergedSettings = {
                         ...defaultSettings,
                         ...data,
-                        team: data.team || defaultSettings.team,
+                        team,
+                        teamRoles,
                         categories: data.categories || defaultSettings.categories
                     };
 
-                    // Si estamos leyendo de un legacy, forzamos la escritura en 'config' para la próxima
-                    if (effectiveDoc.id !== 'config') {
-                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), mergedSettings);
-                    }
-
                     setSettings(mergedSettings);
-                    setSettingsLoaded(true); // Marcar que los settings ya se cargaron
+                    setSettingsLoaded(true);
                     setAboutText(data.aboutUsText || defaultSettings.aboutUsText);
-
-                    // Si ya migramos y leímos exitosamente, podríamos borrar el legacy para evitar fantasmas
-                    if (configDoc && legacyDocs.length > 0) {
-                        // MIGRACIÓN DE CATEGORÍAS ESPECÍFICA (Rescate)
-                        const legacyData = legacyDocs[0].data();
-                        if (legacyData.categories && legacyData.categories.length > 0) {
-                            // Si el config tiene las default y el legacy tiene custom, pisar config
-                            const isDefault = JSON.stringify(mergedSettings.categories) === JSON.stringify(defaultSettings.categories);
-                            const isLegacyCustom = JSON.stringify(legacyData.categories) !== JSON.stringify(defaultSettings.categories);
-
-                            if (isDefault && isLegacyCustom) {
-                                console.log("Restoring categories from legacy...");
-                                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), {
-                                    categories: legacyData.categories
-                                });
-                            }
-                        }
-                    }
                 } else {
-                    // Nada existe, crear default en config
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings);
+                    setSettings(defaultSettings);
+                    setSettingsLoaded(true);
+                    setAboutText(defaultSettings.aboutUsText);
+                    if (isAdminUser) {
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings).catch(() => { });
+                    }
                 }
             })
-        ];
+        );
 
-        // Limpiar suscripciones al desmontar
+        if (isAuthenticatedUser) {
+            const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+            const ordersQuery = isAdminUser
+                ? query(ordersRef, orderBy('date', 'desc'), limit(200))
+                : query(ordersRef, where('customerId', '==', systemUser.uid), orderBy('date', 'desc'), limit(50));
+
+            unsubscribeFunctions.push(
+                onSnapshot(ordersQuery, (snapshot) => {
+                    const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setOrders(ordersData);
+                })
+            );
+        } else {
+            setOrders([]);
+        }
+
+        if (isAdminUser) {
+            unsubscribeFunctions.push(
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
+                    setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                })
+            );
+
+            unsubscribeFunctions.push(
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => {
+                    setSuppliers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                })
+            );
+
+            unsubscribeFunctions.push(
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => {
+                    setExpenses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                })
+            );
+
+            unsubscribeFunctions.push(
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
+                    setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                })
+            );
+
+            unsubscribeFunctions.push(
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), snapshot => {
+                    setInvestments(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                })
+            );
+
+            unsubscribeFunctions.push(
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'carts'), snapshot => {
+                    const activeCarts = snapshot.docs
+                        .map(d => ({ id: d.id, ...d.data() }))
+                        .filter(c => c.items && c.items.length > 0);
+                    setLiveCarts(activeCarts);
+                })
+            );
+        } else {
+            setUsers([]);
+            setSuppliers([]);
+            setExpenses([]);
+            setPurchases([]);
+            setInvestments([]);
+            setLiveCarts([]);
+        }
+
         return () => unsubscribeFunctions.forEach(unsub => unsub());
-    }, [systemUser]);
+    }, [systemUser, currentUser?.role]);
 
     // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
     // Elimina automáticamente productos que ya no existen o no tienen stock
@@ -2319,12 +2284,21 @@ function App() {
         // Auto-Save Settings Logic (Debounced)
         const autoSaveTimer = setTimeout(async () => {
             try {
+                if (currentUser?.role !== 'admin') {
+                    lastSavedSettingsRef.current = currentSettingsStr;
+                    return;
+                }
                 const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                const team = settings?.team || defaultSettings.team;
+                const teamRoles = (settings?.teamRoles && typeof settings.teamRoles === 'object')
+                    ? settings.teamRoles
+                    : Object.fromEntries((team || []).filter(m => m?.email && m?.role).map(m => [m.email.trim().toLowerCase(), m.role]));
+                const settingsToSave = { ...settings, teamRoles };
                 // Use merge true to be safe, though we usually have the full object
-                await setDoc(settingsRef, settings, { merge: true });
+                await setDoc(settingsRef, settingsToSave, { merge: true });
 
                 // Update the ref to match what we just saved
-                lastSavedSettingsRef.current = JSON.stringify(settings);
+                lastSavedSettingsRef.current = JSON.stringify(settingsToSave);
 
                 console.log("[AutoSave] Settings saved successfully.");
             } catch (error) {
@@ -2439,266 +2413,147 @@ function App() {
         console.log('[SEO & AutoSave] Updated and Autosaved.');
 
         return () => clearTimeout(autoSaveTimer);
-    }, [settings, settingsLoaded]);
+    }, [settings, settingsLoaded, currentUser?.role]);
 
     // ⚠️ [PAUSA POR SEGURIDAD] - El código continúa con la lógica expandida. Escribe "continuar" para la siguiente parte.
     // --- LÓGICA DE NEGOCIO Y FUNCIONES PRINCIPALES ---
 
-    // 1. Lógica de Autenticación (Registro y Login Detallado) - SEGURIDAD MEJORADA
+    // 1. Lógica de Autenticación (Firebase Auth + Perfil en Firestore)
     const handleAuth = async (isRegister) => {
         setIsLoading(true);
         try {
-            const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-            const normalizedEmail = authData.email.trim().toLowerCase();
+            const usersPath = ['artifacts', appId, 'public', 'data', 'users'];
 
-            // === SEGURIDAD: Rate Limiting ===
-            if (!isRegister) {
-                const canAttempt = SecurityManager.canAttemptLogin(normalizedEmail);
-                if (!canAttempt.allowed) {
-                    throw new Error(`Demasiados intentos fallidos. Intenta de nuevo en ${canAttempt.remainingTime} segundos.`);
-                }
-            }
+            const fetchProfile = async (uid) => {
+                const snap = await getDoc(doc(db, ...usersPath, uid));
+                return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+            };
+
+            const setupProfile = async (firebaseUser) => {
+                const token = await firebaseUser.getIdToken();
+                const res = await fetch('/api/auth/setup-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: authData.name,
+                        username: authData.username,
+                        dni: authData.dni,
+                        phone: authData.phone
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Error al crear el perfil');
+            };
+
+            const claimLegacyProfile = async (firebaseUser) => {
+                const token = await firebaseUser.getIdToken();
+                await fetch('/api/auth/claim-legacy-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({})
+                });
+            };
 
             if (isRegister) {
-                // Validaciones explícitas para Registro
-                if (!authData.name || authData.name.length < 3) throw new Error("El nombre es muy corto.");
-                if (!authData.username) throw new Error("Debes elegir un nombre de usuario.");
-                if (!authData.email || !authData.email.includes('@')) throw new Error("Email inválido.");
+                const normalizedEmail = authData.email.trim().toLowerCase();
+                if (!authData.name || authData.name.trim().length < 3) throw new Error("El nombre es muy corto.");
+                if (!authData.username || authData.username.trim().length < 3) throw new Error("Debes elegir un nombre de usuario.");
+                if (!normalizedEmail || !normalizedEmail.includes('@')) throw new Error("Email inválido.");
                 if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
-
-                // DNI y Teléfono SIEMPRE obligatorios (necesarios para checkout)
                 if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dígitos).");
                 if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dígitos).");
 
-                // Verificar duplicados (Email) - Buscar por emailLower para case-insensitive
-                const allUsersSnap = await getDocs(usersRef);
-                const existingEmailUser = allUsersSnap.docs.find(doc => {
-                    const userData = doc.data();
-                    const existingEmail = (userData.emailLower || userData.email || '').toLowerCase();
-                    return existingEmail === normalizedEmail;
-                });
-                if (existingEmailUser) throw new Error("Este correo electrónico ya está registrado.");
+                const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, authData.password);
+                try {
+                    await setupProfile(userCredential.user);
+                } catch (e) {
+                    try { await userCredential.user.delete(); } catch { }
+                    throw e;
+                }
 
-                // Verificar duplicados (Usuario) - Case Insensitive Check
-                const normalizedUsername = authData.username.trim().toLowerCase();
-                const existingUsernameUser = allUsersSnap.docs.find(doc => {
-                    const userData = doc.data();
-                    const existingUsername = (userData.usernameLower || userData.username || '').toLowerCase();
-                    return existingUsername === normalizedUsername;
-                });
-                if (existingUsernameUser) throw new Error("El nombre de usuario ya está en uso.");
+                const profile = await fetchProfile(userCredential.user.uid);
+                if (!profile) throw new Error('No se pudo cargar el perfil');
 
-                // === SEGURIDAD: Hash de contraseña ===
-                const hashedPassword = await SecurityManager.hashPassword(authData.password);
-
-                // Creación del usuario con contraseña hasheada
-                const newUser = {
-                    name: authData.name,
-                    email: normalizedEmail,
-                    emailLower: normalizedEmail,
-                    username: authData.username,
-                    usernameLower: normalizedUsername,
-                    password: hashedPassword, // Contraseña hasheada
-                    dni: authData.dni || '',
-                    phone: authData.phone || '',
-                    role: 'user',
-                    joinDate: new Date().toISOString(),
-                    favorites: [],
-                    ordersCount: 0,
-                    lastLogin: new Date().toISOString()
-                };
-
-                const docRef = await addDoc(usersRef, newUser);
-
-                // === SEGURIDAD: Generar token de sesión ===
-                SecurityManager.generateSessionToken(docRef.id);
-
-                // No almacenar contraseña en estado del cliente
-                const safeUserData = { ...newUser, id: docRef.id };
-                delete safeUserData.password;
-
-                setCurrentUser(safeUserData);
+                setCurrentUser(profile);
                 showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
-
             } else {
-                // Validaciones para Login
-                if (!authData.email) throw new Error("Ingresa tu email o usuario.");
+                const input = authData.email.trim();
+                if (!input) throw new Error("Ingresa tu email o usuario.");
                 if (!authData.password) throw new Error("Ingresa tu contraseña.");
 
-                const normalizedInput = authData.email.trim();
-                let matchedDoc = null;
-                let isFirebaseAuthUser = false;
+                let emailToUse = input.toLowerCase();
+                let authUser = null;
 
-                // 0. BYPASS ADMIN DE EMERGENCIA
-                const ADMIN_EMAIL = 'lautarocorazza63@gmail.com';
-                const ADMIN_PASS = 'lautaros';
-                if (normalizedInput.toLowerCase() === ADMIN_EMAIL && authData.password === ADMIN_PASS) {
-                    // Buscar o crear el documento admin en DB
-                    const allUsersSnap = await getDocs(usersRef);
-                    matchedDoc = allUsersSnap.docs.find(d => (d.data().email || '').toLowerCase() === ADMIN_EMAIL);
-
-                    if (!matchedDoc) {
-                        // Crear documento admin si no existe
-                        const adminData = {
-                            email: ADMIN_EMAIL,
-                            emailLower: ADMIN_EMAIL,
-                            name: 'Lautaro Corazza',
-                            phone: '3425906630',
-                            dni: '00000000',
-                            role: 'admin',
-                            createdAt: new Date().toISOString()
-                        };
-                        const newAdminRef = await addDoc(usersRef, adminData);
-                        matchedDoc = await getDoc(newAdminRef);
-                    }
-
-                    const adminUserData = { ...matchedDoc.data(), id: matchedDoc.id, role: 'admin' };
-                    setCurrentUser(adminUserData);
-                    showToast(`¡Bienvenido Admin!`, "success");
-                    setView('store');
-                    setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
-                    setIsLoading(false);
-                    return; // Salir de la función, login exitoso
-                }
-
-                // 1. INTENTO: Firebase Auth Nativo (Solo si parece un email)
-                if (normalizedInput.includes('@')) {
-                    try {
-                        const userCredential = await signInWithEmailAndPassword(auth, normalizedInput, authData.password);
-                        const authUid = userCredential.user.uid;
-
-                        // Buscar documento de usuario correspondiente
-                        // Intenta buscar por ID directo (lo ideal)
-                        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', authUid);
-                        const userDocSnap = await getDoc(userDocRef);
-
-                        if (userDocSnap.exists()) {
-                            matchedDoc = userDocSnap;
-                            isFirebaseAuthUser = true;
-                        } else {
-                            // Si no existe perfil en DB pero sí en Auth, buscamos en la colección por email por si acaso tiene otro ID
-                            // O creamos uno nuevo (pero mejor solo buscar por ahora)
-                            const allUsersSnap = await getDocs(usersRef);
-                            matchedDoc = allUsersSnap.docs.find(d => d.data().email?.toLowerCase() === normalizedInput.toLowerCase());
-                        }
-
-                        if (!matchedDoc && isFirebaseAuthUser) {
-                            // Caso raro: Auth OK, pero sin datos en DB. Usamos datos básicos.
-                            // Creamos un objeto "fake doc" para que pase la lógica siguiente o lo manejamos aquí
-                            // Para simplificar, si Auth pasó, es válido.
-                            const basicData = {
-                                id: authUid,
-                                email: normalizedInput,
-                                name: userCredential.user.displayName || 'Usuario',
-                                role: 'user'
-                            };
-                            // Guardamos/Restauramos perfil básico
-                            await setDoc(userDocRef, basicData, { merge: true });
-                            matchedDoc = await getDoc(userDocRef);
-                        }
-
-                    } catch (e) {
-                        console.error("DEBUG: Auth Nativo Error:", e.code);
-                        if (e.code === 'auth/wrong-password') {
-                            throw new Error("La contraseña es incorrecta (Sistema Google).");
-                        }
-                        if (e.code === 'auth/too-many-requests') {
-                            throw new Error("Demasiados intentos fallidos. Intenta más tarde o restablece tu contraseña.");
-                        }
-                        // Si es user-not-found, seguimos al manual
-                    }
-                }
-
-                // 2. INTENTO: Login Manual (Búsqueda en Colección) - Si Auth falló o no se usó
-                if (!matchedDoc) {
-                    const allUsersSnap = await getDocs(usersRef);
-                    // Buscar usuario por email o username
-                    matchedDoc = allUsersSnap.docs.find(doc => {
-                        const userData = doc.data();
-                        const userEmail = (userData.emailLower || userData.email || '').toLowerCase();
-                        const userUsername = (userData.usernameLower || userData.username || '').toLowerCase();
-                        return userEmail === normalizedInput.toLowerCase() || userUsername === normalizedInput.toLowerCase();
+                if (!input.includes('@')) {
+                    const res = await fetch('/api/auth/username-lookup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: input })
                     });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error("Usuario no encontrado.");
+                    emailToUse = String(data.email || '').toLowerCase();
                 }
 
-                if (!matchedDoc) {
-                    // DIAGNÓSTICO INTELIGENTE:
-                    // Si llegamos a que no hay "matchedDoc" válido para login manual,
-                    // pero quizás el documento EXISTE en la DB y solo le faltan credenciales (password) para el login manual
-                    // O el Auth falló con user-not-found.
-
-                    // Buscamos si existe el email en DB sin importar password
-                    const allUsers = await getDocs(usersRef);
-                    const existsInDB = allUsers.docs.find(d => (d.data().email || '').toLowerCase() === normalizedInput.toLowerCase());
-
-                    if (existsInDB) {
-                        // El usuario existe en DB, pero falló Auth Nativo (user-not-found) y falló validación Manual (probablemente sin password en DB)
-                        throw new Error("Tu cuenta existe en nuestra base de datos pero no tiene credenciales de acceso activas (posiblemente por migración de seguridad). Por favor ve a 'Registrate gratis' y crea la cuenta de nuevo con este MISMO email para reactivarla sin perder tus datos.");
-                    }
-
-                    SecurityManager.recordFailedAttempt(normalizedInput);
-                    throw new Error("No encontramos una cuenta con esos datos. Verifica o regístrate.");
-                }
-
-                const userData = matchedDoc.data();
-                const userId = matchedDoc.id;
-
-                // === SEGURIDAD: Verificar contraseña hasheada ===
-                let passwordValid = false;
-
-                // Compatibilidad: verificar si la contraseña está hasheada o en texto plano
-                if (userData.password && userData.password.length === 64) {
-                    // Contraseña hasheada (SHA-256 = 64 caracteres hex)
-                    passwordValid = await SecurityManager.verifyPassword(authData.password, userData.password);
-                } else {
-                    // Contraseña en texto plano (legacy) - migrar a hash
-                    passwordValid = userData.password === authData.password;
-
-                    if (passwordValid) {
-                        // Migrar a contraseña hasheada
-                        const hashedPassword = await SecurityManager.hashPassword(authData.password);
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
-                            password: hashedPassword
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, authData.password);
+                    authUser = userCredential.user;
+                } catch (e) {
+                    if (e.code === 'auth/user-not-found') {
+                        const res = await fetch('/api/auth/legacy-login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ identifier: input, password: authData.password })
                         });
-                        console.log('[Security] Password migrated to hash for user:', userId);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'No se pudo recuperar tu cuenta legacy');
+                        const userCredential = await signInWithCustomToken(auth, data.token);
+                        authUser = userCredential.user;
+                    } else if (e.code === 'auth/wrong-password') {
+                        throw new Error("La contraseña es incorrecta.");
+                    } else if (e.code === 'auth/too-many-requests') {
+                        throw new Error("Demasiados intentos fallidos. Intenta más tarde o restablece tu contraseña.");
+                    } else {
+                        throw e;
                     }
                 }
 
-                if (!passwordValid) {
-                    SecurityManager.recordFailedAttempt(normalizedInput);
-                    throw new Error("Credenciales incorrectas. Verifica tus datos.");
+                if (!authUser) throw new Error('Error al iniciar sesión');
+
+                let profile = await fetchProfile(authUser.uid);
+                if (!profile) {
+                    await claimLegacyProfile(authUser);
+                    profile = await fetchProfile(authUser.uid);
                 }
 
-                // === SEGURIDAD: Login exitoso ===
-                SecurityManager.clearAttempts(normalizedInput);
-                SecurityManager.generateSessionToken(userId);
-
-                // Actualizar último login
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
-                    lastLogin: new Date().toISOString()
-                });
-
-                // No almacenar contraseña en estado del cliente
-                const safeUserData = { ...userData, id: userId };
-                delete safeUserData.password;
-
-                // Estampar verificación de admin
-                if (safeUserData.role === 'admin') {
-                    safeUserData._adminVerified = true;
+                if (!profile) {
+                    const minimal = {
+                        name: authUser.displayName || 'Usuario',
+                        email: authUser.email || emailToUse,
+                        emailLower: (authUser.email || emailToUse).toLowerCase(),
+                        role: 'user',
+                        createdAt: new Date().toISOString()
+                    };
+                    await setDoc(doc(db, ...usersPath, authUser.uid), minimal, { merge: true });
+                    profile = await fetchProfile(authUser.uid);
                 }
 
-                setCurrentUser(safeUserData);
-                showToast(`¡Hola de nuevo, ${userData.name || 'Usuario'}!`, "success");
+                await updateDoc(doc(db, ...usersPath, authUser.uid), { lastLogin: new Date().toISOString() }).catch(() => { });
+                setCurrentUser(profile);
+                showToast(`¡Hola de nuevo, ${profile?.name || 'Usuario'}!`, "success");
             }
 
-            // Redirigir a tienda tras éxito
             setView('store');
-            // Limpiar formulario
             setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
-
         } catch (error) {
             console.error("Error de autenticación:", error);
-            showToast(error.message, "error");
+            showToast(error.message || 'Error de autenticación', "error");
         } finally {
             setIsLoading(false);
         }
@@ -2882,31 +2737,7 @@ function App() {
             return showToast(`El monto mínimo para este cupón es $${coupon.minPurchase}.`, "warning");
         }
 
-        // VALIDACIÓN RIGUROSA: Un uso por DNI
-        // Buscamos en 'orders' si alguna orden de este DNI usó este código de cupón
-        if (currentUser && currentUser.dni) {
-            try {
-                // Nota: Query compleja. Requiere índice compuesto posiblemente.
-                // Si falla index, usar catch y avisar o filtrar en cliente.
-                // query(orders, where("customer.dni", "==", dni), where("discountCode", "==", code))
-                const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-                const qDniCoupon = query(ordersRef,
-                    where("customer.dni", "==", currentUser.dni),
-                    where("discountCode", "==", coupon.code)
-                );
-                const matchSnap = await getDocs(qDniCoupon);
-
-                if (!matchSnap.empty) {
-                    return showToast("Ya utilizaste este cupón en una compra anterior (Verif. por DNI).", "error");
-                }
-
-            } catch (err) {
-                console.warn("Error validando cupón por DNI:", err);
-                // Fallback seguro: Si no podemos validar historial, permitimos (o bloqueamos según politica).
-                // Bloqueamos por precaución.
-                // return showToast("Error verificando historial de cupones.", "error");
-            }
-        } else {
+        if (!currentUser?.dni) {
             return showToast("Debes actualizar tu DNI en el perfil para usar cupones.", "warning");
         }
 
@@ -2977,111 +2808,46 @@ function App() {
         showToast("Procesando tu pedido, por favor espera...", "info");
 
         try {
-            const orderId = `ORD-${Date.now().toString().slice(-6)}`; // Generar ID único corto
-
-            const newOrder = {
-                orderId: orderId,
-                userId: currentUser.id,
-                customer: {
-                    name: currentUser.name || 'Usuario',
-                    email: currentUser.email || '',
-                    phone: currentUser.phone || '-',
-                    dni: currentUser.dni || '-'
-                },
-                items: cart.map(i => ({
-                    productId: i.product?.id || 'unknown',
-                    title: i.product?.name || 'Producto',
-                    quantity: i.quantity || 1,
-                    unit_price: calculateItemPrice(i.product?.basePrice, i.product?.discount),
-                    image: i.product?.image || ''
-                })),
-                subtotal: cartSubtotal,
-                discount: discountAmount,
-                total: finalTotal,
-                discountCode: appliedCoupon ? appliedCoupon.code : null,
-                status: 'Pendiente',
-                date: new Date().toISOString(),
-                shippingMethod: checkoutData.shippingMethod,
-                shippingFee: shippingFee,
-                shippingAddress: checkoutData.shippingMethod === 'Delivery' ? `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})` : 'Retiro en Local',
-                paymentMethod: checkoutData.paymentChoice,
-                lastUpdate: new Date().toISOString()
-            };
-
-            // 1. Guardar Pedido
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
-
-            // 2. Actualizar Datos de Usuario (Guardar última dirección) - Usamos setDoc con merge para crear si no existe
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
-                address: checkoutData.address,
-                city: checkoutData.city,
-                province: checkoutData.province,
-                zipCode: checkoutData.zipCode,
-                ordersCount: increment(1)
-            }, { merge: true });
-
-            // 3. Limpiar Carrito "En Vivo" en DB
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
-                userId: currentUser.id,
-                items: []
-            });
-
-            // 4. Actualizar Stock y Uso de Cupones (Atomic Batch)
-            const batch = writeBatch(db);
-
-            // Descontar Stock (Maneja promos y productos normales)
-            cart.forEach(item => {
-                if (item.product.isPromo && item.product.items) {
-                    // PROMO: Descontar stock de cada componente + incrementar ventas
-                    item.product.items.forEach(promoItem => {
-                        const totalDecrement = promoItem.quantity * item.quantity;
-                        const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', promoItem.productId);
-                        batch.update(productRef, {
-                            stock: increment(-totalDecrement),
-                            salesCount: increment(totalDecrement) // Incrementar contador de ventas
-                        });
-                    });
-                } else {
-                    // Producto Normal
-                    const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.product.id);
-                    batch.update(productRef, {
-                        stock: increment(-item.quantity),
-                        salesCount: increment(item.quantity) // Incrementar contador de ventas
-                    });
-                }
-            });
-
-            // Registrar uso de cupón
-            if (appliedCoupon) {
-                const couponRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
-                // Leemos el cupón actual para asegurar array
-                const couponDoc = await getDoc(couponRef);
-                if (couponDoc.exists()) {
-                    const currentUses = couponDoc.data().usedBy || [];
-                    batch.update(couponRef, { usedBy: [...currentUses, currentUser.id] });
-                }
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                setView('login');
+                throw new Error('Por favor inicia sesión para finalizar la compra.');
             }
 
-            await batch.commit();
+            if (checkoutData.paymentChoice === 'Tarjeta') {
+                throw new Error('Para pagar con tarjeta usá el formulario de Mercado Pago.');
+            }
 
-            // 5. Finalización
-
-            // Disparar email en segundo plano (Fire and Forget)
-            const discountInfo = appliedCoupon ? {
-                percentage: appliedCoupon.value,
-                amount: discountAmount
-            } : null;
-
-            sendOrderConfirmationEmail(newOrder, discountInfo);
+            const token = await auth.currentUser.getIdToken();
+            const res = await fetch('/api/orders/confirm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    paymentMethod: checkoutData.paymentChoice,
+                    shippingMethod: checkoutData.shippingMethod,
+                    shipping: {
+                        address: checkoutData.address,
+                        city: checkoutData.city,
+                        province: checkoutData.province,
+                        zipCode: checkoutData.zipCode,
+                        fee: shippingFee,
+                    },
+                    couponCode: appliedCoupon?.code || null,
+                    cart: cart.map(i => ({ productId: i.product?.id, quantity: i.quantity })),
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Error al procesar el pedido');
 
             setCart([]);
             setAppliedCoupon(null);
             setView('profile');
-            showToast("¡Pedido realizado con éxito! Te hemos enviado un email con el detalle.", "success");
-
+            showToast("¡Pedido realizado con éxito! Te enviamos un email con el detalle.", "success");
         } catch (e) {
             console.error("Error al procesar pedido:", e);
-            showToast("Ocurrió un error al procesar el pedido. Intenta nuevamente.", "error");
+            showToast(e.message || "Ocurrió un error al procesar el pedido.", "error");
         } finally {
             setIsProcessingOrder(false);
         }
@@ -3298,112 +3064,42 @@ function App() {
     // Confirmar orden después de pago exitoso con MP
     const confirmOrderAfterPayment = async (mpPaymentId) => {
         try {
-            const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-
-            const newOrder = {
-                orderId,
-                userId: currentUser.id,
-                customer: {
-                    name: currentUser.name || 'Usuario',
-                    email: currentUser.email || '',
-                    phone: currentUser.phone || '-',
-                    dni: currentUser.dni || '-',
-                },
-                items: cart.map(i => ({
-                    productId: i.product?.id || 'unknown',
-                    title: i.product?.name || 'Producto',
-                    quantity: i.quantity || 1,
-                    unit_price: calculateItemPrice(i.product?.basePrice, i.product?.discount),
-                    image: i.product?.image || '',
-                })),
-                subtotal: cartSubtotal,
-                discount: discountAmount,
-                total: finalTotal,
-                discountCode: appliedCoupon?.code || null,
-                status: 'Realizado', // Directamente como REALIZADO (pago confirmado)
-                date: new Date().toISOString(),
-                shippingMethod: checkoutData.shippingMethod,
-                shippingFee,
-                shippingAddress: checkoutData.shippingMethod === 'Delivery'
-                    ? `${checkoutData.address}, ${checkoutData.city}, ${checkoutData.province} (CP: ${checkoutData.zipCode})`
-                    : 'Retiro en Local',
-                paymentMethod: 'Tarjeta',
-                mpPaymentId, // ID del pago en Mercado Pago
-                lastUpdate: new Date().toISOString(),
-            };
-
-            // 1. Guardar Pedido
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
-
-            // 2. Actualizar Datos de Usuario (usar setDoc con merge para crear si no existe)
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id), {
-                address: checkoutData.address || '',
-                city: checkoutData.city || '',
-                province: checkoutData.province || '',
-                zipCode: checkoutData.zipCode || '',
-                ordersCount: increment(1),
-                lastOrderDate: new Date().toISOString(),
-            }, { merge: true });
-
-            // 3. Limpiar Carrito en DB
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
-                userId: currentUser.id,
-                items: [],
-            });
-
-            // 4. Actualizar Stock (Batch)
-            const batch = writeBatch(db);
-
-            cart.forEach(item => {
-                if (item.product.isPromo && item.product.items) {
-                    item.product.items.forEach(promoItem => {
-                        const totalDecrement = promoItem.quantity * item.quantity;
-                        const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', promoItem.productId);
-                        batch.update(productRef, {
-                            stock: increment(-totalDecrement),
-                            salesCount: increment(totalDecrement),
-                        });
-                    });
-                } else {
-                    const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.product.id);
-                    batch.update(productRef, {
-                        stock: increment(-item.quantity),
-                        salesCount: increment(item.quantity),
-                    });
-                }
-            });
-
-            // Registrar uso de cupón si se usó
-            if (appliedCoupon) {
-                const couponRef = doc(db, 'artifacts', appId, 'public', 'data', 'coupons', appliedCoupon.id);
-                const couponDoc = await getDoc(couponRef);
-                if (couponDoc.exists()) {
-                    const currentUses = couponDoc.data().usedBy || [];
-                    batch.update(couponRef, { usedBy: [...currentUses, currentUser.id] });
-                }
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                throw new Error('Sesión inválida. Reiniciá e intentá de nuevo.');
             }
 
-            await batch.commit();
+            const token = await auth.currentUser.getIdToken();
+            const res = await fetch('/api/orders/confirm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    paymentMethod: 'Tarjeta',
+                    mpPaymentId,
+                    shippingMethod: checkoutData.shippingMethod,
+                    shipping: {
+                        address: checkoutData.address,
+                        city: checkoutData.city,
+                        province: checkoutData.province,
+                        zipCode: checkoutData.zipCode,
+                        fee: shippingFee,
+                    },
+                    couponCode: appliedCoupon?.code || null,
+                    cart: cart.map(i => ({ productId: i.product?.id, quantity: i.quantity })),
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Error guardando el pedido');
 
-            // 5. Enviar email de confirmación
-            const discountInfo = appliedCoupon ? {
-                percentage: appliedCoupon.value,
-                amount: discountAmount,
-            } : null;
-
-            sendOrderConfirmationEmail(newOrder, discountInfo);
-
-            // 6. Limpiar estado local
             setCart([]);
             setAppliedCoupon(null);
             if (mpBrickController) {
-                try {
-                    mpBrickController.unmount();
-                } catch (e) { }
+                try { mpBrickController.unmount(); } catch (e) { }
             }
             setMpBrickController(null);
             setView('profile');
-
         } catch (error) {
             console.error('Error creating order after payment:', error);
             showToast('El pago fue exitoso pero hubo un error guardando el pedido. Contacta soporte.', 'warning');
@@ -5011,6 +4707,8 @@ function App() {
         const handleEditSubmit = async (formData) => {
             setIsSaving(true);
             try {
+                if (!auth.currentUser || auth.currentUser.isAnonymous) throw new Error('Sesión inválida');
+                const token = await auth.currentUser.getIdToken();
                 // 1. Actualización Crítica (Auth) vía API si cambió email o password
                 const authUpdate = {};
                 if (formData.email !== user.email) authUpdate.email = formData.email;
@@ -5019,7 +4717,7 @@ function App() {
                 if (Object.keys(authUpdate).length > 0) {
                     const res = await fetch('/api/admin/update-user', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ uid: user.id, ...authUpdate })
                     });
                     const result = await res.json();
@@ -5040,10 +4738,6 @@ function App() {
                 };
 
                 // Si cambió la contraseña, también actualizarla en Firestore
-                if (formData.newPassword && formData.newPassword.length >= 6) {
-                    firestoreUpdate.password = formData.newPassword;
-                }
-
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), firestoreUpdate);
 
                 // Si estamos editando nuestro propio usuario, actualizar el estado global inmediatamente
@@ -5069,9 +4763,11 @@ function App() {
             openConfirm("ELIMINAR USUARIO", `¿Estás seguro de eliminar a ${user.name}? Esta acción es irreversible y borrará su acceso y datos.`, async () => {
                 setIsSaving(true);
                 try {
+                    if (!auth.currentUser || auth.currentUser.isAnonymous) throw new Error('Sesión inválida');
+                    const token = await auth.currentUser.getIdToken();
                     const res = await fetch('/api/admin/delete-user', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ uid: user.id })
                     });
                     if (!res.ok) throw new Error("Error eliminando acceso de Auth");

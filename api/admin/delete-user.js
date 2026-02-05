@@ -1,32 +1,17 @@
-
-import admin from 'firebase-admin';
-
-// Inicialización Lazy de Firebase Admin
-if (!admin.apps.length) {
-    try {
-        const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-            ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-            : {
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-            };
-
-        if (serviceAccount.projectId) {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
-        } else {
-            admin.initializeApp();
-        }
-    } catch (error) {
-        console.error("Error inicializando Firebase Admin:", error.message);
-    }
-}
+import { getAdmin, verifyIdTokenFromRequest } from '../_firebaseAdmin.js';
+import { isAdminEmail } from '../_authz.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const decoded = await verifyIdTokenFromRequest(req);
+    if (!decoded?.email) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    if (!(await isAdminEmail(decoded.email))) {
+        return res.status(403).json({ error: 'Forbidden' });
     }
 
     const { uid } = req.body;
@@ -36,6 +21,7 @@ export default async function handler(req, res) {
     }
 
     try {
+        const admin = getAdmin();
         // Intentar eliminar de Firebase Auth
         try {
             await admin.auth().deleteUser(uid);
