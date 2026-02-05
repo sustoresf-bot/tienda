@@ -1224,6 +1224,19 @@ function App() {
     const [isProcessingOrder, setIsProcessingOrder] = useState(false);
     const [toasts, setToasts] = useState([]);
 
+    const [adminOrderAlarmMuted, setAdminOrderAlarmMuted] = useState(() => {
+        try {
+            return localStorage.getItem('sustore_admin_order_alarm_muted') === '1';
+        } catch (e) { return false; }
+    });
+
+    const orderAlarmContextRef = useRef(null);
+    const orderAlarmIntervalRef = useRef(null);
+    const orderAlarmActiveRef = useRef(false);
+    const orderAlarmToastShownRef = useRef(false);
+    const orderAlarmUnlockListenerActiveRef = useRef(false);
+    const lastOrdersSeenWriteRef = useRef(null);
+
 
     // Datos Principales
     const [products, setProducts] = useState([]);
@@ -1741,6 +1754,114 @@ function App() {
         return role === 'admin' || role === 'editor' || role === 'employee';
     };
 
+    const isAdminUser = currentUser?.role === 'admin';
+    const latestOrderIso = useMemo(() => {
+        if (!isAdminUser) return null;
+        const v = orders?.[0]?.date;
+        return typeof v === 'string' ? v : null;
+    }, [isAdminUser, orders]);
+    const ordersLastSeenIso = typeof settings?.ordersLastSeenIso === 'string' ? settings.ordersLastSeenIso : null;
+    const hasUnseenOrders = !!(latestOrderIso && (!ordersLastSeenIso || latestOrderIso > ordersLastSeenIso));
+
+    const toggleAdminOrderAlarmMuted = useCallback(() => {
+        setAdminOrderAlarmMuted(prev => {
+            const next = !prev;
+            try {
+                localStorage.setItem('sustore_admin_order_alarm_muted', next ? '1' : '0');
+            } catch (e) { }
+            return next;
+        });
+    }, []);
+
+    const stopOrderAlarm = useCallback(async () => {
+        orderAlarmActiveRef.current = false;
+        if (orderAlarmIntervalRef.current) {
+            clearInterval(orderAlarmIntervalRef.current);
+            orderAlarmIntervalRef.current = null;
+        }
+        const ctx = orderAlarmContextRef.current;
+        orderAlarmContextRef.current = null;
+        if (ctx) {
+            try {
+                await ctx.close();
+            } catch (e) { }
+        }
+    }, []);
+
+    const markOrdersSeen = useCallback(async (iso) => {
+        if (!isAdminUser) return;
+        const value = typeof iso === 'string' && iso ? iso : new Date().toISOString();
+        if (lastOrdersSeenWriteRef.current === value) return;
+        lastOrdersSeenWriteRef.current = value;
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), { ordersLastSeenIso: value });
+        } catch (e) { }
+    }, [isAdminUser]);
+
+    const startOrderAlarm = useCallback(async () => {
+        if (!isAdminUser) return;
+        if (adminOrderAlarmMuted) return;
+        if (orderAlarmActiveRef.current) return;
+
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) return;
+
+        const ctx = orderAlarmContextRef.current || new AudioContextCtor();
+        orderAlarmContextRef.current = ctx;
+
+        const scheduleBeep = (at) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.0001, at);
+            gain.gain.exponentialRampToValueAtTime(0.12, at + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.09);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(at);
+            osc.stop(at + 0.1);
+        };
+
+        const tick = () => {
+            const now = ctx.currentTime;
+            scheduleBeep(now);
+            scheduleBeep(now + 0.18);
+        };
+
+        try {
+            if (ctx.state === 'suspended') {
+                await ctx.resume();
+            }
+        } catch (e) { }
+
+        if (ctx.state !== 'running') {
+            if (!orderAlarmToastShownRef.current) {
+                showToast('Pedido nuevo: tocá/clic para habilitar sonido', 'warning');
+                orderAlarmToastShownRef.current = true;
+            }
+            if (!orderAlarmUnlockListenerActiveRef.current) {
+                orderAlarmUnlockListenerActiveRef.current = true;
+                window.addEventListener('pointerdown', async () => {
+                    orderAlarmUnlockListenerActiveRef.current = false;
+                    try {
+                        if (orderAlarmContextRef.current?.state === 'suspended') {
+                            await orderAlarmContextRef.current.resume();
+                        }
+                    } catch (e) { }
+                    if (hasUnseenOrders && !(view === 'admin' && adminTab === 'orders') && !adminOrderAlarmMuted) {
+                        startOrderAlarm();
+                    }
+                }, { once: true, capture: true });
+            }
+            return;
+        }
+
+        orderAlarmActiveRef.current = true;
+        tick();
+        orderAlarmIntervalRef.current = setInterval(tick, 2000);
+    }, [isAdminUser, adminOrderAlarmMuted, hasUnseenOrders, view, adminTab]);
+
     // --- EFECTOS DE SINCRONIZACIÓN (FIREBASE) ---
 
     // 0. Sincronizar Dark Mode con el DOM y localStorage
@@ -1785,6 +1906,43 @@ function App() {
             return () => clearTimeout(debounceTimer);
         }
     }, [cart, currentUser]);
+
+    useEffect(() => {
+        if (!isAdminUser) {
+            stopOrderAlarm();
+            return;
+        }
+
+        if (typeof settings?.ordersLastSeenIso !== 'string' && settingsLoaded && orders.length > 0 && latestOrderIso) {
+            markOrdersSeen(latestOrderIso);
+        }
+    }, [isAdminUser, settingsLoaded, settings?.ordersLastSeenIso, orders.length, latestOrderIso, markOrdersSeen, stopOrderAlarm]);
+
+    useEffect(() => {
+        if (!isAdminUser) {
+            stopOrderAlarm();
+            return;
+        }
+        if (adminOrderAlarmMuted) {
+            stopOrderAlarm();
+            return;
+        }
+
+        const inOrdersTab = view === 'admin' && adminTab === 'orders';
+        if (hasUnseenOrders && !inOrdersTab) {
+            startOrderAlarm();
+        } else {
+            stopOrderAlarm();
+        }
+    }, [isAdminUser, adminOrderAlarmMuted, hasUnseenOrders, view, adminTab, startOrderAlarm, stopOrderAlarm]);
+
+    useEffect(() => {
+        if (!isAdminUser) return;
+        if (view !== 'admin' || adminTab !== 'orders') return;
+        if (!latestOrderIso) return;
+        markOrdersSeen(latestOrderIso);
+        stopOrderAlarm();
+    }, [isAdminUser, view, adminTab, latestOrderIso, markOrdersSeen, stopOrderAlarm]);
 
     // 1.1 Sincronizar precios y datos del carrito con productos actualizados
     useEffect(() => {
@@ -5105,6 +5263,21 @@ function App() {
                                     <Shield className="w-5 h-5 sm:w-6 sm:h-6" /> Admin Panel
                                 </button>
                             )}
+
+                            {isAdminUser && (
+                                <button onClick={() => toggleAdminOrderAlarmMuted()} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border ${darkMode ? 'border-slate-800 bg-slate-900/30 hover:bg-slate-900/50' : 'border-slate-200 bg-slate-100 hover:bg-slate-200'} ${adminOrderAlarmMuted ? (darkMode ? 'text-slate-500' : 'text-slate-500') : (darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-700 hover:text-slate-900')}`}>
+                                    <div className="relative">
+                                        <Bell className={`w-5 h-5 sm:w-6 sm:h-6 transition ${adminOrderAlarmMuted ? (darkMode ? 'text-slate-600' : 'text-slate-400') : (darkMode ? 'text-slate-400 group-hover:text-orange-500' : 'text-slate-500 group-hover:text-orange-600')}`} />
+                                        {hasUnseenOrders && (
+                                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white/80"></span>
+                                        )}
+                                    </div>
+                                    Notificación pedidos
+                                    <span className={`ml-auto text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-widest ${adminOrderAlarmMuted ? (darkMode ? 'bg-slate-900/60 text-slate-500 border-slate-700' : 'bg-white text-slate-500 border-slate-300') : 'bg-green-900/20 text-green-400 border-green-500/30'}`}>
+                                        {adminOrderAlarmMuted ? 'Muteada' : 'Activa'}
+                                    </span>
+                                </button>
+                            )}
                         </div>
 
                         <div className={`mt-6 sm:mt-8 pt-6 sm:pt-8 border-t text-center ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
@@ -6333,7 +6506,22 @@ function App() {
 
                                         <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'orders' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                             <ShoppingBag className="w-5 h-5" /> Pedidos
+                                            {isAdminUser && hasUnseenOrders && (
+                                                <span className="ml-auto text-[10px] px-2 py-1 rounded-full bg-red-900/30 text-red-300 border border-red-500/30 font-black uppercase tracking-widest">
+                                                    Nuevo
+                                                </span>
+                                            )}
                                         </button>
+
+                                        {isAdminUser && (
+                                            <button onClick={() => toggleAdminOrderAlarmMuted()} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminOrderAlarmMuted ? 'bg-slate-900 text-slate-400 border border-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <Bell className={`w-5 h-5 ${adminOrderAlarmMuted ? 'opacity-40' : ''}`} />
+                                                Notificación pedidos
+                                                <span className={`ml-auto text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-widest ${adminOrderAlarmMuted ? 'bg-slate-900/60 text-slate-400 border-slate-700' : 'bg-green-900/20 text-green-400 border-green-500/30'}`}>
+                                                    {adminOrderAlarmMuted ? 'Muteada' : 'Activa'}
+                                                </span>
+                                            </button>
+                                        )}
 
                                         <button onClick={() => { setAdminTab('products'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'products' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                             <Package className="w-5 h-5" /> Productos
