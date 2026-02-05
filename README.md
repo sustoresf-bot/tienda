@@ -28,3 +28,5 @@ Opciones de configuración:
   - `FIREBASE_PROJECT_ID`
   - `FIREBASE_CLIENT_EMAIL`
   - `FIREBASE_PRIVATE_KEY` (pegado con `\n` en lugar de saltos reales)
+
+Para verificar si el backend quedó configurado, hacé un GET a `/api/auth/legacy-login` (devuelve `firebaseAdmin.configured`).
