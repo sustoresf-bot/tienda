@@ -3516,12 +3516,15 @@ function App() {
                         });
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok || !data?.token) {
+                            if (res.status === 401) {
+                                throw new Error('Tu despliegue está respondiendo 401 (Vercel protegido). Desactivá Deployment Protection / Vercel Authentication o hacé el sitio público.');
+                            }
                             if (data?.code === 'firebase_admin_not_configured') {
                                 throw new Error(data.error || 'Backend no configurado (Firebase Admin)');
                             }
                             if (superAdminAttempt) {
                                 if (!isLocalhost) {
-                                    throw new Error('El Super Admin solo puede inicializarse en localhost.');
+                                    throw new Error('El Super Admin no se inicializa desde Vercel. Crealo en Firebase Auth (Authentication > Users) o inicializalo en localhost.');
                                 }
                                 const bootRes = await fetch('/api/auth/bootstrap-super-admin', {
                                     method: 'POST',
