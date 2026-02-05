@@ -2528,6 +2528,12 @@ function App() {
             return;
         }
 
+        if (normalizedHostname.endsWith('.vercel.app')) {
+            setStoreResolution({ status: 'resolved', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: DEFAULT_APP_ID, error: null });
+            setAppId(DEFAULT_APP_ID);
+            return;
+        }
+
         setStoreResolution({ status: 'resolving', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: null });
 
         let cancelled = false;
@@ -6097,7 +6103,7 @@ function App() {
 
 
             {/* Contenedores Globales (Toasts y Modales) */}
-            <div className="fixed top-24 right-4 z-[9999] space-y-3 pointer-events-none">
+            <div className="fixed top-24 right-4 z-[20001] space-y-3 pointer-events-none">
                 {/* Toasts necesitan pointer-events-auto para poder cerrarlos */}
                 <div className="pointer-events-auto space-y-3">
                     {toasts.map(t => (
@@ -7380,7 +7386,7 @@ function App() {
 
                 {/* 5. MODAL DE AUTENTICACIÓN (LOGIN/REGISTER) */}
                 {(view === 'login' || view === 'register') && (
-                    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-[#050505]/95 p-4 animate-fade-up backdrop-blur-xl">
+                    <div className="fixed inset-0 z-[20002] flex items-center justify-center bg-[#050505]/95 p-4 animate-fade-up backdrop-blur-xl">
 
                         <div className="bg-[#0a0a0a] p-8 md:p-12 rounded-[3rem] w-full max-w-md shadow-2xl border border-slate-800 relative overflow-hidden">
                             {/* Botón Cerrar (Dentro de la tarjeta) */}
