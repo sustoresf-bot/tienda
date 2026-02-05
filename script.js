@@ -35,6 +35,88 @@ const db = getFirestore(app);
 const appId = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
 
+const setupSmoothWheelScroll = () => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (window.__smoothWheelScrollEnabled) return;
+    window.__smoothWheelScrollEnabled = true;
+
+    const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+
+    const getScrollingElement = () => document.scrollingElement || document.documentElement;
+    let targetY = getScrollingElement().scrollTop;
+    let rafId = null;
+    let isAnimating = false;
+
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const maxScrollTop = () => Math.max(0, getScrollingElement().scrollHeight - window.innerHeight);
+
+    const isScrollable = (el) => {
+        if (!el || !(el instanceof Element)) return false;
+        const style = window.getComputedStyle(el);
+        const overflowY = style.overflowY;
+        if (overflowY === 'hidden' || overflowY === 'visible') return false;
+        return el.scrollHeight > el.clientHeight + 1;
+    };
+
+    const findScrollableAncestor = (startEl) => {
+        let el = startEl;
+        while (el && el instanceof Element && el !== document.body && el !== document.documentElement) {
+            if (isScrollable(el)) return el;
+            el = el.parentElement;
+        }
+        return null;
+    };
+
+    const animate = () => {
+        isAnimating = true;
+        const scrollingElement = getScrollingElement();
+        const currentY = scrollingElement.scrollTop;
+        const diff = targetY - currentY;
+
+        if (Math.abs(diff) < 0.5) {
+            scrollingElement.scrollTop = targetY;
+            rafId = null;
+            isAnimating = false;
+            return;
+        }
+
+        scrollingElement.scrollTop = currentY + diff * 0.12;
+        rafId = window.requestAnimationFrame(animate);
+    };
+
+    const onWheel = (e) => {
+        if (e.defaultPrevented) return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+        const targetEl = e.target instanceof Element ? e.target : null;
+        if (targetEl && findScrollableAncestor(targetEl)) return;
+
+        const deltaX = e.deltaX;
+        const deltaY = e.deltaY;
+        if (Math.abs(deltaX) > Math.abs(deltaY)) return;
+        if (!Number.isFinite(deltaY) || Math.abs(deltaY) < 0.01) return;
+
+        e.preventDefault();
+        targetY = clamp(targetY + deltaY * 1.1, 0, maxScrollTop());
+        if (rafId === null) rafId = window.requestAnimationFrame(animate);
+    };
+
+    const onScroll = () => {
+        if (isAnimating) return;
+        targetY = getScrollingElement().scrollTop;
+    };
+
+    const onResize = () => {
+        targetY = clamp(targetY, 0, maxScrollTop());
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+};
+
+try { setupSmoothWheelScroll(); } catch (e) { }
+
 // === SEGURIDAD: Email de Super Admin ofuscado (múltiples capas) ===
 const _sa = ['bGF1dGFyb2NvcmF6emE2M0BnbWFpbC5jb20=']; // Base64
 const SUPER_ADMIN_EMAIL = (() => { try { return atob(_sa[0]); } catch (e) { return ''; } })();
@@ -5263,21 +5345,6 @@ function App() {
                                     <Shield className="w-5 h-5 sm:w-6 sm:h-6" /> Admin Panel
                                 </button>
                             )}
-
-                            {isAdminUser && (
-                                <button onClick={() => toggleAdminOrderAlarmMuted()} className={`w-full text-left text-base sm:text-lg font-bold transition flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl group border ${darkMode ? 'border-slate-800 bg-slate-900/30 hover:bg-slate-900/50' : 'border-slate-200 bg-slate-100 hover:bg-slate-200'} ${adminOrderAlarmMuted ? (darkMode ? 'text-slate-500' : 'text-slate-500') : (darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-700 hover:text-slate-900')}`}>
-                                    <div className="relative">
-                                        <Bell className={`w-5 h-5 sm:w-6 sm:h-6 transition ${adminOrderAlarmMuted ? (darkMode ? 'text-slate-600' : 'text-slate-400') : (darkMode ? 'text-slate-400 group-hover:text-orange-500' : 'text-slate-500 group-hover:text-orange-600')}`} />
-                                        {hasUnseenOrders && (
-                                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white/80"></span>
-                                        )}
-                                    </div>
-                                    Notificación pedidos
-                                    <span className={`ml-auto text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-widest ${adminOrderAlarmMuted ? (darkMode ? 'bg-slate-900/60 text-slate-500 border-slate-700' : 'bg-white text-slate-500 border-slate-300') : 'bg-green-900/20 text-green-400 border-green-500/30'}`}>
-                                        {adminOrderAlarmMuted ? 'Muteada' : 'Activa'}
-                                    </span>
-                                </button>
-                            )}
                         </div>
 
                         <div className={`mt-6 sm:mt-8 pt-6 sm:pt-8 border-t text-center ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
@@ -6512,16 +6579,6 @@ function App() {
                                                 </span>
                                             )}
                                         </button>
-
-                                        {isAdminUser && (
-                                            <button onClick={() => toggleAdminOrderAlarmMuted()} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminOrderAlarmMuted ? 'bg-slate-900 text-slate-400 border border-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
-                                                <Bell className={`w-5 h-5 ${adminOrderAlarmMuted ? 'opacity-40' : ''}`} />
-                                                Notificación pedidos
-                                                <span className={`ml-auto text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-widest ${adminOrderAlarmMuted ? 'bg-slate-900/60 text-slate-400 border-slate-700' : 'bg-green-900/20 text-green-400 border-green-500/30'}`}>
-                                                    {adminOrderAlarmMuted ? 'Muteada' : 'Activa'}
-                                                </span>
-                                            </button>
-                                        )}
 
                                         <button onClick={() => { setAdminTab('products'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'products' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                             <Package className="w-5 h-5" /> Productos
@@ -8086,7 +8143,16 @@ function App() {
                                     {/* TAB: PEDIDOS (RESTAURADO) */}
                                     {adminTab === 'orders' && (
                                         <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                            <h1 className="text-3xl font-black text-white mb-8">Gestión de Pedidos</h1>
+                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                <h1 className="text-3xl font-black text-white">Gestión de Pedidos</h1>
+                                                <button onClick={() => toggleAdminOrderAlarmMuted()} className={`px-5 py-3 rounded-xl font-black transition border flex items-center gap-3 ${adminOrderAlarmMuted ? 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800' : 'bg-green-900/10 text-green-400 border-green-500/20 hover:bg-green-600 hover:text-white'}`}>
+                                                    <Bell className={`w-5 h-5 ${adminOrderAlarmMuted ? 'opacity-40' : ''}`} />
+                                                    Notificación pedidos
+                                                    <span className={`text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-widest ${adminOrderAlarmMuted ? 'bg-slate-900/60 text-slate-400 border-slate-700' : 'bg-green-900/20 text-green-400 border-green-500/30'}`}>
+                                                        {adminOrderAlarmMuted ? 'Muteada' : 'Activa'}
+                                                    </span>
+                                                </button>
+                                            </div>
 
                                             {orders.length === 0 ? (
                                                 <div className="text-center py-20 border border-dashed border-slate-800 rounded-[3rem] bg-slate-900/20">
