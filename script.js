@@ -2009,6 +2009,7 @@ function App() {
                 }
                 .text-white { color: #0f172a !important; }
                 .text-white\\/50, .text-white\\/60, .text-white\\/70, .text-white\\/80 { color: #475569 !important; }
+                .hover\\:text-white:hover { color: #0f172a !important; }
                 .text-slate-200 { color: #334155 !important; }
                 .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600 { color: #64748b !important; }
                 .bg-slate-900, .bg-slate-900\\/50, .bg-slate-800 { background-color: #ffffff !important; }
@@ -2017,6 +2018,8 @@ function App() {
                     border-color: #e2e8f0 !important; 
                 }
                 .border-white\\/5, .border-white\\/10, .border-white\\/20 { border-color: #e2e8f0 !important; }
+                .fill-white { fill: #0f172a !important; }
+                .stroke-white { stroke: #0f172a !important; }
                 .glass {
                     background: rgba(255, 255, 255, 0.95) !important;
                     border-color: #e2e8f0 !important;
@@ -2035,7 +2038,11 @@ function App() {
                 }
                 
                 /* Footer */
-                footer { background-color: #0f172a !important; }
+                footer.bg-\\[\\#050505\\] { background-color: #0f172a !important; }
+                footer.bg-\\[\\#050505\\] .bg-slate-900, 
+                footer.bg-\\[\\#050505\\] .bg-slate-900\\/50,
+                footer.bg-\\[\\#050505\\] .bg-slate-800 { background-color: rgba(255,255,255,0.06) !important; }
+                footer.bg-\\[\\#050505\\] .border-slate-800 { border-color: rgba(255,255,255,0.10) !important; }
                 footer .text-white { color: #ffffff !important; }
                 footer .text-slate-500, footer .text-slate-400, footer .text-slate-600 { color: #94a3b8 !important; }
                 
@@ -5150,7 +5157,7 @@ function App() {
                             {!settingsLoaded ? (
                                 <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
                             ) : settings?.heroUrl ? (
-                                <img src={settings.heroUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-40'}`} />
+                                <img src={settings.heroUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70'}`} />
                             ) : (
                                 // Fallback Hero Background si no hay URL configurada
                                 <div className={`absolute inset-0 opacity-60 ${darkMode ? 'bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40' : 'bg-gradient-to-br from-orange-200/60 via-white to-slate-200/60'}`}>
@@ -5159,7 +5166,7 @@ function App() {
                             )}
 
                             {/* Overlay de Texto */}
-                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white via-white/85 to-transparent'}`}>
+                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/70 via-white/55 to-transparent'}`}>
                                 <div className="max-w-2xl animate-fade-up">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
