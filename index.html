@@ -49,7 +49,7 @@
         if (typeof console !== 'undefined') {
             const originalWarn = console.warn;
             console.warn = function (...args) {
-                if (args[0] && typeof args[0] === 'string' && (args[0].includes('cdn.tailwindcss.com') || args[0].includes('babel') || args[0].includes('Could not reach Cloud Firestore backend'))) return;
+                if (args[0] && typeof args[0] === 'string' && (args[0].includes('cdn.tailwindcss.com') || args[0].includes('babel'))) return;
                 originalWarn.apply(console, args);
             };
         }
@@ -61,21 +61,18 @@
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://esm.sh">
     <link rel="preconnect" href="https://www.gstatic.com">
-    <link rel="preconnect" href="https://unpkg.com">
 
     <!-- DNS Prefetch for CDNs -->
     <link rel="dns-prefetch" href="https://sdk.mercadopago.com">
-    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
-
-    <!-- Preload critical resources -->
+    <link rel="dns-prefetch" href="https://unpkg.com">
 
 
     <!-- Critical CSS inline for faster first paint -->
     <style>
         /* Critical above-the-fold styles */
         body {
-            background-color: #ffffff;
-            color: #0f172a;
+            background-color: #050505;
+            color: #e2e8f0;
             margin: 0;
             font-family: system-ui, sans-serif;
         }
@@ -83,7 +80,6 @@
         #root {
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
         }
@@ -112,7 +108,7 @@
         }
     </style>
 
-    <!-- TailwindCSS - load immediately -->
+    <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Import Map for ES Modules -->
@@ -122,7 +118,6 @@
             "react": "https://esm.sh/react@18.2.0",
             "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
             "lucide-react": "https://esm.sh/lucide-react@0.263.1",
-            "lenis": "https://esm.sh/lenis",
             "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
             "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
             "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
@@ -130,16 +125,13 @@
     }
     </script>
 
-    <!-- Babel - Load ASAP for JSX compilation -->
-    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" id="babel-loader"></script>
+    <!-- Babel - defer loading to not block render -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" defer></script>
 
     <!-- Main Stylesheet (non-blocking) -->
-    <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
-    <noscript>
-        <link rel="stylesheet" href="styles.css">
-    </noscript>
+    <link rel="stylesheet" href="styles.css">
 
-    <!-- Mercado Pago SDK - defer loading (only needed at checkout) -->
+    <!-- Mercado Pago SDK - defer loading -->
     <script src="https://sdk.mercadopago.com/js/v2" defer></script>
 </head>
 
@@ -149,71 +141,34 @@
         <div class="loading-spinner"></div>
     </div>
 
-    <!-- Wait for Babel to be ready before loading the main script -->
-    <script>
-        // Ensure Babel is fully loaded before executing the main script
-        (function () {
-            function loadMainScript() {
-                const script = document.createElement('script');
-                script.type = 'text/babel';
-                script.setAttribute('data-type', 'module');
-                script.src = 'script.js?v=12.5';
-                document.body.appendChild(script);
-            }
-
-            // Wait for Babel to be available
-            if (window.Babel) {
-                loadMainScript();
-            } else {
-                const babelLoader = document.getElementById('babel-loader');
-                if (babelLoader) {
-                    babelLoader.onload = loadMainScript;
-                } else {
-                    // Fallback: wait a bit and try again
-                    setTimeout(loadMainScript, 100);
-                }
-            }
-        })();
-    </script>
+    <script type="text/babel" data-type="module" src="script.js"></script>
 
     <!-- KILL SWITCH v3.0 (Tiempo Real + Contacto) -->
+    <script src="https://controlador-de-paginas.vercel.app/kill-switch.js" defer></script>
     <script>
-        (function () {
-            const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-            if (isLocal) return;
-
-            const script = document.createElement('script');
-            script.src = 'https://controlador-de-paginas.vercel.app/kill-switch.js';
-            script.defer = true;
-            script.onload = function () {
-                if (window.KillSwitch) {
-                    KillSwitch.init({
-                        controllerUrl: 'https://controlador-de-paginas.vercel.app',
-                        contactEmail: 'soporte@tienda.com',
-                        whatsapp: ''
-                    });
-                }
-            };
-            document.body.appendChild(script);
-        })();
+        // Initialize KillSwitch after page load
+        window.addEventListener('load', function () {
+            if (window.KillSwitch) {
+                KillSwitch.init({
+                    controllerUrl: 'https://controlador-de-paginas.vercel.app',
+                    contactEmail: 'soporte@tienda.com',
+                    whatsapp: ''
+                });
+            }
+        });
     </script>
 
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-
-                if (isLocal) {
-                    navigator.serviceWorker.getRegistrations()
-                        .then(regs => Promise.all(regs.map(r => r.unregister())))
-                        .catch(() => { });
-                    return;
-                }
-
                 navigator.serviceWorker.register('/sw.js')
-                    .then(() => { })
-                    .catch(() => { });
+                    .then(registration => {
+                        console.log('SW registered OK');
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
             });
         }
     </script>

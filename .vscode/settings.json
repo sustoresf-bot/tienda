@@ -1,7 +1,0 @@
-{
-  "files.associations": {
-    "script.js": "javascriptreact"
-  },
-  "javascript.validate.enable": false,
-  "typescript.validate.enable": false
-}
