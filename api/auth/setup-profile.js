@@ -1,5 +1,5 @@
 import { getAdmin, verifyIdTokenFromRequest } from '../_firebaseAdmin.js';
-import { APP_ID } from '../_authz.js';
+import { getStoreIdFromRequest } from '../_authz.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -21,6 +21,7 @@ export default async function handler(req, res) {
     if (dni.length < 6) return res.status(400).json({ error: 'DNI inválido' });
     if (phone.length < 8) return res.status(400).json({ error: 'Teléfono inválido' });
 
+    const storeId = getStoreIdFromRequest(req);
     const usernameLower = username.toLowerCase();
     const emailLower = decoded.email.toLowerCase();
 
@@ -28,8 +29,8 @@ export default async function handler(req, res) {
         const adminSdk = getAdmin();
         const db = adminSdk.firestore();
 
-        const userRef = db.doc(`artifacts/${APP_ID}/public/data/users/${decoded.uid}`);
-        const usernameRef = db.doc(`artifacts/${APP_ID}/public/data/usernames/${usernameLower}`);
+        const userRef = db.doc(`artifacts/${storeId}/public/data/users/${decoded.uid}`);
+        const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
 
         const [userSnap, usernameSnap] = await Promise.all([userRef.get(), usernameRef.get()]);
         if (usernameSnap.exists) {
@@ -63,4 +64,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Internal error' });
     }
 }
-

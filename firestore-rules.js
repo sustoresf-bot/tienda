@@ -27,16 +27,16 @@ service cloud.firestore {
     }
 
     // Verificar si está en el equipo como admin
-    function isTeamAdmin() {
-      let configData = get(/databases/$(database)/documents/artifacts/sustore-63266-prod/public/data/settings/config).data;
+    function isTeamAdmin(appId) {
+      let configData = get(/databases/$(database)/documents/artifacts/$(appId)/public/data/settings/config).data;
       return request.auth != null &&
         configData.teamRoles != null &&
         configData.teamRoles[request.auth.token.email] == 'admin';
     }
 
     // Verificar si es Admin (cualquier tipo)
-    function isAdmin() {
-      return isSuperAdmin() || isTeamAdmin();
+    function isAdmin(appId) {
+      return isSuperAdmin() || isTeamAdmin(appId);
     }
 
     // Verificar autenticación
@@ -87,9 +87,9 @@ service cloud.firestore {
     }
 
     // Prevenir escalación de privilegios
-    function noPrivilegeEscalation() {
+    function noPrivilegeEscalation(appId) {
       return !request.resource.data.keys().hasAny(['role', 'isAdmin', '_adminVerified']) ||
-             isAdmin();
+             isAdmin(appId);
     }
 
     // ========================================
@@ -100,15 +100,15 @@ service cloud.firestore {
       // ----------------------------------------
       // LECTURA: Datos públicos permitidos
       // ----------------------------------------
-      allow read: if collectionName in ['products', 'settings', 'promos', 'categories'];
+      allow read: if collectionName in ['products', 'settings', 'promos', 'categories', 'homeBanners'];
 
       // Lectura de usuarios: solo admin o el propio usuario
       allow read: if collectionName == 'users' &&
-        (isAdmin() || isOwner(docId));
+        (isAdmin(appId) || isOwner(docId));
 
       // Lectura de pedidos: solo admin o el cliente del pedido
       allow read: if collectionName == 'orders' &&
-        (isAdmin() || (isAuthenticated() && resource.data.customerId == request.auth.uid));
+        (isAdmin(appId) || (isAuthenticated() && resource.data.customerId == request.auth.uid));
 
       // Lectura de carritos: solo el propietario
       allow read: if collectionName == 'carts' && isOwner(docId);
@@ -117,13 +117,13 @@ service cloud.firestore {
       allow read: if collectionName == 'coupons';
 
       // Datos sensibles solo para admin
-      allow read: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments'] && isAdmin();
+      allow read: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments'] && isAdmin(appId);
 
       // ----------------------------------------
       // PRODUCTOS: Solo admin puede crear/editar/eliminar
       // ----------------------------------------
       allow write: if collectionName == 'products' &&
-        isAdmin() &&
+        isAdmin(appId) &&
         isValidSize() &&
         isValidProduct();
 
@@ -131,25 +131,32 @@ service cloud.firestore {
       // SETTINGS: Solo admin puede modificar configuración
       // ----------------------------------------
       allow write: if collectionName == 'settings' &&
-        isAdmin() &&
+        isAdmin(appId) &&
         isValidSize();
 
       // ----------------------------------------
       // CUPONES: Solo admin puede gestionar cupones
       // ----------------------------------------
       allow write: if collectionName == 'coupons' &&
-        isAdmin() &&
+        isAdmin(appId) &&
         isValidSize();
 
       // ----------------------------------------
       // PROMOS: Solo admin puede gestionar promos
       // ----------------------------------------
-      allow write: if collectionName == 'promos' && isAdmin();
+      allow write: if collectionName == 'promos' && isAdmin(appId);
+
+      // ----------------------------------------
+      // HOME BANNERS: Solo admin puede gestionar banners del carrusel
+      // ----------------------------------------
+      allow write: if collectionName == 'homeBanners' &&
+        isAdmin(appId) &&
+        isValidSize();
 
       // ----------------------------------------
       // PROVEEDORES/GASTOS/COMPRAS: Solo admin
       // ----------------------------------------
-      allow write: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments'] && isAdmin();
+      allow write: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments'] && isAdmin(appId);
 
       // ----------------------------------------
       // USUARIOS:
@@ -162,13 +169,13 @@ service cloud.firestore {
         isAuthenticated() &&
         docId == request.auth.uid &&
         isValidUser() &&
-        noPrivilegeEscalation();
+        noPrivilegeEscalation(appId);
 
       allow update: if collectionName == 'users' &&
-        (isOwner(docId) || isAdmin()) &&
-        noPrivilegeEscalation();
+        (isOwner(docId) || isAdmin(appId)) &&
+        noPrivilegeEscalation(appId);
 
-      allow delete: if collectionName == 'users' && isAdmin();
+      allow delete: if collectionName == 'users' && isAdmin(appId);
 
       // ----------------------------------------
       // CARRITOS:
@@ -182,7 +189,7 @@ service cloud.firestore {
       // PEDIDOS (Orders):
       // - Solo admin puede escribir pedidos (creación via servidor)
       // ----------------------------------------
-      allow write: if collectionName == 'orders' && isAdmin();
+      allow write: if collectionName == 'orders' && isAdmin(appId);
     }
 
     // ========================================
@@ -190,7 +197,12 @@ service cloud.firestore {
     // ========================================
     match /artifacts/{appId}/public/config {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin(appId);
+    }
+
+    match /storesIndex/{hostname} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
     }
 
     // ========================================

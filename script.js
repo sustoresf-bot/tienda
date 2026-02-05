@@ -32,7 +32,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 // ID interno de la app (no es el appId de Firebase). Puedes cambiarlo si quieres diferenciar entornos.
-const appId = "sustore-63266-prod";
+const DEFAULT_APP_ID = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
 
 const setupSmoothWheelScroll = () => {
@@ -43,13 +43,11 @@ const setupSmoothWheelScroll = () => {
     const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
 
-    const getScrollingElement = () => document.scrollingElement || document.documentElement;
-    let targetY = getScrollingElement().scrollTop;
-    let rafId = null;
-    let isAnimating = false;
+    const getDocumentScrollingElement = () => document.scrollingElement || document.documentElement;
+    const elementStates = new WeakMap();
 
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-    const maxScrollTop = () => Math.max(0, getScrollingElement().scrollHeight - window.innerHeight);
+    const maxScrollTopForEl = (el) => Math.max(0, el.scrollHeight - el.clientHeight);
 
     const isScrollable = (el) => {
         if (!el || !(el instanceof Element)) return false;
@@ -68,50 +66,73 @@ const setupSmoothWheelScroll = () => {
         return null;
     };
 
-    const animate = () => {
-        isAnimating = true;
-        const scrollingElement = getScrollingElement();
-        const currentY = scrollingElement.scrollTop;
-        const diff = targetY - currentY;
+    const getState = (el) => {
+        const existing = elementStates.get(el);
+        if (existing) return existing;
+        const state = { rafId: null, velocity: 0, lastTs: 0 };
+        elementStates.set(el, state);
+        return state;
+    };
 
-        if (Math.abs(diff) < 0.5) {
-            scrollingElement.scrollTop = targetY;
-            rafId = null;
-            isAnimating = false;
+    const animateElement = (el, ts) => {
+        const state = getState(el);
+        if (!state.lastTs) state.lastTs = ts;
+        const dt = Math.min(48, ts - state.lastTs);
+        state.lastTs = ts;
+
+        const frictionPerFrame = 0.86;
+        const friction = Math.pow(frictionPerFrame, dt / 16.67);
+
+        const current = el.scrollTop;
+        const next = clamp(current + state.velocity * (dt / 16.67), 0, maxScrollTopForEl(el));
+        el.scrollTop = next;
+
+        if (next === 0 || next === maxScrollTopForEl(el)) {
+            state.velocity *= 0.5;
+        }
+
+        state.velocity *= friction;
+
+        if (Math.abs(state.velocity) < 0.1) {
+            state.rafId = null;
+            state.velocity = 0;
+            state.lastTs = 0;
             return;
         }
 
-        scrollingElement.scrollTop = currentY + diff * 0.12;
-        rafId = window.requestAnimationFrame(animate);
+        state.rafId = window.requestAnimationFrame((nextTs) => animateElement(el, nextTs));
     };
 
     const onWheel = (e) => {
         if (e.defaultPrevented) return;
         if (e.ctrlKey || e.metaKey || e.shiftKey) return;
         const targetEl = e.target instanceof Element ? e.target : null;
-        if (targetEl && findScrollableAncestor(targetEl)) return;
+        const scrollEl = (targetEl && findScrollableAncestor(targetEl)) || getDocumentScrollingElement();
 
         const deltaX = e.deltaX;
-        const deltaY = e.deltaY;
+        let deltaY = e.deltaY;
         if (Math.abs(deltaX) > Math.abs(deltaY)) return;
         if (!Number.isFinite(deltaY) || Math.abs(deltaY) < 0.01) return;
 
         e.preventDefault();
-        targetY = clamp(targetY + deltaY * 1.1, 0, maxScrollTop());
-        if (rafId === null) rafId = window.requestAnimationFrame(animate);
-    };
 
-    const onScroll = () => {
-        if (isAnimating) return;
-        targetY = getScrollingElement().scrollTop;
+        if (e.deltaMode === 1) deltaY *= 40;
+        else if (e.deltaMode === 2) deltaY *= window.innerHeight;
+
+        const state = getState(scrollEl);
+        const strength = 0.9;
+        state.velocity += deltaY * strength;
+        state.velocity = clamp(state.velocity, -4500, 4500);
+        if (state.rafId === null) state.rafId = window.requestAnimationFrame((ts) => animateElement(scrollEl, ts));
     };
 
     const onResize = () => {
-        targetY = clamp(targetY, 0, maxScrollTop());
+        const docEl = getDocumentScrollingElement();
+        const state = getState(docEl);
+        state.velocity = clamp(state.velocity, -4500, 4500);
     };
 
-    window.addEventListener('wheel', onWheel, { passive: false });
-    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('wheel', onWheel, { passive: false, capture: true });
     window.addEventListener('resize', onResize, { passive: true });
 };
 
@@ -396,11 +417,14 @@ const defaultSettings = {
     whatsappLink: "",
     showWhatsapp: false,
     showFloatingWhatsapp: false,
+    showCartWhatsappCheckout: false,
     showInstagram: false,
 
     // --- Imágenes ---
     logoUrl: "",
     heroUrl: "",
+    showHomeBannerCarousel: true,
+    homeBannerAutoplayMs: 5000,
 
     // --- Configuración de Tienda ---
     markupPercentage: 0,
@@ -456,6 +480,116 @@ const LazyImage = ({ src, alt, className, placeholder = 'data:image/svg+xml;base
             onLoad={() => setIsLoaded(true)}
             loading="lazy"
         />
+    );
+};
+
+const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, autoplayMs, darkMode, onBannerClick }) => {
+    const slides = useMemo(() => {
+        if (!Array.isArray(banners)) return [];
+        return banners.filter(b => b && b.enabled !== false && typeof b.imageUrl === 'string' && b.imageUrl.trim().length > 0);
+    }, [banners]);
+
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+
+    useEffect(() => {
+        if (activeIndex >= slides.length) setActiveIndex(0);
+    }, [activeIndex, slides.length]);
+
+    const effectiveAutoplayMs = Number(autoplayMs);
+    const shouldAutoplay = settingsLoaded && !isPaused && slides.length > 1 && Number.isFinite(effectiveAutoplayMs) && effectiveAutoplayMs >= 1500;
+
+    useEffect(() => {
+        if (!shouldAutoplay) return;
+        const id = setInterval(() => {
+            setActiveIndex(i => (i + 1) % slides.length);
+        }, effectiveAutoplayMs);
+        return () => clearInterval(id);
+    }, [shouldAutoplay, slides.length, effectiveAutoplayMs]);
+
+    useEffect(() => {
+        if (slides.length <= 1) return;
+        const next = slides[(activeIndex + 1) % slides.length];
+        if (!next?.imageUrl) return;
+        const img = new Image();
+        img.src = next.imageUrl;
+    }, [slides, activeIndex]);
+
+    const activeSlide = slides[activeIndex] || null;
+    const imageClass = `absolute inset-0 w-full h-full object-cover transition-opacity duration-700 transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70 saturate-110 contrast-110'}`;
+
+    const goPrev = () => {
+        setActiveIndex(i => {
+            const next = i - 1;
+            return next < 0 ? slides.length - 1 : next;
+        });
+    };
+
+    const goNext = () => {
+        setActiveIndex(i => (i + 1) % slides.length);
+    };
+
+    if (!settingsLoaded) {
+        return <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>;
+    }
+
+    if (slides.length === 0) {
+        return fallbackUrl ? (
+            <img src={fallbackUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70 saturate-110 contrast-110'}`} />
+        ) : (
+            <div className={`absolute inset-0 opacity-60 ${darkMode ? 'bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40' : 'bg-gradient-to-br from-orange-200/60 via-white to-slate-200/60'}`}>
+                <div className={`absolute inset-0 bg-[url('/noise.svg')] ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className={`absolute inset-0 ${activeSlide?.productId ? 'cursor-pointer' : ''}`}
+            onClick={() => activeSlide?.productId && onBannerClick?.(activeSlide)}
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+        >
+            {slides.map((slide, idx) => (
+                <img
+                    key={slide.id || `${idx}-${slide.productId || 'slide'}`}
+                    src={slide.imageUrl}
+                    className={`${imageClass} ${idx === activeIndex ? 'opacity-100' : 'opacity-0'}`}
+                />
+            ))}
+
+            {slides.length > 1 && (
+                <>
+                    <button
+                        type="button"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/40 border border-white/20 text-white backdrop-blur-md hover:bg-black/55 transition flex items-center justify-center pointer-events-auto"
+                        onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                        aria-label="Banner anterior"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                        type="button"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/40 border border-white/20 text-white backdrop-blur-md hover:bg-black/55 transition flex items-center justify-center pointer-events-auto"
+                        onClick={(e) => { e.stopPropagation(); goNext(); }}
+                        aria-label="Banner siguiente"
+                    >
+                        <ArrowRight className="w-5 h-5" />
+                    </button>
+                    <div className="absolute bottom-4 inset-x-0 z-20 flex items-center justify-center gap-2 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                        {slides.map((_, idx) => (
+                            <button
+                                key={`dot-${idx}`}
+                                type="button"
+                                aria-label={`Ir al banner ${idx + 1}`}
+                                className={`h-2.5 rounded-full transition-all duration-300 ${idx === activeIndex ? 'w-8 bg-white' : 'w-2.5 bg-white/40 hover:bg-white/70'}`}
+                                onClick={() => setActiveIndex(idx)}
+                            />
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
     );
 };
 
@@ -818,33 +952,206 @@ const BotProductCard = ({ product, onAdd }) => {
 // --- COMPONENTE SUSTIA (AI ASSISTANT) ---
 const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, coupons }) => {
     // 1. Verificación de Plan - Solo disponible en Plan Premium
-    if (settings?.subscriptionPlan !== 'premium') return null;
+    const forceEnabled = (() => {
+        try {
+            const href = String(window.location.href || '');
+            if (href.includes('sustia=1')) return true;
+            return new URLSearchParams(window.location.search).get('sustia') === '1';
+        } catch { return false; }
+    })();
+    if (!forceEnabled && settings?.subscriptionPlan !== 'premium') return null;
 
     const [isOpen, setIsOpen] = useState(false);
 
     // Custom Bot Image (Configurable)
     const botImage = settings?.botImage || "sustia-ai-v2.jpg";
 
-    const [messages, setMessages] = useState([
-        { role: 'model', text: '¡Hola! Soy SustIA 🤖, tu asistente personal. ¿Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' }
-    ]);
+    const chatStorageKey = `sustore_sustia_chat_${DEFAULT_APP_ID}`;
+    const defaultBotMessage = { role: 'model', text: '¡Hola! Soy SustIA 🤖, tu asistente personal. ¿Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' };
+    const [messages, setMessages] = useState(() => {
+        try {
+            const raw = localStorage.getItem(chatStorageKey);
+            if (!raw) return [defaultBotMessage];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed) || parsed.length === 0) return [defaultBotMessage];
+            const cleaned = parsed
+                .filter(m => m && (m.role === 'client' || m.role === 'model') && typeof m.text === 'string')
+                .slice(-60);
+            return cleaned.length > 0 ? cleaned : [defaultBotMessage];
+        } catch {
+            return [defaultBotMessage];
+        }
+    });
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [lastContext, setLastContext] = useState(null); // Para manejar contexto (Sí/No)
     const messagesEndRef = useRef(null);
+    const messagesRef = useRef(messages);
+    const inFlightRef = useRef(false);
+    const isMountedRef = useRef(true);
+
+    const safeProducts = Array.isArray(products) ? products : [];
+    const safeCoupons = Array.isArray(coupons) ? coupons : [];
+    const aiEnabled = !!settings?.aiAssistant?.enabled;
+
+    const normalizeText = (value) => {
+        if (value === null || value === undefined) return '';
+        return String(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    };
+
+    const tokenize = (value) => {
+        const t = normalizeText(value);
+        if (!t) return [];
+        const raw = t.split(/[\s,.;:!?/()\\[\]{}"“”'’\-+*_]+/).filter(Boolean);
+        const stop = new Set([
+            'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',
+            'de', 'del', 'en', 'con', 'sin', 'para', 'por', 'a', 'al',
+            'que', 'como', 'cual', 'cuales', 'donde', 'cuando', 'quien', 'quienes',
+            'hola', 'buenas', 'buenos', 'dia', 'dias', 'tardes', 'noches',
+            'busco', 'buscar', 'tenes', 'tienes', 'precio', 'vale', 'cuesta',
+            'quiero', 'necesito', 'hay', 'me', 'te', 'mi', 'mis', 'tu', 'tus',
+            'agrega', 'agregar', 'agregame', 'agregalo', 'sumar', 'sumame', 'poner', 'pone',
+            'comprar', 'compralo', 'llevo', 'carrito', 'bolsa', 'cesta',
+            'mas', 'menos', 'muy', 'super', 're'
+        ]);
+        return raw.filter(w => w.length > 1 && !stop.has(w) && !/^\d+$/.test(w));
+    };
+
+    const parseHumanNumber = (rawNumber, contextText) => {
+        if (!rawNumber) return null;
+        const n = parseFloat(String(rawNumber).replace(',', '.'));
+        if (!Number.isFinite(n)) return null;
+        const hasK = contextText.includes(`${rawNumber}k`) || contextText.includes(`${rawNumber} k`) || contextText.includes(`${rawNumber}mil`) || contextText.includes(`${rawNumber} mil`);
+        if (hasK) return n * 1000;
+        return n;
+    };
+
+    const parseQuantity = (t) => {
+        const text = normalizeText(t);
+        const m1 = text.match(/\b(?:x|por)\s*(\d{1,3})\b/);
+        if (m1) return Math.max(1, Math.min(99, parseInt(m1[1], 10)));
+        const m2 = text.match(/\b(\d{1,3})\s*(?:u|ud|uds|unidad|unidades|pcs|piezas)\b/);
+        if (m2) return Math.max(1, Math.min(99, parseInt(m2[1], 10)));
+        const m3 = text.match(/\b(\d{1,2})\b/);
+        if (m3 && text.match(/\b(agrega|agregar|agregame|sum[aá]|pone|poner|met[eé]|quiero|llevo|comprar)\b/)) {
+            return Math.max(1, Math.min(99, parseInt(m3[1], 10)));
+        }
+        return 1;
+    };
+
+    const getProductCategories = (p) => {
+        const cats = [];
+        if (Array.isArray(p?.categories)) cats.push(...p.categories);
+        if (typeof p?.category === 'string' && p.category.trim()) cats.push(p.category);
+        return cats
+            .filter(Boolean)
+            .map(c => String(c).trim())
+            .filter(Boolean);
+    };
+
+    const getProductFinalPrice = (p) => {
+        const base = Number(p?.basePrice) || 0;
+        const disc = Number(p?.discount) || 0;
+        if (typeof calculateItemPrice === 'function') return calculateItemPrice(base, disc);
+        return base * (1 - disc / 100);
+    };
+
+    const aiContext = useMemo(() => {
+        const storeName = settings?.storeName ? String(settings.storeName) : '';
+        const aboutUsText = settings?.aboutUsText ? String(settings.aboutUsText) : '';
+
+        const deliveryEnabled = !!settings?.shippingDelivery?.enabled;
+        const pickupEnabled = !!settings?.shippingPickup?.enabled;
+        const deliveryFee = Number(settings?.shippingDelivery?.fee) || 0;
+        const freeAbove = Number(settings?.shippingDelivery?.freeAbove) || 0;
+        const pickupAddress = settings?.shippingPickup?.address || '';
+        const shippingParts = [];
+        if (pickupEnabled) shippingParts.push(`Retiro en local: ${pickupAddress ? pickupAddress : 'a coordinar'}.`);
+        if (deliveryEnabled) {
+            if (freeAbove > 0) shippingParts.push(`Envío a domicilio: $${deliveryFee.toLocaleString()} (gratis desde $${freeAbove.toLocaleString()}).`);
+            else shippingParts.push(`Envío a domicilio: $${deliveryFee.toLocaleString()}.`);
+        }
+
+        const hasCard = !!settings?.paymentMercadoPago?.enabled;
+        const hasTransfer = !!settings?.paymentTransfer?.enabled;
+        const hasCash = !!settings?.paymentCash && pickupEnabled;
+        const payParts = [];
+        if (hasCard) payParts.push('Tarjeta (Mercado Pago)');
+        if (hasTransfer) payParts.push('Transferencia');
+        if (hasCash) payParts.push('Efectivo (solo retiro en local)');
+
+        const categories = [...new Set([...(Array.isArray(settings?.categories) ? settings.categories : []), ...safeProducts.flatMap(p => getProductCategories(p))])]
+            .map(c => String(c).trim())
+            .filter(Boolean)
+            .slice(0, 20);
+
+        const productHints = safeProducts
+            .filter(p => p && (Number(p.stock) || 0) > 0 && p.isActive !== false)
+            .map(p => ({
+                name: String(p.name || '').trim(),
+                price: getProductFinalPrice(p),
+                discount: Number(p.discount) || 0,
+                featured: !!p.isFeatured,
+                cats: getProductCategories(p).slice(0, 2).join(', ')
+            }))
+            .filter(p => p.name)
+            .sort((a, b) => (b.discount - a.discount) || (Number(b.featured) - Number(a.featured)) || (a.price - b.price))
+            .slice(0, 25)
+            .map(p => `${p.name} — $${Math.round(p.price).toLocaleString()}${p.cats ? ` — ${p.cats}` : ''}`);
+
+        return {
+            storeName,
+            aboutUsText,
+            shipping: shippingParts.join(' '),
+            payments: payParts.join(', '),
+            categories,
+            productHints
+        };
+    }, [settings, safeProducts]);
+
+    const callExternalAI = async ({ userText, history, signal }) => {
+        const res = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userText,
+                messages: Array.isArray(history) ? history : [],
+                context: aiContext
+            }),
+            signal
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || 'ai_error');
+        if (!data?.text || typeof data.text !== 'string') throw new Error('ai_invalid');
+        return { text: data.text };
+    };
 
     // Auto-scroll al último mensaje
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
+
+    useEffect(() => {
+        return () => { isMountedRef.current = false; };
+    }, []);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(chatStorageKey, JSON.stringify(messages.slice(-60)));
+        } catch { }
+    }, [chatStorageKey, messages]);
+
     // --- HERRAMIENTA DE BÚSQUEDA INTELIGENTE (FUZZY) ---
     const fuzzySearch = (text, query) => {
         if (!query || typeof query !== 'string') return false;
         if (!text || typeof text !== 'string') return false;
 
-        const str = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const patt = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const str = normalizeText(text);
+        const patt = normalizeText(query);
 
         if (str.includes(patt)) return true; // Coincidencia exacta parcial
 
@@ -865,11 +1172,33 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     // --- CEREBRO LOCAL AVANZADO V5 (Universal & Contextual) ---
     const callLocalBrain = async (userText, currentMessages) => {
         await new Promise(resolve => setTimeout(resolve, 800)); // Simular pensamiento
-        const text = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const text = normalizeText(userText);
+        const qty = parseQuantity(text);
 
         // 0. Detectar Saludos
         if (text.match(/\b(hola|holas|buen dia|buenos dias|buenas tardes|buenas noches|buenas|hello|hi|hey|que tal|como estas|como va|todo bien)\b/)) {
-            return { text: "¡Hola! 👋 ¿En qué puedo ayudarte hoy? Puedes pedirme buscar productos o ver ofertas." };
+            return { text: "¡Hola! 👋 ¿Qué querés hacer? Podés pedirme productos, ofertas, cupones, envío, pagos o que agregue algo al carrito." };
+        }
+
+        if (text.match(/\b(quien sos|que sos|que haces|sos real|sos un bot|asistente)\b/)) {
+            const storeName = settings?.storeName ? ` de **${settings.storeName}**` : '';
+            return { text: `Soy SustIA${storeName}. Puedo ayudarte a encontrar productos, ver ofertas/cupones y armar el carrito más rápido.` };
+        }
+
+        if (text.match(/\b(categorias|categoria|rubros|rubro|secciones)\b/)) {
+            const prodCats = [...new Set(safeProducts.flatMap(p => getProductCategories(p)))];
+            const cats = [...new Set([...(Array.isArray(settings?.categories) ? settings.categories : []), ...prodCats])]
+                .map(c => String(c).trim())
+                .filter(Boolean);
+            if (cats.length === 0) return { text: "Todavía no tengo categorías configuradas. Decime qué estás buscando y lo resuelvo igual." };
+            const top = cats.slice(0, 10);
+            return { text: `Tenemos estas categorías:\n\n${top.map(c => `- ${c}`).join('\n')}\n\nDecime cuál te interesa y te muestro opciones.` };
+        }
+
+        if (text.match(/\b(sobre|info|informacion|quienes somos|about)\b/)) {
+            const about = settings?.aboutUsText || '';
+            if (about.trim()) return { text: about.trim() };
+            return { text: "Esta tienda todavía no cargó su sección “Sobre nosotros”. ¿Querés que te ayude a encontrar un producto?" };
         }
 
         // 0.1 Comandos de Sistema (Universal)
@@ -888,6 +1217,46 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             }
         }
 
+        if (text.match(/\b(envio|envios|entrega|delivery|domicilio|retiro|retirar|local|pickup)\b/)) {
+            const deliveryEnabled = !!settings?.shippingDelivery?.enabled;
+            const pickupEnabled = !!settings?.shippingPickup?.enabled;
+            const deliveryFee = Number(settings?.shippingDelivery?.fee) || 0;
+            const freeAbove = Number(settings?.shippingDelivery?.freeAbove) || 0;
+            const pickupAddress = settings?.shippingPickup?.address || '';
+
+            const lines = [];
+            if (pickupEnabled) {
+                lines.push(`📍 Retiro en local: ${pickupAddress ? `**${pickupAddress}**` : 'a coordinar'}.`);
+            }
+            if (deliveryEnabled) {
+                if (freeAbove > 0) {
+                    lines.push(`🚚 Envío a domicilio: $${deliveryFee.toLocaleString()} (gratis desde $${freeAbove.toLocaleString()}).`);
+                } else {
+                    lines.push(`🚚 Envío a domicilio: $${deliveryFee.toLocaleString()}.`);
+                }
+            }
+            if (!pickupEnabled && !deliveryEnabled) {
+                lines.push("Todavía no tengo configurado el método de entrega para esta tienda.");
+            }
+            lines.push("Si me decís tu ciudad/zona, te digo lo mejor para vos.");
+            return { text: lines.join('\n') };
+        }
+
+        if (text.match(/\b(pago|pagos|tarjeta|mercado\s*pago|transferencia|cbu|alias|efectivo)\b/)) {
+            const hasCard = !!settings?.paymentMercadoPago?.enabled;
+            const hasTransfer = !!settings?.paymentTransfer?.enabled;
+            const hasCash = !!settings?.paymentCash && !!settings?.shippingPickup?.enabled;
+            const options = [];
+            if (hasCard) options.push("💳 Tarjeta (Mercado Pago)");
+            if (hasTransfer) options.push("🏦 Transferencia");
+            if (hasCash) options.push("💵 Efectivo (solo retiro en local)");
+
+            if (options.length === 0) {
+                return { text: "Todavía no tengo métodos de pago configurados para esta tienda. Si querés, te paso WhatsApp para coordinar." };
+            }
+            return { text: `Podés pagar con:\n\n${options.map(o => `- ${o}`).join('\n')}\n\n¿Con cuál preferís?` };
+        }
+
         // 0.2 Detectar Ayuda/Contacto
         if (text.match(/\b(ayuda|soporte|contacto|human|persona|asesor)\b/)) {
             if (settings?.whatsappLink) {
@@ -898,14 +1267,18 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
         // 0.3 Detectar Promociones/Cupones
         if (text.match(/\b(descuento|promo|cupon|oferta|codigo|rebaja)\b/)) {
-            const activeCoupons = (coupons || []).filter(c => c.active);
-            const productsWithDiscount = products.filter(p => p.discount > 0).length;
+            const activeCoupons = safeCoupons.filter(c => c?.active);
+            const deals = safeProducts.filter(p => (Number(p?.discount) || 0) > 0 && (Number(p?.stock) || 0) > 0);
 
             if (activeCoupons.length > 0) {
-                const couponText = activeCoupons.map(c => `🎫 **${c.code}** (${c.discountType === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`).join("\n");
+                const couponText = activeCoupons
+                    .filter(c => c?.code)
+                    .map(c => `🎫 **${c.code}** (${c.discountType === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`)
+                    .join("\n");
                 return { text: `¡Sí! Tenemos estos cupones disponibles para ti:\n\n${couponText}\n\n¡Úsalos al finalizar tu compra! 🛒` };
-            } else if (productsWithDiscount > 0) {
-                return { text: `No tengo códigos de cupón activos ahora, ¡pero tenemos ${productsWithDiscount} productos con descuento especial en la tienda! 🏷️ ¿Quieres verlos?` };
+            } else if (deals.length > 0) {
+                setLastContext({ type: 'show_deals', data: deals.sort(() => 0.5 - Math.random()).slice(0, 5) });
+                return { text: `No tengo códigos de cupón activos ahora, pero sí tenemos **${deals.length}** productos con descuento. ¿Querés que te muestre los mejores? 🏷️` };
             } else {
                 return { text: "Por el momento no tengo códigos promocionales activos, pero nuestros precios son los mejores del mercado. 😉" };
             }
@@ -922,6 +1295,12 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                         products: ctx.data
                     };
                 }
+                if (ctx.type === 'show_deals') {
+                    return {
+                        text: "Listo. Estas son algunas ofertas que valen la pena ahora mismo:",
+                        products: ctx.data
+                    };
+                }
             } else if (text.match(/\b(no|gracias|paso|cancelar|asi esta bien)\b/)) {
                 setLastContext(null);
                 return { text: "Entendido. ¿Necesitas ayuda con algo más? 😊" };
@@ -929,66 +1308,86 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         }
 
         // 2. Detectar Intenciones
-        const isCheaper = text.match(/(?:mas|muy|super)\s*(?:barato|economico|bajo)|oferta|menos/);
+        const isCheaper = text.match(/(?:mas|muy|super)\s*(?:barato|economico|bajo)|oferta|menos|mas\s*economico/);
         const isExpensive = text.match(/(?:mas|muy|super)\s*(?:caro|mejor|calidad|top|premium)|costoso|lujo/);
-        const isBuying = text.match(/(?:agrega|comprar|quiero|dame|carrito|llevo|lo quiero)/);
+        const isBuying = text.match(/(?:agrega|agregar|agregame|sum[aá]|pone|poner|met[eé]|comprar|quiero|dame|carrito|llevo|lo quiero)/);
 
         // 2.1 Filtros de Precio Inteligentes (NUEVO)
         let minPrice = 0;
         let maxPrice = Infinity;
 
         // Detectar "menos de X"
-        const lessThanMatch = text.match(/(?:menos|menor|bajo)\s*(?:de|a|que)?\s*\$?\s*(\d+(?:[.,]\d+)?)/);
+        const lessThanMatch = text.match(/(?:menos|menor|bajo)\s*(?:de|a|que)?\s*\$?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:k|mil))?/);
         if (lessThanMatch) {
-            maxPrice = parseFloat(lessThanMatch[1].replace(',', '.'));
-            // Soporte simple para "mil" (ej: 10 mil)
-            if (text.includes(lessThanMatch[1] + ' mil') || text.includes(lessThanMatch[1] + 'k')) {
-                maxPrice *= 1000;
-            }
+            const parsed = parseHumanNumber(lessThanMatch[1], text);
+            if (parsed !== null) maxPrice = parsed;
         }
 
         // Detectar "entre X y Y"
-        const betweenMatch = text.match(/entre\s*\$?\s*(\d+(?:[.,]\d+)?)\s*y\s*\$?\s*(\d+(?:[.,]\d+)?)/);
+        const betweenMatch = text.match(/entre\s*\$?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:k|mil))?\s*y\s*\$?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:k|mil))?/);
         if (betweenMatch) {
-            minPrice = parseFloat(betweenMatch[1].replace(',', '.'));
-            maxPrice = parseFloat(betweenMatch[2].replace(',', '.'));
-            if (text.includes(betweenMatch[1] + ' mil') || text.includes(betweenMatch[1] + 'k')) minPrice *= 1000;
-            if (text.includes(betweenMatch[2] + ' mil') || text.includes(betweenMatch[2] + 'k')) maxPrice *= 1000;
+            const parsedMin = parseHumanNumber(betweenMatch[1], text);
+            const parsedMax = parseHumanNumber(betweenMatch[2], text);
+            if (parsedMin !== null) minPrice = parsedMin;
+            if (parsedMax !== null) maxPrice = parsedMax;
         }
 
         // 3. Detectar Categoría (Fuzzy)
-        const availableCategories = [...new Set(products.filter(p => p.category && typeof p.category === 'string').map(p => p.category))];
+        const availableCategories = [...new Set(safeProducts.flatMap(p => getProductCategories(p)))];
         const detectedCategoryVal = availableCategories.find(c => fuzzySearch(c, text) || fuzzySearch(text, c));
         const targetCategory = detectedCategoryVal ? detectedCategoryVal.toLowerCase() : null;
 
         // 4. Búsqueda y Scoring de Productos
-        const stopWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'con', 'que', 'para', 'por', 'hola', 'busco', 'tienes', 'precio', 'vale', 'quiero', 'necesito', 'hay', 'donde', 'mas', 'menos', 'agregalo', 'agrega', 'compralo'];
-        const keywords = text.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w) && isNaN(w));
+        const synonyms = new Map([
+            ['celu', 'celular'],
+            ['cel', 'celular'],
+            ['tele', 'televisor'],
+            ['tv', 'televisor'],
+            ['compu', 'computadora'],
+            ['notebook', 'laptop'],
+            ['auris', 'auriculares'],
+            ['zapas', 'zapatillas'],
+            ['remera', 'camiseta'],
+            ['remeras', 'camisetas']
+        ]);
+        const keywords = tokenize(text).flatMap(k => {
+            const alt = synonyms.get(k);
+            return alt ? [k, alt] : [k];
+        });
 
-        let candidates = products.filter(p => p.stock > 0);
+        let candidates = safeProducts.filter(p => (Number(p?.stock) || 0) > 0 && p?.isActive !== false);
 
         // Aplicar filtros de precio
-        candidates = candidates.filter(p => p.basePrice >= minPrice && p.basePrice <= maxPrice);
+        candidates = candidates.filter(p => {
+            const fp = getProductFinalPrice(p);
+            return fp >= minPrice && fp <= maxPrice;
+        });
 
         // Filtro por categoría detectada
         if (targetCategory) {
-            candidates = candidates.filter(p => p.category && p.category.toLowerCase() === targetCategory);
+            candidates = candidates.filter(p => getProductCategories(p).some(c => normalizeText(c) === targetCategory));
         }
 
         // Scoring
         if (keywords.length > 0) {
             candidates = candidates.map(p => {
                 let score = 0;
-                const pName = (p.name || "").toLowerCase().normalize("NFD");
-                const pCategory = (p.category || "").toLowerCase().normalize("NFD");
+                const pName = normalizeText(p?.name || "");
+                const pDesc = normalizeText(p?.description || "");
+                const pCats = getProductCategories(p).map(c => normalizeText(c));
 
-                // Coincidencia exacta o fuzzy
                 keywords.forEach(k => {
-                    if (pName.includes(k)) score += 10;
-                    else if (fuzzySearch(pName, k)) score += 5;
+                    if (!k) return;
+                    if (pName.includes(k)) score += 12;
+                    else if (fuzzySearch(pName, k)) score += 6;
 
-                    if (pCategory.includes(k)) score += 5;
+                    if (pDesc.includes(k)) score += 4;
+                    else if (fuzzySearch(pDesc, k)) score += 2;
+
+                    if (pCats.some(c => c.includes(k))) score += 6;
                 });
+                if ((Number(p?.discount) || 0) > 0) score += 2;
+                if (p?.isFeatured) score += 2;
                 return { ...p, score };
             }).filter(p => p.score > 0);
 
@@ -1013,13 +1412,13 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         }
 
         // Ordenamiento por precio (secundario)
-        if (isCheaper) candidates.sort((a, b) => a.basePrice - b.basePrice);
-        if (isExpensive) candidates.sort((a, b) => b.basePrice - a.basePrice);
+        if (isCheaper) candidates.sort((a, b) => getProductFinalPrice(a) - getProductFinalPrice(b));
+        if (isExpensive) candidates.sort((a, b) => getProductFinalPrice(b) - getProductFinalPrice(a));
 
         // 5. Respuesta
         if (candidates.length === 0) {
             // Inteligencia Proactiva: Si no hay match, ofrecer ofertas o destacados
-            const deals = products.filter(p => p.discount > 0 && p.stock > 0).slice(0, 3);
+            const deals = safeProducts.filter(p => (Number(p?.discount) || 0) > 0 && (Number(p?.stock) || 0) > 0).slice(0, 3);
             if (deals.length > 0) {
                 setLastContext({ type: 'suggest_cross_sell', data: deals });
                 return { text: "Mmm, no encontré exactamente eso 🤔. ¿Pero te gustaría ver nuestras ofertas del día? 🏷️" };
@@ -1044,12 +1443,12 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         // Acción de Compra
         if (isBuying && topMatches.length > 0) {
             const best = topMatches[0];
-            addToCart(best);
+            addToCart(best, qty);
 
             // --- CROSS-SELLING UNIVERSAL ---
             // Buscar productos complementarios (Destacados o con Descuento que NO sean el que acaba de comprar)
             // Esto funciona para cualquier tienda
-            const suggestions = products
+            const suggestions = safeProducts
                 .filter(p => (p.isFeatured || p.discount > 0) && p.id !== best.id && p.stock > 0)
                 .sort(() => 0.5 - Math.random()) // Mezclar
                 .slice(0, 3);
@@ -1057,13 +1456,13 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             if (suggestions.length > 0) {
                 setLastContext({ type: 'suggest_cross_sell', data: suggestions });
                 return {
-                    text: `¡Listo! Agregué **${best.name}** a tu carrito. 🛒\n\n¿Te gustaría ver algunos productos destacados para complementar tu compra? 👀`,
+                    text: `¡Listo! Agregué **${qty}x ${best.name}** a tu carrito. 🛒\n\n¿Te gustaría ver algunos productos destacados para complementar tu compra? 👀`,
                     products: [best]
                 };
             }
 
             return {
-                text: `¡Listo! Agregué **${best.name}** a tu carrito. 🛒 ¿Algo más?`,
+                text: `¡Listo! Agregué **${qty}x ${best.name}** a tu carrito. 🛒 ¿Algo más?`,
                 products: [best]
             };
         }
@@ -1078,26 +1477,93 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         };
     };
 
-    const handleSend = async () => {
-        if (!inputValue.trim()) return;
-        const text = inputValue;
+    const withTimeout = async (promise, ms) => {
+        let timeoutId = null;
+        const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('timeout')), ms);
+        });
+        try {
+            return await Promise.race([promise, timeoutPromise]);
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
+        }
+    };
+
+    const sendText = async (rawText) => {
+        if (inFlightRef.current) return;
+        const text = String(rawText || '').trim().slice(0, 300);
+        if (!text) return;
+
+        inFlightRef.current = true;
         setInputValue('');
 
         const newMsgUser = { role: 'client', text };
-        const updatedHistory = [...messages, newMsgUser];
+        const updatedHistory = [...(messagesRef.current || []), newMsgUser];
 
-        setMessages(updatedHistory);
+        setMessages(prev => [...prev, newMsgUser]);
         setIsTyping(true);
 
-        const response = await callLocalBrain(text, updatedHistory);
+        try {
+            const localResponse = await withTimeout(callLocalBrain(text, updatedHistory), 12000);
+            if (!isMountedRef.current) return;
+            let finalText = localResponse?.text && typeof localResponse.text === 'string'
+                ? localResponse.text
+                : "Perdón, tuve un problema procesando eso. ¿Podés reformularlo?";
+            const safeProducts = Array.isArray(localResponse?.products) ? localResponse.products : undefined;
 
-        setIsTyping(false);
-        setMessages(prev => [...prev, {
-            role: 'model',
-            text: response.text,
-            products: response.products
-        }]);
+            const shouldAskExternal = aiEnabled && (!safeProducts || safeProducts.length === 0) && /no encontr[eé]|no tengo eso|no lo tengo|probando con otra palabra/i.test(finalText);
+            if (shouldAskExternal) {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), 8500);
+                try {
+                    const aiRes = await callExternalAI({ userText: text, history: updatedHistory, signal: controller.signal });
+                    if (aiRes?.text) finalText = aiRes.text;
+                } catch { }
+                clearTimeout(id);
+            }
+
+            setMessages(prev => [...prev, {
+                role: 'model',
+                text: finalText,
+                products: safeProducts
+            }]);
+        } catch (e) {
+            if (!isMountedRef.current) return;
+            const fallback = settings?.whatsappLink
+                ? `Uy, se me trabó por un momento. Si querés, hablá por WhatsApp: ${settings.whatsappLink}`
+                : "Uy, se me trabó por un momento. ¿Probamos de nuevo?";
+            setMessages(prev => [...prev, { role: 'model', text: fallback }]);
+        } finally {
+            if (isMountedRef.current) setIsTyping(false);
+            inFlightRef.current = false;
+        }
     };
+
+    const handleSend = async () => {
+        return sendText(inputValue);
+    };
+
+    const handleQuickAction = (value) => {
+        if (isTyping) return;
+        return sendText(value);
+    };
+
+    const clearChat = () => {
+        try {
+            localStorage.removeItem(chatStorageKey);
+        } catch { }
+        setLastContext(null);
+        setMessages([defaultBotMessage]);
+    };
+
+    const quickActions = [
+        { label: 'Ofertas', value: 'Mostrame ofertas' },
+        { label: 'Cupones', value: 'Tenés cupones?' },
+        { label: 'Envío', value: 'Cómo es el envío?' },
+        { label: 'Pagos', value: 'Qué medios de pago hay?' },
+        { label: 'Categorías', value: 'Qué categorías tenés?' },
+        { label: 'WhatsApp', value: 'Necesito hablar con una persona' }
+    ];
 
 
 
@@ -1118,12 +1584,30 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-lg transition">
-                            <X className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={clearChat} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-lg transition" title="Limpiar chat">
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-lg transition" title="Cerrar">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-[#111] custom-scrollbar">
+                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                            {quickActions.map(a => (
+                                <button
+                                    key={a.label}
+                                    type="button"
+                                    onClick={() => handleQuickAction(a.value)}
+                                    disabled={isTyping}
+                                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border border-white/10 bg-[#1a1a1a] text-white/90 hover:bg-[#222] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {a.label}
+                                </button>
+                            ))}
+                        </div>
                         {messages.map((m, i) => (
                             <div key={i} className={`flex flex-col ${m.role === 'client' ? 'items-end' : 'items-start'}`}>
                                 <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${m.role === 'client'
@@ -1277,6 +1761,12 @@ function App() {
             return saved !== null ? JSON.parse(saved) : false; // Default to light mode (blanco)
         } catch (e) { return false; }
     });
+    const [appId, setAppId] = useState(null);
+    const [storeResolution, setStoreResolution] = useState({ status: 'resolving', hostname: '', normalizedHostname: '', storeId: null, error: null });
+    const [storeSetupStoreIdInput, setStoreSetupStoreIdInput] = useState('');
+    const [isStoreSetupSaving, setIsStoreSetupSaving] = useState(false);
+    const [isExportingBackup, setIsExportingBackup] = useState(false);
+    const [isImportingBackup, setIsImportingBackup] = useState(false);
 
     // Usuarios y Autenticación
     const [currentUser, setCurrentUser] = useState(() => {
@@ -1323,12 +1813,14 @@ function App() {
     // Datos Principales
     const [products, setProducts] = useState([]);
     const [promos, setPromos] = useState([]); // Nuevo estado para Promos
+    const [homeBanners, setHomeBanners] = useState([]);
     const [cart, setCart] = useState(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('sustore_cart'));
             return Array.isArray(saved) ? saved : [];
         } catch (e) { return []; }
     });
+    const cartHydratedFromRemoteRef = useRef(false);
     const [liveCarts, setLiveCarts] = useState([]); // Monitor de carritos en tiempo real
     const [orders, setOrders] = useState([]);
     const [users, setUsers] = useState([]);
@@ -1386,6 +1878,8 @@ function App() {
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
     const [newInvestment, setNewInvestment] = useState({ investor: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
     const [newPurchase, setNewPurchase] = useState({ productId: '', supplierId: '', quantity: 1, cost: 0, isNewProduct: false });
+    const [newHomeBanner, setNewHomeBanner] = useState({ imageUrl: '', productId: '', enabled: true, order: 0 });
+    const [editingHomeBannerId, setEditingHomeBannerId] = useState(null);
 
     // Estado para Proveedores (Restaurado)
     const [newSupplier, setNewSupplier] = useState({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] });
@@ -1414,6 +1908,64 @@ function App() {
             },
             onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
         });
+    };
+
+    const downloadJsonFile = (filename, obj) => {
+        const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    const exportBackup = async () => {
+        if (!appId) throw new Error('Tienda no configurada');
+        if (!auth.currentUser || auth.currentUser.isAnonymous) throw new Error('Sesión inválida');
+        setIsExportingBackup(true);
+        try {
+            const token = await auth.currentUser.getIdToken();
+            const res = await fetch('/api/admin/export-store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-store-id': appId, 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'No se pudo exportar');
+            const safeDate = new Date().toISOString().replace(/[:.]/g, '-');
+            downloadJsonFile(`backup-${appId}-${safeDate}.json`, data);
+            showToast('Backup exportado.', 'success');
+        } catch (e) {
+            showToast(e?.message || 'No se pudo exportar', 'error');
+        } finally {
+            setIsExportingBackup(false);
+        }
+    };
+
+    const importBackupFile = async (file) => {
+        if (!appId) throw new Error('Tienda no configurada');
+        if (!auth.currentUser || auth.currentUser.isAnonymous) throw new Error('Sesión inválida');
+        setIsImportingBackup(true);
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            const token = await auth.currentUser.getIdToken();
+            const res = await fetch('/api/admin/import-store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-store-id': appId, 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ backup: parsed }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'No se pudo importar');
+            showToast(`Backup importado (${data.written || 0} docs).`, 'success');
+        } catch (e) {
+            showToast(e?.message || 'No se pudo importar', 'error');
+        } finally {
+            setIsImportingBackup(false);
+        }
     };
 
     // --- FUNCIÓN PARA MANEJAR CAMBIO DE PLAN (DOWNGRADE) ---
@@ -1793,6 +2345,18 @@ function App() {
 
     const removeToast = (id) => setToasts(p => p.filter(t => t.id !== id));
 
+    const handleHomeBannerClick = (slide) => {
+        const productId = slide?.productId;
+        if (!productId) return;
+        const product = products.find(p => String(p.id).trim() === String(productId).trim());
+        if (product) {
+            setSelectedProduct(product);
+            return;
+        }
+        showToast("Este banner apunta a un producto que ya no existe.", "warning");
+        document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
     // Validar acceso por rol
     const getRole = (email) => {
         if (!email) return 'user';
@@ -1837,6 +2401,7 @@ function App() {
     };
 
     const isAdminUser = currentUser?.role === 'admin';
+    const isSuperAdminSession = !!(systemUser?.email && SUPER_ADMIN_EMAIL && systemUser.email.trim().toLowerCase() === SUPER_ADMIN_EMAIL.trim().toLowerCase());
     const latestOrderIso = useMemo(() => {
         if (!isAdminUser) return null;
         const v = orders?.[0]?.date;
@@ -1872,13 +2437,14 @@ function App() {
 
     const markOrdersSeen = useCallback(async (iso) => {
         if (!isAdminUser) return;
+        if (!appId) return;
         const value = typeof iso === 'string' && iso ? iso : new Date().toISOString();
         if (lastOrdersSeenWriteRef.current === value) return;
         lastOrdersSeenWriteRef.current = value;
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), { ordersLastSeenIso: value });
         } catch (e) { }
-    }, [isAdminUser]);
+    }, [isAdminUser, appId]);
 
     const startOrderAlarm = useCallback(async () => {
         if (!isAdminUser) return;
@@ -1944,6 +2510,79 @@ function App() {
         orderAlarmIntervalRef.current = setInterval(tick, 2000);
     }, [isAdminUser, adminOrderAlarmMuted, hasUnseenOrders, view, adminTab]);
 
+    useEffect(() => {
+        const rawHostname = (typeof window !== 'undefined' && window.location && window.location.hostname)
+            ? String(window.location.hostname).trim().toLowerCase()
+            : '';
+        const normalizedHostname = rawHostname.startsWith('www.') ? rawHostname.slice(4) : rawHostname;
+
+        if (!normalizedHostname) {
+            setStoreResolution({ status: 'unconfigured', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: 'hostname-empty' });
+            setAppId(null);
+            return;
+        }
+
+        if (normalizedHostname === 'localhost' || normalizedHostname === '127.0.0.1') {
+            setStoreResolution({ status: 'resolved', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: DEFAULT_APP_ID, error: null });
+            setAppId(DEFAULT_APP_ID);
+            return;
+        }
+
+        setStoreResolution({ status: 'resolving', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: null });
+
+        let cancelled = false;
+        const resolve = async () => {
+            try {
+                const snap = await getDoc(doc(db, 'storesIndex', normalizedHostname));
+                if (cancelled) return;
+                if (snap.exists()) {
+                    const data = snap.data() || {};
+                    const storeId = typeof data.storeId === 'string' ? data.storeId.trim() : '';
+                    if (storeId) {
+                        setStoreResolution({ status: 'resolved', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId, error: null });
+                        setAppId(storeId);
+                        return;
+                    }
+                }
+                setStoreResolution({ status: 'unconfigured', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: null });
+                setAppId(null);
+            } catch (e) {
+                if (cancelled) return;
+                setStoreResolution({ status: 'unconfigured', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: e?.message || 'resolve-error' });
+                setAppId(null);
+            }
+        };
+        resolve();
+        return () => { cancelled = true; };
+    }, []);
+
+    const createStoreId = useCallback(() => {
+        const clean = (value) => String(value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+        const base = clean(storeResolution.normalizedHostname || storeResolution.hostname || 'store');
+        const rand = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID().split('-')[0]
+            : Math.random().toString(36).slice(2, 8);
+        return `${base}-${rand}`.slice(0, 80);
+    }, [storeResolution.hostname, storeResolution.normalizedHostname]);
+
+    const bootstrapStoreData = useCallback(async (storeId) => {
+        const nowIso = new Date().toISOString();
+        await setDoc(doc(db, 'artifacts', storeId, 'public', 'data', 'settings', 'config'), { ...defaultSettings, createdAt: nowIso, updatedAt: nowIso }, { merge: true });
+        await setDoc(doc(db, 'artifacts', storeId, 'public', 'config'), { version: APP_VERSION, updatedAt: nowIso }, { merge: true });
+    }, []);
+
+    const registerHostname = useCallback(async (storeId) => {
+        const hostname = storeResolution.normalizedHostname;
+        if (!hostname) throw new Error('Dominio inválido');
+        const normalizedStoreId = String(storeId || '').trim();
+        if (!normalizedStoreId) throw new Error('StoreId inválido');
+        const nowIso = new Date().toISOString();
+        await setDoc(doc(db, 'storesIndex', hostname), { storeId: normalizedStoreId, hostname, updatedAt: nowIso, updatedBy: systemUser?.email || null, createdAt: nowIso }, { merge: true });
+        await bootstrapStoreData(normalizedStoreId);
+        setAppId(normalizedStoreId);
+        setStoreResolution((prev) => ({ ...prev, status: 'resolved', storeId: normalizedStoreId, error: null }));
+    }, [bootstrapStoreData, storeResolution.normalizedHostname, systemUser?.email]);
+
     // --- EFECTOS DE SINCRONIZACIÓN (FIREBASE) ---
 
     // 0. Sincronizar Dark Mode con el DOM y localStorage
@@ -1965,7 +2604,7 @@ function App() {
         localStorage.setItem('sustore_cart', JSON.stringify(cart));
 
         // Si hay usuario, subir carrito a DB para monitor de admin
-        if (currentUser && currentUser.id) {
+        if (appId && currentUser && currentUser.id) {
             const syncCartToDB = async () => {
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
@@ -1978,7 +2617,7 @@ function App() {
                             price: item.product.basePrice
                         })),
                         lastUpdated: new Date().toISOString()
-                    });
+                    }, { merge: true });
                 } catch (e) {
                     console.error("Error syncing cart", e);
                 }
@@ -1987,7 +2626,54 @@ function App() {
             const debounceTimer = setTimeout(syncCartToDB, 800);
             return () => clearTimeout(debounceTimer);
         }
-    }, [cart, currentUser]);
+    }, [cart, currentUser, appId]);
+
+    useEffect(() => {
+        if (!currentUser?.id) return;
+        if (!appId) return;
+        if (cartHydratedFromRemoteRef.current) return;
+
+        let cancelled = false;
+        const hydrateCartFromRemote = async () => {
+            try {
+                const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id));
+                if (!snap.exists()) return;
+                const data = snap.data() || {};
+                const remoteItems = Array.isArray(data.items) ? data.items : [];
+                if (remoteItems.length === 0) return;
+
+                const normalizedRemote = remoteItems
+                    .filter(i => i && i.productId && Number(i.quantity) > 0)
+                    .map(i => ({
+                        product: {
+                            id: i.productId,
+                            name: typeof i.name === 'string' ? i.name : '',
+                            basePrice: Number(i.price) || 0,
+                            image: '',
+                            category: ''
+                        },
+                        quantity: Number(i.quantity) || 1
+                    }));
+
+                if (normalizedRemote.length === 0) return;
+
+                const localSignature = (cart || []).map(i => `${i?.product?.id || ''}:${Number(i?.quantity) || 0}`).sort().join('|');
+                const remoteSignature = normalizedRemote.map(i => `${i.product.id}:${i.quantity}`).sort().join('|');
+                if (localSignature && localSignature === remoteSignature) {
+                    cartHydratedFromRemoteRef.current = true;
+                    return;
+                }
+
+                if (!cancelled) {
+                    setCart(normalizedRemote);
+                    cartHydratedFromRemoteRef.current = true;
+                }
+            } catch (e) { }
+        };
+
+        hydrateCartFromRemote();
+        return () => { cancelled = true; };
+    }, [appId, currentUser?.id, cart]);
 
     useEffect(() => {
         if (!isAdminUser) {
@@ -2062,6 +2748,7 @@ function App() {
 
     // 3. Sistema de Auto-Update
     useEffect(() => {
+        if (!appId) return;
         const configRef = doc(db, 'artifacts', appId, 'public', 'config');
         const unsubscribe = onSnapshot(configRef, (snap) => {
             if (snap.exists()) {
@@ -2073,7 +2760,7 @@ function App() {
             }
         });
         return () => unsubscribe();
-    }, []);
+    }, [appId]);
     // 2. Persistencia Detallada y Session
     useEffect(() => {
         // Solo guardar usuarios con datos válidos completos
@@ -2097,67 +2784,69 @@ function App() {
 
     // 3. Inicialización de Firebase Auth
     useEffect(() => {
-        const initializeAuth = async () => {
+        let didBootstrap = false;
+        let isBootstrapping = false;
+
+        const bootstrapAuth = async () => {
+            if (isBootstrapping) return;
+            isBootstrapping = true;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
-
-                // Refrescar datos de usuario desde DB para asegurar consistencia
-                if (currentUser && currentUser.id) {
-                    try {
-                        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.id);
-                        const userDocSnap = await getDoc(userDocRef);
-
-                        if (userDocSnap.exists()) {
-                            const freshUserData = { ...userDocSnap.data(), id: userDocSnap.id };
-
-                            // Asegurar flag de verificación para admins al recargar
-                            if (freshUserData.role === 'admin') {
-                                freshUserData._adminVerified = true;
-                            }
-
-                            // Verificar si hay cambios reales antes de actualizar estado
-                            if (JSON.stringify(freshUserData) !== JSON.stringify(currentUser)) {
-                                setCurrentUser(freshUserData);
-                            }
-                        }
-                    } catch (err) {
-                        console.warn("No se pudo refrescar usuario al inicio:", err);
-                    }
-                }
             } catch (e) {
-                console.error("Error en inicialización Auth:", e);
+                console.error("Error en bootstrap Auth:", e);
+            } finally {
+                isBootstrapping = false;
             }
         };
 
-        initializeAuth();
-
-        // Listener de Auth State
         return onAuthStateChanged(auth, async (user) => {
             setSystemUser(user);
 
-            if (user && !user.isAnonymous) {
-                try {
-                    const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
-                    const snap = await getDoc(userDocRef);
-                    if (snap.exists()) {
-                        setCurrentUser({ id: snap.id, ...snap.data() });
-                    } else {
-                        setCurrentUser(null);
-                    }
-                } catch {
+            if (!didBootstrap) {
+                didBootstrap = true;
+                if (!user) {
                     setCurrentUser(null);
+                    await bootstrapAuth();
+                    setTimeout(() => setIsLoading(false), 300);
+                    return;
                 }
-            } else {
+            }
+
+            if (!user || user.isAnonymous) {
                 setCurrentUser(null);
             }
 
             setTimeout(() => setIsLoading(false), 300);
         });
     }, []);
+
+    useEffect(() => {
+        if (!appId) return;
+        if (!systemUser || systemUser.isAnonymous) return;
+        let cancelled = false;
+        const loadProfile = async () => {
+            try {
+                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', systemUser.uid);
+                const snap = await getDoc(userDocRef);
+                if (cancelled) return;
+                if (snap.exists()) {
+                    const userData = { id: snap.id, ...snap.data() };
+                    if (userData.role === 'admin') userData._adminVerified = true;
+                    setCurrentUser(userData);
+                } else {
+                    setCurrentUser(null);
+                }
+            } catch {
+                if (!cancelled) setCurrentUser(null);
+            }
+        };
+        loadProfile();
+        return () => { cancelled = true; };
+    }, [appId, systemUser?.uid, systemUser?.isAnonymous]);
 
     // CSS Variable Injection for Dynamic Theme Colors
     useEffect(() => {
@@ -2297,6 +2986,7 @@ function App() {
     // 4. Suscripciones a Colecciones (Snapshot Listeners)
     useEffect(() => {
         if (!systemUser) return;
+        if (!appId) return;
 
         const isAuthenticatedUser = systemUser && !systemUser.isAnonymous;
         const isAdminUser = currentUser?.role === 'admin';
@@ -2328,6 +3018,30 @@ function App() {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), snapshot => {
                 setPromos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             })
+        );
+
+        unsubscribeFunctions.push(
+            onSnapshot(
+                collection(db, 'artifacts', appId, 'public', 'data', 'homeBanners'),
+                (snapshot) => {
+                    const banners = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    banners.sort((a, b) => {
+                        const ao = Number.isFinite(Number(a.order)) ? Number(a.order) : 0;
+                        const bo = Number.isFinite(Number(b.order)) ? Number(b.order) : 0;
+                        if (ao !== bo) return ao - bo;
+                        const ad = typeof a.createdAt === 'string' ? a.createdAt : '';
+                        const bd = typeof b.createdAt === 'string' ? b.createdAt : '';
+                        return ad.localeCompare(bd);
+                    });
+                    setHomeBanners(banners);
+                },
+                (error) => {
+                    setHomeBanners([]);
+                    if (currentUser?.role === 'admin') {
+                        showToast("No se pudieron cargar los banners del Home: " + (error?.message || "error"), "warning");
+                    }
+                }
+            )
         );
 
         unsubscribeFunctions.push(
@@ -2432,12 +3146,13 @@ function App() {
         }
 
         return () => unsubscribeFunctions.forEach(unsub => unsub());
-    }, [systemUser, currentUser?.role]);
+    }, [systemUser, currentUser?.role, appId]);
 
     // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
     // Elimina automáticamente productos que ya no existen o no tienen stock
     useEffect(() => {
         // Solo ejecutar si hay productos cargados y un usuario con carrito
+        if (!appId) return;
         if (products.length > 0 && cart.length > 0 && currentUser) {
             let hasChanges = false;
             let removedItems = [];
@@ -2524,6 +3239,7 @@ function App() {
     // Actualiza todas las meta tags de SEO según la configuración de la tienda
     useEffect(() => {
         // IMPORTANTE: Esperar a que la configuración cargue realmente para evitar "parpadeo" del logo default
+        if (!appId) return;
         if (!settingsLoaded || !settings) return;
 
         const currentSettingsStr = JSON.stringify(settings);
@@ -2674,19 +3390,26 @@ function App() {
     const handleAuth = async (isRegister) => {
         setIsLoading(true);
         try {
-            const usersPath = ['artifacts', appId, 'public', 'data', 'users'];
+            const superAdminAttempt = String(authData.email || '').trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+            if (!appId && !superAdminAttempt) {
+                throw new Error('Tienda no configurada para este dominio.');
+            }
+            const usersPath = appId ? ['artifacts', appId, 'public', 'data', 'users'] : null;
 
             const fetchProfile = async (uid) => {
+                if (!usersPath) return null;
                 const snap = await getDoc(doc(db, ...usersPath, uid));
                 return snap.exists() ? { id: snap.id, ...snap.data() } : null;
             };
 
             const setupProfile = async (firebaseUser) => {
+                if (!appId) return;
                 const token = await firebaseUser.getIdToken();
                 const res = await fetch('/api/auth/setup-profile', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'x-store-id': appId || '',
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
@@ -2701,11 +3424,13 @@ function App() {
             };
 
             const claimLegacyProfile = async (firebaseUser) => {
+                if (!appId) return;
                 const token = await firebaseUser.getIdToken();
                 await fetch('/api/auth/claim-legacy-profile', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'x-store-id': appId || '',
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({})
@@ -2745,7 +3470,7 @@ function App() {
                 if (!input.includes('@')) {
                     const res = await fetch('/api/auth/username-lookup', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '' },
                         body: JSON.stringify({ username: input })
                     });
                     const data = await res.json().catch(() => ({}));
@@ -2760,7 +3485,7 @@ function App() {
                     if (e.code === 'auth/user-not-found') {
                         const res = await fetch('/api/auth/legacy-login', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '' },
                             body: JSON.stringify({ identifier: input, password: authData.password })
                         });
                         const data = await res.json().catch(() => ({}));
@@ -2777,6 +3502,19 @@ function App() {
                 }
 
                 if (!authUser) throw new Error('Error al iniciar sesión');
+
+                if (!usersPath) {
+                    setCurrentUser({
+                        id: authUser.uid,
+                        name: authUser.displayName || 'Usuario',
+                        email: authUser.email || emailToUse,
+                        emailLower: (authUser.email || emailToUse).toLowerCase(),
+                    });
+                    showToast('Sesión iniciada. Vinculá el dominio para cargar la tienda.', 'success');
+                    setView('store');
+                    setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
+                    return;
+                }
 
                 let profile = await fetchProfile(authUser.uid);
                 if (!profile) {
@@ -2959,6 +3697,80 @@ function App() {
         return Math.ceil(discountValue);
     };
 
+    const buildWhatsappUrl = (baseLink, message) => {
+        const trimmed = (baseLink || '').trim();
+        if (!trimmed) return null;
+        try {
+            const url = new URL(trimmed);
+            url.searchParams.set('text', message);
+            return url.toString();
+        } catch {
+            const digits = trimmed.replace(/[^\d]/g, '');
+            if (!digits) return null;
+            return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+        }
+    };
+
+    const isCouponValidForWhatsapp = (coupon) => {
+        if (!coupon) return false;
+        if (coupon.targetType === 'specific_email' && currentUser?.email) {
+            if (coupon.targetUser && coupon.targetUser.toLowerCase() !== currentUser.email.toLowerCase()) return false;
+        }
+        if (coupon.expirationDate && new Date(coupon.expirationDate) < new Date()) return false;
+        if (coupon.usageLimit && coupon.usedBy && coupon.usedBy.length >= coupon.usageLimit) return false;
+        if (cartSubtotal < (coupon.minPurchase || 0)) return false;
+        if (!currentUser?.dni) return false;
+        return true;
+    };
+
+    const buildWhatsappCartMessage = () => {
+        const currency = settings?.currency || '$';
+        const storeName = settings?.storeName || 'la tienda';
+
+        const lines = [];
+        lines.push(`Hola, quiero terminar mi compra por WhatsApp en ${storeName}.`);
+
+        if (currentUser?.name) {
+            const userBits = [currentUser.name];
+            if (currentUser.email) userBits.push(currentUser.email);
+            if (currentUser.phone) userBits.push(currentUser.phone);
+            lines.push(`Cliente: ${userBits.join(' - ')}`);
+        } else if (currentUser?.email) {
+            lines.push(`Cliente: ${currentUser.email}`);
+        }
+
+        lines.push('');
+        lines.push('Mi carrito:');
+
+        cart.forEach((item) => {
+            const name = item.product?.name || 'Producto';
+            const quantity = Number(item.quantity) || 0;
+            const unit = calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0);
+            const lineTotal = Math.ceil(unit * quantity);
+            lines.push(`- ${quantity} x ${name} — ${currency}${unit.toLocaleString()} c/u — ${currency}${lineTotal.toLocaleString()}`);
+        });
+
+        const couponToUse = isCouponValidForWhatsapp(appliedCoupon) ? appliedCoupon : null;
+        const couponDiscount = couponToUse ? calculateDiscountAmount(cartSubtotal, couponToUse) : 0;
+        const messageSubtotal = Math.max(0, Number(cartSubtotal) || 0);
+        const messageShipping = Math.max(0, Number(shippingFee) || 0);
+        const messageTotal = Math.max(0, messageSubtotal - couponDiscount + messageShipping);
+
+        lines.push('');
+        lines.push(`Subtotal: ${currency}${messageSubtotal.toLocaleString()}`);
+
+        if (couponToUse && couponDiscount > 0) {
+            lines.push(`Cupón: ${couponToUse.code}`);
+            lines.push(`Descuento: -${currency}${couponDiscount.toLocaleString()}`);
+        }
+
+        const shippingLabel = checkoutData.shippingMethod === 'Delivery' ? 'Envío a domicilio' : 'Retiro en local';
+        lines.push(`${shippingLabel}: ${messageShipping > 0 ? `${currency}${messageShipping.toLocaleString()}` : 'Gratis'}`);
+        lines.push(`Total estimado: ${currency}${messageTotal.toLocaleString()}`);
+
+        return lines.join('\n');
+    };
+
     const discountAmount = appliedCoupon ? calculateDiscountAmount(cartSubtotal, appliedCoupon) : 0;
 
     const shippingFee = useMemo(() => {
@@ -3010,6 +3822,7 @@ function App() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-store-id': appId || '',
                 },
                 body: JSON.stringify({
                     orderId: orderData.orderId,
@@ -3032,48 +3845,82 @@ function App() {
         }
     };
 
+    const getAuthenticatedUser = async () => {
+        const existing = auth.currentUser;
+        if (existing && !existing.isAnonymous) return existing;
+
+        const hydrated = await new Promise((resolve) => {
+            let unsub = null;
+            const timeoutId = setTimeout(() => {
+                if (unsub) unsub();
+                resolve(auth.currentUser);
+            }, 1200);
+            unsub = onAuthStateChanged(auth, (user) => {
+                clearTimeout(timeoutId);
+                unsub();
+                resolve(user);
+            });
+        });
+
+        if (hydrated && !hydrated.isAnonymous) return hydrated;
+        return null;
+    };
+
     // 5. Confirmación de Pedido (Checkout)
     const confirmOrder = async () => {
         if (isProcessingOrder) return;
 
-        // Validaciones de Checkout
-        if (!currentUser) {
-            setView('login');
-            return showToast("Por favor inicia sesión para finalizar la compra.", "info");
-        }
-
-        // Validar que el usuario tenga todos sus datos completos
-        if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
-            setView('profile');
-            return showToast("Por favor completa tus datos personales (Nombre, Teléfono y DNI) en tu perfil antes de comprar.", "warning");
-        }
-
-        if (checkoutData.shippingMethod === 'Delivery' && (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode)) {
-            return showToast("Por favor completa TODOS los datos de envío.", "warning");
-        }
-
-        if (!checkoutData.paymentChoice) {
-            return showToast("Selecciona un método de pago.", "warning");
-        }
-
-        setIsProcessingOrder(true);
-        showToast("Procesando tu pedido, por favor espera...", "info");
-
         try {
-            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+            const authUser = await getAuthenticatedUser();
+            if (!authUser) {
                 setView('login');
-                throw new Error('Por favor inicia sesión para finalizar la compra.');
+                return showToast("Por favor inicia sesión para finalizar la compra.", "info");
+            }
+
+            let effectiveUser = currentUser;
+            if (!effectiveUser && appId) {
+                try {
+                    const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', authUser.uid));
+                    if (snap.exists()) {
+                        const userData = { id: snap.id, ...snap.data() };
+                        if (userData.role === 'admin') userData._adminVerified = true;
+                        setCurrentUser(userData);
+                        effectiveUser = userData;
+                    }
+                } catch { }
+            }
+
+            if (!effectiveUser) {
+                setView('login');
+                return showToast("Por favor inicia sesión para finalizar la compra.", "info");
+            }
+
+            if (!effectiveUser.name || !effectiveUser.phone || !effectiveUser.dni) {
+                setView('profile');
+                return showToast("Por favor completa tus datos personales (Nombre, Teléfono y DNI) en tu perfil antes de comprar.", "warning");
+            }
+
+            if (checkoutData.shippingMethod === 'Delivery' && (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode)) {
+                return showToast("Por favor completa TODOS los datos de envío.", "warning");
+            }
+
+            if (!checkoutData.paymentChoice) {
+                return showToast("Selecciona un método de pago.", "warning");
             }
 
             if (checkoutData.paymentChoice === 'Tarjeta') {
                 throw new Error('Para pagar con tarjeta usá el formulario de Mercado Pago.');
             }
 
-            const token = await auth.currentUser.getIdToken();
+            setIsProcessingOrder(true);
+            showToast("Procesando tu pedido, por favor espera...", "info");
+
+            const token = await authUser.getIdToken(true);
             const res = await fetch('/api/orders/confirm', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-store-id': appId || '',
                     'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
@@ -3091,6 +3938,10 @@ function App() {
                 }),
             });
             const data = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+                setView('login');
+                throw new Error('Tu sesión venció. Iniciá sesión nuevamente para finalizar la compra.');
+            }
             if (!res.ok) throw new Error(data.error || 'Error al procesar el pedido');
 
             setCart([]);
@@ -3316,15 +4167,17 @@ function App() {
     // Confirmar orden después de pago exitoso con MP
     const confirmOrderAfterPayment = async (mpPaymentId) => {
         try {
-            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+            const authUser = await getAuthenticatedUser();
+            if (!authUser) {
                 throw new Error('Sesión inválida. Reiniciá e intentá de nuevo.');
             }
 
-            const token = await auth.currentUser.getIdToken();
+            const token = await authUser.getIdToken(true);
             const res = await fetch('/api/orders/confirm', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-store-id': appId || '',
                     'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
@@ -3343,6 +4196,7 @@ function App() {
                 }),
             });
             const data = await res.json().catch(() => ({}));
+            if (res.status === 401) throw new Error('Tu sesión venció. Iniciá sesión nuevamente e intentá otra vez.');
             if (!res.ok) throw new Error(data.error || 'Error guardando el pedido');
 
             setCart([]);
@@ -3504,6 +4358,66 @@ function App() {
             img.src = event.target.result;
         };
         reader.readAsDataURL(file);
+    };
+
+    const resetHomeBannerForm = () => {
+        setEditingHomeBannerId(null);
+        setNewHomeBanner({ imageUrl: '', productId: '', enabled: true, order: 0 });
+    };
+
+    const editHomeBannerFn = (banner) => {
+        if (!banner) return;
+        setEditingHomeBannerId(banner.id);
+        setNewHomeBanner({
+            imageUrl: banner.imageUrl || '',
+            productId: banner.productId || '',
+            enabled: banner.enabled !== false,
+            order: Number.isFinite(Number(banner.order)) ? Number(banner.order) : 0,
+        });
+    };
+
+    const saveHomeBannerFn = async () => {
+        if (!newHomeBanner?.imageUrl) return showToast("Subí una imagen para el banner.", "warning");
+        if (!newHomeBanner?.productId) return showToast("Seleccioná un producto para el banner.", "warning");
+
+        const orderValue = Number.isFinite(Number(newHomeBanner.order)) ? Number(newHomeBanner.order) : 0;
+        const payload = {
+            imageUrl: newHomeBanner.imageUrl,
+            productId: String(newHomeBanner.productId),
+            enabled: newHomeBanner.enabled !== false,
+            order: orderValue,
+        };
+
+        try {
+            if (editingHomeBannerId) {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'homeBanners', editingHomeBannerId), payload);
+                showToast("Banner actualizado.", "success");
+            } else {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'homeBanners'), {
+                    ...payload,
+                    createdAt: new Date().toISOString(),
+                });
+                showToast("Banner creado.", "success");
+            }
+            resetHomeBannerForm();
+        } catch (e) {
+            console.error(e);
+            showToast("Error guardando banner: " + (e?.message || "error"), "error");
+        }
+    };
+
+    const deleteHomeBannerFn = (banner) => {
+        if (!banner?.id) return;
+        openConfirm("Eliminar Banner", "¿Eliminar este banner del carrusel?", async () => {
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'homeBanners', banner.id));
+                showToast("Banner eliminado.", "success");
+                if (editingHomeBannerId === banner.id) resetHomeBannerForm();
+            } catch (e) {
+                console.error(e);
+                showToast("Error eliminando banner: " + (e?.message || "error"), "error");
+            }
+        });
     };
 
     // 6.5. Eliminar Producto
@@ -4969,7 +5883,7 @@ function App() {
                 if (Object.keys(authUpdate).length > 0) {
                     const res = await fetch('/api/admin/update-user', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ uid: user.id, ...authUpdate })
                     });
                     const result = await res.json();
@@ -5019,7 +5933,7 @@ function App() {
                     const token = await auth.currentUser.getIdToken();
                     const res = await fetch('/api/admin/delete-user', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ uid: user.id })
                     });
                     if (!res.ok) throw new Error("Error eliminando acceso de Auth");
@@ -5191,6 +6105,115 @@ function App() {
                     ))}
                 </div>
             </div>
+
+            {storeResolution.status !== 'resolved' && (
+                <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
+                    <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#050505] p-8 shadow-2xl">
+                        {storeResolution.status === 'resolving' ? (
+                            <div className="flex items-center gap-4">
+                                <Loader2 className="w-7 h-7 animate-spin text-orange-500" />
+                                <div>
+                                    <p className="text-white font-black text-xl tracking-tight">Detectando tienda…</p>
+                                    <p className="text-slate-500 text-sm font-mono">{storeResolution.normalizedHostname || storeResolution.hostname}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <p className="text-white font-black text-2xl tracking-tight">Tienda no configurada</p>
+                                    <p className="text-slate-500 text-sm font-mono">Dominio: {storeResolution.normalizedHostname || storeResolution.hostname}</p>
+                                </div>
+
+                                {!systemUser || systemUser.isAnonymous ? (
+                                    <div className="space-y-4">
+                                        <p className="text-slate-400 text-sm">Iniciá sesión para configurar este dominio.</p>
+                                        <button
+                                            onClick={() => setView('login')}
+                                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-orange-600 to-purple-600 text-white font-black uppercase tracking-widest text-xs hover:from-orange-500 hover:to-purple-500 transition"
+                                        >
+                                            Iniciar sesión
+                                        </button>
+                                    </div>
+                                ) : !isSuperAdminSession ? (
+                                    <div className="space-y-3">
+                                        <p className="text-slate-400 text-sm">Este dominio solo puede registrarlo el Super Admin.</p>
+                                        <p className="text-slate-600 text-xs font-mono">Sesión: {systemUser?.email || systemUser?.uid}</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-5">
+                                        <div className="space-y-3">
+                                            <p className="text-slate-300 text-sm">Elegí cómo querés vincular este dominio:</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <button
+                                                    disabled={isStoreSetupSaving}
+                                                    onClick={async () => {
+                                                        setIsStoreSetupSaving(true);
+                                                        try {
+                                                            const newStoreId = createStoreId();
+                                                            await registerHostname(newStoreId);
+                                                            showToast(`Dominio vinculado a ${newStoreId}`, 'success');
+                                                        } catch (e) {
+                                                            showToast(e?.message || 'No se pudo crear la tienda', 'error');
+                                                        }
+                                                        setIsStoreSetupSaving(false);
+                                                    }}
+                                                    className="py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition disabled:opacity-50"
+                                                >
+                                                    Crear tienda nueva
+                                                </button>
+                                                <button
+                                                    disabled={isStoreSetupSaving}
+                                                    onClick={async () => {
+                                                        setIsStoreSetupSaving(true);
+                                                        try {
+                                                            await registerHostname(DEFAULT_APP_ID);
+                                                            showToast(`Dominio vinculado a ${DEFAULT_APP_ID}`, 'success');
+                                                        } catch (e) {
+                                                            showToast(e?.message || 'No se pudo vincular', 'error');
+                                                        }
+                                                        setIsStoreSetupSaving(false);
+                                                    }}
+                                                    className="py-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 font-black text-[10px] uppercase tracking-widest hover:bg-orange-500/20 transition disabled:opacity-50"
+                                                >
+                                                    Usar tienda default
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <p className="text-slate-500 text-xs font-mono">O pegá un storeId existente:</p>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    value={storeSetupStoreIdInput}
+                                                    onChange={(e) => setStoreSetupStoreIdInput(e.target.value)}
+                                                    className="input-cyber flex-1 p-4 text-sm font-mono"
+                                                    placeholder="storeId (ej: cliente-abc123)"
+                                                />
+                                                <button
+                                                    disabled={isStoreSetupSaving || !storeSetupStoreIdInput.trim()}
+                                                    onClick={async () => {
+                                                        setIsStoreSetupSaving(true);
+                                                        try {
+                                                            await registerHostname(storeSetupStoreIdInput.trim());
+                                                            showToast('Dominio vinculado', 'success');
+                                                        } catch (e) {
+                                                            showToast(e?.message || 'No se pudo vincular', 'error');
+                                                        }
+                                                        setIsStoreSetupSaving(false);
+                                                    }}
+                                                    className="px-5 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition disabled:opacity-50"
+                                                >
+                                                    Vincular
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
 
 
@@ -5393,20 +6416,17 @@ function App() {
                         {/* Banner Hero */}
                         <div className={`relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group relative container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-0 ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
-                            {/* Imagen de fondo - Solo mostrar cuando settings están cargados */}
-                            {!settingsLoaded ? (
-                                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
-                            ) : settings?.heroUrl ? (
-                                <img src={settings.heroUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70 saturate-110 contrast-110'}`} />
-                            ) : (
-                                // Fallback Hero Background si no hay URL configurada
-                                <div className={`absolute inset-0 opacity-60 ${darkMode ? 'bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40' : 'bg-gradient-to-br from-orange-200/60 via-white to-slate-200/60'}`}>
-                                    <div className={`absolute inset-0 bg-[url('/noise.svg')] ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
-                                </div>
-                            )}
+                            <HomeBannerCarouselBackground
+                                settingsLoaded={settingsLoaded}
+                                banners={settings?.showHomeBannerCarousel === false ? [] : homeBanners}
+                                fallbackUrl={settings?.heroUrl}
+                                autoplayMs={settings?.homeBannerAutoplayMs || 5000}
+                                darkMode={darkMode}
+                                onBannerClick={handleHomeBannerClick}
+                            />
 
                             {/* Overlay de Texto */}
-                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/25 via-white/10 to-transparent'}`}>
+                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 pointer-events-none ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/25 via-white/10 to-transparent'}`}>
                                 <div className="max-w-2xl animate-fade-up">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
@@ -5436,10 +6456,10 @@ function App() {
                                                 {settings?.heroSubtitle || ''}
                                             </p>
                                             <div className="flex items-center gap-4">
-                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-orange-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn">
+                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-orange-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn pointer-events-auto">
                                                     VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
-                                                <button onClick={() => setView('guide')} className={`px-6 py-2.5 rounded-xl flex items-center gap-2 transition font-bold text-xs group ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
+                                                <button onClick={() => setView('guide')} className={`px-6 py-2.5 rounded-xl flex items-center gap-2 transition font-bold text-xs group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
                                                     <Info className={`w-4 h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Ayuda
                                                 </button>
                                             </div>
@@ -5714,13 +6734,31 @@ function App() {
                 {/* 2. VISTA DEL CARRITO DE COMPRAS */}
                 {view === 'cart' && (
                     <div className="max-w-6xl mx-auto animate-fade-up px-4 md:px-8 pb-20">
-                        <div className="flex items-center gap-4 mb-8 pt-8">
-                            <button onClick={() => setView('store')} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 group">
-                                <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition" />
-                            </button>
-                            <h1 className={`text-4xl font-black flex items-center gap-3 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                                <ShoppingBag className="w-10 h-10 text-orange-500" /> Mi Carrito
-                            </h1>
+                        <div className="flex flex-col gap-4 mb-8 pt-8 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setView('store')} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 group">
+                                    <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition" />
+                                </button>
+                                <h1 className={`text-4xl font-black flex items-center gap-3 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                                    <ShoppingBag className="w-10 h-10 text-orange-500" /> Mi Carrito
+                                </h1>
+                            </div>
+
+                            {cart.length > 0 && settings?.showCartWhatsappCheckout === true && (
+                                <button
+                                    onClick={() => {
+                                        const url = buildWhatsappUrl(settings?.whatsappLink, buildWhatsappCartMessage());
+                                        if (!url) {
+                                            showToast('Configura el enlace de WhatsApp en Admin → Configuración → Social.', 'warning');
+                                            return;
+                                        }
+                                        window.open(url, '_blank');
+                                    }}
+                                    className="w-full sm:w-auto px-5 py-3 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black transition shadow-lg hover:shadow-green-500/30 flex items-center justify-center gap-2"
+                                >
+                                    <MessageCircle className="w-5 h-5" /> Terminar compra por WhatsApp
+                                </button>
+                            )}
                         </div>
 
                         {cart.length === 0 ? (
@@ -8592,6 +9630,38 @@ function App() {
                                                             </div>
                                                         </div>
 
+                                                        <div className="mb-8 p-6 bg-slate-900/40 border border-slate-800 rounded-2xl">
+                                                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                                                                <div>
+                                                                    <p className="text-white font-black text-lg">Backup de Tienda</p>
+                                                                    <p className="text-slate-500 text-xs font-mono">storeId: {appId || '—'}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        disabled={isExportingBackup || !appId}
+                                                                        onClick={exportBackup}
+                                                                        className="px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-black text-[10px] uppercase tracking-widest hover:bg-green-500/20 transition disabled:opacity-50"
+                                                                    >
+                                                                        {isExportingBackup ? 'Exportando…' : 'Exportar'}
+                                                                    </button>
+                                                                    <label className={`px-4 py-3 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-200 font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600/30 transition ${isImportingBackup || !appId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                                        {isImportingBackup ? 'Importando…' : 'Importar'}
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="application/json"
+                                                                            className="hidden"
+                                                                            onChange={(e) => {
+                                                                                const file = e.target.files && e.target.files[0];
+                                                                                if (file) importBackupFile(file);
+                                                                                e.target.value = '';
+                                                                            }}
+                                                                        />
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-slate-600 text-xs mt-4">Importar escribe con merge (no borra por defecto). Usalo con cuidado.</p>
+                                                        </div>
+
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                             {/* Plan Emprendedor */}
                                                             <button
@@ -9056,6 +10126,165 @@ function App() {
                                                                     <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
                                                                         <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
                                                                     </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                            <Play className="w-5 h-5 text-orange-400" /> Carrusel Home
+                                                        </h3>
+
+                                                        <div className="space-y-6">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Mostrar carrusel</p>
+                                                                        <p className="text-xs text-slate-500">Si está apagado, se usa la imagen Hero tradicional.</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showHomeBannerCarousel: settings?.showHomeBannerCarousel === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showHomeBannerCarousel !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showHomeBannerCarousel !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cambio automático (segundos)</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        min="1"
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={Number.isFinite(Number(settings?.homeBannerAutoplayMs)) ? Math.max(1, Math.round(Number(settings.homeBannerAutoplayMs) / 1000)) : 5}
+                                                                        onChange={(e) => {
+                                                                            const seconds = Number(e.target.value);
+                                                                            const safeSeconds = Number.isFinite(seconds) ? Math.max(1, seconds) : 5;
+                                                                            setSettings({ ...settings, homeBannerAutoplayMs: Math.round(safeSeconds * 1000) });
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                                <div className="lg:col-span-1">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen del slide</label>
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        onChange={(e) => handleImageUpload(e, setNewHomeBanner, 'imageUrl', 1400)}
+                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
+                                                                    />
+                                                                    {newHomeBanner?.imageUrl && (
+                                                                        <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-28">
+                                                                            <img src={newHomeBanner.imageUrl} className="w-full h-full object-cover" alt="Banner preview" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="lg:col-span-2 space-y-4">
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto al hacer click</label>
+                                                                            <select
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={newHomeBanner?.productId || ''}
+                                                                                onChange={(e) => setNewHomeBanner(prev => ({ ...prev, productId: e.target.value }))}
+                                                                            >
+                                                                                <option value="">Seleccionar producto...</option>
+                                                                                {[...products].sort((a, b) => (a?.name || '').localeCompare(b?.name || '')).map(p => (
+                                                                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                                                                ))}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Orden</label>
+                                                                            <input
+                                                                                type="number"
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={Number.isFinite(Number(newHomeBanner?.order)) ? Number(newHomeBanner.order) : 0}
+                                                                                onChange={(e) => setNewHomeBanner(prev => ({ ...prev, order: e.target.value }))}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                                                        <div className="flex items-center justify-between flex-1 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Slide habilitado</p>
+                                                                                <p className="text-xs text-slate-500">Si está apagado no se muestra.</p>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setNewHomeBanner(prev => ({ ...prev, enabled: prev?.enabled === false ? true : false }))}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${newHomeBanner?.enabled !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${newHomeBanner?.enabled !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+
+                                                                        <div className="flex gap-3">
+                                                                            {editingHomeBannerId && (
+                                                                                <button
+                                                                                    onClick={resetHomeBannerForm}
+                                                                                    className="px-6 py-3 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition"
+                                                                                >
+                                                                                    Cancelar
+                                                                                </button>
+                                                                            )}
+                                                                            <button
+                                                                                onClick={saveHomeBannerFn}
+                                                                                className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition"
+                                                                            >
+                                                                                {editingHomeBannerId ? 'Guardar Slide' : 'Agregar Slide'}
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-3">
+                                                                {homeBanners.length === 0 ? (
+                                                                    <p className="text-slate-500 text-sm">Todavía no hay slides en el carrusel.</p>
+                                                                ) : (
+                                                                    homeBanners.map(b => {
+                                                                        const productName = products.find(p => p.id === b.productId)?.name || 'Producto inexistente';
+                                                                        const isEnabled = b?.enabled !== false;
+                                                                        return (
+                                                                            <div key={b.id} className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-slate-900/40 rounded-2xl border border-slate-800">
+                                                                                <div className="w-full md:w-40 h-20 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex-shrink-0">
+                                                                                    {b?.imageUrl ? (
+                                                                                        <img src={b.imageUrl} className="w-full h-full object-cover" alt="Slide" />
+                                                                                    ) : null}
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                                        <p className="font-black text-white truncate">{productName}</p>
+                                                                                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${isEnabled ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-800/30'}`}>
+                                                                                            {isEnabled ? 'ACTIVO' : 'PAUSADO'}
+                                                                                        </span>
+                                                                                        <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
+                                                                                            ORDEN {Number.isFinite(Number(b.order)) ? Number(b.order) : 0}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <p className="text-xs text-slate-500 mt-1 truncate">{b.productId || ''}</p>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <button
+                                                                                        onClick={() => editHomeBannerFn(b)}
+                                                                                        className="px-4 py-2 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition flex items-center gap-2"
+                                                                                    >
+                                                                                        <Edit className="w-4 h-4" /> Editar
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => deleteHomeBannerFn(b)}
+                                                                                        className="px-4 py-2 rounded-xl font-bold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition flex items-center gap-2"
+                                                                                    >
+                                                                                        <Trash2 className="w-4 h-4" /> Eliminar
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })
                                                                 )}
                                                             </div>
                                                         </div>
@@ -9545,6 +10774,20 @@ function App() {
                                                                         className={`w-10 h-5 rounded-full transition relative ${settings?.showFloatingWhatsapp ? 'bg-green-500' : 'bg-slate-700'} ${(!['business', 'premium'].includes(settings?.subscriptionPlan)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                     >
                                                                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showFloatingWhatsapp ? '22px' : '2px' }}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Cart Button Toggle */}
+                                                                <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-800/50">
+                                                                    <div>
+                                                                        <p className="text-xs text-slate-400 font-bold">Botón en Carrito</p>
+                                                                        <p className="text-[9px] text-slate-500 mt-0.5">“Terminar compra por WhatsApp”</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showCartWhatsappCheckout: !settings?.showCartWhatsappCheckout })}
+                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showCartWhatsappCheckout ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showCartWhatsappCheckout ? '22px' : '2px' }}></div>
                                                                     </button>
                                                                 </div>
                                                             </div>

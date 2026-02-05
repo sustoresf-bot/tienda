@@ -1,5 +1,5 @@
 import { getAdmin, verifyIdTokenFromRequest } from '../_firebaseAdmin.js';
-import { APP_ID } from '../_authz.js';
+import { getStoreIdFromRequest } from '../_authz.js';
 
 function stripLegacySensitiveFields(data) {
     const cleaned = { ...(data || {}) };
@@ -18,12 +18,13 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const storeId = getStoreIdFromRequest(req);
     try {
         const adminSdk = getAdmin();
         const db = adminSdk.firestore();
         const emailLower = decoded.email.toLowerCase();
 
-        const usersCol = db.collection(`artifacts/${APP_ID}/public/data/users`);
+        const usersCol = db.collection(`artifacts/${storeId}/public/data/users`);
         const uidRef = usersCol.doc(decoded.uid);
         const uidSnap = await uidRef.get();
         if (uidSnap.exists) {
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
 
         const usernameLower = String(legacyData.usernameLower || '').trim().toLowerCase();
         if (usernameLower) {
-            const usernameRef = db.doc(`artifacts/${APP_ID}/public/data/usernames/${usernameLower}`);
+            const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
             const usernameSnap = await usernameRef.get();
             if (!usernameSnap.exists) {
                 batch.set(usernameRef, { uid: decoded.uid, emailLower, createdAt: nowIso, updatedAt: nowIso }, { merge: true });
@@ -58,4 +59,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Internal error' });
     }
 }
-

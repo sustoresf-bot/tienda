@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { getAdmin, verifyIdTokenFromRequest } from '../_firebaseAdmin.js';
-import { APP_ID } from '../_authz.js';
+import { getStoreIdFromRequest } from '../_authz.js';
 
 function formatMoney(amount) {
     return `$${Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 0 })}`;
@@ -171,6 +171,7 @@ export default async function handler(req, res) {
     if (!decoded?.uid || !decoded?.email) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
+    const storeId = getStoreIdFromRequest(req);
 
     const paymentMethod = String(req.body?.paymentMethod || '').trim();
     const shippingMethod = String(req.body?.shippingMethod || '').trim();
@@ -193,7 +194,7 @@ export default async function handler(req, res) {
         const db = adminSdk.firestore();
         const FieldValue = adminSdk.firestore.FieldValue;
 
-        const userRef = db.doc(`artifacts/${APP_ID}/public/data/users/${decoded.uid}`);
+        const userRef = db.doc(`artifacts/${storeId}/public/data/users/${decoded.uid}`);
         const userSnap = await userRef.get();
         const userData = userSnap.exists ? userSnap.data() : null;
         if (!userData?.name || !userData?.dni || !userData?.phone) {
@@ -203,7 +204,7 @@ export default async function handler(req, res) {
         const productIds = cart.map((i) => String(i?.productId || '').trim()).filter(Boolean);
         if (productIds.length !== cart.length) return res.status(400).json({ error: 'Carrito inválido' });
 
-        const productSnaps = await Promise.all(productIds.map((id) => db.doc(`artifacts/${APP_ID}/public/data/products/${id}`).get()));
+        const productSnaps = await Promise.all(productIds.map((id) => db.doc(`artifacts/${storeId}/public/data/products/${id}`).get()));
         const productsById = new Map();
         productSnaps.forEach((snap) => {
             if (snap.exists) productsById.set(snap.id, snap.data());
@@ -232,7 +233,7 @@ export default async function handler(req, res) {
             subtotal += unitPrice * quantity;
         }
 
-        const settingsSnap = await db.doc(`artifacts/${APP_ID}/public/data/settings/config`).get();
+        const settingsSnap = await db.doc(`artifacts/${storeId}/public/data/settings/config`).get();
         const deliverySettings = settingsSnap.exists ? settingsSnap.data()?.shippingDelivery : null;
 
         let deliveryFee = 0;
@@ -249,7 +250,7 @@ export default async function handler(req, res) {
         let couponDocRef = null;
 
         if (couponCode) {
-            const couponsCol = db.collection(`artifacts/${APP_ID}/public/data/coupons`);
+            const couponsCol = db.collection(`artifacts/${storeId}/public/data/coupons`);
             const snap = await couponsCol.where('code', '==', couponCode).limit(1).get();
             const couponDoc = snap.docs[0];
             if (couponDoc) {
@@ -259,7 +260,7 @@ export default async function handler(req, res) {
                     if (!usedBy.includes(decoded.uid)) {
                         if (userData?.dni) {
                             try {
-                                const ordersCol = db.collection(`artifacts/${APP_ID}/public/data/orders`);
+                                const ordersCol = db.collection(`artifacts/${storeId}/public/data/orders`);
                                 const dniSnap = await ordersCol
                                     .where('customer.dni', '==', String(userData.dni))
                                     .where('discountCode', '==', couponCode)
@@ -337,10 +338,10 @@ export default async function handler(req, res) {
         };
 
         const batch = db.batch();
-        const orderRef = db.collection(`artifacts/${APP_ID}/public/data/orders`).doc();
+        const orderRef = db.collection(`artifacts/${storeId}/public/data/orders`).doc();
         batch.set(orderRef, orderData);
 
-        const cartRef = db.doc(`artifacts/${APP_ID}/public/data/carts/${decoded.uid}`);
+        const cartRef = db.doc(`artifacts/${storeId}/public/data/carts/${decoded.uid}`);
         batch.set(cartRef, { userId: decoded.uid, items: [] }, { merge: true });
 
         batch.set(userRef, {
@@ -363,11 +364,11 @@ export default async function handler(req, res) {
                     const componentQty = Number(promoItem?.quantity) || 0;
                     if (!componentId || componentQty <= 0) continue;
                     const totalDecrement = componentQty * quantity;
-                    const ref = db.doc(`artifacts/${APP_ID}/public/data/products/${componentId}`);
+                    const ref = db.doc(`artifacts/${storeId}/public/data/products/${componentId}`);
                     batch.update(ref, { stock: FieldValue.increment(-totalDecrement), salesCount: FieldValue.increment(totalDecrement) });
                 }
             } else {
-                const ref = db.doc(`artifacts/${APP_ID}/public/data/products/${productId}`);
+                const ref = db.doc(`artifacts/${storeId}/public/data/products/${productId}`);
                 batch.update(ref, { stock: FieldValue.increment(-quantity), salesCount: FieldValue.increment(quantity) });
             }
         }

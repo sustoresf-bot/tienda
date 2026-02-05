@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { getAdmin } from '../_firebaseAdmin.js';
-import { APP_ID } from '../_authz.js';
+import { getStoreIdFromRequest } from '../_authz.js';
 
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX = 20;
@@ -64,6 +64,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    const storeId = getStoreIdFromRequest(req);
     const clientKey = getClientKey(req);
     const now = Date.now();
     const record = rateLimitMemory.get(clientKey) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
@@ -89,7 +90,7 @@ export default async function handler(req, res) {
     try {
         const adminSdk = getAdmin();
         const db = adminSdk.firestore();
-        const usersCol = db.collection(`artifacts/${APP_ID}/public/data/users`);
+        const usersCol = db.collection(`artifacts/${storeId}/public/data/users`);
 
         const querySnap = isEmail
             ? await usersCol.where('emailLower', '==', normalized).limit(5).get()
@@ -150,7 +151,7 @@ export default async function handler(req, res) {
 
         const usernameLower = String(dataToCopy.usernameLower || '').trim().toLowerCase();
         if (usernameLower) {
-            const usernameRef = db.doc(`artifacts/${APP_ID}/public/data/usernames/${usernameLower}`);
+            const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
             const usernameSnap = await usernameRef.get();
             if (!usernameSnap.exists) {
                 batch.set(usernameRef, { uid, emailLower, createdAt: nowIso, updatedAt: nowIso }, { merge: true });
@@ -165,4 +166,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Internal error' });
     }
 }
-

@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { verifyIdTokenFromRequest } from './_firebaseAdmin.js';
-import { isAdminEmail } from './_authz.js';
+import { getStoreIdFromRequest, isAdminEmail } from './_authz.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -11,7 +11,8 @@ export default async function handler(req, res) {
     if (!decoded?.email) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
-    if (!(await isAdminEmail(decoded.email))) {
+    const storeId = getStoreIdFromRequest(req);
+    if (!(await isAdminEmail(decoded.email, storeId))) {
         return res.status(403).json({ error: 'Forbidden' });
     }
 

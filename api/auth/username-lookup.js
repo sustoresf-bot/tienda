@@ -1,5 +1,5 @@
 import { getAdmin } from '../_firebaseAdmin.js';
-import { APP_ID } from '../_authz.js';
+import { getStoreIdFromRequest } from '../_authz.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -12,8 +12,9 @@ export default async function handler(req, res) {
     }
 
     try {
+        const storeId = getStoreIdFromRequest(req);
         const adminSdk = getAdmin();
-        const snap = await adminSdk.firestore().doc(`artifacts/${APP_ID}/public/data/usernames/${username}`).get();
+        const snap = await adminSdk.firestore().doc(`artifacts/${storeId}/public/data/usernames/${username}`).get();
         if (!snap.exists) {
             return res.status(404).json({ error: 'Username not found' });
         }
