@@ -5493,6 +5493,7 @@ function App() {
                 {view !== 'admin' && <div className="h-16 sm:h-20 md:h-24"></div>}
 
                 {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
+                <>
                 <main className={`flex-grow relative z-10 ${view === 'admin' ? 'flex' : 'p-4 md:p-8'}`}>
 
                     {/* 1. VISTA TIENDA (HOME) */}
@@ -6780,8 +6781,7 @@ function App() {
                         )
                     }
 
-                    {
-                        view === 'guide' && (
+                    {view === 'guide' && (
                             <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
                                 <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
                                 <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
@@ -6815,11 +6815,9 @@ function App() {
                                     ))}
                                 </div>
                             </div>
-                        )
-                    }
+                        )}
 
-                    {
-                        view === 'privacy' && (
+                    {view === 'privacy' && (
                             <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
                                 <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
                                 <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
@@ -6876,8 +6874,7 @@ function App() {
                                     </div>
                                 </div>
                             </div>
-                        )
-                    }
+                        )}
 
                     {/* 7. PANEL DE ADMINISTRACIÓN (COMPLETO Y DETALLADO) */}
                     {
@@ -11010,17 +11007,12 @@ function App() {
                                                     </div>
                                                     </div>
                                                     </div>
-                                                    </div>
-                                                    </div>
-                                                    </div>
-                                                    </div>
-                                        </div>
                                 )
                     }
 
                                                                                 {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
 
-                                                                                {view === 'privacy' && (
+                                                                                {false && (
                                                                                         <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
                                                                                             <div className="glass p-12 rounded-[3rem] border border-slate-800">
                                                                                                 <div className="prose prose-invert max-w-none">
@@ -11337,6 +11329,7 @@ function App() {
                                                                         </footer>
                                                                     )
                                                                 }
+                </>
 
                                                                 {/* MODAL: CREAR CATEGORÍA */}
                                                                 {
