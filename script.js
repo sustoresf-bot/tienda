@@ -5157,7 +5157,7 @@ function App() {
                             {!settingsLoaded ? (
                                 <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse"></div>
                             ) : settings?.heroUrl ? (
-                                <img src={settings.heroUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70'}`} />
+                                <img src={settings.heroUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70 saturate-110 contrast-110'}`} />
                             ) : (
                                 // Fallback Hero Background si no hay URL configurada
                                 <div className={`absolute inset-0 opacity-60 ${darkMode ? 'bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40' : 'bg-gradient-to-br from-orange-200/60 via-white to-slate-200/60'}`}>
@@ -5166,7 +5166,7 @@ function App() {
                             )}
 
                             {/* Overlay de Texto */}
-                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/70 via-white/55 to-transparent'}`}>
+                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/25 via-white/10 to-transparent'}`}>
                                 <div className="max-w-2xl animate-fade-up">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
