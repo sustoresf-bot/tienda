@@ -16,6 +16,7 @@ function scanDivBalanceInRange(lines, startLine, endLine) {
   let line = startLine;
   let col = 0;
   const stack = [];
+  const extraCloses = [];
 
   function readTagEnd(pos) {
     let j = pos;
@@ -124,6 +125,7 @@ function scanDivBalanceInRange(lines, startLine, endLine) {
       const gt = segment.indexOf('>', i + 5);
       if (gt !== -1) {
         if (stack.length) stack.pop();
+        else extraCloses.push({ line, col });
         advanceTo(gt + 1);
         continue;
       }
@@ -146,7 +148,7 @@ function scanDivBalanceInRange(lines, startLine, endLine) {
     i += 1;
   }
 
-  return stack;
+  return { stack, extraCloses };
 }
 
 const filePath = process.argv[2] || 'script.js';
@@ -154,6 +156,6 @@ const startLine = Number(process.argv[3] || 5497);
 const endLine = Number(process.argv[4] || 11186);
 
 const lines = readLines(filePath);
-const stack = scanDivBalanceInRange(lines, startLine, endLine);
+const { stack, extraCloses } = scanDivBalanceInRange(lines, startLine, endLine);
 
-console.log(JSON.stringify({ unclosedDivCount: stack.length, last: stack.slice(-10) }, null, 2));
+console.log(JSON.stringify({ unclosedDivCount: stack.length, extraCloseCount: extraCloses.length, last: stack.slice(-10), extraCloseLast: extraCloses.slice(-10) }, null, 2));
