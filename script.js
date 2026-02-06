@@ -2694,13 +2694,16 @@ function App() {
                 if (!cancelled) setHomeBanners([]);
             }
 
-            try {
-                const couponsSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'));
-                if (!cancelled) setCoupons(couponsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-            } catch {
-                if (!cancelled) setCoupons([]);
-            }
         })();
+
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), (snapshot) => {
+                setCoupons(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            }, (error) => {
+                console.error("Error fetching coupons:", error);
+                setCoupons([]);
+            })
+        );
 
         return () => {
             cancelled = true;
