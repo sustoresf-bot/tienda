@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
     ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
@@ -1725,7 +1725,11 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 onClick={() => setIsOpen(!isOpen)}
                 className="pointer-events-auto w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform group relative z-50"
             >
-                {isOpen ? <X className="w-6 h-6 text-white" /> : <img src="sustia-ai-v2.jpg" className="w-full h-full object-cover rounded-full opacity-95 hover:scale-110 transition-transform duration-300" alt="SustIA" />}
+                {isOpen ? <X className="w-6 h-6 text-white" /> : (
+                    <div className="w-full h-full p-1">
+                        <img src="sustia-ai-v2.jpg" className="w-full h-full object-cover rounded-full opacity-95 group-hover:scale-110 transition-transform duration-300" alt="SustIA" />
+                    </div>
+                )}
                 {!isOpen && (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
