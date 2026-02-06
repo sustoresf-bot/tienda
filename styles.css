@@ -72,9 +72,11 @@ body {
     background-color: var(--bg-main) !important;
     color: var(--text-primary);
     overflow-x: hidden;
+    overflow-x: clip;
     overflow-y: auto !important;
     margin: 0;
     min-height: 100vh;
+    min-height: 100dvh;
     /* Performance: Smooth scrolling */
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -109,6 +111,16 @@ body {
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+.full-viewport {
+    height: 100vh;
+    height: 100dvh;
+}
+
+.min-full-viewport {
+    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 /* Glassmorphism Advanced - Adaptado a temas */

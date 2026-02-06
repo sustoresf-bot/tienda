@@ -24,6 +24,33 @@ function calculateItemPrice(basePrice, discount) {
     return Math.ceil(base * (1 - disc / 100));
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function normalizeUrl(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (raw.startsWith('//')) return `https:${raw}`;
+    return `https://${raw}`;
+}
+
+function normalizeWhatsappLink(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('//')) return normalizeUrl(raw);
+    if (/wa\.me\/|api\.whatsapp\.com/i.test(raw)) return normalizeUrl(raw);
+    const digits = raw.replace(/[^\d]/g, '');
+    if (digits.length >= 8) return `https://wa.me/${digits}`;
+    return null;
+}
+
 async function getMercadoPagoPayment({ paymentId, accessToken }) {
     const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -36,8 +63,12 @@ async function getMercadoPagoPayment({ paymentId, accessToken }) {
     return data;
 }
 
-function buildEmailHtml({ orderId, customerName, items, subtotal, discountDetails, shippingMethod, shippingAddress, shippingFee, total, paymentMethod, date }) {
+function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId, customerName, items, subtotal, discountDetails, shippingMethod, shippingAddress, shippingFee, total, paymentMethod, date }) {
     const safeItems = Array.isArray(items) ? items : [];
+    const safeBrandName = escapeHtml(brandName || 'Sustore');
+    const storeUrl = normalizeUrl(ticketSiteUrl) || 'https://sustore.vercel.app/';
+    const whatsappUrl = normalizeWhatsappLink(ticketWhatsappLink);
+    const year = new Date(date || Date.now()).getFullYear();
     return `
         <!DOCTYPE html>
         <html>
@@ -49,6 +80,7 @@ function buildEmailHtml({ orderId, customerName, items, subtotal, discountDetail
                 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap');
                 body { margin: 0; padding: 0; background-color: #000000; font-family: 'Outfit', Helvetica, Arial, sans-serif; color: #e2e8f0; }
                 .btn { display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: #ffffff !important; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 14px; text-align: center; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4); }
+                .btn-whatsapp { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); box-shadow: 0 4px 15px rgba(34, 197, 94, 0.35); }
                 .status-badge { background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); color: #22d3ee; padding: 8px 16px; border-radius: 50px; font-size: 12px; font-weight: 700; letter-spacing: 1px; display: inline-block; }
                 .card { background-color: #0a0a0a; border: 1px solid #1e293b; border-radius: 16px; padding: 24px; }
             </style>
@@ -61,7 +93,7 @@ function buildEmailHtml({ orderId, customerName, items, subtotal, discountDetail
                             <tr><td height="4" style="background: linear-gradient(90deg, #06b6d4, #8b5cf6);"></td></tr>
                             <tr>
                                 <td style="padding: 40px 40px 20px; text-align: center;">
-                                    <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Sustore</h1>
+                                    <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">${safeBrandName}</h1>
                                     <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; letter-spacing: 2px;">CONFIRMACIÓN DE COMPRA</p>
                                 </td>
                             </tr>
@@ -69,7 +101,7 @@ function buildEmailHtml({ orderId, customerName, items, subtotal, discountDetail
                                 <td style="padding: 0 40px 40px; text-align: center;">
                                     <div class="status-badge">PAGO EXITOSO</div>
                                     <p style="margin-top: 24px; color: #cbd5e1; font-size: 16px; line-height: 1.6;">
-                                        ¡Hola <span style="font-weight: 700; color: #ffffff;">${customerName}</span>! Gracias por tu compra.
+                                        ¡Hola <span style="font-weight: 700; color: #ffffff;">${escapeHtml(customerName)}</span>! Gracias por tu compra.
                                         <br>Ya estamos preparando tu pedido con el ID: <strong style="color: #22d3ee;">#${orderId}</strong>
                                     </p>
                                 </td>
@@ -81,10 +113,10 @@ function buildEmailHtml({ orderId, customerName, items, subtotal, discountDetail
                                             <td width="48%" valign="top" class="card">
                                                 <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Método de Entrega</div>
                                                 <div style="font-size: 14px; color: #e2e8f0; line-height: 1.4; font-weight: 500; margin-bottom: 4px;">
-                                                    ${shippingMethod || 'Envío'}
+                                                    ${escapeHtml(shippingMethod || 'Envío')}
                                                 </div>
                                                 <div style="font-size: 12px; color: #94a3b8; line-height: 1.4;">
-                                                    ${shippingAddress || 'No especificada'}
+                                                    ${escapeHtml(shippingAddress || 'No especificada')}
                                                 </div>
                                             </td>
                                             <td width="4%"></td>
@@ -108,7 +140,7 @@ function buildEmailHtml({ orderId, customerName, items, subtotal, discountDetail
                                             <tr>
                                                 <td style="padding: 16px 0; border-bottom: 1px dashed #1e293b; vertical-align: middle;">
                                                     <div style="font-size: 15px; font-weight: 600; color: #ffffff;">
-                                                        <span style="color: #8b5cf6; font-weight: 900; margin-right: 8px;">${item.quantity}x</span> ${item.title}
+                                                        <span style="color: #8b5cf6; font-weight: 900; margin-right: 8px;">${Number(item.quantity) || 0}x</span> ${escapeHtml(item.title)}
                                                     </div>
                                                 </td>
                                                 <td style="padding: 16px 0; border-bottom: 1px dashed #1e293b; text-align: right; vertical-align: middle;">
@@ -145,11 +177,12 @@ function buildEmailHtml({ orderId, customerName, items, subtotal, discountDetail
                                 <td style="padding: 0 40px 40px; text-align: center;">
                                     <div style="margin-bottom: 40px; padding: 20px; background: rgba(139, 92, 246, 0.05); border-radius: 16px; border: 1px solid rgba(139, 92, 246, 0.2);">
                                         <p style="margin: 0 0 5px; font-size: 11px; text-transform: uppercase; color: #a78bfa; font-weight: 700;">Método de Pago</p>
-                                        <p style="margin: 0; font-size: 15px; color: #ffffff; font-weight: 600;">${paymentMethod}</p>
+                                        <p style="margin: 0; font-size: 15px; color: #ffffff; font-weight: 600;">${escapeHtml(paymentMethod)}</p>
                                     </div>
-                                    <a href="https://sustore.vercel.app/" class="btn">VER DETALLES EN LA TIENDA</a>
+                                    <a href="${escapeHtml(storeUrl)}" class="btn">VER DETALLES EN LA TIENDA</a>
+                                    ${whatsappUrl ? `<a href="${escapeHtml(whatsappUrl)}" class="btn btn-whatsapp" style="margin-left: 12px;">WHATSAPP</a>` : ''}
                                     <div style="margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 30px;">
-                                        <div style="font-size: 12px; color: #64748b;">© 2026 Sustore. Todos los derechos reservados.</div>
+                                        <div style="font-size: 12px; color: #64748b;">© ${year} ${safeBrandName}. Todos los derechos reservados.</div>
                                     </div>
                                 </td>
                             </tr>
@@ -234,7 +267,12 @@ export default async function handler(req, res) {
         }
 
         const settingsSnap = await db.doc(`artifacts/${storeId}/public/data/settings/config`).get();
-        const deliverySettings = settingsSnap.exists ? settingsSnap.data()?.shippingDelivery : null;
+        const settingsData = settingsSnap.exists ? (settingsSnap.data() || {}) : {};
+        const deliverySettings = settingsData?.shippingDelivery || null;
+        const ticketSettings = settingsData?.ticket || {};
+        const ticketBrandName = String(ticketSettings?.brandName || settingsData?.storeName || 'Sustore').trim();
+        const ticketWhatsappLink = String(ticketSettings?.whatsappLink || settingsData?.whatsappLink || '').trim();
+        const ticketSiteUrl = String(ticketSettings?.siteUrl || settingsData?.seoUrl || 'https://sustore.vercel.app/').trim();
 
         let deliveryFee = 0;
         if (shippingMethod === 'Delivery' && deliverySettings?.enabled) {
@@ -388,6 +426,9 @@ export default async function handler(req, res) {
         });
 
         const html = buildEmailHtml({
+            brandName: ticketBrandName,
+            ticketWhatsappLink,
+            ticketSiteUrl,
             orderId,
             customerName: userData.name || 'Cliente',
             items,
@@ -401,8 +442,9 @@ export default async function handler(req, res) {
             date: nowIso,
         });
 
+        const fromName = String(ticketBrandName || 'Sustore').replace(/[\r\n"]/g, '').trim().slice(0, 80) || 'Sustore';
         await transporter.sendMail({
-            from: `"Sustore" <${process.env.EMAIL_USER}>`,
+            from: `"${fromName}" <${process.env.EMAIL_USER}>`,
             to: `${decoded.email}, ${process.env.EMAIL_USER}`,
             replyTo: process.env.EMAIL_USER,
             subject: `✅ Pedido Confirmado #${orderId}`,

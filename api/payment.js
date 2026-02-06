@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { verifyIdTokenFromRequest } from '../lib/firebaseAdmin.js';
+import { getAdmin, verifyIdTokenFromRequest } from '../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest, isAdminEmail } from '../lib/authz.js';
 
 export default async function handler(req, res) {
@@ -20,6 +20,31 @@ export default async function handler(req, res) {
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
             return res.status(500).json({ error: 'Email service not configured' });
         }
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const normalizeUrl = (value) => {
+            const raw = String(value ?? '').trim();
+            if (!raw) return null;
+            if (/^https?:\/\//i.test(raw)) return raw;
+            if (raw.startsWith('//')) return `https:${raw}`;
+            return `https://${raw}`;
+        };
+
+        const normalizeWhatsappLink = (value) => {
+            const raw = String(value ?? '').trim();
+            if (!raw) return null;
+            if (/^https?:\/\//i.test(raw) || raw.startsWith('//')) return normalizeUrl(raw);
+            if (/wa\.me\/|api\.whatsapp\.com/i.test(raw)) return normalizeUrl(raw);
+            const digits = raw.replace(/[^\d]/g, '');
+            if (digits.length >= 8) return `https://wa.me/${digits}`;
+            return null;
+        };
 
         // 1. Extracción de datos con Defaults seguros
         const {
@@ -44,6 +69,19 @@ export default async function handler(req, res) {
         const finalShippingFee = Number(shippingFee) || 0;
         const finalSubtotal = Number(subtotal) || 0;
         const finalTotal = Number(total) || 0;
+
+        const adminSdk = getAdmin();
+        const db = adminSdk.firestore();
+        const settingsSnap = await db.doc(`artifacts/${storeId}/public/data/settings/config`).get();
+        const settingsData = settingsSnap.exists ? (settingsSnap.data() || {}) : {};
+        const ticketSettings = settingsData?.ticket || {};
+        const ticketBrandName = String(ticketSettings?.brandName || settingsData?.storeName || 'Sustore').trim();
+        const ticketWhatsappLink = String(ticketSettings?.whatsappLink || settingsData?.whatsappLink || '').trim();
+        const ticketSiteUrl = String(ticketSettings?.siteUrl || settingsData?.seoUrl || 'https://sustore.vercel.app/').trim();
+        const safeBrandName = escapeHtml(ticketBrandName || 'Sustore');
+        const safeSiteUrl = normalizeUrl(ticketSiteUrl) || 'https://sustore.vercel.app/';
+        const safeWhatsappUrl = normalizeWhatsappLink(ticketWhatsappLink);
+        const year = new Date(date || Date.now()).getFullYear();
 
         // Validación Crítica
         if (!customerEmail) {
@@ -130,7 +168,7 @@ export default async function handler(req, res) {
                                 <!-- Header -->
                                 <tr>
                                     <td style="padding: 40px 40px 20px; text-align: center;">
-                                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Sustore</h1>
+                                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">${safeBrandName}</h1>
                                         <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; letter-spacing: 2px;">CONFIRMACIÓN DE COMPRA</p>
                                     </td>
                                 </tr>
@@ -138,9 +176,9 @@ export default async function handler(req, res) {
                                 <!-- Status -->
                                 <tr>
                                     <td style="padding: 0 40px 40px; text-align: center;">
-                                        <div class="status-badge">⚡ PAGO EXTITOSO</div>
+                                        <div class="status-badge">⚡ PAGO EXITOSO</div>
                                         <p style="margin-top: 24px; color: #cbd5e1; font-size: 16px; line-height: 1.6;">
-                                            ¡Hola <span style="font-weight: 700; color: #ffffff;">${customerName}</span>! Gracias por tu compra.
+                                            ¡Hola <span style="font-weight: 700; color: #ffffff;">${escapeHtml(customerName)}</span>! Gracias por tu compra.
                                             <br>Ya estamos preparando tu pedido con el ID: <strong style="color: #22d3ee;">#${orderId}</strong>
                                         </p>
                                     </td>
@@ -186,7 +224,7 @@ export default async function handler(req, res) {
                                                 <tr>
                                                     <td style="padding: 16px 0; border-bottom: 1px dashed #1e293b; vertical-align: middle;">
                                                         <div style="font-size: 15px; font-weight: 600; color: #ffffff;">
-                                                            <span style="color: #8b5cf6; font-weight: 900; margin-right: 8px;">${item.quantity}x</span> ${item.title}
+                                                            <span style="color: #8b5cf6; font-weight: 900; margin-right: 8px;">${Number(item.quantity) || 0}x</span> ${escapeHtml(item.title)}
                                                         </div>
                                                     </td>
                                                     <td style="padding: 16px 0; border-bottom: 1px dashed #1e293b; text-align: right; vertical-align: middle;">
@@ -230,18 +268,20 @@ export default async function handler(req, res) {
                                     <td style="padding: 0 40px 40px; text-align: center;">
                                         <div style="margin-bottom: 40px; padding: 20px; background: rgba(139, 92, 246, 0.05); border-radius: 16px; border: 1px solid rgba(139, 92, 246, 0.2);">
                                             <p style="margin: 0 0 5px; font-size: 11px; text-transform: uppercase; color: #a78bfa; font-weight: 700;">Método de Pago</p>
-                                            <p style="margin: 0; font-size: 15px; color: #ffffff; font-weight: 600;">${paymentMethod}</p>
-                                            ${safeCustomer.dni ? `<p style="margin: 5px 0 0; font-size: 13px; color: #94a3b8;">DNI: ${safeCustomer.dni}</p>` : ''}
+                                            <p style="margin: 0; font-size: 15px; color: #ffffff; font-weight: 600;">${escapeHtml(paymentMethod)}</p>
+                                            ${safeCustomer.dni ? `<p style="margin: 5px 0 0; font-size: 13px; color: #94a3b8;">DNI: ${escapeHtml(safeCustomer.dni)}</p>` : ''}
                                         </div>
 
-                                        <a href="https://sustore.vercel.app/" class="btn">VER DETALLES EN LA TIENDA</a>
+                                        <a href="${escapeHtml(safeSiteUrl)}" class="btn">VER DETALLES EN LA TIENDA</a>
 
                                         <div style="margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 30px;">
-                                            <a href="https://wa.me/5493425906300" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 14px; text-align: center; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); margin-bottom: 20px;">
-                                                ¿NECESITAS AYUDA? CONTACTANOS
-                                            </a>
+                                            ${safeWhatsappUrl ? `
+                                                <a href="${escapeHtml(safeWhatsappUrl)}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 14px; text-align: center; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); margin-bottom: 20px;">
+                                                    ¿NECESITAS AYUDA? CONTACTANOS
+                                                </a>
+                                            ` : ''}
                                             <div style="font-size: 12px; color: #64748b;">
-                                                © 2026 Sustore. Todos los derechos reservados.
+                                                © ${year} ${safeBrandName}. Todos los derechos reservados.
                                             </div>
                                         </div>
                                     </td>
@@ -256,8 +296,9 @@ export default async function handler(req, res) {
             </html>
         `;
 
+        const fromName = String(ticketBrandName || 'Sustore').replace(/[\r\n"]/g, '').trim().slice(0, 80) || 'Sustore';
         await transporter.sendMail({
-            from: `"Sustore" <${process.env.EMAIL_USER}>`,
+            from: `"${fromName}" <${process.env.EMAIL_USER}>`,
             to: `${customerEmail}, ${process.env.EMAIL_USER}`,
             replyTo: process.env.EMAIL_USER,
             subject: `✅ Pedido Confirmado #${orderId}`,

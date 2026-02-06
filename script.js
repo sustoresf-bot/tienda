@@ -1,4 +1,4 @@
-﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
     ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
@@ -40,7 +40,8 @@ async function getMercadoPagoPublicKey() {
     if (mpPublicKeyPromise) return mpPublicKeyPromise;
     mpPublicKeyPromise = (async () => {
         try {
-            const res = await fetch('/api/public-config', { method: 'GET' });
+            const res = await fetch('/api/checkout?action=public_config', { method: 'GET' });
+            if (!res.ok) return null;
             const data = await res.json().catch(() => ({}));
             const key = String(data?.mpPublicKey || '').trim();
             return key || null;
@@ -422,6 +423,12 @@ const defaultSettings = {
     primaryColor: "#f97316",
     currency: "$",
 
+    ticket: {
+        brandName: "",
+        whatsappLink: "",
+        siteUrl: ""
+    },
+
     // --- Administración ---
     admins: SUPER_ADMIN_EMAIL,
     team: [{ email: SUPER_ADMIN_EMAIL, role: "admin", name: "Administrador" }],
@@ -435,6 +442,17 @@ const defaultSettings = {
     showFloatingWhatsapp: false,
     showCartWhatsappCheckout: false,
     showInstagram: false,
+
+    paymentTransfer: {
+        enabled: false,
+        holderName: "",
+        alias: "",
+        cbu: ""
+    },
+    paymentCash: false,
+    paymentMercadoPago: {
+        enabled: false
+    },
 
     // --- Imágenes ---
     logoUrl: "",
@@ -537,7 +555,8 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
         const id = activeSlide?.targetId || activeSlide?.promoId || activeSlide?.productId || '';
         return type !== 'none' && !!id;
     })();
-    const imageClass = `w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70 saturate-110 contrast-110'}`;
+    const imageOpacity = 0.15;
+    const imageClass = `w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`;
 
     const goPrev = () => {
         setActiveIndex(i => {
@@ -556,7 +575,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
 
     if (slides.length === 0) {
         return fallbackUrl ? (
-            <img src={fallbackUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? 'opacity-60' : 'opacity-70 saturate-110 contrast-110'}`} />
+            <img src={fallbackUrl} style={{ opacity: imageOpacity }} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`} />
         ) : (
             <div className={`absolute inset-0 opacity-60 ${darkMode ? 'bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40' : 'bg-gradient-to-br from-orange-200/60 via-white to-slate-200/60'}`}>
                 <div className={`absolute inset-0 bg-[url('/noise.svg')] ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
@@ -577,7 +596,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
             >
                 {slides.map((slide, idx) => (
                     <div key={slide.id || `${idx}-${slide.targetId || slide.productId || slide.promoId || 'slide'}`} className="w-full h-full flex-shrink-0 relative">
-                        <img src={slide.imageUrl} className={imageClass} />
+                        <img src={slide.imageUrl} style={{ opacity: imageOpacity }} className={imageClass} />
                     </div>
                 ))}
             </div>
@@ -992,26 +1011,14 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
     const chatStorageKey = `sustore_sustia_chat_${DEFAULT_APP_ID}`;
     const defaultBotMessage = { role: 'model', text: '¡Hola! Soy SustIA 🤖, tu asistente personal. ¿Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' };
-    const [messages, setMessages] = useState(() => {
-        try {
-            const raw = localStorage.getItem(chatStorageKey);
-            if (!raw) return [defaultBotMessage];
-            const parsed = JSON.parse(raw);
-            if (!Array.isArray(parsed) || parsed.length === 0) return [defaultBotMessage];
-            const cleaned = parsed
-                .filter(m => m && (m.role === 'client' || m.role === 'model') && typeof m.text === 'string')
-                .slice(-60);
-            return cleaned.length > 0 ? cleaned : [defaultBotMessage];
-        } catch {
-            return [defaultBotMessage];
-        }
-    });
+    const [messages, setMessages] = useState([defaultBotMessage]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [lastContext, setLastContext] = useState(null); // Para manejar contexto (Sí/No)
     const messagesEndRef = useRef(null);
     const messagesRef = useRef(messages);
     const inFlightRef = useRef(false);
+    const pendingTextRef = useRef(null);
     const isMountedRef = useRef(true);
 
     const safeProducts = Array.isArray(products) ? products : [];
@@ -1163,12 +1170,6 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         return () => { isMountedRef.current = false; };
     }, []);
 
-    useEffect(() => {
-        try {
-            localStorage.setItem(chatStorageKey, JSON.stringify(messages.slice(-60)));
-        } catch { }
-    }, [chatStorageKey, messages]);
-
     // --- HERRAMIENTA DE BÚSQUEDA INTELIGENTE (FUZZY) ---
     const fuzzySearch = (text, query) => {
         if (!query || typeof query !== 'string') return false;
@@ -1270,6 +1271,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             const hasCard = !!settings?.paymentMercadoPago?.enabled;
             const hasTransfer = !!settings?.paymentTransfer?.enabled;
             const hasCash = !!settings?.paymentCash && !!settings?.shippingPickup?.enabled;
+            const wantsTransferData = hasTransfer && text.match(/\b(alias|cbu|transferencia)\b/);
             const options = [];
             if (hasCard) options.push("💳 Tarjeta (Mercado Pago)");
             if (hasTransfer) options.push("🏦 Transferencia");
@@ -1277,6 +1279,19 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
             if (options.length === 0) {
                 return { text: "Todavía no tengo métodos de pago configurados para esta tienda. Si querés, te paso WhatsApp para coordinar." };
+            }
+            if (wantsTransferData) {
+                const holderName = settings?.paymentTransfer?.holderName ? String(settings.paymentTransfer.holderName).trim() : '';
+                const alias = settings?.paymentTransfer?.alias ? String(settings.paymentTransfer.alias).trim() : '';
+                const cbu = settings?.paymentTransfer?.cbu ? String(settings.paymentTransfer.cbu).trim() : '';
+                const lines = ["Para transferir, usá estos datos:"];
+                if (holderName) lines.push(`- Titular: ${holderName}`);
+                if (alias) lines.push(`- Alias: ${alias}`);
+                if (cbu) lines.push(`- CBU: ${cbu}`);
+                if (!holderName && !alias && !cbu) {
+                    lines.push("- Aún no están cargados los datos de transferencia para esta tienda.");
+                }
+                return { text: lines.join('\n') };
             }
             return { text: `Podés pagar con:\n\n${options.map(o => `- ${o}`).join('\n')}\n\n¿Con cuál preferís?` };
         }
@@ -1513,18 +1528,28 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         }
     };
 
-    const sendText = async (rawText) => {
-        if (inFlightRef.current) return;
+    const sendText = async (rawText, opts = {}) => {
+        const alreadyAddedUser = !!opts.alreadyAddedUser;
         const text = String(rawText || '').trim().slice(0, 300);
         if (!text) return;
+        if (inFlightRef.current) {
+            if (!alreadyAddedUser) {
+                const newMsgUserQueued = { role: 'client', text };
+                setMessages(prev => [...prev, newMsgUserQueued]);
+            }
+            pendingTextRef.current = { text, alreadyAddedUser: true };
+            return;
+        }
 
         inFlightRef.current = true;
         setInputValue('');
 
-        const newMsgUser = { role: 'client', text };
-        const updatedHistory = [...(messagesRef.current || []), newMsgUser];
+        const newMsgUser = alreadyAddedUser ? null : { role: 'client', text };
+        const updatedHistory = [...(messagesRef.current || []), ...(newMsgUser ? [newMsgUser] : [])];
 
-        setMessages(prev => [...prev, newMsgUser]);
+        if (newMsgUser) {
+            setMessages(prev => [...prev, newMsgUser]);
+        }
         setIsTyping(true);
 
         try {
@@ -1560,6 +1585,11 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         } finally {
             if (isMountedRef.current) setIsTyping(false);
             inFlightRef.current = false;
+            const pending = pendingTextRef.current;
+            if (pending && pending.text) {
+                pendingTextRef.current = null;
+                setTimeout(() => sendText(pending.text, { alreadyAddedUser: pending.alreadyAddedUser === true }), 0);
+            }
         }
     };
 
@@ -1568,8 +1598,9 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     };
 
     const handleQuickAction = (value) => {
-        if (isTyping) return;
-        return sendText(value);
+        const text = String(value || '').trim();
+        if (!text) return;
+        sendText(text);
     };
 
     const clearChat = () => {
@@ -1592,10 +1623,10 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
 
     return (
-        <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end pointer-events-none">
+        <div className="fixed bottom-6 right-6 left-3 sm:left-auto z-[9999] flex flex-col items-end pointer-events-none">
             {isOpen && (
-                <div className="pointer-events-auto bg-[#0a0a0a] border border-yellow-500/30 rounded-2xl w-80 md:w-96 h-[550px] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden font-sans">
-                    <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center shadow-md">
+                <div className="bg-[#0a0a0a] border border-yellow-500/30 rounded-2xl w-full max-w-sm sm:max-w-none sm:w-80 md:w-96 h-[min(550px,75dvh)] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden font-sans pointer-events-auto">
+                    <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center shadow-md relative z-10">
                         <div className="flex items-center gap-3">
                             <div className="p-1 bg-white/10 rounded-full backdrop-blur-sm overflow-hidden border border-white/20">
                                 <img src={botImage} className="w-8 h-8 object-cover rounded-full opacity-90" alt="SustIA" />
@@ -1618,20 +1649,25 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-[#111] custom-scrollbar">
-                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                    <div className="bg-[#111] px-4 py-2 border-b border-white/5">
+                        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
                             {quickActions.map(a => (
                                 <button
                                     key={a.label}
                                     type="button"
-                                    onClick={() => handleQuickAction(a.value)}
-                                    disabled={isTyping}
-                                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border border-white/10 bg-[#1a1a1a] text-white/90 hover:bg-[#222] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    data-testid={`quick-action-${a.label.toLowerCase()}`}
+                                    onClick={() => {
+                                        handleQuickAction(a.value);
+                                    }}
+                                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border border-white/10 bg-[#1a1a1a] text-white/90 hover:bg-[#222] transition"
                                 >
                                     {a.label}
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-[#111] custom-scrollbar relative">
                         {messages.map((m, i) => (
                             <div key={i} className={`flex flex-col ${m.role === 'client' ? 'items-end' : 'items-start'}`}>
                                 <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${m.role === 'client'
@@ -1669,7 +1705,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                         <div ref={messagesEndRef} />
                     </div>
 
-                    <div className="p-3 bg-[#0a0a0a] border-t border-white/10">
+                    <div className="p-3 bg-[#0a0a0a] border-t border-white/10 relative z-0">
                         <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
                             <input
                                 className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-full px-4 py-2.5 text-sm text-white focus:border-yellow-500/50 outline-none transition placeholder:text-slate-600"
@@ -1765,6 +1801,276 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
         </div>
     );
 };
+
+const ADMIN_PANEL_GUIDES = {
+    dashboard: {
+        title: 'Inicio (Panel de Control)',
+        description: 'Acá tenés el resumen general de tu tienda: ventas, ingresos y métricas para tomar decisiones rápidas.',
+        sections: [
+            {
+                title: 'Qué mirar primero',
+                bullets: [
+                    'Ingresos brutos y beneficio neto estimado para ver cómo viene el mes.',
+                    'Rendimiento mensual para comparar meses recientes.',
+                    'Movimientos recientes para detectar ingresos/gastos rápido.'
+                ]
+            },
+            {
+                title: 'Acciones típicas',
+                bullets: [
+                    'Usá los botones/atajos del panel para ver detalles de métricas y reportes.',
+                    'Registrá ventas manuales si vendiste fuera del checkout (mostrador / en casa).'
+                ]
+            }
+        ]
+    },
+    orders: {
+        title: 'Pedidos',
+        description: 'Gestioná los pedidos que entran: ver detalle, finalizar y eliminar.',
+        sections: [
+            {
+                title: 'Cómo operar',
+                bullets: [
+                    'Abrí un pedido con el ícono de ojo para ver productos, datos del cliente y totales.',
+                    'Marcá como finalizado con el ícono de tilde cuando ya esté entregado/pagado.',
+                    'Eliminá con el ícono de papelera solo si fue un pedido inválido o duplicado.'
+                ]
+            },
+            {
+                title: 'Notificación',
+                bullets: [
+                    'El botón “Notificación pedidos” activa o mutea el sonido/alerta de nuevos pedidos (solo admins).'
+                ]
+            }
+        ]
+    },
+    products: {
+        title: 'Productos',
+        description: 'Administrá tu catálogo: altas, edición, categorías, stock y visibilidad.',
+        sections: [
+            {
+                title: 'Crear y organizar',
+                bullets: [
+                    'Usá “Agregar Producto” para cargar nombre, imagen, precio y stock.',
+                    'Usá “Categorías” para crear/editar categorías y ordenar el catálogo.'
+                ]
+            },
+            {
+                title: 'Stock y visibilidad',
+                bullets: [
+                    'Revisá el stock para evitar vender sin disponibilidad.',
+                    'Si un producto está desactivado, no aparece en la tienda hasta reactivarlo.'
+                ]
+            },
+            {
+                title: 'Límites de plan',
+                bullets: [
+                    'El contador muestra cuántos productos tenés según el plan; si estás cerca del límite, te avisa.'
+                ]
+            }
+        ]
+    },
+    promos: {
+        title: 'Promos',
+        description: 'Creá combos/promociones armando un paquete de productos con un precio final.',
+        sections: [
+            {
+                title: 'Crear una promo',
+                bullets: [
+                    'Poné nombre, precio e imagen (opcional) para mostrarla atractiva.',
+                    'Agregá productos al combo y ajustá cantidades.',
+                    'Guardá y revisá que el precio final tenga sentido vs. el costo.'
+                ]
+            },
+            {
+                title: 'Edición y limpieza',
+                bullets: [
+                    'Editá una promo existente cuando cambien productos o precios.',
+                    'Eliminá promos viejas para mantener el panel ordenado.'
+                ]
+            }
+        ]
+    },
+    coupons: {
+        title: 'Cupones',
+        description: 'Creá cupones de descuento por porcentaje o monto fijo, con límites y vencimiento.',
+        sections: [
+            {
+                title: 'Configurar un cupón',
+                bullets: [
+                    'Definí el código (en mayúsculas), el tipo (porcentaje/fijo) y el valor.',
+                    'Opcional: mínimo de compra, límite de usos y fecha de vencimiento.',
+                    'Elegí si es público (para redes) o para un email específico.'
+                ]
+            },
+            {
+                title: 'Usarlo y compartirlo',
+                bullets: [
+                    'Copiá el código con el botón de copiar y pasalo por WhatsApp/Instagram.',
+                    'Eliminá cupones vencidos o que ya no quieras ofrecer.'
+                ]
+            },
+            {
+                title: 'Planes',
+                bullets: [
+                    'Si tu plan no habilita cupones, vas a ver el panel bloqueado y un acceso a planes.'
+                ]
+            }
+        ]
+    },
+    suppliers: {
+        title: 'Proveedores',
+        description: 'Guardá proveedores y vinculalos a los productos que te abastecen.',
+        sections: [
+            {
+                title: 'Alta y datos',
+                bullets: [
+                    'Creá un proveedor con nombre, contacto, teléfono, IG y dirección (si aplica).',
+                    'Asociá productos para tener referencia rápida de qué compra va con quién.'
+                ]
+            },
+            {
+                title: 'Mantenimiento',
+                bullets: [
+                    'Editá cuando cambie un contacto o dato fiscal.',
+                    'Eliminá si ya no trabajás con ese proveedor.'
+                ]
+            }
+        ]
+    },
+    purchases: {
+        title: 'Compras / Stock',
+        description: 'Registrá reposiciones de stock y llevá historial de compras a proveedores.',
+        sections: [
+            {
+                title: 'Registrar reposición',
+                bullets: [
+                    'Elegí el producto existente, poné cantidad y seleccioná el proveedor.',
+                    'El sistema calcula un costo estimado y ajusta el stock al guardar.'
+                ]
+            },
+            {
+                title: 'Historial y correcciones',
+                bullets: [
+                    'Usá el historial para revisar compras pasadas.',
+                    'Editar una compra puede ajustar el stock automáticamente: revisalo antes de guardar.'
+                ]
+            }
+        ]
+    },
+    finance: {
+        title: 'Finanzas',
+        description: 'Registrá inversiones/aportes y gastos para entender el capital y la rentabilidad.',
+        sections: [
+            {
+                title: 'Registrar movimientos',
+                bullets: [
+                    'Cargá inversiones/aportes con socio, monto y fecha.',
+                    'Cargá gastos/egresos con descripción, categoría y fecha.'
+                ]
+            },
+            {
+                title: 'Lectura',
+                bullets: [
+                    'Usá los totales para ver capital, egresos e impacto en el resultado.',
+                    'Mantené al día los gastos para que el beneficio estimado sea realista.'
+                ]
+            }
+        ]
+    },
+    users: {
+        title: 'Usuarios',
+        description: 'Administrá cuentas: búsqueda, roles y auditoría para soporte.',
+        sections: [
+            {
+                title: 'Buscar y filtrar',
+                bullets: [
+                    'Buscá por nombre, email o usuario desde la barra.',
+                    'Filtrá por rol para encontrar rápido admins/usuarios.'
+                ]
+            },
+            {
+                title: 'Gestión',
+                bullets: [
+                    'Editá el perfil o permisos según necesidad.',
+                    'Usá la auditoría para entender carritos/actividad si hay reclamos.'
+                ]
+            }
+        ]
+    }
+};
+
+function AdminHowToUse({ guideKey }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const guide = ADMIN_PANEL_GUIDES[guideKey];
+    if (!guide) return null;
+
+    return (
+        <>
+            <button
+                onClick={() => setIsOpen(true)}
+                className="px-4 py-2 rounded-xl bg-slate-900/60 hover:bg-slate-900 text-slate-300 hover:text-white border border-slate-800 transition flex items-center gap-2 font-black text-[10px] uppercase tracking-widest"
+                type="button"
+            >
+                <FileQuestion className="w-4 h-4" />
+                Cómo usar
+            </button>
+
+            {isOpen && (
+                <div
+                    className="fixed inset-0 z-[20050] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+                    onClick={() => setIsOpen(false)}
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div
+                        className="w-full max-w-2xl bg-[#0a0a0a] border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between gap-4 p-6 border-b border-slate-800">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Guía rápida</p>
+                                <h2 className="text-2xl font-black text-white mt-1">Cómo usar: {guide.title}</h2>
+                                <p className="text-slate-400 text-sm mt-2">{guide.description}</p>
+                            </div>
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition"
+                                type="button"
+                                aria-label="Cerrar"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar space-y-6">
+                            {(guide.sections || []).map((section, idx) => (
+                                <div key={idx} className="bg-slate-900/20 border border-slate-800 rounded-2xl p-5">
+                                    <h3 className="text-white font-black">{section.title}</h3>
+                                    <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-slate-300">
+                                        {(section.bullets || []).map((b, i) => (
+                                            <li key={i}>{b}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="p-6 border-t border-slate-800 flex justify-end">
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black transition"
+                                type="button"
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
 
 // --- APLICACIÓN PRINCIPAL ---
 function App() {
@@ -2230,6 +2536,12 @@ function App() {
     // Estado para Detalle de Pedido (Modal)
     const [selectedOrder, setSelectedOrder] = useState(null);
 
+    // Estados para Paginación de Pedidos (Admin)
+    const [ordersLimit, setOrdersLimit] = useState(20);
+    const [ordersCursor, setOrdersCursor] = useState(null); // DocumentSnapshot del último elemento
+    const [ordersHistory, setOrdersHistory] = useState([]); // Historial de cursores para "Volver"
+    const [hasMoreOrders, setHasMoreOrders] = useState(true);
+
     // Estados para Dashboard Avanzado (Venta Manual, Analíticas, Producto Menos Vendido)
     const [showManualSaleModal, setShowManualSaleModal] = useState(false);
     const [metricsDetail, setMetricsDetail] = useState(null); // { type: 'revenue' | 'net_income' }
@@ -2692,10 +3004,16 @@ function App() {
         const hydrateCartFromRemote = async () => {
             try {
                 const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id));
-                if (!snap.exists()) return;
+                if (!snap.exists()) {
+                    cartHydratedFromRemoteRef.current = true;
+                    return;
+                }
                 const data = snap.data() || {};
                 const remoteItems = Array.isArray(data.items) ? data.items : [];
-                if (remoteItems.length === 0) return;
+                if (remoteItems.length === 0) {
+                    cartHydratedFromRemoteRef.current = true;
+                    return;
+                }
 
                 const normalizedRemote = remoteItems
                     .filter(i => i && i.productId && Number(i.quantity) > 0)
@@ -2710,25 +3028,29 @@ function App() {
                         quantity: Number(i.quantity) || 1
                     }));
 
-                if (normalizedRemote.length === 0) return;
-
-                const localSignature = (cart || []).map(i => `${i?.product?.id || ''}:${Number(i?.quantity) || 0}`).sort().join('|');
-                const remoteSignature = normalizedRemote.map(i => `${i.product.id}:${i.quantity}`).sort().join('|');
-                if (localSignature && localSignature === remoteSignature) {
+                if (normalizedRemote.length === 0) {
                     cartHydratedFromRemoteRef.current = true;
                     return;
                 }
 
+                // Solo hidratamos si el carrito local está vacío para evitar sobrescribir cambios recientes
+                // o si es la primera carga y decidimos que el remoto manda.
+                // Eliminamos la dependencia de 'cart' para evitar el bucle.
                 if (!cancelled) {
-                    setCart(normalizedRemote);
+                    setCart(prevCart => {
+                        if (prevCart.length === 0) return normalizedRemote;
+                        return prevCart; // Mantener local si ya hay algo
+                    });
                     cartHydratedFromRemoteRef.current = true;
                 }
-            } catch (e) { }
+            } catch (e) { 
+                cartHydratedFromRemoteRef.current = true;
+            }
         };
 
         hydrateCartFromRemote();
         return () => { cancelled = true; };
-    }, [appId, currentUser?.id, cart]);
+    }, [appId, currentUser?.id]); // Eliminado 'cart' de las dependencias
 
     useEffect(() => {
         if (!isAdminUser) {
@@ -2978,6 +3300,11 @@ function App() {
             document.head.appendChild(lightModeStyle);
         }
 
+        if (view === 'admin') {
+            lightModeStyle.textContent = '';
+            return;
+        }
+
         if (!darkMode) {
             // Light mode styles
             lightModeStyle.textContent = `
@@ -3036,17 +3363,19 @@ function App() {
         } else {
             lightModeStyle.textContent = '';
         }
-    }, [darkMode]);
+    }, [darkMode, view]);
 
     // 4. Suscripciones a Colecciones (Snapshot Listeners)
+    // - Público: se mantiene realtime solo donde aporta (products + settings)
+    // - Resto: se carga por demanda inicial (getDocs) para evitar listeners extra
+    // - Admin: listeners solo cuando el panel Admin está activo (view === 'admin')
+
     useEffect(() => {
         if (!systemUser) return;
         if (!appId) return;
 
-        const isAuthenticatedUser = systemUser && !systemUser.isAnonymous;
-        const isAdminUser = currentUser?.role === 'admin';
-
         const unsubscribeFunctions = [];
+        let cancelled = false;
 
         unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), (snapshot) => {
@@ -3058,50 +3387,14 @@ function App() {
                 if (cart.length === 0) setIsLoading(false);
             }, (error) => {
                 console.error("Error fetching products:", error);
-                if (error.code === 'permission-denied' || error.message.includes('permission')) {
+                if (error?.code === 'permission-denied' || String(error?.message || '').includes('permission')) {
                     showToast("Error de permisos. Reiniciando sesión...", "warning");
                     setTimeout(() => {
                         auth.signOut().then(() => window.location.reload());
                     }, 2000);
                 } else {
-                    showToast("Error al cargar productos: " + error.message, "error");
+                    showToast("Error al cargar productos: " + (error?.message || 'error'), "error");
                 }
-            })
-        );
-
-        unsubscribeFunctions.push(
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), snapshot => {
-                setPromos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            })
-        );
-
-        unsubscribeFunctions.push(
-            onSnapshot(
-                collection(db, 'artifacts', appId, 'public', 'data', 'homeBanners'),
-                (snapshot) => {
-                    const banners = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                    banners.sort((a, b) => {
-                        const ao = Number.isFinite(Number(a.order)) ? Number(a.order) : 0;
-                        const bo = Number.isFinite(Number(b.order)) ? Number(b.order) : 0;
-                        if (ao !== bo) return ao - bo;
-                        const ad = typeof a.createdAt === 'string' ? a.createdAt : '';
-                        const bd = typeof b.createdAt === 'string' ? b.createdAt : '';
-                        return ad.localeCompare(bd);
-                    });
-                    setHomeBanners(banners);
-                },
-                (error) => {
-                    setHomeBanners([]);
-                    if (currentUser?.role === 'admin') {
-                        showToast("No se pudieron cargar los banners del Home: " + (error?.message || "error"), "warning");
-                    }
-                }
-            )
-        );
-
-        unsubscribeFunctions.push(
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), snapshot => {
-                setCoupons(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             })
         );
 
@@ -3129,172 +3422,259 @@ function App() {
                     setSettings(defaultSettings);
                     setSettingsLoaded(true);
                     setAboutText(defaultSettings.aboutUsText);
-                    if (isAdminUser) {
-                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), defaultSettings).catch(() => { });
-                    }
                 }
             })
         );
 
-        if (isAuthenticatedUser) {
-            const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-            const ordersQuery = isAdminUser
-                ? query(ordersRef, orderBy('date', 'desc'), limit(200))
-                : query(ordersRef, where('customerId', '==', systemUser.uid), limit(50));
+        (async () => {
+            try {
+                const promosSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'promos'));
+                if (!cancelled) setPromos(promosSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+            } catch {
+                if (!cancelled) setPromos([]);
+            }
 
-            unsubscribeFunctions.push(
-                onSnapshot(ordersQuery, (snapshot) => {
-                    const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                    if (!isAdminUser) {
-                        const getDateMs = (value) => {
-                            if (!value) return 0;
-                            if (typeof value?.toMillis === 'function') return value.toMillis();
-                            const ms = Date.parse(String(value));
-                            return Number.isFinite(ms) ? ms : 0;
-                        };
-                        ordersData.sort((a, b) => getDateMs(b.date) - getDateMs(a.date));
-                    }
-                    setOrders(ordersData);
-                })
-            );
-        } else {
+            try {
+                const bannersSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'homeBanners'));
+                if (!cancelled) {
+                    const banners = bannersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    banners.sort((a, b) => {
+                        const ao = Number.isFinite(Number(a.order)) ? Number(a.order) : 0;
+                        const bo = Number.isFinite(Number(b.order)) ? Number(b.order) : 0;
+                        if (ao !== bo) return ao - bo;
+                        const ad = typeof a.createdAt === 'string' ? a.createdAt : '';
+                        const bd = typeof b.createdAt === 'string' ? b.createdAt : '';
+                        return ad.localeCompare(bd);
+                    });
+                    setHomeBanners(banners);
+                }
+            } catch {
+                if (!cancelled) setHomeBanners([]);
+            }
+
+            try {
+                const couponsSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'));
+                if (!cancelled) setCoupons(couponsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+            } catch {
+                if (!cancelled) setCoupons([]);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+            unsubscribeFunctions.forEach(unsub => unsub());
+        };
+    }, [systemUser, appId]);
+
+    useEffect(() => {
+        if (!systemUser) return;
+        if (!appId) return;
+
+        const isAuthenticatedUser = systemUser && !systemUser.isAnonymous;
+        const isAdminUser = currentUser?.role === 'admin';
+        const isAdminViewActive = view === 'admin';
+
+        if (!isAuthenticatedUser) {
             setOrders([]);
+            return;
         }
 
+        if (isAdminUser && !isAdminViewActive) {
+            setOrders([]);
+            return;
+        }
+
+        const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+        
+        let q;
         if (isAdminUser) {
-            unsubscribeFunctions.push(
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
-                    setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-                })
-            );
-
-            unsubscribeFunctions.push(
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => {
-                    setSuppliers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-                })
-            );
-
-            unsubscribeFunctions.push(
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => {
-                    setExpenses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-                })
-            );
-
-            unsubscribeFunctions.push(
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
-                    setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-                })
-            );
-
-            unsubscribeFunctions.push(
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), snapshot => {
-                    setInvestments(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-                })
-            );
-
-            unsubscribeFunctions.push(
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'carts'), snapshot => {
-                    const activeCarts = snapshot.docs
-                        .map(d => ({ id: d.id, ...d.data() }))
-                        .filter(c => c.items && c.items.length > 0);
-                    setLiveCarts(activeCarts);
-                })
-            );
+            const constraints = [orderBy('date', 'desc'), limit(ordersLimit)];
+            if (ordersCursor) constraints.push(startAfter(ordersCursor));
+            q = query(ordersRef, ...constraints);
         } else {
+            q = query(ordersRef, where('customerId', '==', systemUser.uid), orderBy('date', 'desc'), limit(50));
+        }
+
+        return onSnapshot(q, (snapshot) => {
+            const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            if (isAdminUser) {
+                setHasMoreOrders(snapshot.docs.length === ordersLimit);
+                // No actualizamos el cursor aquí para evitar bucles infinitos si onSnapshot dispara
+                // El cursor solo se actualiza manualmente al cambiar de página
+            }
+
+            if (!isAdminUser) {
+                const getDateMs = (value) => {
+                    if (!value) return 0;
+                    if (typeof value?.toMillis === 'function') return value.toMillis();
+                    const ms = Date.parse(String(value));
+                    return Number.isFinite(ms) ? ms : 0;
+                };
+                ordersData.sort((a, b) => getDateMs(b.date) - getDateMs(a.date));
+            }
+            setOrders(ordersData);
+        }, (err) => {
+            console.error("Orders Snapshot Error:", err);
+            setOrders([]);
+        });
+    }, [systemUser, currentUser?.role, appId, view, ordersLimit, ordersCursor]);
+
+    const handleNextOrders = () => {
+        if (!hasMoreOrders || orders.length === 0) return;
+        // Necesitamos el DocumentSnapshot real. Como onSnapshot no nos lo da persistente,
+        // vamos a tener que buscarlo en la colección o cambiar a getDocs para paginación.
+        // Por ahora, buscaremos el último doc de la lista actual.
+        const lastId = orders[orders.length - 1].id;
+        getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', lastId)).then(snap => {
+            if (snap.exists()) {
+                setOrdersHistory(prev => [...prev, ordersCursor]);
+                setOrdersCursor(snap);
+            }
+        });
+    };
+
+    const handlePrevOrders = () => {
+        if (ordersHistory.length === 0) return;
+        const prevCursor = ordersHistory[ordersHistory.length - 1];
+        setOrdersCursor(prevCursor);
+        setOrdersHistory(prev => prev.slice(0, -1));
+    };
+
+    useEffect(() => {
+        if (!appId) return;
+
+        const isAdminUser = currentUser?.role === 'admin';
+        const isAdminViewActive = view === 'admin';
+        if (!(isAdminUser && isAdminViewActive)) {
             setUsers([]);
             setSuppliers([]);
             setExpenses([]);
             setPurchases([]);
             setInvestments([]);
             setLiveCarts([]);
+            return;
         }
 
+        const unsubscribeFunctions = [];
+
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
+                setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            })
+        );
+
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => {
+                setSuppliers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            })
+        );
+
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => {
+                setExpenses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            })
+        );
+
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
+                setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            })
+        );
+
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), snapshot => {
+                setInvestments(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            })
+        );
+
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'carts'), snapshot => {
+                const activeCarts = snapshot.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(c => c.items && c.items.length > 0);
+                setLiveCarts(activeCarts);
+            })
+        );
+
         return () => unsubscribeFunctions.forEach(unsub => unsub());
-    }, [systemUser, currentUser?.role, appId]);
+    }, [currentUser?.role, appId, view]);
 
     // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
     // Elimina automáticamente productos que ya no existen o no tienen stock
+    const productsById = useMemo(() => {
+        const map = new Map();
+        for (const p of products) map.set(String(p.id).trim(), p);
+        return map;
+    }, [products]);
+
+    const lastSyncedCartRef = useRef(null);
+
     useEffect(() => {
-        // Solo ejecutar si hay productos cargados y un usuario con carrito
         if (!appId) return;
-        if (products.length > 0 && cart.length > 0 && currentUser) {
-            let hasChanges = false;
-            let removedItems = [];
+        if (products.length === 0) return;
+        if (!currentUser) return;
+        if (cart.length === 0) return;
 
-            const validatedCart = cart.filter(item => {
-                const itemId = String(item.product.id).trim();
-                const productInStore = products.find(p => String(p.id).trim() === itemId);
+        let changed = false;
+        const removed = [];
 
-                // 1. Verificar si el producto aún existe (Borrado físico)
-                if (!productInStore) {
-                    hasChanges = true;
-                    removedItems.push(`${item.product.name} (Producto eliminado)`);
+        const validated = cart.filter(item => {
+            const itemId = String(item.product?.id || '').trim();
+            const productInStore = productsById.get(itemId);
+            if (!productInStore) {
+                changed = true;
+                removed.push(`${item.product?.name || 'Producto'} (Producto eliminado)`);
+                return false;
+            }
+            if (productInStore.isActive === false) {
+                changed = true;
+                removed.push(`${item.product?.name || 'Producto'} (No disponible actualmente)`);
+                return false;
+            }
+            if (productInStore.isPromo && Array.isArray(productInStore.items)) {
+                const ok = productInStore.items.every(comp => {
+                    const cid = String(comp?.productId || '').trim();
+                    const cp = productsById.get(cid);
+                    return !!cp && cp.isActive !== false;
+                });
+                if (!ok) {
+                    changed = true;
+                    removed.push(`${item.product?.name || 'Promo'} (Componente inválido)`);
                     return false;
-                }
-
-                // 2. Verificar si está Activo (Borrado lógico / Pausado)
-                if (productInStore.isActive === false) {
-                    hasChanges = true;
-                    removedItems.push(`${item.product.name} (No disponible actualmente)`);
-                    return false;
-                }
-
-                // 3. Validación Especial para Promos: Verificar sus componentes
-                if (productInStore.isPromo && productInStore.items) {
-                    const componentsValid = productInStore.items.every(comp => {
-                        const compProduct = products.find(p => String(p.id).trim() === String(comp.productId).trim());
-                        // El componente debe existir y estar activo
-                        return compProduct && compProduct.isActive !== false;
-                    });
-
-                    if (!componentsValid) {
-                        hasChanges = true;
-                        removedItems.push(`${item.product.name} (Uno de sus productos ya no existe)`);
-                        return false;
-                    }
-                }
-
-                // 4. Verificar Stock
-                const hasStock = productInStore.stock > 0;
-                // Si es un producto "infinito" (servicios digitales) podríamos ignorar esto, pero asumimos fisico
-                if (!hasStock) {
-                    hasChanges = true;
-                    removedItems.push(`${item.product.name} (Sin Stock)`);
-                    return false;
-                }
-
-                return true;
-            }).map(item => {
-                // Actualizar datos del producto (precio actualizado, imagen nueva) siempre
-                const productInStore = products.find(p => p.id === item.product.id);
-
-                // Si cambió el precio, detectamos el cambio para guardar en DB
-                if (productInStore && ((item.product?.basePrice ?? 0) !== productInStore.basePrice || (item.product?.discount ?? 0) !== productInStore.discount)) {
-                    hasChanges = true;
-                }
-
-                // Usar siempre la versión más fresca del producto
-                return { ...item, product: productInStore || item.product };
-            });
-
-            if (hasChanges) {
-                console.log("🧹 Carrito actualizado automáticamente:", removedItems);
-
-                // Actualizar estado local
-                setCart(validatedCart);
-
-                // Actualizar base de datos
-                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
-                    userId: currentUser.id,
-                    items: validatedCart
-                }, { merge: true });
-
-                if (removedItems.length > 0) {
-                    showToast(`Tu carrito se actualizó: ${removedItems.join(', ')}`, 'info');
                 }
             }
+            if (!(Number(productInStore.stock) > 0)) {
+                changed = true;
+                removed.push(`${item.product?.name || 'Producto'} (Sin Stock)`);
+                return false;
+            }
+            return true;
+        }).map(item => {
+            const fresh = productsById.get(String(item.product?.id || '').trim());
+            if (fresh && ((item.product?.basePrice ?? 0) !== fresh.basePrice || (item.product?.discount ?? 0) !== fresh.discount)) {
+                changed = true;
+            }
+            return { ...item, product: fresh || item.product };
+        });
+
+        if (!changed) return;
+
+        setCart(validated);
+
+        const payload = JSON.stringify(validated.map(i => ({ id: String(i.product?.id || ''), q: i.quantity, p: i.product?.basePrice, d: i.product?.discount })));
+        if (lastSyncedCartRef.current === payload) return;
+        lastSyncedCartRef.current = payload;
+
+        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
+            userId: currentUser.id,
+            items: validated
+        }, { merge: true });
+
+        if (removed.length > 0) {
+            showToast(`Tu carrito se actualizó: ${removed.join(', ')}`, 'info');
         }
-    }, [products, currentUser, cart]); // Se ejecuta cuando productos, usuario o EL CARRITO cambian
+    }, [productsById, currentUser?.id, cart, appId]);
 
     // --- EFECTO VISUAL: SEO, FAVICON Y TÍTULO DINÁMICO ---
 
@@ -4083,9 +4463,22 @@ function App() {
         console.log('💎 Mercado Pago: Iniciando Brick. Total a cobrar:', finalTotal);
 
         if (!window.MercadoPago) {
-            console.error('❌ Mercado Pago: SDK no cargado.');
-            setPaymentError('No se pudo cargar el sistema de pagos. Por favor recarga la página.');
-            return;
+            try {
+                await (async () => {
+                    if (window.MercadoPago) return;
+                    await new Promise((resolve, reject) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://sdk.mercadopago.com/js/v2';
+                        s.async = true;
+                        s.onload = resolve;
+                        s.onerror = reject;
+                        document.head.appendChild(s);
+                    });
+                })();
+            } catch {
+                setPaymentError('No se pudo cargar el sistema de pagos. Intentá nuevamente.');
+                return;
+            }
         }
 
         // Sanitizar el monto total para evitar errores de precisión flotante
@@ -4210,8 +4603,13 @@ function App() {
                                 }),
                             });
 
-                            const result = await response.json();
+                            const result = await response.json().catch(() => ({}));
                             console.log('📦 Respuesta:', result);
+
+                            if (!response.ok) {
+                                const message = result?.error || result?.message || `Error procesando pago (${response.status})`;
+                                throw new Error(message);
+                            }
 
                             if (result.status === 'approved' || result.status === 'in_process' || result.status === 'pending') {
                                 await confirmOrderAfterPayment(result.id);
@@ -5730,7 +6128,7 @@ function App() {
                                     return (
                                         <div key={idx} className="flex flex-col items-center justify-end h-full gap-2 group min-w-[60px] cursor-pointer hover:bg-slate-900/30 rounded-xl p-1 transition-all">
                                             {/* Tooltip on Hover */}
-                                            <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl pointer-events-none transition z-50 shadow-xl whitespace-nowrap">
+                                            <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl pointer-events-none transition z-50 shadow-xl max-w-[min(240px,70vw)] whitespace-normal break-words">
                                                 <p className="text-white font-bold">{item.date}</p>
                                                 <p className={`font-black ${colorClass}`}>${item.revenue.toLocaleString()}</p>
                                                 <p className="text-[10px] text-slate-500">{item.orders} Pedidos</p>
@@ -6508,7 +6906,7 @@ function App() {
             {view !== 'admin' && <div className="h-16 sm:h-20 md:h-24"></div>}
 
             {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
-            <main className={`flex-grow relative z-10 ${view === 'admin' ? 'h-screen flex overflow-hidden' : 'p-4 md:p-8'}`}>
+            <main className={`flex-grow relative z-10 ${view === 'admin' ? 'min-h-screen min-full-viewport flex overflow-hidden' : 'p-4 md:p-8'}`}>
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
@@ -6700,7 +7098,7 @@ function App() {
                             <div className="mb-16 animate-fade-in">
                                 {promos.length > 0 ? (
                                     <>
-                                        <h2 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
+                                        <h2 className={`text-3xl font-black mb-8 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                             <Tag className="w-8 h-8 text-purple-500 animate-pulse" /> PROMOCIONES ESPECIALES
                                         </h2>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -6837,7 +7235,7 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-4 sm:gap-6 md:gap-8 pb-32">
+                                <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-3 sm:gap-6 md:gap-8 pb-32">
                                     {filteredProducts.map(p => (
                                         <ProductCard
                                             key={p.id}
@@ -7200,6 +7598,36 @@ function App() {
                                             </div>
                                         </div>
                                     )}
+                                    {checkoutData.paymentChoice === 'Transferencia' && (
+                                        <div className="mt-8 animate-fade-up">
+                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-orange-500/20">
+                                                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                                                    <Building className="w-5 h-5 text-orange-400" />
+                                                    Datos para transferir
+                                                </h3>
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <span className="text-slate-400">Titular</span>
+                                                        <span className="text-white font-medium text-right break-all">{settings?.paymentTransfer?.holderName ? String(settings.paymentTransfer.holderName) : 'Sin configurar'}</span>
+                                                    </div>
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <span className="text-slate-400">Alias</span>
+                                                        <span className="text-white font-mono text-right break-all">{settings?.paymentTransfer?.alias ? String(settings.paymentTransfer.alias) : 'Sin configurar'}</span>
+                                                    </div>
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <span className="text-slate-400">CBU</span>
+                                                        <span className="text-white font-mono text-right break-all">{settings?.paymentTransfer?.cbu ? String(settings.paymentTransfer.cbu) : 'Sin configurar'}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-4 p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
+                                                    <Info className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                                                    <p className="text-xs text-orange-200 leading-relaxed font-medium">
+                                                        Una vez realizada la transferencia, confirmá el pedido. Si necesitás coordinar el comprobante, te contactamos por WhatsApp si está disponible.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -7359,7 +7787,8 @@ function App() {
                                         />
                                         <button
                                             onClick={() => {
-                                                const code = document.getElementById('couponRedeemInput').value.trim().toUpperCase();
+                                                const input = document.getElementById('couponRedeemInput');
+                                                const code = String(input?.value || '').trim().toUpperCase();
                                                 if (!code) return showToast("Ingresa un código", "warning");
                                                 const coupon = coupons.find(c => c.code === code);
                                                 if (coupon) {
@@ -7567,7 +7996,7 @@ function App() {
                             <div className={`mt-12 pt-12 border-t flex flex-col md:flex-row gap-8 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                 <div className="flex items-center gap-4">
                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}><Shield className="text-orange-500" /></div>
-                                    <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Garantía Oficial</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>En todos los productos</p></div>
+                                    <div><h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Garantía Oficial</h4><p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Productos de calidad</p></div>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}><Truck className="text-purple-500" /></div>
@@ -7698,7 +8127,7 @@ function App() {
                             currentUser?.id &&
                             currentUser?.id.length >= 10 &&
                             !SecurityManager.detectManipulation()) ? (
-                            <div className="flex h-screen bg-[#050505] overflow-hidden animate-fade-up relative w-full font-sans">
+                            <div className="flex min-h-screen min-full-viewport bg-[#050505] overflow-hidden animate-fade-up relative w-full font-sans">
 
                                 {/* Overlay para cerrar el menú en móvil */}
                                 {isAdminMenuOpen && (
@@ -7813,8 +8242,11 @@ function App() {
                                                     <h1 className="text-4xl font-black text-white neon-text">Panel de Control</h1>
                                                     <p className="text-slate-500 mt-2">Resumen administrativo y financiero.</p>
                                                 </div>
-                                                <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
-                                                    {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                <div className="flex items-center gap-3">
+                                                    <AdminHowToUse guideKey="dashboard" />
+                                                    <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
+                                                        {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -8034,11 +8466,14 @@ function App() {
                                     {/* TAB: PROVEEDORES (CON SELECTOR VISUAL) */}
                                     {adminTab === 'suppliers' && (
                                         <div className="max-w-6xl mx-auto space-y-8 animate-fade-up pb-20">
-                                            <div className="flex justify-between items-center">
+                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                                 <h1 className="text-3xl font-black text-white">Proveedores</h1>
-                                                <button onClick={() => { setNewSupplier({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] }); setEditingSupplierId(null); setShowSupplierModal(true); }} className="bg-orange-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-orange-500 transition transform hover:-translate-y-1">
-                                                    <Plus className="w-5 h-5" /> Nuevo Proveedor
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <AdminHowToUse guideKey="suppliers" />
+                                                    <button onClick={() => { setNewSupplier({ name: '', contact: '', phone: '', ig: '', address: '', cuit: '', associatedProducts: [] }); setEditingSupplierId(null); setShowSupplierModal(true); }} className="bg-orange-600 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-orange-500 transition transform hover:-translate-y-1">
+                                                        <Plus className="w-5 h-5" /> Nuevo Proveedor
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -8111,7 +8546,10 @@ function App() {
                                     {/* TAB: COMPRAS (STOCK) */}
                                     {adminTab === 'purchases' && (
                                         <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                            <h1 className="text-3xl font-black text-white mb-8">Gestión de Stock y Compras</h1>
+                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                <h1 className="text-3xl font-black text-white">Gestión de Stock y Compras</h1>
+                                                <AdminHowToUse guideKey="purchases" />
+                                            </div>
 
                                             {/* Formulario de Compra Unificado */}
                                             <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] mb-10 shadow-xl overflow-hidden relative">
@@ -8364,7 +8802,10 @@ function App() {
                                     {/* TAB: FINANZAS (GASTOS E INVERSIONES) */}
                                     {adminTab === 'finance' && (
                                         <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                            <h1 className="text-4xl font-black text-white mb-8 neon-text">Finanzas y Capital</h1>
+                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                <h1 className="text-4xl font-black text-white neon-text">Finanzas y Capital</h1>
+                                                <AdminHowToUse guideKey="finance" />
+                                            </div>
 
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                                                 {/* SECCIÓN: REGISTRAR INVERSIÓN (NUEVO) */}
@@ -8673,7 +9114,10 @@ function App() {
                                                 </button>
                                             )}
 
-                                            <h1 className="text-3xl font-black text-white mb-8">Gestión de Cupones</h1>
+                                            <div className="relative z-30 flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                <h1 className="text-3xl font-black text-white">Gestión de Cupones</h1>
+                                                <AdminHowToUse guideKey="coupons" />
+                                            </div>
 
                                             {/* Formulario de Creación */}
                                             <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
@@ -8842,6 +9286,9 @@ function App() {
                                                     </div>
 
                                                     <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                                                        <div className="w-full sm:w-auto flex justify-end">
+                                                            <AdminHowToUse guideKey="users" />
+                                                        </div>
                                                         <div className="relative w-full sm:w-64 group">
                                                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-orange-400 transition" />
                                                             <input
@@ -8986,9 +9433,12 @@ function App() {
                                     {/* TAB: PROMOS (NUEVO) */}
                                     {adminTab === 'promos' && (
                                         <div className="max-w-6xl mx-auto animate-fade-up pb-20">
-                                            <h1 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
-                                                <Tag className="w-8 h-8 text-purple-500" /> Gestión de Promos
-                                            </h1>
+                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                <h1 className="text-3xl font-black text-white flex items-center gap-3">
+                                                    <Tag className="w-8 h-8 text-purple-500" /> Gestión de Promos
+                                                </h1>
+                                                <AdminHowToUse guideKey="promos" />
+                                            </div>
 
                                             {/* Formulario Nueva Promo */}
                                             {/* Formulario Nueva Promo o Banner Upgrade */}
@@ -9058,9 +9508,9 @@ function App() {
                                                                 <Package className="w-4 h-4" /> Productos Incluidos
                                                             </p>
 
-                                                            <div className="flex gap-2 mb-4">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-[1fr_5rem_auto] gap-2 mb-4">
                                                                 <select
-                                                                    className="input-cyber flex-1 p-3 text-sm"
+                                                                    className="input-cyber w-full p-3 text-sm min-w-0"
                                                                     value={selectedPromoProduct}
                                                                     onChange={e => setSelectedPromoProduct(e.target.value)}
                                                                 >
@@ -9071,7 +9521,7 @@ function App() {
                                                                 </select>
                                                                 <input
                                                                     type="number"
-                                                                    className="input-cyber w-20 p-3 text-sm text-center"
+                                                                    className="input-cyber w-full sm:w-20 p-3 text-sm text-center"
                                                                     value={promoProductQty}
                                                                     min="1"
                                                                     onChange={e => setPromoProductQty(Math.max(1, parseInt(e.target.value) || 1))}
@@ -9094,7 +9544,7 @@ function App() {
                                                                         setSelectedPromoProduct('');
                                                                         setPromoProductQty(1);
                                                                     }}
-                                                                    className="p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition"
+                                                                    className="h-[46px] w-full sm:w-auto px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition flex items-center justify-center"
                                                                 >
                                                                     <Plus className="w-5 h-5" />
                                                                 </button>
@@ -9109,7 +9559,7 @@ function App() {
                                                                             <div className="flex items-center gap-3">
                                                                                 <img src={p.image} className="w-8 h-8 rounded bg-white object-contain p-0.5" />
                                                                                 <div>
-                                                                                    <p className="text-sm font-bold text-white truncate max-w-[120px]">{p.name}</p>
+                                                                                    <p className="text-sm font-bold text-white truncate max-w-[200px] sm:max-w-none">{p.name}</p>
                                                                                     <p className="text-xs text-slate-500">{item.quantity} un. x ${p.basePrice}</p>
                                                                                 </div>
                                                                             </div>
@@ -9131,7 +9581,7 @@ function App() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex gap-4 justify-end mt-6">
+                                                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:justify-end mt-6">
                                                         {isEditingPromo && (
                                                             <button
                                                                 onClick={() => {
@@ -9139,7 +9589,7 @@ function App() {
                                                                     setEditingPromoId(null);
                                                                     setNewPromo({ name: '', price: '', image: '', description: '', items: [] });
                                                                 }}
-                                                                className="px-6 py-3 text-slate-400 hover:text-white font-bold transition"
+                                                                className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-300 hover:text-white hover:bg-slate-900 transition font-bold"
                                                             >
                                                                 Cancelar
                                                             </button>
@@ -9172,7 +9622,7 @@ function App() {
                                                                     setIsLoading(false);
                                                                 }
                                                             }}
-                                                            className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition"
+                                                            className="w-full sm:w-auto px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center"
                                                         >
                                                             {isEditingPromo ? 'Guardar Cambios' : 'Crear Promo'}
                                                         </button>
@@ -9215,10 +9665,10 @@ function App() {
                                                             <div className="aspect-video relative overflow-hidden">
                                                                 <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                                                                <div className="absolute bottom-4 left-4 right-4">
-                                                                    <h4 className="text-xl font-black text-white mb-1 drop-shadow-lg">{promo.name}</h4>
+                                                                <div className="absolute bottom-4 left-4 right-4 bg-black/55 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                                                                    <h4 className="text-xl font-black text-white mb-1 leading-tight">{promo.name}</h4>
                                                                     <div className="flex items-center gap-3">
-                                                                        <p className="text-3xl text-purple-400 font-black drop-shadow-lg">${price.toLocaleString()}</p>
+                                                                        <p className="text-3xl text-purple-400 font-black">${price.toLocaleString()}</p>
                                                                         {totalCost > 0 && (
                                                                             <div className={`px-2 py-1 rounded text-xs font-bold border ${isProfitable ? 'bg-green-900/30 border-green-500/30 text-green-400' : 'bg-red-900/30 border-red-500/30 text-red-400'}`}>
                                                                                 {margin}% MG
@@ -9231,7 +9681,7 @@ function App() {
                                                             <div className="p-6 flex-1 flex flex-col">
                                                                 {/* Productos Incluidos con Miniaturas */}
                                                                 <div className="mb-6 flex-1">
-                                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Include:</p>
+                                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Incluye:</p>
                                                                     <div className="flex flex-col gap-2">
                                                                         {(promo.items || []).map((item, i) => {
                                                                             const p = products.find(prod => prod.id === item.productId);
@@ -9310,13 +9760,16 @@ function App() {
                                         <div className="max-w-6xl mx-auto animate-fade-up pb-20">
                                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
                                                 <h1 className="text-3xl font-black text-white">Gestión de Pedidos</h1>
-                                                <button onClick={() => toggleAdminOrderAlarmMuted()} className={`px-5 py-3 rounded-xl font-black transition border flex items-center gap-3 ${adminOrderAlarmMuted ? 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800' : 'bg-green-900/10 text-green-400 border-green-500/20 hover:bg-green-600 hover:text-white'}`}>
-                                                    <Bell className={`w-5 h-5 ${adminOrderAlarmMuted ? 'opacity-40' : ''}`} />
-                                                    Notificación pedidos
-                                                    <span className={`text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-widest ${adminOrderAlarmMuted ? 'bg-slate-900/60 text-slate-400 border-slate-700' : 'bg-green-900/20 text-green-400 border-green-500/30'}`}>
-                                                        {adminOrderAlarmMuted ? 'Muteada' : 'Activa'}
-                                                    </span>
-                                                </button>
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                                    <AdminHowToUse guideKey="orders" />
+                                                    <button onClick={() => toggleAdminOrderAlarmMuted()} className={`px-5 py-3 rounded-xl font-black transition border flex items-center gap-3 ${adminOrderAlarmMuted ? 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800' : 'bg-green-900/10 text-green-400 border-green-500/20 hover:bg-green-600 hover:text-white'}`}>
+                                                        <Bell className={`w-5 h-5 ${adminOrderAlarmMuted ? 'opacity-40' : ''}`} />
+                                                        Notificación pedidos
+                                                        <span className={`text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-widest ${adminOrderAlarmMuted ? 'bg-slate-900/60 text-slate-400 border-slate-700' : 'bg-green-900/20 text-green-400 border-green-500/30'}`}>
+                                                            {adminOrderAlarmMuted ? 'Muteada' : 'Activa'}
+                                                        </span>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             {orders.length === 0 ? (
@@ -9382,6 +9835,27 @@ function App() {
                                                             </div>
                                                         </div>
                                                     ))}
+
+                                                    {/* Paginación */}
+                                                    <div className="flex items-center justify-center gap-4 mt-10 pb-10">
+                                                        <button
+                                                            onClick={handlePrevOrders}
+                                                            disabled={ordersHistory.length === 0}
+                                                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition ${ordersHistory.length === 0 ? 'bg-slate-900 text-slate-700 cursor-not-allowed' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+                                                        >
+                                                            <ChevronLeft className="w-5 h-5" /> Anterior
+                                                        </button>
+                                                        <span className="text-slate-500 font-mono text-sm">
+                                                            Página {ordersHistory.length + 1}
+                                                        </span>
+                                                        <button
+                                                            onClick={handleNextOrders}
+                                                            disabled={!hasMoreOrders || orders.length < ordersLimit}
+                                                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition ${(!hasMoreOrders || orders.length < ordersLimit) ? 'bg-slate-900 text-slate-700 cursor-not-allowed' : 'bg-orange-600 text-white hover:bg-orange-500'}`}
+                                                        >
+                                                            Siguiente <ChevronRight className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -9407,6 +9881,7 @@ function App() {
                                                     })()}
                                                 </div>
                                                 <div className="flex gap-2">
+                                                    <AdminHowToUse guideKey="products" />
                                                     <button onClick={() => setShowCategoryModal(true)} className="bg-slate-800 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 border border-slate-700">
                                                         <FolderPlus className="w-5 h-5" /> Categorías
                                                     </button>
@@ -9723,6 +10198,7 @@ function App() {
                                                     { id: 'appearance', label: 'Apariencia', icon: Palette },
                                                     { id: 'social', label: 'Redes', icon: Share2 },
                                                     { id: 'payments', label: 'Pagos', icon: CreditCard },
+                                                    { id: 'ticket', label: 'Ticket', icon: Ticket },
                                                     { id: 'shipping', label: 'Envíos', icon: Truck },
                                                     { id: 'seo', label: 'SEO', icon: Globe },
                                                     { id: 'advanced', label: 'Avanzado', icon: Cog },
@@ -10902,6 +11378,46 @@ function App() {
                                                 </div>
                                             )}
 
+                                            {settingsTab === 'ticket' && (
+                                                <div className="space-y-6 animate-fade-up">
+                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                            <Ticket className="w-5 h-5 text-orange-400" /> Ticket / Comprobante
+                                                        </h3>
+                                                        <p className="text-sm text-slate-500 mb-6">Estos datos se usan en el comprobante que se envía por email al confirmar la compra.</p>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre que aparece en el ticket</label>
+                                                                <input
+                                                                    className="input-cyber w-full p-4"
+                                                                    value={settings?.ticket?.brandName || ''}
+                                                                    onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, brandName: e.target.value } })}
+                                                                    placeholder={settings?.storeName || 'Mi Tienda'}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Link de WhatsApp (para el ticket)</label>
+                                                                <input
+                                                                    className="input-cyber w-full p-4"
+                                                                    value={settings?.ticket?.whatsappLink || ''}
+                                                                    onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, whatsappLink: e.target.value } })}
+                                                                    placeholder={settings?.whatsappLink || 'https://wa.me/5491112345678'}
+                                                                />
+                                                            </div>
+                                                            <div className="md:col-span-2">
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Link de la página (para el ticket)</label>
+                                                                <input
+                                                                    className="input-cyber w-full p-4"
+                                                                    value={settings?.ticket?.siteUrl || ''}
+                                                                    onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, siteUrl: e.target.value } })}
+                                                                    placeholder={settings?.seoUrl || ''}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {/* === SOCIAL MEDIA === */}
                                             {settingsTab === 'social' && (
                                                 <div className="space-y-6 animate-fade-up">
@@ -11105,6 +11621,37 @@ function App() {
                                                                         <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentTransfer?.enabled ? 'left-7' : 'left-1'}`}></div>
                                                                     </button>
                                                                 </div>
+                                                                {settings?.paymentTransfer?.enabled && (
+                                                                    <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">Titular</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3 text-sm"
+                                                                                value={settings?.paymentTransfer?.holderName || ''}
+                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, holderName: e.target.value } })}
+                                                                                placeholder="Nombre y apellido"
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">Alias</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3 text-sm"
+                                                                                value={settings?.paymentTransfer?.alias || ''}
+                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, alias: e.target.value } })}
+                                                                                placeholder="alias.ejemplo"
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">CBU</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3 text-sm"
+                                                                                value={settings?.paymentTransfer?.cbu || ''}
+                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, cbu: e.target.value } })}
+                                                                                placeholder="0000000000000000000000"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
 
                                                             {/* Cash */}
@@ -12806,7 +13353,11 @@ const AccessDenied = ({ onBack }) => (
 );
 
 // Renderizado Final
-const root = createRoot(document.getElementById('root'));
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+    throw new Error('No se encontró el contenedor #root');
+}
+const root = createRoot(rootElement);
 root.render(
     <ErrorBoundary>
         <App />

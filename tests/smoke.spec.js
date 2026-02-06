@@ -2,9 +2,16 @@ import { test, expect } from '@playwright/test';
 
 test('carga la home sin errores de runtime', async ({ page }) => {
     const errors = [];
-    page.on('pageerror', (err) => errors.push(String(err)));
+    page.on('pageerror', (err) => {
+        const text = String(err);
+        if (text.includes('[BABEL] Note: The code generator has deoptimised the styling')) return;
+        errors.push(text);
+    });
     page.on('console', (msg) => {
-        if (msg.type() === 'error') errors.push(msg.text());
+        if (msg.type() !== 'error') return;
+        const text = msg.text();
+        if (text.includes('[BABEL] Note: The code generator has deoptimised the styling')) return;
+        errors.push(text);
     });
 
     await page.goto('/');

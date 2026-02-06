@@ -59,14 +59,27 @@ export default async function handler(req, res) {
         ],
     };
 
-    const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    let upstream;
+    try {
+        upstream = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+        });
+    } catch (error) {
+        clearTimeout(timeoutId);
+        const message = error?.name === 'AbortError' ? 'AI upstream timeout' : 'AI upstream error';
+        return res.status(502).json({ error: message });
+    } finally {
+        clearTimeout(timeoutId);
+    }
 
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
@@ -78,4 +91,3 @@ export default async function handler(req, res) {
     if (!text || typeof text !== 'string') return res.status(502).json({ error: 'Invalid AI response' });
     return res.status(200).json({ text });
 }
-

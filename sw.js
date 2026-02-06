@@ -1,20 +1,24 @@
 // Service Worker para Tienda Online
 // Permite funcionamiento offline y mejor rendimiento
 
-const CACHE_NAME = 'tienda-cache-v1';
+const CACHE_NAME = 'tienda-cache-v4';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
-    '/styles.css'
+    '/styles.css',
+    '/assets/app.js',
+    '/assets/tailwind.css',
+    '/manifest.json',
+    '/icon-192.png',
+    '/icon-192.svg'
 ];
 
 // Instalación: cachear archivos estáticos
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Cacheando archivos estáticos');
-            return cache.addAll(STATIC_ASSETS);
-        })
+        caches.open(CACHE_NAME)
+            .then((cache) => cache.addAll(STATIC_ASSETS))
+            .catch(() => undefined)
     );
     self.skipWaiting();
 });
@@ -23,14 +27,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('[SW] Eliminando cache antiguo:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+            const toDelete = cacheNames.filter((cacheName) => cacheName !== CACHE_NAME);
+            return Promise.all(toDelete.map((cacheName) => caches.delete(cacheName)));
         })
     );
     self.clients.claim();
@@ -70,10 +68,25 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    const isAsset = url.pathname.startsWith('/assets/') || url.pathname.endsWith('.css') || url.pathname.endsWith('.js');
+    if (isAsset) {
+        event.respondWith((async () => {
+            const cache = await caches.open(CACHE_NAME);
+            const cached = await cache.match(event.request);
+            const network = fetch(event.request).then(async (res) => {
+                if (res.status === 200) {
+                    await cache.put(event.request, res.clone());
+                }
+                return res;
+            }).catch(() => null);
+            return cached || network || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+        })());
+        return;
+    }
+
     event.respondWith(
         fetch(event.request)
             .then((response) => {
-                // Cachear respuestas exitosas
                 if (response.status === 200) {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {
@@ -83,12 +96,10 @@ self.addEventListener('fetch', (event) => {
                 return response;
             })
             .catch(() => {
-                // Si falla la red, buscar en cache
                 return caches.match(event.request).then((response) => {
                     if (response) {
                         return response;
                     }
-                    // Si es una página HTML, devolver index.html (SPA)
                     if (event.request.headers.get('accept')?.includes('text/html')) {
                         return caches.match('/index.html');
                     }
