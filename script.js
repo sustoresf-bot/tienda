@@ -22,7 +22,8 @@ import {
     where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter
 } from 'firebase/firestore';
 
-// ... rest of the code remains the same ...
+const firebaseConfig = {
+    apiKey: "",
     authDomain: "sustore-63266.firebaseapp.com",
     projectId: "sustore-63266",
     storageBucket: "sustore-63266.firebasestorage.app",
@@ -1972,7 +1973,7 @@ function App() {
         if (cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) return 'admin';
 
         // 1. Verificar currentUser.role (Prioridad sobre equipo estático)
-        // Esto permite promover usuarios desde el panel sin depender de settings.team
+        // Esto permite promover usuarios desde el panel sin depender de settings
         // Esta verificación no depende de settings, solo de currentUser
         if (currentUser && currentUser.email && currentUser.email.trim().toLowerCase() === cleanEmail && currentUser.role && currentUser.role !== 'user') {
             return currentUser.role;
@@ -2060,8 +2061,34 @@ function App() {
         const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
         if (!AudioContextCtor) return;
 
-        const ctx = orderAlarmContextRef.current || new AudioContextCtor();
-        orderAlarmContextRef.current = ctx;
+        const ensureUnlocked = () => {
+            if (orderAlarmUnlockListenerActiveRef.current) return;
+            orderAlarmUnlockListenerActiveRef.current = true;
+            window.addEventListener('pointerdown', async () => {
+                orderAlarmUnlockListenerActiveRef.current = false;
+                try {
+                    if (!orderAlarmContextRef.current) {
+                        orderAlarmContextRef.current = new AudioContextCtor();
+                    }
+                    if (orderAlarmContextRef.current?.state === 'suspended') {
+                        await orderAlarmContextRef.current.resume();
+                    }
+                } catch (e) { }
+                if (hasUnseenOrders && !(view === 'admin' && adminTab === 'orders') && !adminOrderAlarmMuted) {
+                    startOrderAlarm();
+                }
+            }, { once: true, capture: true });
+        };
+
+        const ctx = orderAlarmContextRef.current;
+        if (!ctx) {
+            if (!orderAlarmToastShownRef.current) {
+                showToast('Pedido nuevo: tocá/clic para habilitar sonido', 'warning');
+                orderAlarmToastShownRef.current = true;
+            }
+            ensureUnlocked();
+            return;
+        }
 
         const scheduleBeep = (at) => {
             const osc = ctx.createOscillator();
@@ -2082,30 +2109,6 @@ function App() {
             scheduleBeep(now);
             scheduleBeep(now + 0.18);
         };
-
-        // Chrome blocks starting/resuming AudioContext unless triggered by a user gesture.
-        // Do not call ctx.resume() here; instead wait for the unlock listener below.
-        if (ctx.state !== 'running') {
-            if (!orderAlarmToastShownRef.current) {
-                showToast('Pedido nuevo: tocá/clic para habilitar sonido', 'warning');
-                orderAlarmToastShownRef.current = true;
-            }
-            if (!orderAlarmUnlockListenerActiveRef.current) {
-                orderAlarmUnlockListenerActiveRef.current = true;
-                window.addEventListener('pointerdown', async () => {
-                    orderAlarmUnlockListenerActiveRef.current = false;
-                    try {
-                        if (orderAlarmContextRef.current?.state === 'suspended') {
-                            await orderAlarmContextRef.current.resume();
-                        }
-                    } catch (e) { }
-                    if (hasUnseenOrders && !(view === 'admin' && adminTab === 'orders') && !adminOrderAlarmMuted) {
-                        startOrderAlarm();
-                    }
-                }, { once: true, capture: true });
-            }
-            return;
-        }
 
         orderAlarmActiveRef.current = true;
         tick();
