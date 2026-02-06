@@ -90,10 +90,6 @@
     ],
     "rewrites": [
         {
-            "source": "/api/public-config",
-            "destination": "/api/checkout?action=public_config"
-        },
-        {
             "source": "/api/checkout",
             "destination": "/api/checkout"
         },
@@ -102,8 +98,16 @@
             "destination": "/api/payment"
         },
         {
-            "source": "/api/admin/:path*",
-            "destination": "/api/admin/:path*"
+            "source": "/api/admin/users",
+            "destination": "/api/admin?action=users"
+        },
+        {
+            "source": "/api/admin/export-store",
+            "destination": "/api/admin?action=export"
+        },
+        {
+            "source": "/api/admin/import-store",
+            "destination": "/api/admin?action=import"
         }
     ]
 }
