@@ -15,8 +15,8 @@
     "tailwindcss": "^4.1.18"
   },
   "scripts": {
-    "build": "node build.mjs && tailwindcss -c tailwind.config.cjs -i tailwind.input.css -o assets/tailwind.css --minify",
+    "build": "node build.mjs && npx tailwindcss -c tailwind.config.cjs -i tailwind.input.css -o assets/tailwind.css --minify",
     "start": "node dev-server.mjs",
-    "test": "playwright test"
+    "test": "npx playwright test"
   }
 }
