@@ -58,7 +58,8 @@ const filesToCopy = [
   'styles.css',
   'sustia-ai-v2.jpg',
   'sustia-ai.jpg',
-  'sustia-ai.png'
+  'sustia-ai.png',
+  'reset-password.html'
 ];
 
 for (const file of filesToCopy) {
