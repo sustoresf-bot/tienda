@@ -2114,12 +2114,14 @@ function App() {
 
             // 2. Crear Orden
             const total = saleData.quantity * saleData.price;
+            const nowIso = new Date().toISOString();
             const newOrder = {
-                orderId: Date.now().toString().slice(-6),
-                date: new Date().toISOString(),
+                orderId: `man-${Date.now().toString().slice(-6)}`,
+                date: nowIso,
                 status: 'Realizado',
-                source: 'manual_sale', // Identificador clave
+                source: 'manual_sale',
                 userId: 'manual_admin',
+                customerId: 'manual_admin',
                 customer: {
                     name: saleData.customerName || 'Cliente Mostrador',
                     email: '-',
@@ -2127,15 +2129,19 @@ function App() {
                     dni: '-'
                 },
                 items: [{
-                    id: saleData.productId,
+                    productId: saleData.productId,
                     title: products.find(p => p.id === saleData.productId)?.name || 'Producto',
-                    quantity: saleData.quantity,
-                    unit_price: saleData.price,
+                    quantity: Number(saleData.quantity),
+                    unit_price: Number(saleData.price),
                     image: products.find(p => p.id === saleData.productId)?.image || ''
                 }],
+                subtotal: total,
+                discount: 0,
                 total: total,
+                shippingAddress: 'Entrega Presencial (Offline)',
                 paymentMethod: saleData.paymentMethod,
-                notes: saleData.notes
+                notes: saleData.notes,
+                lastUpdate: nowIso
             };
 
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
@@ -2144,6 +2150,11 @@ function App() {
             await updateDoc(productRef, {
                 stock: increment(-saleData.quantity)
             });
+
+            // 4. Forzar notificación de alarma para la nueva venta
+            if (!adminOrderAlarmMuted) {
+                startOrderAlarm();
+            }
 
             showToast("Venta registrada exitosamente", "success");
             setShowManualSaleModal(false);
@@ -2960,7 +2971,6 @@ function App() {
         if (!appId) return;
 
         const isAuthenticatedUser = systemUser && !systemUser.isAnonymous;
-        const isAdminUser = currentUser?.role === 'admin';
         const isAdminViewActive = view === 'admin';
 
         if (!isAuthenticatedUser) {
@@ -3007,7 +3017,7 @@ function App() {
             console.error("Orders Snapshot Error:", err);
             setOrders([]);
         });
-    }, [systemUser, currentUser?.role, appId, view, ordersLimit, ordersCursor]);
+    }, [systemUser, isAdminUser, appId, view, ordersLimit, ordersCursor]);
 
     const handleNextOrders = () => {
         if (!hasMoreOrders || orders.length === 0) return;
@@ -4543,9 +4553,11 @@ function App() {
         openConfirm("Venta Manual", `¿Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
             try {
                 const price = Number(product.basePrice) || 0;
+                const nowIso = new Date().toISOString();
                 const newOrder = {
                     orderId: `man-${Date.now().toString().slice(-6)}`,
                     userId: 'manual_admin',
+                    customerId: 'manual_admin',
                     customer: {
                         name: 'Cliente Mostrador',
                         email: 'offline@store.com',
@@ -4563,17 +4575,21 @@ function App() {
                     discount: 0,
                     total: price,
                     status: 'Realizado',
-                    date: new Date().toISOString(),
+                    date: nowIso,
                     shippingAddress: 'Entrega Presencial (Offline)',
                     paymentMethod: 'Efectivo',
                     source: 'manual_sale',
-                    notes: 'Venta presencial rápida'
+                    notes: 'Venta presencial rápida',
+                    lastUpdate: nowIso
                 };
 
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
                     stock: increment(-1)
                 });
+                if (!adminOrderAlarmMuted) {
+                    startOrderAlarm();
+                }
                 showToast("Venta registrada. Stock actualizado.", "success");
             } catch (e) {
                 console.error(e);
@@ -5532,9 +5548,11 @@ function App() {
                 const orderId = `man-${Date.now().toString().slice(-6)}`;
                 const total = saleData.quantity * saleData.price;
 
+                const nowIso = new Date().toISOString();
                 const newOrder = {
                     orderId: orderId,
-                    userId: 'manual_admin', // Usuario sistema
+                    userId: 'manual_admin',
+                    customerId: 'manual_admin',
                     customer: {
                         name: saleData.customerName || 'Cliente Mostrador',
                         email: 'offline@store.com',
@@ -5551,12 +5569,13 @@ function App() {
                     subtotal: total,
                     discount: 0,
                     total: total,
-                    status: 'Realizado', // Ya entregado
-                    date: new Date().toISOString(),
+                    status: 'Realizado',
+                    date: nowIso,
                     shippingAddress: 'Entrega Presencial (Offline)',
                     paymentMethod: saleData.paymentMethod,
                     source: 'manual_sale',
-                    notes: saleData.notes
+                    notes: saleData.notes,
+                    lastUpdate: nowIso
                 };
 
                 // 1. Guardar Pedido
@@ -5566,6 +5585,11 @@ function App() {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
                     stock: increment(-Number(saleData.quantity))
                 });
+
+                // 3. Forzar notificación de alarma
+                if (!adminOrderAlarmMuted) {
+                    startOrderAlarm();
+                }
 
                 showToast("Venta registrada correctamente.", "success");
                 setShowManualSaleModal(false);
