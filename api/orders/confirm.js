@@ -417,41 +417,55 @@ export default async function handler(req, res) {
 
         await batch.commit();
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
+        let emailSent = false;
+        const emailUser = String(process.env.EMAIL_USER || '').trim();
+        const emailPass = String(process.env.EMAIL_PASS || '').trim();
 
-        const html = buildEmailHtml({
-            brandName: ticketBrandName,
-            ticketWhatsappLink,
-            ticketSiteUrl,
-            orderId,
-            customerName: userData.name || 'Cliente',
-            items,
-            subtotal,
-            discountDetails,
-            shippingMethod,
-            shippingAddress,
-            shippingFee: deliveryFee,
-            total,
-            paymentMethod,
-            date: nowIso,
-        });
+        if (emailUser && emailPass) {
+            try {
+                const transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: emailUser,
+                        pass: emailPass,
+                    },
+                });
 
-        const fromName = String(ticketBrandName || 'Sustore').replace(/[\r\n"]/g, '').trim().slice(0, 80) || 'Sustore';
-        await transporter.sendMail({
-            from: `"${fromName}" <${process.env.EMAIL_USER}>`,
-            to: `${decoded.email}, ${process.env.EMAIL_USER}`,
-            replyTo: process.env.EMAIL_USER,
-            subject: `✅ Pedido Confirmado #${orderId}`,
-            html,
-        });
+                const html = buildEmailHtml({
+                    brandName: ticketBrandName,
+                    ticketWhatsappLink,
+                    ticketSiteUrl,
+                    orderId,
+                    customerName: userData.name || 'Cliente',
+                    items,
+                    subtotal,
+                    discountDetails,
+                    shippingMethod,
+                    shippingAddress,
+                    shippingFee: deliveryFee,
+                    total,
+                    paymentMethod,
+                    date: nowIso,
+                });
 
-        return res.status(200).json({ success: true, orderId });
+                const fromName = String(ticketBrandName || 'Sustore').replace(/[\r\n"]/g, '').trim().slice(0, 80) || 'Sustore';
+                await transporter.sendMail({
+                    from: `"${fromName}" <${emailUser}>`,
+                    to: `${decoded.email}, ${emailUser}`,
+                    replyTo: emailUser,
+                    subject: `✅ Pedido Confirmado #${orderId}`,
+                    html,
+                });
+
+                emailSent = true;
+            } catch (e) {
+                console.error('[orders/confirm] Email send failed:', e);
+            }
+        } else {
+            console.warn('[orders/confirm] Email not configured (missing EMAIL_USER/EMAIL_PASS).');
+        }
+
+        return res.status(200).json({ success: true, orderId, emailSent });
     } catch (error) {
         return res.status(500).json({ error: error.message || 'Error interno' });
     }
