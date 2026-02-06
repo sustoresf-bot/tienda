@@ -9,7 +9,7 @@ import {
     ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
     Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home,
     Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet,
-    FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
+    FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronLeft, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, EyeOff, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
     Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload
@@ -3140,23 +3140,42 @@ function App() {
                 if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dígitos).");
 
                 const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, authData.password);
-                try {
-                    await setupProfile(userCredential.user);
-                } catch (e) {
-                    try { await userCredential.user.delete(); } catch { }
-                    throw e;
-                }
 
-                const profile = await fetchProfile(userCredential.user.uid);
-                if (!profile) throw new Error('No se pudo cargar el perfil');
+                const minimalUser = {
+                    id: userCredential.user.uid,
+                    name: authData.name,
+                    email: normalizedEmail,
+                    emailLower: normalizedEmail,
+                    role: String(normalizedEmail).trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase() ? 'admin' : 'user',
+                };
+                setCurrentUser(minimalUser);
 
-                const normalizedEmailLower = String(profile?.emailLower || profile?.email || '').trim().toLowerCase();
-                const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
-                const normalizedProfile = superEmailLower && normalizedEmailLower === superEmailLower
-                    ? { ...profile, role: 'admin' }
-                    : profile;
-                setCurrentUser(normalizedProfile);
+                setView('store');
+                setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
+                setIsLoading(false);
                 showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
+
+                (async () => {
+                    try {
+                        await setupProfile(userCredential.user);
+                        const profile = await fetchProfile(userCredential.user.uid);
+                        if (!profile) return;
+
+                        const normalizedEmailLower = String(profile?.emailLower || profile?.email || '').trim().toLowerCase();
+                        const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+                        const normalizedProfile = superEmailLower && normalizedEmailLower === superEmailLower
+                            ? { ...profile, role: 'admin' }
+                            : profile;
+                        setCurrentUser(normalizedProfile);
+                    } catch (e) {
+                        console.error('Error setup profile (background):', e);
+                        showToast(e?.message || 'Error al crear el perfil', 'error');
+                        try { await auth.signOut(); } catch { }
+                        try { await userCredential.user.delete(); } catch { }
+                    }
+                })();
+
+                return;
             } else {
                 const input = authData.email.trim();
                 if (!input) throw new Error("Ingresa tu email o usuario.");
@@ -3252,36 +3271,55 @@ function App() {
                     return;
                 }
 
-                let profile = await fetchProfile(authUser.uid);
-                if (!profile) {
-                    await claimLegacyProfile(authUser);
-                    profile = await fetchProfile(authUser.uid);
-                }
+                setCurrentUser({
+                    id: authUser.uid,
+                    name: authUser.displayName || 'Usuario',
+                    email: authUser.email || emailToUse,
+                    emailLower: (authUser.email || emailToUse).toLowerCase(),
+                    role: String(authUser.email || emailToUse).trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase() ? 'admin' : 'user',
+                });
 
-                if (!profile) {
-                    const minimal = {
-                        name: authUser.displayName || 'Usuario',
-                        email: authUser.email || emailToUse,
-                        emailLower: (authUser.email || emailToUse).toLowerCase(),
-                        role: String(authUser.email || emailToUse).trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase() ? 'admin' : 'user',
-                        createdAt: new Date().toISOString()
-                    };
-                    await setDoc(doc(db, ...usersPath, authUser.uid), minimal, { merge: true });
-                    profile = await fetchProfile(authUser.uid);
-                }
+                setView('store');
+                setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
+                setIsLoading(false);
+                showToast(`¡Hola de nuevo!`, "success");
 
-                await updateDoc(doc(db, ...usersPath, authUser.uid), { lastLogin: new Date().toISOString() }).catch(() => { });
-                const normalizedEmailLower = String(profile?.emailLower || profile?.email || '').trim().toLowerCase();
-                const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
-                const normalizedProfile = superEmailLower && normalizedEmailLower === superEmailLower
-                    ? { ...profile, role: 'admin' }
-                    : profile;
-                setCurrentUser(normalizedProfile);
-                showToast(`¡Hola de nuevo, ${profile?.name || 'Usuario'}!`, "success");
+                (async () => {
+                    try {
+                        let profile = await fetchProfile(authUser.uid);
+                        if (!profile) {
+                            await claimLegacyProfile(authUser);
+                            profile = await fetchProfile(authUser.uid);
+                        }
+
+                        if (!profile) {
+                            const minimal = {
+                                name: authUser.displayName || 'Usuario',
+                                email: authUser.email || emailToUse,
+                                emailLower: (authUser.email || emailToUse).toLowerCase(),
+                                role: String(authUser.email || emailToUse).trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase() ? 'admin' : 'user',
+                                createdAt: new Date().toISOString()
+                            };
+                            await setDoc(doc(db, ...usersPath, authUser.uid), minimal, { merge: true });
+                            profile = await fetchProfile(authUser.uid);
+                        }
+
+                        await updateDoc(doc(db, ...usersPath, authUser.uid), { lastLogin: new Date().toISOString() }).catch(() => { });
+                        if (!profile) return;
+
+                        const normalizedEmailLower = String(profile?.emailLower || profile?.email || '').trim().toLowerCase();
+                        const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+                        const normalizedProfile = superEmailLower && normalizedEmailLower === superEmailLower
+                            ? { ...profile, role: 'admin' }
+                            : profile;
+                        setCurrentUser(normalizedProfile);
+                    } catch (e) {
+                        console.error('Error load profile (background):', e);
+                    }
+                })();
+
+                return;
             }
-
-            setView('store');
-            setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
         } catch (error) {
             console.error("Error de autenticación:", error);
             showToast(error.message || 'Error de autenticación', "error");

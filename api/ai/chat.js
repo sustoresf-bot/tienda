@@ -23,6 +23,7 @@ function buildSystemPrompt(context) {
         `Reglas:`,
         `- Responder en español (Argentina) y de forma concisa.`,
         `- No inventar stock, precios o políticas si no están en el contexto.`,
+        `- Si el mensaje del usuario es muy corto o poco claro (ej: una letra, 'ok', 'hola', '???'), NO respondas con listas genéricas: hace 1 pregunta concreta para aclarar qué necesita.`,
         `- Si falta info, pedir un dato concreto (ej: ciudad, presupuesto, categoría) o sugerir WhatsApp si existe.`,
         `- Cuando recomiendes, ofrece 3-5 opciones y una pregunta de seguimiento.`,
     ];

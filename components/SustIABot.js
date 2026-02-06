@@ -65,6 +65,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     if (!forceEnabled && settings?.subscriptionPlan !== 'premium') return null;
 
     const [isOpen, setIsOpen] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(false);
 
     // Custom Bot Image (Configurable)
     const botImage = settings?.botImage || "sustia-ai-v2.jpg";
@@ -84,6 +85,27 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     const safeProducts = Array.isArray(products) ? products : [];
     const safeCoupons = Array.isArray(coupons) ? coupons : [];
     const aiEnabled = !!settings?.aiAssistant?.enabled;
+
+    useEffect(() => {
+        const check = () => {
+            try {
+                setIsDarkMode(document?.documentElement?.classList?.contains('dark-mode') === true);
+            } catch {
+                setIsDarkMode(false);
+            }
+        };
+        check();
+
+        let obs;
+        try {
+            obs = new MutationObserver(() => check());
+            if (document?.documentElement) obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        } catch { }
+
+        return () => {
+            try { obs?.disconnect?.(); } catch { }
+        };
+    }, []);
 
     const normalizeText = (value) => {
         if (value === null || value === undefined) return '';
@@ -258,6 +280,10 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         await new Promise(resolve => setTimeout(resolve, 800)); // Simular pensamiento
         const text = normalizeText(userText);
         const qty = parseQuantity(text);
+
+        if (text.length <= 1) {
+            return { text: "Te leí, pero me falta info 😊. ¿Qué estás buscando? (ej: 'auriculares', 'zapatillas', 'envío', 'pagos')" };
+        }
 
         // 0. Detectar Saludos
         if (text.match(/\b(hola|holas|buen dia|buenos dias|buenas tardes|buenas noches|buenas|hello|hi|hey|que tal|como estas|como va|todo bien)\b/)) {
@@ -453,6 +479,10 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             return alt ? [k, alt] : [k];
         });
 
+        if (keywords.length === 0 && !targetCategory && !isCheaper && !isExpensive && !isBuying) {
+            return { text: "¿Me decís qué producto o categoría querés ver? Si querés, también podés preguntar por 'envío', 'pagos' o 'cupones'." };
+        }
+
         let candidates = safeProducts.filter(p => (Number(p?.stock) || 0) > 0 && p?.isActive !== false);
 
         // Aplicar filtros de precio
@@ -515,7 +545,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             };
         }
 
-        let msg = "Aquí tienes algunas opciones:";
+        let msg = "Encontré estas opciones. ¿Querés que te muestre más o me decís un presupuesto?";
         if (targetCategory) msg = `Encontré esto en la categoría ${targetCategory}:`;
         if (isCheaper) msg = "Las opciones más económicas:";
 
@@ -666,9 +696,13 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                                     onClick={() => {
                                         handleQuickAction(a.value);
                                     }}
-                                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border border-white/10 bg-[#1a1a1a] text-white/90 hover:bg-[#222] transition"
+                                    className={
+                                        isDarkMode
+                                            ? "shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border border-white/10 bg-[#1a1a1a] text-white hover:bg-[#222] transition"
+                                            : "shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 transition"
+                                    }
                                 >
-                                    {a.label}
+                                    <span className={isDarkMode ? "text-white" : "text-slate-800"}>{a.label}</span>
                                 </button>
                             ))}
                         </div>
