@@ -2608,8 +2608,7 @@ function App() {
     }, [darkMode, view]);
 
     // 4. Suscripciones a Colecciones (Snapshot Listeners)
-    // - Público: se mantiene realtime solo donde aporta (products + settings)
-    // - Resto: se carga por demanda inicial (getDocs) para evitar listeners extra
+    // - Público: realtime en todas las colecciones (products, settings, promos, homeBanners, coupons)
     // - Admin: listeners solo cuando el panel Admin está activo (view === 'admin')
 
     useEffect(() => {
@@ -2668,33 +2667,32 @@ function App() {
             })
         );
 
-        (async () => {
-            try {
-                const promosSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'promos'));
-                if (!cancelled) setPromos(promosSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-            } catch {
-                if (!cancelled) setPromos([]);
-            }
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), (snapshot) => {
+                setPromos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            }, (error) => {
+                console.error("Error fetching promos:", error);
+                setPromos([]);
+            })
+        );
 
-            try {
-                const bannersSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'homeBanners'));
-                if (!cancelled) {
-                    const banners = bannersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    banners.sort((a, b) => {
-                        const ao = Number.isFinite(Number(a.order)) ? Number(a.order) : 0;
-                        const bo = Number.isFinite(Number(b.order)) ? Number(b.order) : 0;
-                        if (ao !== bo) return ao - bo;
-                        const ad = typeof a.createdAt === 'string' ? a.createdAt : '';
-                        const bd = typeof b.createdAt === 'string' ? b.createdAt : '';
-                        return ad.localeCompare(bd);
-                    });
-                    setHomeBanners(banners);
-                }
-            } catch {
-                if (!cancelled) setHomeBanners([]);
-            }
-
-        })();
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'homeBanners'), (snapshot) => {
+                const banners = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                banners.sort((a, b) => {
+                    const ao = Number.isFinite(Number(a.order)) ? Number(a.order) : 0;
+                    const bo = Number.isFinite(Number(b.order)) ? Number(b.order) : 0;
+                    if (ao !== bo) return ao - bo;
+                    const ad = typeof a.createdAt === 'string' ? a.createdAt : '';
+                    const bd = typeof b.createdAt === 'string' ? b.createdAt : '';
+                    return ad.localeCompare(bd);
+                });
+                setHomeBanners(banners);
+            }, (error) => {
+                console.error("Error fetching homeBanners:", error);
+                setHomeBanners([]);
+            })
+        );
 
         unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'coupons'), (snapshot) => {
