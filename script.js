@@ -1489,10 +1489,10 @@ function AdminHowToUse({ guideKey }) {
                     aria-modal="true"
                 >
                     <div
-                        className={`w-full max-w-2xl bg-[#0a0a0a] border ${c.border} rounded-[2rem] shadow-2xl overflow-hidden animate-fade-up`}
+                        className={`w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#0a0a0a] border ${c.border} rounded-[2rem] shadow-2xl overflow-hidden animate-fade-up`}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className={`relative p-6 md:p-8 border-b border-slate-800/50 overflow-hidden`}>
+                        <div className={`relative p-6 md:p-8 border-b border-slate-800/50 overflow-hidden flex-shrink-0`}>
                             <div className={`absolute inset-0 ${c.bg} opacity-30`}></div>
                             <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-10" style={{ background: `radial-gradient(circle, var(--tw-gradient-stops))` }}></div>
                             <div className="relative flex items-start justify-between gap-4">
@@ -1515,7 +1515,7 @@ function AdminHowToUse({ guideKey }) {
                             </div>
                         </div>
 
-                        <div className="p-5 md:p-6 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-4">
+                        <div className="p-5 md:p-6 flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4">
                             {(guide.sections || []).map((section, idx) => {
                                 const si = sectionIconMap[section.icon] || sectionIconMap.eye;
                                 return (
@@ -1547,7 +1547,7 @@ function AdminHowToUse({ guideKey }) {
                             })}
                         </div>
 
-                        <div className="p-5 md:p-6 border-t border-slate-800/50 flex items-center justify-between gap-4">
+                        <div className="p-5 md:p-6 border-t border-slate-800/50 flex items-center justify-between gap-4 flex-shrink-0">
                             <p className="text-[10px] text-slate-600 font-mono uppercase tracking-wider hidden sm:block">Panel Admin v3.0</p>
                             <button
                                 onClick={() => setIsOpen(false)}
@@ -2671,17 +2671,19 @@ function App() {
         return onAuthStateChanged(auth, async (user) => {
             setSystemUser(user);
 
-            if (!didBootstrap) {
-                didBootstrap = true;
-                if (!user) {
-                    setCurrentUser(null);
+            if (!user) {
+                setCurrentUser(null);
+                if (!isBootstrapping) {
                     await bootstrapAuth();
-                    setTimeout(() => setIsLoading(false), 300);
-                    return;
                 }
+                if (!didBootstrap) didBootstrap = true;
+                setTimeout(() => setIsLoading(false), 300);
+                return;
             }
 
-            if (!user || user.isAnonymous) {
+            if (!didBootstrap) didBootstrap = true;
+
+            if (user.isAnonymous) {
                 setCurrentUser(null);
             }
 
@@ -3600,6 +3602,17 @@ function App() {
             showToast(error.message || 'Error de autenticación', "error");
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // 1.0.1 Cerrar Sesión (Firebase Auth + localStorage)
+    const handleLogout = async () => {
+        setCurrentUser(null);
+        setView('store');
+        try {
+            await auth.signOut();
+        } catch (e) {
+            console.error('Error al cerrar sesión:', e);
         }
     };
 
@@ -7342,7 +7355,7 @@ function App() {
                                         <Shield className="w-5 h-5" /> Panel Admin
                                     </button>
                                 )}
-                                <button onClick={() => { localStorage.removeItem('sustore_user_data'); setCurrentUser(null); setView('store') }} className={`px-6 py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2 border ${darkMode ? 'bg-red-900/10 border-red-500/20 text-red-500 hover:bg-red-900/20 hover:border-red-500/40' : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'}`}>
+                                <button onClick={handleLogout} className={`px-6 py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2 border ${darkMode ? 'bg-red-900/10 border-red-500/20 text-red-500 hover:bg-red-900/20 hover:border-red-500/40' : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'}`}>
                                     <LogOut className="w-5 h-5" /> Cerrar Sesión
                                 </button>
                             </div>
@@ -7581,6 +7594,12 @@ function App() {
                                     <input className="input-cyber w-full p-4" type="password" placeholder={loginMode ? "Contraseña" : "Contraseña *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
                                 </div>
 
+                                {loginMode && (
+                                    <button type="button" onClick={handleForgotPassword} className="text-sm text-slate-500 hover:text-orange-400 transition text-right w-full mt-1">
+                                        ¿Olvidaste tu contraseña?
+                                    </button>
+                                )}
+
                                 <button type="submit" className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-4 text-white rounded-xl font-bold mt-6 transition transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2">
                                     {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : (loginMode ? 'INGRESAR' : 'REGISTRARSE')}
                                 </button>
@@ -7812,6 +7831,9 @@ function App() {
 
                                                 <button onClick={() => { setAdminTab('coupons'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'coupons' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                     <Ticket className="w-5 h-5" /> Cupones
+                                                    {!['business', 'premium'].includes(settings?.subscriptionPlan) && (
+                                                        <Lock className="w-3 h-3 text-yellow-500 ml-auto" />
+                                                    )}
                                                 </button>
 
                                                 <button onClick={() => { setAdminTab('suppliers'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'suppliers' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
