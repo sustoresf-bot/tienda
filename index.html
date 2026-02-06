@@ -44,9 +44,27 @@
     <!-- Icono PNG Circular -->
     <link id="dynamic-favicon" rel="icon" type="image/png" href="/icon-192.png">
 
+    <!-- Suppress technical warnings -->
+    <script>
+        if (typeof console !== 'undefined') {
+            const originalWarn = console.warn;
+            console.warn = function (...args) {
+                if (args[0] && typeof args[0] === 'string' && (args[0].includes('cdn.tailwindcss.com') || args[0].includes('babel') || args[0].includes('[BABEL] Note: The code generator has deoptimised'))) return;
+                originalWarn.apply(console, args);
+            };
+
+            const originalError = console.error;
+            console.error = function (...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('[BABEL] Note: The code generator has deoptimised')) return;
+                originalError.apply(console, args);
+            };
+        }
+    </script>
+
     <!-- Preconnect to external domains for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://esm.sh">
     <link rel="preconnect" href="https://www.gstatic.com">
 
@@ -96,6 +114,9 @@
         }
     </style>
 
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- Import Map for ES Modules -->
     <script type="importmap">
     {
@@ -110,9 +131,11 @@
     }
     </script>
 
-    <link rel="stylesheet" href="assets/tailwind.css">
-    <link rel="stylesheet" href="styles.css">
+    <!-- Babel - defer loading to not block render -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" defer></script>
 
+    <!-- Main Stylesheet (non-blocking) -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -121,7 +144,7 @@
         <div class="loading-spinner"></div>
     </div>
 
-    <script type="module" src="assets/app.js"></script>
+    <script type="text/babel" data-type="module" src="script.js"></script>
 
     <!-- KILL SWITCH v3.0 (Tiempo Real + Contacto) -->
     <script>

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // Lazy loaded components for code splitting
@@ -941,7 +941,451 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
 });
 
 
-// --- Admin Components ---
+// --- Category Modal Component ---
+const CategoryModal = ({ isOpen, onClose, category, products, onAddToCart, darkMode }) => {
+    if (!isOpen) return null;
+
+    const categoryProducts = products.filter(p => {
+        const cats = Array.isArray(p.categories) ? p.categories : (p.category ? [p.category] : []);
+        return cats.includes(category);
+    });
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={onClose}
+            />
+            <div className={`relative w-full max-w-2xl max-h-[80vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col ${darkMode ? 'bg-slate-900 border border-white/10' : 'bg-white border border-slate-200'}`}>
+                <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{category}</h2>
+                    <button
+                        onClick={onClose}
+                        className={`p-2 rounded-full hover:bg-white/10 transition ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+                <div className="p-6 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {categoryProducts.map(p => (
+                        <div key={p.id} className="group relative">
+                            <div className="aspect-square rounded-2xl overflow-hidden mb-2">
+                                <img
+                                    src={p.image || 'placeholder.jpg'}
+                                    alt={p.name}
+                                    className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                                />
+                            </div>
+                            <h3 className={`text-sm font-bold truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>{p.name}</h3>
+                            <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>${p.basePrice.toLocaleString()}</p>
+                            <button
+                                onClick={() => onAddToCart(p)}
+                                className="mt-2 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-lg"
+                            >
+                                Agregar
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- COMPONENTE SUSTIA (AI ASSISTANT) ---
+// Extracted to components/SustIABot.js for code splitting
+
+            const parsed = parseHumanNumber(lessThanMatch[1], text);
+            if (parsed !== null) maxPrice = parsed;
+        }
+
+        // Detectar "entre X y Y"
+        const betweenMatch = text.match(/entre\s*\$?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:k|mil))?\s*y\s*\$?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:k|mil))?/);
+        if (betweenMatch) {
+            const parsedMin = parseHumanNumber(betweenMatch[1], text);
+            const parsedMax = parseHumanNumber(betweenMatch[2], text);
+            if (parsedMin !== null) minPrice = parsedMin;
+            if (parsedMax !== null) maxPrice = parsedMax;
+        }
+
+        // 3. Detectar Categoría (Fuzzy)
+        const availableCategories = [...new Set(safeProducts.flatMap(p => getProductCategories(p)))];
+        const detectedCategoryVal = availableCategories.find(c => fuzzySearch(c, text) || fuzzySearch(text, c));
+        const targetCategory = detectedCategoryVal ? detectedCategoryVal.toLowerCase() : null;
+
+        // 4. Búsqueda y Scoring de Productos
+        const synonyms = new Map([
+            ['celu', 'celular'],
+            ['cel', 'celular'],
+            ['tele', 'televisor'],
+            ['tv', 'televisor'],
+            ['compu', 'computadora'],
+            ['notebook', 'laptop'],
+            ['auris', 'auriculares'],
+            ['zapas', 'zapatillas'],
+            ['remera', 'camiseta'],
+            ['remeras', 'camisetas']
+        ]);
+        const keywords = tokenize(text).flatMap(k => {
+            const alt = synonyms.get(k);
+            return alt ? [k, alt] : [k];
+        });
+
+        let candidates = safeProducts.filter(p => (Number(p?.stock) || 0) > 0 && p?.isActive !== false);
+
+        // Aplicar filtros de precio
+        candidates = candidates.filter(p => {
+            const fp = getProductFinalPrice(p);
+            return fp >= minPrice && fp <= maxPrice;
+        });
+
+        // Filtro por categoría detectada
+        if (targetCategory) {
+            candidates = candidates.filter(p => getProductCategories(p).some(c => normalizeText(c) === targetCategory));
+        }
+
+        // Scoring
+        if (keywords.length > 0) {
+            candidates = candidates.map(p => {
+                let score = 0;
+                const pName = normalizeText(p?.name || "");
+                const pDesc = normalizeText(p?.description || "");
+                const pCats = getProductCategories(p).map(c => normalizeText(c));
+
+                keywords.forEach(k => {
+                    if (!k) return;
+                    if (pName.includes(k)) score += 12;
+                    else if (fuzzySearch(pName, k)) score += 6;
+
+                    if (pDesc.includes(k)) score += 4;
+                    else if (fuzzySearch(pDesc, k)) score += 2;
+
+                    if (pCats.some(c => c.includes(k))) score += 6;
+                });
+                if ((Number(p?.discount) || 0) > 0) score += 2;
+                if (p?.isFeatured) score += 2;
+                return { ...p, score };
+            }).filter(p => p.score > 0);
+
+            // Ordenar por relevancia
+            candidates.sort((a, b) => b.score - a.score);
+        }
+
+        // 4.1 Recuperación Contextual (Si el usuario dice "agregalo" y no hay keywords de producto)
+        // Buscamos en el historial previo si se mostraron productos
+        if (candidates.length === 0 && isBuying) {
+            // Buscar el último mensaje del modelo que tuviera productos
+            // currentMessages incluye el mensaje actual del usuario al final.
+            const history = [...currentMessages].reverse();
+            // history[0] es el mensaje del usuario actual
+            // history[1] debería ser el último del modelo
+            const lastModelMsg = history.find(m => m.role === 'model' && m.products && m.products.length > 0);
+
+            if (lastModelMsg) {
+                // Asumimos el primero de la lista anterior como el deseado
+                candidates = [lastModelMsg.products[0]];
+            }
+        }
+
+        // Ordenamiento por precio (secundario)
+        if (isCheaper) candidates.sort((a, b) => getProductFinalPrice(a) - getProductFinalPrice(b));
+        if (isExpensive) candidates.sort((a, b) => getProductFinalPrice(b) - getProductFinalPrice(a));
+
+        // 5. Respuesta
+        if (candidates.length === 0) {
+            // Inteligencia Proactiva: Si no hay match, ofrecer ofertas o destacados
+            const deals = safeProducts.filter(p => (Number(p?.discount) || 0) > 0 && (Number(p?.stock) || 0) > 0).slice(0, 3);
+            if (deals.length > 0) {
+                setLastContext({ type: 'suggest_cross_sell', data: deals });
+                return { text: "Mmm, no encontré exactamente eso 🤔. ¿Pero te gustaría ver nuestras ofertas del día? 🏷️" };
+            }
+            // Dynamic "Smart" Suggestions
+            let suggestionText = "No encontré nada parecido. 😅";
+
+            if (availableCategories.length > 0) {
+                // Get 3 random unique categories
+                const shuffled = availableCategories.sort(() => 0.5 - Math.random());
+                const topCats = shuffled.slice(0, 3).join(", ");
+                suggestionText = `No tengo eso por ahora. Pero mira, en esta tienda tenemos cosas de: **${topCats}**. ¿Te sirve algo de eso?`;
+            } else {
+                suggestionText = "No encontré nada con ese nombre. ¿Quizás probando con otra palabra más simple?";
+            }
+
+            return { text: suggestionText };
+        }
+
+        const topMatches = candidates.slice(0, 5);
+
+        // Acción de Compra
+        if (isBuying && topMatches.length > 0) {
+            const best = topMatches[0];
+            addToCart(best, qty);
+
+            // --- CROSS-SELLING UNIVERSAL ---
+            // Buscar productos complementarios (Destacados o con Descuento que NO sean el que acaba de comprar)
+            // Esto funciona para cualquier tienda
+            const suggestions = safeProducts
+                .filter(p => (p.isFeatured || p.discount > 0) && p.id !== best.id && p.stock > 0)
+                .sort(() => 0.5 - Math.random()) // Mezclar
+                .slice(0, 3);
+
+            if (suggestions.length > 0) {
+                setLastContext({ type: 'suggest_cross_sell', data: suggestions });
+                return {
+                    text: `¡Listo! Agregué **${qty}x ${best.name}** a tu carrito. 🛒\n\n¿Te gustaría ver algunos productos destacados para complementar tu compra? 👀`,
+                    products: [best]
+                };
+            }
+
+            return {
+                text: `¡Listo! Agregué **${qty}x ${best.name}** a tu carrito. 🛒 ¿Algo más?`,
+                products: [best]
+            };
+        }
+
+        let msg = "Aquí tienes algunas opciones:";
+        if (targetCategory) msg = `Encontré esto en la categoría ${targetCategory}:`;
+        if (isCheaper) msg = "Las opciones más económicas:";
+
+        return {
+            text: msg,
+            products: topMatches
+        };
+    };
+
+    const withTimeout = async (promise, ms) => {
+        let timeoutId = null;
+        const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('timeout')), ms);
+        });
+        try {
+            return await Promise.race([promise, timeoutPromise]);
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
+        }
+    };
+
+    const sendText = async (rawText, opts = {}) => {
+        const alreadyAddedUser = !!opts.alreadyAddedUser;
+        const text = String(rawText || '').trim().slice(0, 300);
+        if (!text) return;
+        if (inFlightRef.current) {
+            if (!alreadyAddedUser) {
+                const newMsgUserQueued = { role: 'client', text };
+                setMessages(prev => [...prev, newMsgUserQueued]);
+            }
+            pendingTextRef.current = { text, alreadyAddedUser: true };
+            return;
+        }
+
+        inFlightRef.current = true;
+        setInputValue('');
+
+        const newMsgUser = alreadyAddedUser ? null : { role: 'client', text };
+        const updatedHistory = [...(messagesRef.current || []), ...(newMsgUser ? [newMsgUser] : [])];
+
+        if (newMsgUser) {
+            setMessages(prev => [...prev, newMsgUser]);
+        }
+        setIsTyping(true);
+
+        try {
+            const localResponse = await withTimeout(callLocalBrain(text, updatedHistory), 12000);
+            if (!isMountedRef.current) return;
+            let finalText = localResponse?.text && typeof localResponse.text === 'string'
+                ? localResponse.text
+                : "Perdón, tuve un problema procesando eso. ¿Podés reformularlo?";
+            const safeProducts = Array.isArray(localResponse?.products) ? localResponse.products : undefined;
+
+            const shouldAskExternal = aiEnabled && (!safeProducts || safeProducts.length === 0) && /no encontr[eé]|no tengo eso|no lo tengo|probando con otra palabra/i.test(finalText);
+            if (shouldAskExternal) {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), 8500);
+                try {
+                    const aiRes = await callExternalAI({ userText: text, history: updatedHistory, signal: controller.signal });
+                    if (aiRes?.text) finalText = aiRes.text;
+                } catch { }
+                clearTimeout(id);
+            }
+
+            setMessages(prev => [...prev, {
+                role: 'model',
+                text: finalText,
+                products: safeProducts
+            }]);
+        } catch (e) {
+            if (!isMountedRef.current) return;
+            const fallback = settings?.whatsappLink
+                ? `Uy, se me trabó por un momento. Si querés, hablá por WhatsApp: ${settings.whatsappLink}`
+                : "Uy, se me trabó por un momento. ¿Probamos de nuevo?";
+            setMessages(prev => [...prev, { role: 'model', text: fallback }]);
+        } finally {
+            if (isMountedRef.current) setIsTyping(false);
+            inFlightRef.current = false;
+            const pending = pendingTextRef.current;
+            if (pending && pending.text) {
+                pendingTextRef.current = null;
+                setTimeout(() => sendText(pending.text, { alreadyAddedUser: pending.alreadyAddedUser === true }), 0);
+            }
+        }
+    };
+
+    const handleSend = async () => {
+        return sendText(inputValue);
+    };
+
+    const handleQuickAction = (value) => {
+        const text = String(value || '').trim();
+        if (!text) return;
+        sendText(text);
+    };
+
+    const clearChat = () => {
+        try {
+            localStorage.removeItem(chatStorageKey);
+        } catch { }
+        setLastContext(null);
+        setMessages([defaultBotMessage]);
+    };
+
+    const quickActions = [
+        { label: 'Ofertas', value: 'Mostrame ofertas' },
+        { label: 'Cupones', value: 'Tenés cupones?' },
+        { label: 'Envío', value: 'Cómo es el envío?' },
+        { label: 'Pagos', value: 'Qué medios de pago hay?' },
+        { label: 'Categorías', value: 'Qué categorías tenés?' },
+        { label: 'WhatsApp', value: 'Necesito hablar con una persona' }
+    ];
+
+
+
+    return (
+        <div className="fixed bottom-6 right-6 left-3 sm:left-auto z-[9999] flex flex-col items-end pointer-events-none">
+            {isOpen && (
+                <div className="bg-[#0a0a0a] border border-yellow-500/30 rounded-2xl w-full max-w-sm sm:max-w-none sm:w-80 md:w-96 h-[min(550px,75dvh)] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden font-sans pointer-events-auto">
+                    <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center shadow-md relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="p-1 bg-white/10 rounded-full backdrop-blur-sm overflow-hidden border border-white/20">
+                                <img src={botImage} className="w-8 h-8 object-cover rounded-full opacity-90" alt="SustIA" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-white text-sm">SustIA</h3>
+                                <p className="text-[10px] text-white/80 flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                                    Asistente Virtual
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={clearChat} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-lg transition" title="Limpiar chat">
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-lg transition" title="Cerrar">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-[#111] px-4 py-2 border-b border-white/5">
+                        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                            {quickActions.map(a => (
+                                <button
+                                    key={a.label}
+                                    type="button"
+                                    data-testid={`quick-action-${a.label.toLowerCase()}`}
+                                    onClick={() => {
+                                        handleQuickAction(a.value);
+                                    }}
+                                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border border-white/10 bg-[#1a1a1a] text-white/90 hover:bg-[#222] transition"
+                                >
+                                    {a.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-[#111] custom-scrollbar relative">
+                        {messages.map((m, i) => (
+                            <div key={i} className={`flex flex-col ${m.role === 'client' ? 'items-end' : 'items-start'}`}>
+                                <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${m.role === 'client'
+                                    ? 'bg-yellow-600 text-white rounded-br-sm'
+                                    : 'bg-[#1a1a1a] text-slate-200 rounded-bl-sm border border-white/5'
+                                    }`}>
+                                    <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
+                                </div>
+
+                                {m.products && m.products.length > 0 && (
+                                    <div className="mt-3 flex gap-3 overflow-x-auto pb-2 w-full custom-scrollbar pl-1 snap-x">
+                                        {m.products.map(product => (
+                                            <BotProductCard
+                                                key={product.id}
+                                                product={product}
+                                                onAdd={(p, qty) => {
+                                                    addToCart(p, qty);
+                                                    setMessages(prev => [...prev, { role: 'model', text: `Agregado ${qty}x ${p.name} al carrito! 🛒` }]);
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        {isTyping && (
+                            <div className="flex justify-start">
+                                <div className="bg-[#1a1a1a] p-3 rounded-2xl rounded-bl-none border border-white/5 flex gap-1">
+                                    <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></span>
+                                    <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
+                                    <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    <div className="p-3 bg-[#0a0a0a] border-t border-white/10 relative z-0">
+                        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
+                            <input
+                                className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-full px-4 py-2.5 text-sm text-white focus:border-yellow-500/50 outline-none transition placeholder:text-slate-600"
+                                placeholder="Escribe aquí..."
+                                value={inputValue}
+                                onChange={e => setInputValue(e.target.value)}
+                            />
+                            <button type="submit" className="p-2.5 bg-yellow-600 hover:bg-yellow-500 text-white rounded-full transition shadow-lg shadow-yellow-600/20 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isTyping || !inputValue.trim()}>
+                                <Send className="w-4 h-4" />
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="pointer-events-auto w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform group relative z-50"
+            >
+                {isOpen ? <X className="w-6 h-6 text-white" /> : (
+                    <div className="w-full h-full p-1">
+                        <img src="sustia-ai-v2.jpg" className="w-full h-full object-cover rounded-full opacity-95 group-hover:scale-110 transition-transform duration-300" alt="SustIA" />
+                    </div>
+                )}
+                {!isOpen && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-yellow-500 border border-black"></span>
+                    </span>
+                )}
+            </button>
+        </div>
+    );
+}, (prevProps, nextProps) => {
+    // Custom comparison for performance optimization
+    // Only re-render if isOpen state changes internally (handled by internal state mainly)
+    // or if critical props change deep inside
+    if (prevProps.settings?.subscriptionPlan !== nextProps.settings?.subscriptionPlan) return false;
+    if (prevProps.products !== nextProps.products) return false;
+    // Don't re-render on addToCart change (function ref usually stable but check if it matters)
+    return true;
+});
+
 const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove, darkMode = true }) => {
     const [catName, setCatName] = React.useState('');
 
