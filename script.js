@@ -5041,11 +5041,11 @@ function App() {
         };
 
         return (
-            <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-4" onClick={() => setSelectedProduct(null)}>
-                <div className={`border rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative h-full md:h-auto overflow-y-auto md:overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`} onClick={e => e.stopPropagation()}>
+            <div className="fixed inset-0 z-[20000] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-0 sm:p-4" onClick={() => setSelectedProduct(null)}>
+                <div className={`border rounded-t-3xl sm:rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative max-h-[95dvh] sm:max-h-[90vh] md:max-h-none md:h-auto overflow-y-auto md:overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`} onClick={e => e.stopPropagation()}>
 
                     {/* Imagen con Zoom y Efectos */}
-                    <div className={`md:w-1/2 h-72 md:h-[550px] p-8 md:p-12 flex items-center justify-center relative overflow-hidden group ${darkMode ? 'bg-gradient-to-b from-slate-900 to-[#0a0a0a]' : 'bg-gradient-to-b from-slate-100 to-white'}`}>
+                    <div className={`md:w-1/2 h-56 sm:h-72 md:h-[550px] p-4 sm:p-8 md:p-12 flex items-center justify-center relative overflow-hidden group flex-shrink-0 ${darkMode ? 'bg-gradient-to-b from-slate-900 to-[#0a0a0a]' : 'bg-gradient-to-b from-slate-100 to-white'}`}>
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
                         <img
                             src={selectedProduct.image}
@@ -5062,13 +5062,13 @@ function App() {
                     </div>
 
                     {/* Panel de Información y Acción */}
-                    <div className={`md:w-1/2 p-8 md:p-12 flex flex-col ${darkMode ? 'bg-[#080808]' : 'bg-white'}`}>
-                        <div className="mb-8">
-                            <span className={`inline-block px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-4 border ${darkMode ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                    <div className={`md:w-1/2 p-5 sm:p-8 md:p-12 flex flex-col ${darkMode ? 'bg-[#080808]' : 'bg-white'}`}>
+                        <div className="mb-4 sm:mb-8">
+                            <span className={`inline-block px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-3 sm:mb-4 border ${darkMode ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
                                 {isPromo ? 'COMBOS & PROMOCIONES' : (Array.isArray(selectedProduct.categories) && selectedProduct.categories.length > 0 ? selectedProduct.categories[0] : (selectedProduct.category || 'Sin categoría'))}
                             </span>
-                            <h2 className={`text-3xl md:text-4xl font-black leading-[1.1] mb-6 ${darkMode ? 'text-white neon-text-small' : 'text-slate-900'}`}>{selectedProduct.name}</h2>
-                            <p className={`text-sm md:text-base leading-relaxed line-clamp-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                            <h2 className={`text-2xl sm:text-3xl md:text-4xl font-black leading-[1.1] mb-3 sm:mb-6 ${darkMode ? 'text-white neon-text-small' : 'text-slate-900'}`}>{selectedProduct.name}</h2>
+                            <p className={`text-xs sm:text-sm md:text-base leading-relaxed line-clamp-3 sm:line-clamp-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                 {selectedProduct.description || ''}
                             </p>
                         </div>
@@ -5096,15 +5096,15 @@ function App() {
                         )}
 
                         {/* Footer con Precio y Carrito */}
-                        <div className={`mt-auto pt-8 border-t flex flex-col gap-6 ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                        <div className={`mt-auto pt-4 sm:pt-8 border-t flex flex-col gap-4 sm:gap-6 ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
                             <div className="flex items-end justify-between">
                                 <div className="flex flex-col">
-                                    <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Inversión Total</span>
-                                    <div className="flex items-center gap-3">
+                                    <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Inversión Total</span>
+                                    <div className="flex items-center gap-2 sm:gap-3">
                                         {selectedProduct.discount > 0 && !isPromo && (
-                                            <span className={`text-sm line-through font-bold ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>${(selectedProduct.basePrice * qty).toLocaleString()}</span>
+                                            <span className={`text-xs sm:text-sm line-through font-bold ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>${(selectedProduct.basePrice * qty).toLocaleString()}</span>
                                         )}
-                                        <span className={`text-4xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        <span className={`text-2xl sm:text-4xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                             ${(displayPrice * qty).toLocaleString()}
                                         </span>
                                     </div>
@@ -5116,30 +5116,30 @@ function App() {
                                 )}
                             </div>
 
-                            <div className="flex gap-3">
+                            <div className="flex gap-2 sm:gap-3">
                                 {/* Selector de Cantidad */}
-                                <div className={`flex items-center gap-3 rounded-2xl p-2 border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                                <div className={`flex items-center gap-1.5 sm:gap-3 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
                                         disabled={qty <= 1}
-                                        className={`w-12 h-12 flex items-center justify-center rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}
+                                        className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}
                                     >
-                                        <Minus className="w-5 h-5" />
+                                        <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
                                     </button>
-                                    <span className={`text-xl font-bold w-8 text-center font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
+                                    <span className={`text-lg sm:text-xl font-bold w-6 sm:w-8 text-center font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setQty(Math.min(availableToAdd, qty + 1)); }}
                                         disabled={qty >= availableToAdd}
-                                        className={`w-12 h-12 flex items-center justify-center rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}
+                                        className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}
                                     >
-                                        <Plus className="w-5 h-5" />
+                                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                                     </button>
                                 </div>
 
                                 <button
                                     onClick={handleAdd}
                                     disabled={!hasStock || isMaxInCart}
-                                    className={`flex-1 py-5 rounded-2xl font-black transition flex items-center justify-center gap-3 shadow-2xl ${added
+                                    className={`flex-1 py-3.5 sm:py-5 rounded-xl sm:rounded-2xl font-black text-sm sm:text-base transition flex items-center justify-center gap-2 sm:gap-3 shadow-2xl ${added
                                         ? 'bg-green-500 text-white'
                                         : (hasStock && !isMaxInCart)
                                             ? (darkMode ? 'bg-white text-black hover:bg-orange-400 hover:text-white hover:scale-[1.02] active:scale-[0.98]' : 'bg-slate-900 text-white hover:bg-orange-600 hover:scale-[1.02] active:scale-[0.98]')
@@ -5147,13 +5147,13 @@ function App() {
                                         }`}
                                 >
                                     {added ? (
-                                        <><CheckCircle className="w-6 h-6" /> LISTO</>
+                                        <><CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" /> LISTO</>
                                     ) : isMaxInCart ? (
-                                        <><AlertCircle className="w-6 h-6" /> MAX EN CARRITO</>
+                                        <><AlertCircle className="w-5 h-5 sm:w-6 sm:h-6" /> MAX EN CARRITO</>
                                     ) : hasStock ? (
-                                        <><ShoppingCart className="w-6 h-6" /> AGREGAR</>
+                                        <><ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" /> AGREGAR</>
                                     ) : (
-                                        <><AlertCircle className="w-6 h-6" /> AGOTADO</>
+                                        <><AlertCircle className="w-5 h-5 sm:w-6 sm:h-6" /> AGOTADO</>
                                     )}
                                 </button>
                             </div>
@@ -6054,7 +6054,7 @@ function App() {
 
             {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
             {view !== 'admin' && (
-                <nav className={`fixed top-0 w-full h-16 sm:h-20 z-50 px-3 sm:px-6 md:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 ${darkMode ? 'glass border-b border-slate-800/50' : 'bg-white/95 border-b border-slate-200 shadow-sm'}`}>
+                <nav className={`fixed top-0 w-full h-14 sm:h-16 md:h-20 z-50 px-2 sm:px-4 md:px-8 lg:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 ${darkMode ? 'glass border-b border-slate-800/50' : 'bg-white/95 border-b border-slate-200 shadow-sm'}`}>
                     {/* Logo y Menú */}
                     <div className="flex items-center gap-2 sm:gap-6">
                         <button onClick={() => setIsMenuOpen(true)} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
@@ -6209,10 +6209,10 @@ function App() {
             )}
 
             {/* Espaciador para el Navbar Fixed */}
-            {view !== 'admin' && <div className="h-16 sm:h-20 md:h-24"></div>}
+            {view !== 'admin' && <div className="h-14 sm:h-16 md:h-20"></div>}
 
             {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
-            <main className={`flex-grow relative z-10 ${view === 'admin' ? 'min-h-screen min-full-viewport flex overflow-hidden' : 'p-4 md:p-8'}`}>
+            <main className={`flex-grow relative z-10 ${view === 'admin' ? 'min-h-screen min-full-viewport flex overflow-hidden' : 'px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8'}`}>
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
@@ -6245,7 +6245,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full h-[30vh] md:h-[350px] 2xl:h-[450px] rounded-[2rem] overflow-hidden shadow-2xl mb-8 border group container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                        <div className={`relative w-full h-[200px] sm:h-[250px] md:h-[350px] 2xl:h-[450px] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
@@ -6259,7 +6259,7 @@ function App() {
                             />
 
                             {/* Overlay de Texto */}
-                            <div className={`absolute inset-0 flex flex-col justify-center px-8 md:px-20 z-10 p-12 pointer-events-none ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/25 via-white/10 to-transparent'}`}>
+                            <div className={`absolute inset-0 flex flex-col justify-end sm:justify-center px-4 pb-4 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/25 via-white/10 to-transparent'}`}>
                                 <div className="max-w-2xl animate-fade-up">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
@@ -6279,20 +6279,20 @@ function App() {
                                             <span className="bg-orange-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
                                                 {settings?.heroBadge || ''}
                                             </span>
-                                            <h1 className={`text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.9] mb-4 ${darkMode ? 'text-white drop-shadow-2xl' : 'text-slate-900'}`}>
+                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.9] mb-2 sm:mb-4 ${darkMode ? 'text-white drop-shadow-2xl' : 'text-slate-900'}`}>
                                                 {settings?.heroTitle1 || ''} <br />
                                                 <span className={`text-transparent bg-clip-text bg-gradient-to-r ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || ''}
                                                 </span>
                                             </h1>
-                                            <p className={`text-sm md:text-base lg:text-lg mb-6 max-w-md font-medium ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                            <p className={`text-xs sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-medium hidden sm:block ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                                 {settings?.heroSubtitle || ''}
                                             </p>
-                                            <div className="flex items-center gap-4">
-                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white text-black font-black rounded-xl hover:bg-orange-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn pointer-events-auto">
-                                                    VER CATÁLOGO <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition" />
+                                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-5 py-2.5 sm:px-8 sm:py-4 bg-white text-black font-black text-sm sm:text-base rounded-xl hover:bg-orange-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn pointer-events-auto">
+                                                    VER CATÁLOGO <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
-                                                <button onClick={() => setView('guide')} className={`px-6 py-2.5 rounded-xl flex items-center gap-2 transition font-bold text-xs group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
+                                                <button onClick={() => setView('guide')} className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-2 transition font-bold text-xs group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
                                                     <Info className={`w-4 h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Ayuda
                                                 </button>
                                             </div>
@@ -6359,7 +6359,7 @@ function App() {
                         )}
 
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className={`sticky top-16 sm:top-20 z-40 backdrop-blur-xl py-3 sm:py-4 mb-6 sm:mb-8 -mx-4 px-4 border-y transition-colors duration-300 ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/90 border-slate-200'}`}>
+                        <div id="catalog" className={`sticky top-14 sm:top-16 md:top-20 z-40 backdrop-blur-xl py-2.5 sm:py-3 md:py-4 mb-4 sm:mb-6 md:mb-8 -mx-3 px-3 sm:-mx-4 sm:px-4 border-y transition-colors duration-300 ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/90 border-slate-200'}`}>
                             <div
                                 ref={categoriesScrollRef}
                                 onMouseDown={handleMouseDownCategories}
@@ -6564,14 +6564,14 @@ function App() {
 
                 {/* 2. VISTA DEL CARRITO DE COMPRAS */}
                 {view === 'cart' && (
-                    <div className="max-w-6xl mx-auto animate-fade-up px-4 md:px-8 pb-20">
-                        <div className="flex flex-col gap-4 mb-8 pt-8 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-4">
-                                <button onClick={() => setView('store')} className={`p-3 rounded-full transition group ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}>
-                                    <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition" />
+                    <div className="max-w-6xl mx-auto animate-fade-up px-2 sm:px-4 md:px-8 pb-20">
+                        <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8 pt-4 sm:pt-8 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-3 sm:gap-4">
+                                <button onClick={() => setView('store')} className={`p-2.5 sm:p-3 rounded-full transition group ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}>
+                                    <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-x-1 transition" />
                                 </button>
-                                <h1 className={`text-4xl font-black flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                    <ShoppingBag className="w-10 h-10 text-orange-500" /> Mi Carrito
+                                <h1 className={`text-2xl sm:text-4xl font-black flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                    <ShoppingBag className="w-7 h-7 sm:w-10 sm:h-10 text-orange-500" /> Mi Carrito
                                 </h1>
                             </div>
 
@@ -6606,20 +6606,20 @@ function App() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="grid lg:grid-cols-3 gap-8">
+                            <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
                                 {/* Lista de Items */}
                                 <div className="lg:col-span-2 space-y-4">
                                     {cart.map((item) => (
-                                        <div key={item.product.id} className={`p-4 md:p-6 rounded-3xl border flex flex-col md:flex-row gap-6 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm hover:shadow-md'}`}>
+                                        <div key={item.product.id} className={`p-3 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl border flex flex-row gap-3 sm:gap-4 md:gap-6 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm hover:shadow-md'}`}>
                                             {/* Imagen */}
-                                            <div className="w-full md:w-32 h-32 bg-white rounded-2xl flex items-center justify-center p-2 flex-shrink-0 shadow-lg border border-slate-100">
+                                            <div className="w-20 sm:w-24 md:w-32 h-20 sm:h-24 md:h-32 bg-white rounded-xl sm:rounded-2xl flex items-center justify-center p-1.5 sm:p-2 flex-shrink-0 shadow-lg border border-slate-100">
                                                 <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain" />
                                             </div>
 
                                             {/* Info */}
-                                            <div className="flex-1 w-full text-center md:text-left z-10">
+                                            <div className="flex-1 min-w-0 text-left z-10">
                                                 <div className="flex justify-between items-start w-full">
-                                                    <h3 className={`font-bold text-lg truncate mb-1 pr-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.product.name}</h3>
+                                                    <h3 className={`font-bold text-sm sm:text-base md:text-lg truncate mb-1 pr-2 sm:pr-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.product.name}</h3>
                                                     <button onClick={() => manageCart(item.product, -item.quantity)} className={`p-2 rounded-lg transition ${darkMode ? 'text-slate-600 hover:text-red-500 bg-slate-900 hover:bg-red-900/20' : 'text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50'}`}>
                                                         <Trash2 className="w-5 h-5" />
                                                     </button>
@@ -6630,7 +6630,7 @@ function App() {
                                                 </p>
 
                                                 {/* Controles de Cantidad */}
-                                                <div className="flex items-center justify-center md:justify-start gap-4">
+                                                <div className="flex items-center justify-start gap-2 sm:gap-4">
                                                     <div className={`flex items-center gap-3 rounded-xl p-1 border ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                                                         <button onClick={() => manageCart(item.product, -1)} className={`w-10 h-10 flex items-center justify-center rounded-lg transition ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}>
                                                             <Minus className="w-4 h-4" />
@@ -6651,7 +6651,7 @@ function App() {
                                 </div>
 
                                 {/* Resumen y Checkout */}
-                                <div className={`border p-8 rounded-[2.5rem] h-fit sticky top-28 shadow-2xl transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <div className={`border p-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] h-fit sticky top-20 sm:top-28 shadow-2xl transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <h3 className={`text-2xl font-black mb-8 border-b pb-4 transition-colors duration-300 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>Resumen de Compra</h3>
 
                                     {/* Sección de Cupones */}
@@ -6720,40 +6720,40 @@ function App() {
 
                 {/* 3. VISTA DE CHECKOUT (FINALIZAR COMPRA) */}
                 {view === 'checkout' && (
-                    <div className="max-w-5xl mx-auto pb-20 animate-fade-up px-4 md:px-8">
-                        <button onClick={() => setView('cart')} className="mb-8 mt-8 text-slate-400 hover:text-white flex items-center gap-2 font-bold transition">
-                            <ArrowLeft className="w-5 h-5" /> Volver al Carrito
+                    <div className="max-w-5xl mx-auto pb-20 animate-fade-up px-2 sm:px-4 md:px-8">
+                        <button onClick={() => setView('cart')} className="mb-4 sm:mb-8 mt-4 sm:mt-8 text-slate-400 hover:text-white flex items-center gap-2 font-bold transition text-sm sm:text-base">
+                            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" /> Volver al Carrito
                         </button>
 
-                        <div className="grid md:grid-cols-5 gap-8">
+                        <div className="grid md:grid-cols-5 gap-4 sm:gap-8">
                             {/* Columna Izquierda: Formularios */}
                             <div className="md:col-span-3 space-y-8">
 
                                 {/* Opciones de Entrega */}
-                                <div className={`border p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <div className={`border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-bl-[100px] pointer-events-none"></div>
-                                    <h2 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                        <Truck className="text-orange-500 w-6 h-6" /> Método de Entrega
+                                    <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        <Truck className="text-orange-500 w-5 h-5 sm:w-6 sm:h-6" /> Método de Entrega
                                     </h2>
-                                    <div className="grid grid-cols-2 gap-4 relative z-10 mb-6">
+                                    <div className="grid grid-cols-2 gap-3 sm:gap-4 relative z-10 mb-4 sm:mb-6">
                                         {settings?.shippingPickup?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, shippingMethod: 'Pickup' })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Pickup' ? 'border-orange-500 bg-orange-500/10 text-orange-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}
+                                                className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl border transition flex flex-col items-center gap-2 sm:gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Pickup' ? 'border-orange-500 bg-orange-500/10 text-orange-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}
                                             >
-                                                {checkoutData.shippingMethod === 'Pickup' && <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-orange-500" />}
-                                                <MapPin className="w-8 h-8 group-hover:scale-110 transition" />
-                                                <span className="text-xs font-black uppercase">Retiro en Local</span>
+                                                {checkoutData.shippingMethod === 'Pickup' && <CheckCircle className="absolute top-2 right-2 w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />}
+                                                <MapPin className="w-6 h-6 sm:w-8 sm:h-8 group-hover:scale-110 transition" />
+                                                <span className="text-[10px] sm:text-xs font-black uppercase">Retiro en Local</span>
                                             </button>
                                         )}
                                         {settings?.shippingDelivery?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, shippingMethod: 'Delivery' })}
-                                                className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Delivery' ? 'border-orange-500 bg-orange-500/10 text-orange-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}
+                                                className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl border transition flex flex-col items-center gap-2 sm:gap-3 relative overflow-hidden group ${checkoutData.shippingMethod === 'Delivery' ? 'border-orange-500 bg-orange-500/10 text-orange-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}
                                             >
-                                                {checkoutData.shippingMethod === 'Delivery' && <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-orange-500" />}
-                                                <Truck className="w-8 h-8 group-hover:scale-110 transition" />
-                                                <span className="text-xs font-black uppercase">Envío a Domicilio</span>
+                                                {checkoutData.shippingMethod === 'Delivery' && <CheckCircle className="absolute top-2 right-2 w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />}
+                                                <Truck className="w-6 h-6 sm:w-8 sm:h-8 group-hover:scale-110 transition" />
+                                                <span className="text-[10px] sm:text-xs font-black uppercase">Envío a Domicilio</span>
                                             </button>
                                         )}
                                     </div>
@@ -6811,10 +6811,10 @@ function App() {
                                 </div>
 
                                 {/* Método de Pago */}
-                                <div className={`border p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <div className={`border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-bl-[100px] pointer-events-none"></div>
-                                    <h2 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                        <CreditCard className="text-orange-500 w-6 h-6" /> Método de Pago
+                                    <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        <CreditCard className="text-orange-500 w-5 h-5 sm:w-6 sm:h-6" /> Método de Pago
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                                         {settings?.paymentMercadoPago?.enabled && (
@@ -6939,8 +6939,8 @@ function App() {
 
                             {/* Columna Derecha: Confirmación */}
                             <div className="md:col-span-2">
-                                <div className={`border p-8 rounded-[2.5rem] sticky top-28 shadow-2xl ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}>
-                                    <h3 className={`font-black mb-8 text-xl border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-100'}`}>Resumen Final</h3>
+                                <div className={`border p-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] sticky top-20 sm:top-28 shadow-2xl ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <h3 className={`font-black mb-6 sm:mb-8 text-lg sm:text-xl border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-100'}`}>Resumen Final</h3>
 
                                     <div className="space-y-4 mb-8">
                                         <div className={`flex justify-between ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -6998,21 +6998,21 @@ function App() {
 
                 {/* 4. VISTA DE PERFIL (HISTORIAL Y FAVORITOS) - Solo si el usuario tiene datos válidos */}
                 {view === 'profile' && currentUser && currentUser.id && currentUser.email && currentUser.name && (
-                    <div className="max-w-6xl mx-auto pt-8 animate-fade-up px-4 md:px-8 pb-20">
+                    <div className="max-w-6xl mx-auto pt-4 sm:pt-8 animate-fade-up px-2 sm:px-4 md:px-8 pb-20">
                         {/* Tarjeta de Usuario */}
-                        <div className={`p-8 md:p-12 rounded-[3rem] mb-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl border transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                        <div className={`p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-[3rem] mb-6 sm:mb-12 flex flex-col md:flex-row items-center gap-4 sm:gap-8 relative overflow-hidden shadow-2xl border transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                             {/* Decoración Fondo */}
                             <div className={`absolute top-0 right-0 w-96 h-96 rounded-full blur-[120px] pointer-events-none ${darkMode ? 'bg-orange-500/5' : 'bg-orange-500/10'}`}></div>
                             <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-[100px] pointer-events-none ${darkMode ? 'bg-blue-600/5' : 'bg-blue-600/10'}`}></div>
 
                             {/* Avatar */}
-                            <div className={`w-28 h-28 rounded-[2rem] bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center text-5xl font-black text-white shadow-2xl z-10 transform rotate-3 border-4 ${darkMode ? 'border-[#0a0a0a]' : 'border-white'}`}>
+                            <div className={`w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-[2rem] bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center text-3xl sm:text-5xl font-black text-white shadow-2xl z-10 transform rotate-3 border-4 ${darkMode ? 'border-[#0a0a0a]' : 'border-white'}`}>
                                 {currentUser.name.charAt(0)}
                             </div>
 
                             {/* Info */}
                             <div className="text-center md:text-left z-10 flex-1">
-                                <h2 className={`text-4xl md:text-5xl font-black mb-2 tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{currentUser.name}</h2>
+                                <h2 className={`text-2xl sm:text-4xl md:text-5xl font-black mb-2 tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{currentUser.name}</h2>
                                 <p className={`flex items-center justify-center md:justify-start gap-2 font-medium mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                     <Mail className="w-4 h-4 text-orange-500" /> {currentUser.email}
                                 </p>
@@ -7043,13 +7043,13 @@ function App() {
                         </div>
 
                         {/* SECCIÓN: MIS CUPONES (NUEVO) */}
-                        <div className={`p-8 rounded-[2.5rem] mb-12 shadow-2xl animate-fade-up border transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
-                            <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                <Ticket className="text-purple-400 w-6 h-6" /> Mis Cupones Disponibles
+                        <div className={`p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] mb-6 sm:mb-12 shadow-2xl animate-fade-up border transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                            <h3 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                <Ticket className="text-purple-400 w-5 h-5 sm:w-6 sm:h-6" /> Mis Cupones Disponibles
                             </h3>
 
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
+                                <div className="space-y-3 sm:space-y-4">
                                     {/* Mostrar cupones GLOBALES (targetType='global') y ESPECIFICOS para este usuario */}
                                     {(() => {
                                         const myCoupons = coupons.filter(c =>
@@ -7241,9 +7241,9 @@ function App() {
 
                 {/* 5. MODAL DE AUTENTICACIÓN (LOGIN/REGISTER) */}
                 {(view === 'login' || view === 'register') && (
-                    <div className="fixed inset-0 z-[20002] flex items-center justify-center bg-[#050505]/95 p-4 animate-fade-up backdrop-blur-xl">
+                    <div className="fixed inset-0 z-[20002] flex items-end sm:items-center justify-center bg-[#050505]/95 p-0 sm:p-4 animate-fade-up backdrop-blur-xl">
 
-                        <div className="bg-[#0a0a0a] p-8 md:p-12 rounded-[3rem] w-full max-w-md shadow-2xl border border-slate-800 relative overflow-hidden">
+                        <div className="bg-[#0a0a0a] p-5 sm:p-8 md:p-12 rounded-t-3xl sm:rounded-[3rem] w-full max-w-md shadow-2xl border border-slate-800 relative overflow-hidden max-h-[95dvh] overflow-y-auto">
                             {/* Botón Cerrar (Dentro de la tarjeta) */}
                             <button onClick={() => setView('store')} className="absolute top-6 right-6 p-2 bg-slate-900/50 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition z-20">
                                 <X className="w-6 h-6" />
@@ -7251,10 +7251,10 @@ function App() {
 
                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600"></div>
 
-                            <h2 className="text-4xl font-black text-white mb-2 text-center tracking-tight">
+                            <h2 className="text-2xl sm:text-4xl font-black text-white mb-2 text-center tracking-tight">
                                 {loginMode ? 'Bienvenido' : 'Crear Cuenta'}
                             </h2>
-                            <p className="text-slate-500 text-center mb-8 text-sm">
+                            <p className="text-slate-500 text-center mb-5 sm:mb-8 text-sm">
                                 {loginMode ? 'Ingresa a tu cuenta para continuar.' : 'Únete a nosotros hoy mismo.'}
                             </p>
 
@@ -7289,12 +7289,12 @@ function App() {
 
                 {/* 6. VISTAS ESTÁTICAS (ABOUT & GUIDE) */}
                 {view === 'about' && (
-                    <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
-                        <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
-                        <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                            <Info className="text-orange-500 w-12 h-12" /> Sobre Nosotros
+                    <div className="max-w-4xl mx-auto pt-6 sm:pt-10 px-3 sm:px-6 animate-fade-up pb-20">
+                        <button onClick={() => setView('store')} className={`mb-4 sm:mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
+                        <h2 className={`text-2xl sm:text-4xl md:text-5xl font-black mb-6 sm:mb-12 flex items-center gap-3 sm:gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                            <Info className="text-orange-500 w-8 h-8 sm:w-12 sm:h-12" /> Sobre Nosotros
                         </h2>
-                        <div className={`border p-8 md:p-12 rounded-[3rem] text-xl leading-relaxed whitespace-pre-wrap shadow-2xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+                        <div className={`border p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-[3rem] text-base sm:text-xl leading-relaxed whitespace-pre-wrap shadow-2xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
                             <p className="relative z-10">{settings.aboutUsText}</p>
 
@@ -7313,12 +7313,12 @@ function App() {
                 )}
 
                 {view === 'guide' && (
-                    <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
-                        <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
-                        <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                            <FileQuestion className="text-orange-500 w-12 h-12" /> {settings?.guideTitle || 'Cómo Comprar'}
+                    <div className="max-w-4xl mx-auto pt-6 sm:pt-10 px-3 sm:px-6 animate-fade-up pb-20">
+                        <button onClick={() => setView('store')} className={`mb-4 sm:mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
+                        <h2 className={`text-2xl sm:text-4xl md:text-5xl font-black mb-6 sm:mb-12 flex items-center gap-3 sm:gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                            <FileQuestion className="text-orange-500 w-8 h-8 sm:w-12 sm:h-12" /> {settings?.guideTitle || 'Cómo Comprar'}
                         </h2>
-                        <div className={`border p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+                        <div className={`border p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-[3rem] shadow-2xl space-y-6 sm:space-y-8 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                             {[
                                 { title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
                                 { title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
@@ -7349,12 +7349,12 @@ function App() {
                 )}
 
                 {view === 'privacy' && (
-                    <div className="max-w-4xl mx-auto pt-10 px-6 animate-fade-up pb-20">
-                        <button onClick={() => setView('store')} className={`mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
-                        <h2 className={`text-4xl md:text-5xl font-black mb-12 flex items-center gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
-                            <Shield className="text-orange-500 w-12 h-12" /> Política de Privacidad
+                    <div className="max-w-4xl mx-auto pt-6 sm:pt-10 px-3 sm:px-6 animate-fade-up pb-20">
+                        <button onClick={() => setView('store')} className={`mb-4 sm:mb-8 p-3 rounded-full transition ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'}`}><ArrowLeft /></button>
+                        <h2 className={`text-2xl sm:text-4xl md:text-5xl font-black mb-6 sm:mb-12 flex items-center gap-3 sm:gap-4 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                            <Shield className="text-orange-500 w-8 h-8 sm:w-12 sm:h-12" /> Política de Privacidad
                         </h2>
-                        <div className={`border p-8 md:p-12 rounded-[3rem] shadow-2xl space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+                        <div className={`border p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-[3rem] shadow-2xl space-y-6 sm:space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                             <div className="prose prose-invert max-w-none">
                                 <p className={`text-sm mb-8 italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Última actualización: 07 de enero de 2026</p>
 
@@ -11760,11 +11760,11 @@ function App() {
                 {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
                 {
                     view === 'terms' && (
-                        <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
-                            <div className="glass p-12 rounded-[3rem] border border-slate-800">
+                        <div className="max-w-4xl mx-auto py-10 sm:py-20 px-3 sm:px-6 animate-fade-up">
+                            <div className="glass p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-[3rem] border border-slate-800">
                                 <div className="prose prose-invert max-w-none">
-                                    <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                        Condiciones de <span className="text-orange-500 text-6xl">Uso</span>
+                                    <h1 className="text-3xl sm:text-5xl font-black mb-8 sm:mb-12 tracking-tighter italic">
+                                        Condiciones de <span className="text-orange-500 text-4xl sm:text-6xl">Uso</span>
                                     </h1>
                                     <p className="text-slate-400 font-bold mb-8">Última actualización: 07 de enero de 2026</p>
 
@@ -11903,7 +11903,7 @@ function App() {
                         <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent`}></div>
                         <div className={`absolute -top-40 -right-40 w-96 h-96 rounded-full blur-[100px] pointer-events-none ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'}`}></div>
 
-                        <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
+                        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-12 mb-10 sm:mb-16 relative z-10">
                             {/* Columna 1: Marca */}
                             <div className="md:col-span-2 space-y-6">
                                 <h2 className={`text-3xl font-black tracking-tighter italic ${darkMode ? 'text-white' : 'text-slate-900'}`}>
