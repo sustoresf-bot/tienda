@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+
+    <!-- SEO Tags - Valores por defecto, se actualizan dinámicamente desde Firebase -->
+    <title>Tienda Online</title>
+    <meta id="meta-description" name="description"
+        content="Tu tienda online de confianza. Calidad y vanguardia en cada producto. Envíos a todo el país.">
+    <meta id="meta-keywords" name="keywords" content="tienda online, productos, comprar, envíos, argentina">
+    <meta id="meta-author" name="author" content="Tienda Online">
+    <meta name="robots" content="index, follow">
+    <meta id="meta-theme-color" name="theme-color" content="#f97316">
+    <meta name="color-scheme" content="light dark">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta id="meta-apple-title" name="apple-mobile-web-app-title" content="Tienda">
+
+    <!-- Canonical URL - Se actualiza dinámicamente -->
+    <link id="link-canonical" rel="canonical" href="">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta id="og-url" property="og:url" content="">
+    <meta id="og-title" property="og:title" content="Tienda Online">
+    <meta id="og-description" property="og:description"
+        content="Tu tienda online de confianza. Calidad y vanguardia en cada producto.">
+    <meta property="og:locale" content="es_AR">
+    <meta id="og-site-name" property="og:site_name" content="Tienda Online">
+    <meta id="og-image" property="og:image" content="">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta id="twitter-title" name="twitter:title" content="Tienda Online">
+    <meta id="twitter-description" name="twitter:description"
+        content="Tu tienda online de confianza. Calidad y vanguardia en cada producto.">
+    <meta id="twitter-image" name="twitter:image" content="">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Icono PNG Circular -->
+    <link id="dynamic-favicon" rel="icon" type="image/png" href="/icon-192.png">
+
+    <!-- Preconnect to external domains for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://esm.sh">
+    <link rel="preconnect" href="https://www.gstatic.com">
+
+    <!-- DNS Prefetch for CDNs -->
+    <link rel="dns-prefetch" href="https://sdk.mercadopago.com">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+
+
+    <!-- Critical CSS inline for faster first paint -->
+    <style>
+        /* Critical above-the-fold styles */
+        body {
+            background-color: #050505;
+            color: #e2e8f0;
+            margin: 0;
+            font-family: system-ui, sans-serif;
+        }
+
+        #root {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #1e293b;
+            border-top-color: #f97316;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @media (min-width: 640px) {
+            .loading-spinner {
+                width: 56px;
+                height: 56px;
+                border-width: 4px;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+    <!-- Import Map for ES Modules -->
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+        }
+    }
+    </script>
+
+    <link rel="stylesheet" href="assets/tailwind.css">
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+    <div id="root">
+        <!-- Loading state while React loads -->
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script type="module" src="assets/app.js"></script>
+
+    <!-- KILL SWITCH v3.0 (Tiempo Real + Contacto) -->
+    <script>
+        (function () {
+            var host = (window.location && window.location.hostname) ? String(window.location.hostname) : '';
+            var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+            if (isLocal) return;
+
+            var s = document.createElement('script');
+            s.src = 'https://controlador-de-paginas.vercel.app/kill-switch.js';
+            s.defer = true;
+            s.onload = function () {
+                try {
+                    if (window.KillSwitch) {
+                        window.KillSwitch.init({
+                            controllerUrl: 'https://controlador-de-paginas.vercel.app',
+                            contactEmail: 'soporte@tienda.com',
+                            whatsapp: ''
+                        });
+                    }
+                } catch (e) { }
+            };
+            document.head.appendChild(s);
+        })();
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered OK');
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>
