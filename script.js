@@ -1629,6 +1629,7 @@ function App() {
     const orderAlarmActiveRef = useRef(false);
     const orderAlarmEagerUnlockDoneRef = useRef(false);
     const lastOrdersSeenWriteRef = useRef(null);
+    const [audioUnlocked, setAudioUnlocked] = useState(false);
 
 
     // Datos Principales
@@ -2541,6 +2542,7 @@ function App() {
                 if (orderAlarmContextRef.current?.state === 'suspended') {
                     await orderAlarmContextRef.current.resume();
                 }
+                setAudioUnlocked(true);
             } catch (e) { }
             orderAlarmEagerUnlockDoneRef.current = true;
         };
@@ -2565,7 +2567,7 @@ function App() {
         } else {
             stopOrderAlarm();
         }
-    }, [isAdminUser, adminOrderAlarmMuted, hasUnseenOrders, view, adminTab, startOrderAlarm, stopOrderAlarm]);
+    }, [isAdminUser, adminOrderAlarmMuted, hasUnseenOrders, view, adminTab, startOrderAlarm, stopOrderAlarm, audioUnlocked]);
 
     useEffect(() => {
         if (!isAdminUser) return;
