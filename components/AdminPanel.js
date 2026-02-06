@@ -385,7 +385,7 @@ const AdminPanel = ({
                         <>
                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-4 md:mt-6">Gestión</p>
                             {[
-                                { id: 'coupons', icon: Ticket, label: 'Cupones' },
+                                { id: 'coupons', icon: Ticket, label: 'Cupones', locked: !['business', 'premium'].includes(settings?.subscriptionPlan) },
                                 { id: 'suppliers', icon: Truck, label: 'Proveedores' },
                                 { id: 'purchases', icon: ShoppingCart, label: 'Compras' },
                                 { id: 'finance', icon: Wallet, label: 'Finanzas' },
@@ -394,6 +394,7 @@ const AdminPanel = ({
                             ].map(item => (
                                 <button key={item.id} onClick={() => { setAdminTab(item.id); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === item.id ? `bg-${item.color || 'orange'}-900/20 text-${item.color || 'orange'}-400 border border-${item.color || 'orange'}-900/30` : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                     <item.icon className="w-5 h-5" /> {item.label}
+                                    {item.locked && <Lock className="w-3 h-3 text-yellow-500 ml-auto" />}
                                 </button>
                             ))}
                         </>

@@ -56,6 +56,13 @@ async function handleUsers(req, res, admin, decoded, storeId) {
     return res.status(400).json({ error: 'Acción inválida' });
 }
 
+async function handleListUsers(req, res, admin, decoded, storeId) {
+    const db = admin.firestore();
+    const snap = await db.collection(`artifacts/${storeId}/public/data/users`).get();
+    const users = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    return res.status(200).json({ users });
+}
+
 async function dumpCollection(db, collectionPath) {
     const snap = await db.collection(collectionPath).get();
     return snap.docs.map((d) => ({ id: d.id, data: d.data() }));
@@ -165,6 +172,7 @@ export default async function handler(req, res) {
     try {
         const admin = getAdmin();
         if (action === 'users') return await handleUsers(req, res, admin, decoded, storeId);
+        if (action === 'list-users') return await handleListUsers(req, res, admin, decoded, storeId);
         if (action === 'export') return await handleExport(req, res, admin, decoded, storeId);
         if (action === 'import') return await handleImport(req, res, admin, decoded, storeId);
 

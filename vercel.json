@@ -111,6 +111,10 @@
             "destination": "/api/admin?action=users"
         },
         {
+            "source": "/api/admin/list-users",
+            "destination": "/api/admin?action=list-users"
+        },
+        {
             "source": "/api/admin/export-store",
             "destination": "/api/admin?action=export"
         },

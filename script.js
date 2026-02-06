@@ -12,7 +12,8 @@ import {
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, EyeOff, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
-    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload, ChevronLeft
+    Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload, ChevronLeft,
+    HelpCircle, Lightbulb
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -553,12 +554,6 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
         img.src = next.imageUrl;
     }, [slides, activeIndex]);
 
-    const activeSlide = slides[activeIndex] || null;
-    const hasTarget = (() => {
-        const type = activeSlide?.targetType || (activeSlide?.promoId ? 'promo' : activeSlide?.productId ? 'product' : 'none');
-        const id = activeSlide?.targetId || activeSlide?.promoId || activeSlide?.productId || '';
-        return type !== 'none' && !!id;
-    })();
     const imageOpacity = 0.85;
     const imageClass = `w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`;
 
@@ -587,10 +582,15 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
         );
     }
 
+    const slideHasTarget = (slide) => {
+        const type = slide?.targetType || (slide?.promoId ? 'promo' : slide?.productId ? 'product' : 'none');
+        const id = slide?.targetId || slide?.promoId || slide?.productId || '';
+        return type !== 'none' && !!id;
+    };
+
     return (
         <div
-            className={`absolute inset-0 overflow-hidden ${hasTarget ? 'cursor-pointer' : ''}`}
-            onClick={() => hasTarget && onBannerClick?.(activeSlide)}
+            className="absolute inset-0 overflow-hidden z-[2]"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
@@ -598,38 +598,45 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                 className="h-full w-full flex transition-transform duration-700 ease-in-out"
                 style={{ transform: `translate3d(-${activeIndex * 100}%, 0, 0)`, willChange: 'transform' }}
             >
-                {slides.map((slide, idx) => (
-                    <div key={slide.id || `${idx}-${slide.targetId || slide.productId || slide.promoId || 'slide'}`} className="w-full h-full flex-shrink-0 relative">
-                        <img src={slide.imageUrl} alt="Banner" style={{ opacity: imageOpacity }} className={imageClass} />
-                    </div>
-                ))}
+                {slides.map((slide, idx) => {
+                    const clickable = slideHasTarget(slide);
+                    return (
+                        <div
+                            key={slide.id || `${idx}-${slide.targetId || slide.productId || slide.promoId || 'slide'}`}
+                            className={`w-full h-full flex-shrink-0 relative ${clickable ? 'cursor-pointer' : ''}`}
+                            onClick={() => clickable && onBannerClick?.(slide)}
+                        >
+                            <img src={slide.imageUrl} alt="Banner" style={{ opacity: imageOpacity }} className={imageClass} />
+                        </div>
+                    );
+                })}
             </div>
 
             {slides.length > 1 && (
                 <>
                     <button
                         type="button"
-                        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/40 border border-white/20 text-white backdrop-blur-md hover:bg-black/55 transition flex items-center justify-center pointer-events-auto"
+                        className={`absolute left-2 sm:left-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-all duration-200 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/40 sm:bg-black/50 hover:bg-black/70 text-white/70 hover:text-white' : 'bg-white/40 sm:bg-white/50 hover:bg-white/70 text-slate-700 hover:text-slate-900'}`}
                         onClick={(e) => { e.stopPropagation(); goPrev(); }}
                         aria-label="Banner anterior"
                     >
-                        <ArrowLeft className="w-5 h-5" />
+                        <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                     <button
                         type="button"
-                        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/40 border border-white/20 text-white backdrop-blur-md hover:bg-black/55 transition flex items-center justify-center pointer-events-auto"
+                        className={`absolute right-2 sm:right-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-all duration-200 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/40 sm:bg-black/50 hover:bg-black/70 text-white/70 hover:text-white' : 'bg-white/40 sm:bg-white/50 hover:bg-white/70 text-slate-700 hover:text-slate-900'}`}
                         onClick={(e) => { e.stopPropagation(); goNext(); }}
                         aria-label="Banner siguiente"
                     >
-                        <ArrowRight className="w-5 h-5" />
+                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
-                    <div className="absolute bottom-4 inset-x-0 z-20 flex items-center justify-center gap-2 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute bottom-2 sm:bottom-3 inset-x-0 z-20 flex items-center justify-center gap-1.5 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                         {slides.map((_, idx) => (
                             <button
                                 key={`dot-${idx}`}
                                 type="button"
                                 aria-label={`Ir al banner ${idx + 1}`}
-                                className={`h-2.5 rounded-full transition-all duration-300 ${idx === activeIndex ? 'w-8 bg-white' : 'w-2.5 bg-white/40 hover:bg-white/70'}`}
+                                className={`rounded-full transition-all duration-300 ${idx === activeIndex ? 'w-6 h-2 bg-white shadow-lg' : 'w-2 h-2 bg-white/40 hover:bg-white/60'}`}
                                 onClick={() => setActiveIndex(idx)}
                             />
                         ))}
@@ -1051,195 +1058,387 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove, darkMode 
 const ADMIN_PANEL_GUIDES = {
     dashboard: {
         title: 'Inicio (Panel de Control)',
-        description: 'Acá tenés el resumen general de tu tienda: ventas, ingresos y métricas para tomar decisiones rápidas.',
+        color: 'orange',
+        description: 'Tu centro de comando. Acá ves el resumen completo de tu tienda en tiempo real: ventas, ingresos, rentabilidad, tendencias y métricas clave para tomar decisiones inteligentes.',
         sections: [
             {
-                title: 'Qué mirar primero',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Ingresos brutos y beneficio neto estimado para ver cómo viene el mes.',
-                    'Rendimiento mensual para comparar meses recientes.',
-                    'Movimientos recientes para detectar ingresos/gastos rápido.'
+                    'Ingresos Brutos: el total de dinero que entró por ventas, con gráfico de barras de los últimos 6 meses.',
+                    'Beneficio Neto Estimado: ingresos menos gastos y compras, con comparativa visual Ingresos vs Gastos por mes.',
+                    'KPIs rápidos: Usuarios Totales, Pedidos Totales, Ticket Promedio y cantidad de productos con Stock Bajo.',
+                    'Producto Estrella: el más vendido con unidades vendidas y stock actual.',
+                    'Menos Vendido (En Stock): producto con menor rotación para que puedas hacer promos o descuentos.',
+                    'Registro de Movimientos: tabla tipo libro mayor con fecha, tipo, concepto, estado y monto de cada transacción.'
                 ]
             },
             {
-                title: 'Acciones típicas',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'Usá los botones/atajos del panel para ver detalles de métricas y reportes.',
-                    'Registrá ventas manuales si vendiste fuera del checkout (mostrador / en casa).'
+                    'Registrar Venta Manual: para pedidos fuera del checkout (mostrador, WhatsApp, en persona). Seleccionás productos, cantidades y método de pago.',
+                    'Ver detalle de métricas: hacé clic en las tarjetas para expandir información.',
+                    'Comparar meses: usá las barras de rendimiento mensual para detectar tendencias de crecimiento o baja.',
+                    'Identificar productos de baja rotación para armar promos o ajustar precios.'
+                ]
+            },
+            {
+                title: 'Consejo',
+                icon: 'tip',
+                bullets: [
+                    'Revisá este panel al menos una vez al día para estar al tanto de nuevos pedidos, stock bajo y la salud financiera de tu tienda.'
                 ]
             }
         ]
     },
     orders: {
         title: 'Pedidos',
-        description: 'Gestioná los pedidos que entran: ver detalle, finalizar y eliminar.',
+        color: 'green',
+        description: 'Acá gestionás todos los pedidos que entran a tu tienda. Podés ver el detalle completo, cambiar estados, finalizar entregas y mantener todo organizado.',
         sections: [
             {
-                title: 'Cómo operar',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Abrí un pedido con el ícono de ojo para ver productos, datos del cliente y totales.',
-                    'Marcá como finalizado con el ícono de tilde cuando ya esté entregado/pagado.',
-                    'Eliminá con el ícono de papelera solo si fue un pedido inválido o duplicado.'
+                    'Lista de pedidos con número de orden (#ID), estado (Pendiente / Realizado), nombre del cliente, fecha/hora y monto total.',
+                    'Vista previa de los productos del pedido (imágenes circulares apiladas).',
+                    'Detalle completo: productos con cantidades, datos del cliente (nombre, dirección, teléfono), método de pago y totales.',
+                    'Paginación para navegar entre páginas de pedidos anteriores.'
                 ]
             },
             {
-                title: 'Notificación',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'El botón “Notificación pedidos” activa o mutea el sonido/alerta de nuevos pedidos (solo admins).'
+                    'Ver Detalle (ícono de ojo): abre el pedido completo con toda la info del cliente y los productos.',
+                    'Finalizar Pedido (ícono de tilde verde): marca como "Realizado" cuando ya fue entregado y pagado.',
+                    'Eliminar Pedido (ícono de papelera rojo): borra pedidos inválidos, duplicados o de prueba.',
+                    'Notificación de pedidos: activa/mutea el sonido de alerta cuando entra un nuevo pedido. Dice "Activa" o "Muteada".',
+                    'Navegar páginas: usá "Anterior" y "Siguiente" para recorrer el historial completo.'
+                ]
+            },
+            {
+                title: 'Consejo',
+                icon: 'tip',
+                bullets: [
+                    'Dejá las notificaciones activas durante el horario de atención para no perderte ningún pedido nuevo.'
                 ]
             }
         ]
     },
     products: {
         title: 'Productos',
-        description: 'Administrá tu catálogo: altas, edición, categorías, stock y visibilidad.',
+        color: 'blue',
+        description: 'El inventario completo de tu tienda. Desde acá creás, editás, organizás por categorías y controlás el stock y la visibilidad de cada producto.',
         sections: [
             {
-                title: 'Crear y organizar',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Usá “Agregar Producto” para cargar nombre, imagen, precio y stock.',
-                    'Usá “Categorías” para crear/editar categorías y ordenar el catálogo.'
+                    'Contador de productos: cuántos tenés vs. el límite de tu plan (ej: 12/30). Si estás cerca del límite, aparece advertencia amarilla.',
+                    'Lista de productos con imagen, nombre, precio de venta, stock actual y estado (activo/inactivo).',
+                    'Banner de advertencia si hay productos desactivados (por límite de plan o manualmente).',
+                    'Formulario expandido con todos los campos al crear o editar.'
                 ]
             },
             {
-                title: 'Stock y visibilidad',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'Revisá el stock para evitar vender sin disponibilidad.',
-                    'Si un producto está desactivado, no aparece en la tienda hasta reactivarlo.'
+                    'Agregar Producto: cargá nombre, precio de venta, precio de compra (costo), stock, categorías (múltiples), imagen, descuento (%) y descripción.',
+                    'Categorías: creá, editá, reordená y eliminá categorías. Un producto puede pertenecer a varias.',
+                    'Editar producto: modificá cualquier campo de un producto existente.',
+                    'Activar/Desactivar: un producto desactivado no aparece en la tienda. Usá el ícono de ojo para cambiar visibilidad.',
+                    'Eliminar producto: borralo definitivamente del catálogo.',
+                    'Subir imagen: seleccioná desde tu dispositivo, se comprime automáticamente.'
                 ]
             },
             {
                 title: 'Límites de plan',
+                icon: 'lock',
                 bullets: [
-                    'El contador muestra cuántos productos tenés según el plan; si estás cerca del límite, te avisa.'
+                    'Emprendedor: hasta 30 productos. Negocio: hasta 50. Premium: ilimitados.',
+                    'Si superás el límite al bajar de plan, los productos excedentes se desactivan automáticamente.'
                 ]
             }
         ]
     },
     promos: {
         title: 'Promos',
-        description: 'Creá combos/promociones armando un paquete de productos con un precio final.',
+        color: 'purple',
+        description: 'Creá combos y promociones atractivas armando paquetes de productos con un precio especial. Ideal para aumentar el ticket promedio y mover stock.',
         sections: [
             {
-                title: 'Crear una promo',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Poné nombre, precio e imagen (opcional) para mostrarla atractiva.',
-                    'Agregá productos al combo y ajustá cantidades.',
-                    'Guardá y revisá que el precio final tenga sentido vs. el costo.'
+                    'Lista de promos activas con nombre, imagen, precio del combo y productos incluidos.',
+                    'Costo real del combo (suma de precios base) vs. precio de venta para calcular si conviene.',
+                    'Formulario de creación/edición con vista previa de los productos incluidos.'
                 ]
             },
             {
-                title: 'Edición y limpieza',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'Editá una promo existente cuando cambien productos o precios.',
-                    'Eliminá promos viejas para mantener el panel ordenado.'
+                    'Crear Nueva Promo: poné nombre, precio final, imagen y descripción.',
+                    'Armar el combo: agregá productos del catálogo con la cantidad deseada. Podés mezclar varios productos.',
+                    'Ver costo real: el sistema calcula automáticamente cuánto cuestan los productos incluidos.',
+                    'Editar promo: modificá nombre, precio, productos o imagen de una promo existente.',
+                    'Eliminar promo: borrá combos viejos o que ya no quieras ofrecer.'
+                ]
+            },
+            {
+                title: 'Límites de plan',
+                icon: 'lock',
+                bullets: [
+                    'Emprendedor: hasta 1 promo activa. Negocio y Premium: promos ilimitadas.'
+                ]
+            }
+        ]
+    },
+    carousel: {
+        title: 'Carrusel de Banners',
+        color: 'cyan',
+        description: 'Personalizá los banners rotativos del home de tu tienda. Mostrá ofertas, productos destacados o promos con imágenes atractivas que rotan automáticamente.',
+        sections: [
+            {
+                title: 'Lo que podés ver',
+                icon: 'eye',
+                bullets: [
+                    'Toggle de activación: encendé o apagá el carrusel. Si está apagado, se muestra la imagen Hero tradicional.',
+                    'Velocidad de rotación: tiempo en segundos entre cada slide.',
+                    'Lista de slides existentes con imagen, orden, estado (habilitado/deshabilitado) y destino al hacer clic.',
+                    'Vista previa del producto o promo vinculada a cada slide.'
+                ]
+            },
+            {
+                title: 'Lo que podés hacer',
+                icon: 'zap',
+                bullets: [
+                    'Activar/Desactivar el carrusel completo con el toggle "Mostrar carrusel".',
+                    'Configurar velocidad: cambiá el tiempo de rotación automática en segundos.',
+                    'Agregar slide: subí una imagen, elegí la acción al hacer clic (solo mostrar, abrir producto o abrir promo), definí el orden y si está habilitado.',
+                    'Vincular a producto o promo: al hacer clic en el banner, se abre directamente el producto o promo que elegiste.',
+                    'Ordenar slides: usá el campo de orden (0 = primero, 1 = segundo, etc.).',
+                    'Habilitar/Deshabilitar slides individuales sin eliminarlos.',
+                    'Eliminar slides que ya no necesites.'
+                ]
+            },
+            {
+                title: 'Requisitos',
+                icon: 'lock',
+                bullets: [
+                    'Disponible desde el Plan Negocio. Con Plan Emprendedor el carrusel aparece bloqueado con opción para mejorar tu plan.'
                 ]
             }
         ]
     },
     coupons: {
-        title: 'Cupones',
-        description: 'Creá cupones de descuento por porcentaje o monto fijo, con límites y vencimiento.',
+        title: 'Cupones de Descuento',
+        color: 'pink',
+        description: 'Creá cupones de descuento por porcentaje o monto fijo para tus clientes. Configuralos con límites de uso, vencimiento y restricciones.',
         sections: [
             {
-                title: 'Configurar un cupón',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Definí el código (en mayúsculas), el tipo (porcentaje/fijo) y el valor.',
-                    'Opcional: mínimo de compra, límite de usos y fecha de vencimiento.',
-                    'Elegí si es público (para redes) o para un email específico.'
+                    'Lista de cupones creados con código, tipo de descuento, valor, estado y cantidad de usos.',
+                    'Formulario completo de creación con todos los campos configurables.',
+                    'Indicador de cupón vencido o agotado.'
                 ]
             },
             {
-                title: 'Usarlo y compartirlo',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'Copiá el código con el botón de copiar y pasalo por WhatsApp/Instagram.',
-                    'Eliminá cupones vencidos o que ya no quieras ofrecer.'
+                    'Crear cupón: definí código en mayúsculas (ej: VERANO2024), elegí tipo Porcentaje (%) o Fijo ($) y el valor.',
+                    'Mínimo de compra: opcionalmente, exigí un monto mínimo para poder usar el cupón.',
+                    'Límite de usos: definí cuántas veces se puede usar en total.',
+                    'Fecha de vencimiento: poné una fecha límite de validez.',
+                    'Público o privado: elegí si cualquiera puede usarlo o solo un email específico.',
+                    'Copiar código: usá el botón de copiar para compartir rápido por WhatsApp o Instagram.',
+                    'Eliminar cupones vencidos o que ya no quieras ofrecer.'
                 ]
             },
             {
-                title: 'Planes',
+                title: 'Requisitos',
+                icon: 'lock',
                 bullets: [
-                    'Si tu plan no habilita cupones, vas a ver el panel bloqueado y un acceso a planes.'
+                    'Disponible desde el Plan Negocio. Con Plan Emprendedor el panel aparece bloqueado con acceso a ver planes.'
                 ]
             }
         ]
     },
     suppliers: {
         title: 'Proveedores',
-        description: 'Guardá proveedores y vinculalos a los productos que te abastecen.',
+        color: 'emerald',
+        description: 'Organizá tu red de proveedores con toda su información de contacto y vinculalos a los productos que te abastecen. Todo centralizado en un solo lugar.',
         sections: [
             {
-                title: 'Alta y datos',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Creá un proveedor con nombre, contacto, teléfono, IG y dirección (si aplica).',
-                    'Asociá productos para tener referencia rápida de qué compra va con quién.'
+                    'Lista de proveedores con nombre, contacto, teléfono, Instagram, dirección y CUIT.',
+                    'Productos asociados a cada proveedor para saber qué comprás a quién.',
+                    'Modal de creación/edición con todos los campos.'
                 ]
             },
             {
-                title: 'Mantenimiento',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'Editá cuando cambie un contacto o dato fiscal.',
-                    'Eliminá si ya no trabajás con ese proveedor.'
+                    'Nuevo Proveedor: cargá nombre, persona de contacto, teléfono, Instagram, dirección y CUIT/datos fiscales.',
+                    'Asociar productos: vinculá productos del catálogo al proveedor para referencia rápida.',
+                    'Editar proveedor: actualizá cualquier dato cuando cambie contacto, dirección o datos fiscales.',
+                    'Eliminar proveedor: borrá proveedores con los que ya no trabajás.'
+                ]
+            },
+            {
+                title: 'Consejo',
+                icon: 'tip',
+                bullets: [
+                    'Mantené actualizados los datos de contacto y asociá siempre los productos. Así cuando necesites reponer stock, sabés exactamente a quién llamar.'
                 ]
             }
         ]
     },
     purchases: {
         title: 'Compras / Stock',
-        description: 'Registrá reposiciones de stock y llevá historial de compras a proveedores.',
+        color: 'amber',
+        description: 'Registrá las reposiciones de stock y llevá un historial completo de compras a proveedores. El sistema ajusta el stock automáticamente al guardar.',
         sections: [
             {
-                title: 'Registrar reposición',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Elegí el producto existente, poné cantidad y seleccioná el proveedor.',
-                    'El sistema calcula un costo estimado y ajusta el stock al guardar.'
+                    'Formulario de nueva compra con selector de producto, cantidad, proveedor y costo.',
+                    'Historial completo de compras pasadas con fecha, producto, cantidad, proveedor y costo total.',
+                    'Stock actual del producto seleccionado antes de registrar la reposición.'
                 ]
             },
             {
-                title: 'Historial y correcciones',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'Usá el historial para revisar compras pasadas.',
-                    'Editar una compra puede ajustar el stock automáticamente: revisalo antes de guardar.'
+                    'Registrar reposición: elegí el producto, poné la cantidad comprada y seleccioná el proveedor.',
+                    'Costo estimado: el sistema calcula automáticamente basándose en el precio de compra del producto.',
+                    'Ajuste automático de stock: al guardar, el stock se incrementa con la cantidad comprada.',
+                    'Ver historial: revisá todas las compras pasadas ordenadas por fecha.',
+                    'Editar compra: modificá una compra registrada (puede ajustar el stock automáticamente).',
+                    'Eliminar compra: borrá registros erróneos.'
+                ]
+            },
+            {
+                title: 'Consejo',
+                icon: 'tip',
+                bullets: [
+                    'Registrá cada reposición apenas la recibas para que el stock siempre esté actualizado y no vendas sin disponibilidad.'
                 ]
             }
         ]
     },
     finance: {
-        title: 'Finanzas',
-        description: 'Registrá inversiones/aportes y gastos para entender el capital y la rentabilidad.',
+        title: 'Finanzas y Capital',
+        color: 'green',
+        description: 'El centro financiero de tu negocio. Registrá inversiones, gastos y visualizá la distribución automática de ganancias entre socios según el capital aportado.',
         sections: [
             {
-                title: 'Registrar movimientos',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Cargá inversiones/aportes con socio, monto y fecha.',
-                    'Cargá gastos/egresos con descripción, categoría y fecha.'
+                    'Formulario de inversión/aporte con selector de socio, monto, fecha y notas.',
+                    'Formulario de gasto/egreso con descripción, monto y categoría (General, Servicios, Impuestos, Mantenimiento, Marketing, Sueldos, Otros).',
+                    'Historial de Inversiones: lista cronológica de aportes con inversor, fecha, notas y monto.',
+                    'Historial de Gastos: lista cronológica con descripción, categoría, fecha y monto.',
+                    'Distribución de Ganancias: tabla automática con cada socio, capital aportado, % de participación y ganancia estimada.',
+                    'Barra visual de distribución proporcional entre socios con colores distintos.'
                 ]
             },
             {
-                title: 'Lectura',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'Usá los totales para ver capital, egresos e impacto en el resultado.',
-                    'Mantené al día los gastos para que el beneficio estimado sea realista.'
+                    'Registrar Inversión/Aporte: elegí el socio (o "Otro/Externo"), poné monto, fecha y notas opcionales.',
+                    'Registrar Gasto/Egreso: cargá descripción, monto y categoría. La fecha se registra automáticamente.',
+                    'Eliminar inversiones o gastos erróneos desde el historial (ícono de papelera).',
+                    'Ver distribución de ganancias: se calcula automáticamente según el % de inversión de cada socio sobre el beneficio neto.'
+                ]
+            },
+            {
+                title: 'Consejo',
+                icon: 'tip',
+                bullets: [
+                    'Cargá todos los gastos recurrentes (internet, alquiler, servicios) para que el beneficio neto sea realista. La distribución es tan precisa como los datos que cargues.'
                 ]
             }
         ]
     },
     users: {
-        title: 'Usuarios',
-        description: 'Administrá cuentas: búsqueda, roles y auditoría para soporte.',
+        title: 'Gestión de Usuarios',
+        color: 'pink',
+        description: 'Control total sobre las cuentas de tu tienda. Buscá, filtrá por rol, gestioná perfiles, editá permisos y auditá la actividad de cada usuario incluyendo su carrito en vivo.',
         sections: [
             {
-                title: 'Buscar y filtrar',
+                title: 'Lo que podés ver',
+                icon: 'eye',
                 bullets: [
-                    'Buscá por nombre, email o usuario desde la barra.',
-                    'Filtrá por rol para encontrar rápido admins/usuarios.'
+                    'Tabla de usuarios con avatar, nombre, email, ID corto y fecha de registro.',
+                    'Actividad y estadísticas: cantidad de favoritos y pedidos realizados por cada usuario.',
+                    'Rol actual (Admin o Usuario) con badge visual.',
+                    'Carrito en vivo: qué tiene cada usuario en su carrito en ese momento.',
+                    'Filtros rápidos por rol: Todos, Admin, Usuario.'
                 ]
             },
             {
-                title: 'Gestión',
+                title: 'Lo que podés hacer',
+                icon: 'zap',
                 bullets: [
-                    'Editá el perfil o permisos según necesidad.',
-                    'Usá la auditoría para entender carritos/actividad si hay reclamos.'
+                    'Buscar usuarios: usá la barra para encontrar por nombre o email.',
+                    'Filtrar por rol: seleccioná "Admin" o "Usuario" para ver solo un tipo.',
+                    'Ver Carrito en Vivo: auditá qué tiene un usuario en su carrito actual (útil para soporte y reclamos).',
+                    'Editar Perfil (ícono de lápiz): modificá datos del usuario como nombre, imagen o permisos.',
+                    'Seguridad y Acceso (ícono de candado): gestioná contraseña y acceso del usuario.',
+                    'Los usuarios verificados tienen un check naranja junto a su nombre.'
+                ]
+            },
+            {
+                title: 'Requisitos',
+                icon: 'lock',
+                bullets: [
+                    'Las estadísticas de actividad (favoritos, pedidos, carrito en vivo) requieren Plan Negocio o superior. Con Plan Emprendedor esa sección aparece borrosa.'
+                ]
+            }
+        ]
+    },
+    settings: {
+        title: 'Configuración',
+        color: 'slate',
+        description: 'La configuración avanzada de tu tienda. Desde acá se ajustan todos los parámetros técnicos, de apariencia, pagos, envíos y más. Administrada por el desarrollador.',
+        sections: [
+            {
+                title: 'Sub-secciones disponibles',
+                icon: 'eye',
+                bullets: [
+                    'Tienda: nombre, logo, descripción y datos generales de tu negocio.',
+                    'Apariencia: colores, tema visual y personalización del diseño.',
+                    'Redes Sociales: links a Instagram, Facebook, TikTok y otras redes.',
+                    'Pagos: configuración de Mercado Pago, transferencia bancaria y pago en efectivo.',
+                    'Ticket: personalización del comprobante/ticket de compra.',
+                    'Envíos: métodos de envío, costos y zonas de cobertura.',
+                    'SEO: meta tags, título, descripción para buscadores y redes sociales.',
+                    'Avanzado: configuraciones técnicas del sistema.',
+                    'Equipo: gestión de miembros del equipo (socios, editores).'
+                ]
+            },
+            {
+                title: 'Importante',
+                icon: 'lock',
+                bullets: [
+                    'Esta sección está reservada para el desarrollador de la plataforma.',
+                    'Si necesitás cambios en la configuración, contactá al desarrollador con los detalles.',
+                    'No modifiques valores sin entender el impacto, ya que puede afectar el funcionamiento de la tienda.'
                 ]
             }
         ]
@@ -1251,14 +1450,34 @@ function AdminHowToUse({ guideKey }) {
     const guide = ADMIN_PANEL_GUIDES[guideKey];
     if (!guide) return null;
 
+    const colorMap = {
+        orange: { border: 'border-orange-500/30', bg: 'bg-orange-500/10', text: 'text-orange-400', dot: 'bg-orange-500', glow: 'shadow-orange-500/20' },
+        green: { border: 'border-green-500/30', bg: 'bg-green-500/10', text: 'text-green-400', dot: 'bg-green-500', glow: 'shadow-green-500/20' },
+        blue: { border: 'border-blue-500/30', bg: 'bg-blue-500/10', text: 'text-blue-400', dot: 'bg-blue-500', glow: 'shadow-blue-500/20' },
+        purple: { border: 'border-purple-500/30', bg: 'bg-purple-500/10', text: 'text-purple-400', dot: 'bg-purple-500', glow: 'shadow-purple-500/20' },
+        cyan: { border: 'border-cyan-500/30', bg: 'bg-cyan-500/10', text: 'text-cyan-400', dot: 'bg-cyan-500', glow: 'shadow-cyan-500/20' },
+        pink: { border: 'border-pink-500/30', bg: 'bg-pink-500/10', text: 'text-pink-400', dot: 'bg-pink-500', glow: 'shadow-pink-500/20' },
+        emerald: { border: 'border-emerald-500/30', bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-500', glow: 'shadow-emerald-500/20' },
+        amber: { border: 'border-amber-500/30', bg: 'bg-amber-500/10', text: 'text-amber-400', dot: 'bg-amber-500', glow: 'shadow-amber-500/20' },
+        slate: { border: 'border-slate-500/30', bg: 'bg-slate-500/10', text: 'text-slate-400', dot: 'bg-slate-500', glow: 'shadow-slate-500/20' },
+    };
+    const c = colorMap[guide.color] || colorMap.orange;
+
+    const sectionIconMap = {
+        eye: { Icon: Eye, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+        zap: { Icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+        tip: { Icon: Lightbulb, color: 'text-green-400', bg: 'bg-green-500/10' },
+        lock: { Icon: Lock, color: 'text-red-400', bg: 'bg-red-500/10' },
+    };
+
     return (
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="px-4 py-2 rounded-xl bg-slate-900/60 hover:bg-slate-900 text-slate-300 hover:text-white border border-slate-800 transition flex items-center gap-2 font-black text-[10px] uppercase tracking-widest"
+                className={`px-4 py-2.5 rounded-xl ${c.bg} hover:brightness-125 ${c.text} border ${c.border} transition-all duration-200 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest hover:shadow-lg ${c.glow} group`}
                 type="button"
             >
-                <FileQuestion className="w-4 h-4" />
+                <HelpCircle className="w-4 h-4 group-hover:rotate-12 transition-transform" />
                 Cómo usar
             </button>
 
@@ -1270,42 +1489,69 @@ function AdminHowToUse({ guideKey }) {
                     aria-modal="true"
                 >
                     <div
-                        className="w-full max-w-2xl bg-[#0a0a0a] border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden"
+                        className={`w-full max-w-2xl bg-[#0a0a0a] border ${c.border} rounded-[2rem] shadow-2xl overflow-hidden animate-fade-up`}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-start justify-between gap-4 p-6 border-b border-slate-800">
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Guía rápida</p>
-                                <h2 className="text-2xl font-black text-white mt-1">Cómo usar: {guide.title}</h2>
-                                <p className="text-slate-400 text-sm mt-2">{guide.description}</p>
-                            </div>
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition"
-                                type="button"
-                                aria-label="Cerrar"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar space-y-6">
-                            {(guide.sections || []).map((section, idx) => (
-                                <div key={idx} className="bg-slate-900/20 border border-slate-800 rounded-2xl p-5">
-                                    <h3 className="text-white font-black">{section.title}</h3>
-                                    <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-slate-300">
-                                        {(section.bullets || []).map((b, i) => (
-                                            <li key={i}>{b}</li>
-                                        ))}
-                                    </ul>
+                        <div className={`relative p-6 md:p-8 border-b border-slate-800/50 overflow-hidden`}>
+                            <div className={`absolute inset-0 ${c.bg} opacity-30`}></div>
+                            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-10" style={{ background: `radial-gradient(circle, var(--tw-gradient-stops))` }}></div>
+                            <div className="relative flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`w-2 h-2 rounded-full ${c.dot} animate-pulse`}></span>
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${c.text}`}>Guía Rápida</p>
+                                    </div>
+                                    <h2 className="text-xl md:text-2xl font-black text-white mt-1 leading-tight">{guide.title}</h2>
+                                    <p className="text-slate-400 text-sm mt-3 leading-relaxed">{guide.description}</p>
                                 </div>
-                            ))}
+                                <button
+                                    onClick={() => setIsOpen(false)}
+                                    className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700 transition-all hover:scale-105 flex-shrink-0"
+                                    type="button"
+                                    aria-label="Cerrar"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="p-6 border-t border-slate-800 flex justify-end">
+                        <div className="p-5 md:p-6 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-4">
+                            {(guide.sections || []).map((section, idx) => {
+                                const si = sectionIconMap[section.icon] || sectionIconMap.eye;
+                                return (
+                                    <div key={idx} className="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 hover:border-slate-700 transition-colors">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className={`w-8 h-8 rounded-lg ${si.bg} flex items-center justify-center flex-shrink-0`}>
+                                                <si.Icon className={`w-4 h-4 ${si.color}`} />
+                                            </div>
+                                            <h3 className="text-white font-black text-sm">{section.title}</h3>
+                                        </div>
+                                        <ul className="space-y-2.5 ml-1">
+                                            {(section.bullets || []).map((b, i) => {
+                                                const parts = b.split(':');
+                                                const hasLabel = parts.length > 1 && parts[0].length < 40;
+                                                return (
+                                                    <li key={i} className="flex gap-3 text-[13px] leading-relaxed">
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${c.dot} mt-[7px] flex-shrink-0 opacity-60`}></span>
+                                                        <span className="text-slate-300">
+                                                            {hasLabel ? (
+                                                                <><span className="text-white font-bold">{parts[0]}:</span>{parts.slice(1).join(':')}</>
+                                                            ) : b}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="p-5 md:p-6 border-t border-slate-800/50 flex items-center justify-between gap-4">
+                            <p className="text-[10px] text-slate-600 font-mono uppercase tracking-wider hidden sm:block">Panel Admin v3.0</p>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black transition"
+                                className={`px-6 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black transition-all shadow-lg shadow-orange-600/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98]`}
                                 type="button"
                             >
                                 Entendido
@@ -1381,8 +1627,7 @@ function App() {
     const orderAlarmContextRef = useRef(null);
     const orderAlarmIntervalRef = useRef(null);
     const orderAlarmActiveRef = useRef(false);
-    const orderAlarmToastShownRef = useRef(false);
-    const orderAlarmUnlockListenerActiveRef = useRef(false);
+    const orderAlarmEagerUnlockDoneRef = useRef(false);
     const lastOrdersSeenWriteRef = useRef(null);
 
 
@@ -2058,37 +2303,12 @@ function App() {
         if (adminOrderAlarmMuted) return;
         if (orderAlarmActiveRef.current) return;
 
-        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextCtor) return;
-
-        const ensureUnlocked = () => {
-            if (orderAlarmUnlockListenerActiveRef.current) return;
-            orderAlarmUnlockListenerActiveRef.current = true;
-            window.addEventListener('pointerdown', async () => {
-                orderAlarmUnlockListenerActiveRef.current = false;
-                try {
-                    if (!orderAlarmContextRef.current) {
-                        orderAlarmContextRef.current = new AudioContextCtor();
-                    }
-                    if (orderAlarmContextRef.current?.state === 'suspended') {
-                        await orderAlarmContextRef.current.resume();
-                    }
-                } catch (e) { }
-                if (hasUnseenOrders && !(view === 'admin' && adminTab === 'orders') && !adminOrderAlarmMuted) {
-                    startOrderAlarm();
-                }
-            }, { once: true, capture: true });
-        };
-
         const ctx = orderAlarmContextRef.current;
-        if (!ctx) {
-            if (!orderAlarmToastShownRef.current) {
-                showToast('Pedido nuevo: tocá/clic para habilitar sonido', 'warning');
-                orderAlarmToastShownRef.current = true;
-            }
-            ensureUnlocked();
-            return;
-        }
+        if (!ctx || ctx.state === 'closed') return;
+
+        try {
+            if (ctx.state === 'suspended') await ctx.resume();
+        } catch (e) { return; }
 
         const scheduleBeep = (at) => {
             const osc = ctx.createOscillator();
@@ -2113,7 +2333,7 @@ function App() {
         orderAlarmActiveRef.current = true;
         tick();
         orderAlarmIntervalRef.current = setInterval(tick, 2000);
-    }, [isAdminUser, adminOrderAlarmMuted, hasUnseenOrders, view, adminTab]);
+    }, [isAdminUser, adminOrderAlarmMuted]);
 
     useEffect(() => {
         const rawHostname = (typeof window !== 'undefined' && window.location && window.location.hostname)
@@ -2306,6 +2526,28 @@ function App() {
             markOrdersSeen(latestOrderIso);
         }
     }, [isAdminUser, settingsLoaded, settings?.ordersLastSeenIso, orders.length, latestOrderIso, markOrdersSeen, stopOrderAlarm]);
+
+    useEffect(() => {
+        if (!isAdminUser) return;
+        if (orderAlarmEagerUnlockDoneRef.current) return;
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) return;
+
+        const handler = async () => {
+            try {
+                if (!orderAlarmContextRef.current) {
+                    orderAlarmContextRef.current = new AudioContextCtor();
+                }
+                if (orderAlarmContextRef.current?.state === 'suspended') {
+                    await orderAlarmContextRef.current.resume();
+                }
+            } catch (e) { }
+            orderAlarmEagerUnlockDoneRef.current = true;
+        };
+
+        window.addEventListener('pointerdown', handler, { once: true, capture: true });
+        return () => window.removeEventListener('pointerdown', handler, true);
+    }, [isAdminUser]);
 
     useEffect(() => {
         if (!isAdminUser) {
@@ -2801,34 +3043,66 @@ function App() {
 
         const unsubscribeFunctions = [];
 
+        const adminSnapshotError = (label) => (error) => {
+            console.error(`[Admin] Error cargando ${label}:`, error?.code || error?.message || error);
+        };
+
+        const fetchUsersViaApi = async () => {
+            try {
+                const token = await auth.currentUser?.getIdToken();
+                if (!token) return;
+                const res = await fetch('/api/admin?action=list-users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'x-store-id': appId || '' },
+                    body: JSON.stringify({})
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data.users)) setUsers(data.users);
+                }
+            } catch (e) {
+                console.error('[Admin] Fallback API list-users failed:', e);
+            }
+        };
+
+        let usersReceivedFromSnapshot = false;
         unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
-                setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                usersReceivedFromSnapshot = true;
+                const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                setUsers(docs);
+                if (docs.length === 0) fetchUsersViaApi();
+            }, (error) => {
+                console.error('[Admin] Error cargando users:', error?.code || error?.message || error);
+                fetchUsersViaApi();
             })
         );
+        const fallbackTimer = setTimeout(() => {
+            if (!usersReceivedFromSnapshot) fetchUsersViaApi();
+        }, 4000);
 
         unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => {
                 setSuppliers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            })
+            }, adminSnapshotError('suppliers'))
         );
 
         unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), snapshot => {
                 setExpenses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            })
+            }, adminSnapshotError('expenses'))
         );
 
         unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'purchases'), snapshot => {
                 setPurchases(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            })
+            }, adminSnapshotError('purchases'))
         );
 
         unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), snapshot => {
                 setInvestments(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            })
+            }, adminSnapshotError('investments'))
         );
 
         unsubscribeFunctions.push(
@@ -2837,10 +3111,13 @@ function App() {
                     .map(d => ({ id: d.id, ...d.data() }))
                     .filter(c => c.items && c.items.length > 0);
                 setLiveCarts(activeCarts);
-            })
+            }, adminSnapshotError('carts'))
         );
 
-        return () => unsubscribeFunctions.forEach(unsub => unsub());
+        return () => {
+            clearTimeout(fallbackTimer);
+            unsubscribeFunctions.forEach(unsub => unsub());
+        };
     }, [currentUser?.role, appId, view]);
 
     // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
@@ -4245,6 +4522,35 @@ function App() {
 
         openConfirm("Venta Manual", `¿Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
             try {
+                const price = Number(product.basePrice) || 0;
+                const newOrder = {
+                    orderId: `man-${Date.now().toString().slice(-6)}`,
+                    userId: 'manual_admin',
+                    customer: {
+                        name: 'Cliente Mostrador',
+                        email: 'offline@store.com',
+                        phone: '-',
+                        dni: '-'
+                    },
+                    items: [{
+                        productId: product.id,
+                        title: product.name,
+                        quantity: 1,
+                        unit_price: price,
+                        image: product.image || ''
+                    }],
+                    subtotal: price,
+                    discount: 0,
+                    total: price,
+                    status: 'Realizado',
+                    date: new Date().toISOString(),
+                    shippingAddress: 'Entrega Presencial (Offline)',
+                    paymentMethod: 'Efectivo',
+                    source: 'manual_sale',
+                    notes: 'Venta presencial rápida'
+                };
+
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
                     stock: increment(-1)
                 });
@@ -6243,10 +6549,10 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full h-[200px] sm:h-[250px] md:h-[350px] 2xl:h-[450px] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                        <div className={`relative w-full h-[280px] sm:h-[300px] md:h-[350px] 2xl:h-[450px] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
-                            <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
+                            <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
                             <HomeBannerCarouselBackground
                                 settingsLoaded={settingsLoaded}
                                 banners={settings?.showHomeBannerCarousel === false ? [] : homeBanners}
@@ -6257,7 +6563,7 @@ function App() {
                             />
 
                             {/* Overlay de Texto */}
-                            <div className={`absolute inset-0 flex flex-col justify-end sm:justify-center px-4 pb-4 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/25 via-white/10 to-transparent'}`}>
+                            <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-3 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/70 sm:from-[#050505] sm:via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/40 via-white/20 sm:from-white/25 sm:via-white/10 to-transparent'}`}>
                                 <div className="max-w-2xl animate-fade-up">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
@@ -6274,10 +6580,10 @@ function App() {
                                         </>
                                     ) : (
                                         <>
-                                            <span className="bg-orange-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
+                                            <span className="bg-orange-500 text-black px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-2 sm:mb-4 inline-block">
                                                 {settings?.heroBadge || ''}
                                             </span>
-                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.9] mb-2 sm:mb-4 ${darkMode ? 'text-white drop-shadow-2xl' : 'text-slate-900'}`}>
+                                            <h1 className={`text-lg sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 ${darkMode ? 'text-white drop-shadow-2xl' : 'text-slate-900'}`}>
                                                 {settings?.heroTitle1 || ''} <br />
                                                 <span className={`text-transparent bg-clip-text bg-gradient-to-r ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || ''}
@@ -6286,12 +6592,12 @@ function App() {
                                             <p className={`text-xs sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-medium hidden sm:block ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                                 {settings?.heroSubtitle || ''}
                                             </p>
-                                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
-                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-5 py-2.5 sm:px-8 sm:py-4 bg-white text-black font-black text-sm sm:text-base rounded-xl hover:bg-orange-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn pointer-events-auto">
-                                                    VER CATÁLOGO <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
+                                            <div className="flex flex-row items-center gap-2 sm:gap-4">
+                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-4 py-2 sm:px-8 sm:py-4 bg-white text-black font-black text-xs sm:text-base rounded-xl hover:bg-orange-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn pointer-events-auto">
+                                                    VER CATÁLOGO <ArrowRight className="w-3.5 h-3.5 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
-                                                <button onClick={() => setView('guide')} className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-2 transition font-bold text-xs group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
-                                                    <Info className={`w-4 h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Ayuda
+                                                <button onClick={() => setView('guide')} className={`px-3 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition font-bold text-[11px] sm:text-xs group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
+                                                    <Info className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Ayuda
                                                 </button>
                                             </div>
                                         </>
@@ -8409,24 +8715,22 @@ function App() {
                                     {/* TAB: CUPONES (GESTIÓN AVANZADA) */}
                                     {adminTab === 'coupons' && (
                                         <div className="max-w-5xl mx-auto animate-fade-up pb-20 relative">
-
-                                            {/* Overlay for Entrepreneur Plan */}
-                                            {(settings?.subscriptionPlan === 'entrepreneur' || !settings?.subscriptionPlan) && (
-                                                <button
-                                                    onClick={() => setShowPlansModal(true)}
-                                                    className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md rounded-[2.5rem] cursor-pointer hover:bg-black/70 transition group"
-                                                >
-                                                    <div className="text-center p-8 max-w-md">
-                                                        <div className="w-20 h-20 mx-auto mb-6 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30 group-hover:scale-110 transition">
-                                                            <Lock className="w-10 h-10 text-purple-400" />
-                                                        </div>
-                                                        <h3 className="text-2xl font-black text-white mb-4">Cupones Bloqueados</h3>
-                                                        <p className="text-slate-400 mb-6">Los cupones de descuento están disponibles a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>.</p>
-                                                        <p className="text-sm text-white/60 group-hover:text-white transition">Clic para ver planes disponibles</p>
+                                            {!['business', 'premium'].includes(settings?.subscriptionPlan) ? (
+                                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                                    <div className="w-20 h-20 bg-yellow-900/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
+                                                        <Lock className="w-10 h-10 text-yellow-500" />
                                                     </div>
-                                                </button>
-                                            )}
-
+                                                    <h3 className="text-2xl font-black text-white mb-4">Cupones Bloqueados</h3>
+                                                    <p className="text-slate-400 mb-6 max-w-md">Los cupones de descuento están disponibles a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>. Mejorá tu plan para gestionar cupones en tu tienda.</p>
+                                                    <button
+                                                        onClick={() => setShowPlansModal(true)}
+                                                        className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
+                                                    >
+                                                        <Zap className="w-5 h-5" /> Ver Planes Disponibles
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                            <>
                                             <div className="relative z-30 flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
                                                 <h1 className="text-3xl font-black text-white">Gestión de Cupones</h1>
                                                 <AdminHowToUse guideKey="coupons" />
@@ -8570,6 +8874,8 @@ function App() {
                                                     </div>
                                                 ))}
                                             </div>
+                                            </>
+                                            )}
                                         </div>
                                     )}
 
@@ -9502,6 +9808,7 @@ function App() {
                                                             <h1 className="text-3xl md:text-4xl font-black text-white neon-text">Carrusel</h1>
                                                             <p className="text-slate-500 mt-2">Administrá los banners rotativos del home de tu tienda.</p>
                                                         </div>
+                                                        <AdminHowToUse guideKey="carousel" />
                                                     </div>
 
                                                     <div className="space-y-6">
@@ -9772,9 +10079,12 @@ function App() {
                                                 </div>
                                             )}
 
-                                            <h1 className="text-4xl font-black text-white neon-text mb-8 flex items-center gap-3">
-                                                <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
-                                            </h1>
+                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                <h1 className="text-4xl font-black text-white neon-text flex items-center gap-3">
+                                                    <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
+                                                </h1>
+                                                <AdminHowToUse guideKey="settings" />
+                                            </div>
 
                                             {/* Sub-Navigation Tabs */}
                                             <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-slate-800">
