@@ -117,7 +117,14 @@ export default async function handler(req, res) {
         }
 
         // Generate the reset link using Firebase Admin
-        const resetLink = await adminSdk.auth().generatePasswordResetLink(email);
+        const firebaseLink = await adminSdk.auth().generatePasswordResetLink(email);
+
+        // Extract oobCode from Firebase link and build custom URL
+        const firebaseUrl = new URL(firebaseLink);
+        const oobCode = firebaseUrl.searchParams.get('oobCode');
+        const host = req.headers?.host || 'sustore.vercel.app';
+        const protocol = host.includes('localhost') ? 'http' : 'https';
+        const resetLink = `${protocol}://${host}/reset-password.html?mode=resetPassword&oobCode=${encodeURIComponent(oobCode)}`;
 
         // Get store brand name for the email
         let brandName = 'Sustore';
