@@ -6,7 +6,7 @@ import {
     ChevronRight, Search, Plus, Filter, Download, MoreVertical,
     Clock, CheckCircle, AlertCircle, Trash2, Edit2, Copy, ExternalLink,
     ChevronLeft, Mail, Phone, MapPin, User, Calendar, CreditCard,
-    ArrowUpRight, ArrowDownRight, Zap, Star, ShieldCheck, HelpCircle
+    ArrowUpRight, ArrowDownRight, Zap, Star, ShieldCheck, HelpCircle, Play, Lock
 } from 'lucide-react';
 
 // Sub-componentes internos de Admin
@@ -369,6 +369,15 @@ const AdminPanel = ({
                     {(isAdmin(currentUser?.email) || isEditor(currentUser?.email)) && (
                         <button onClick={() => { setAdminTab('promos'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'promos' ? 'bg-purple-900/20 text-purple-400 border border-purple-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                             <Tag className="w-5 h-5" /> Promos
+                        </button>
+                    )}
+
+                    {isAdmin(currentUser?.email) && (
+                        <button onClick={() => { setAdminTab('carousel'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'carousel' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                            <Play className="w-5 h-5" /> Carrusel
+                            {!['business', 'premium'].includes(settings?.subscriptionPlan) && (
+                                <Lock className="w-3 h-3 text-yellow-500 ml-auto" />
+                            )}
                         </button>
                     )}
 

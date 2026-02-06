@@ -197,13 +197,13 @@ const CheckoutPanel = ({
                                 <CardIcon className="text-blue-500 w-6 h-6" /> Método de Pago
                             </h2>
                             <div className="grid grid-cols-2 gap-4">
-                                {settings?.payments?.cash?.enabled && (
+                                {settings?.paymentCash && (
                                     <button type="button" onClick={() => setCheckoutData({ ...checkoutData, paymentMethod: 'Cash' })} className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative ${checkoutData.paymentMethod === 'Cash' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}>
                                         <DollarSign className="w-8 h-8" />
                                         <span className="text-xs font-black uppercase">Efectivo</span>
                                     </button>
                                 )}
-                                {settings?.payments?.transfer?.enabled && (
+                                {settings?.paymentTransfer?.enabled && (
                                     <button type="button" onClick={() => setCheckoutData({ ...checkoutData, paymentMethod: 'Transfer' })} className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative ${checkoutData.paymentMethod === 'Transfer' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}>
                                         <Building className="w-8 h-8" />
                                         <span className="text-xs font-black uppercase">Transferencia</span>
@@ -244,7 +244,7 @@ const CheckoutPanel = ({
                                         <span>-${discountAmount.toLocaleString()}</span>
                                     </div>
                                 )}
-                                <div className="pt-4 border-t border-slate-800 flex justify-between items-end">
+                                <div className={`pt-4 border-t flex justify-between items-end ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                     <span className={`font-black text-lg ${darkMode ? 'text-white' : 'text-slate-900'}`}>TOTAL</span>
                                     <span className={`text-3xl font-black tracking-tighter ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>${finalTotal.toLocaleString()}</span>
                                 </div>

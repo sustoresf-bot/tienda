@@ -34,7 +34,7 @@ const BotProductCard = ({ product, onAdd }) => {
                             </button>
                             <span className="px-2 py-1 text-xs text-white font-bold min-w-[24px] text-center">{qty}</span>
                             <button
-                                onClick={() => setQty(Math.min(99, qty + 1))}
+                                onClick={() => setQty(Math.min(product.stock || 99, qty + 1))}
                                 className="px-2 py-1 text-slate-400 hover:text-white hover:bg-white/5 transition"
                             >
                                 +
@@ -391,13 +391,19 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
         // 0.3 Detectar Promociones/Cupones
         if (text.match(/\b(descuento|promo|cupon|oferta|codigo|rebaja)\b/)) {
-            const activeCoupons = safeCoupons.filter(c => c?.active);
+            const activeCoupons = safeCoupons.filter(c => {
+                if (!c?.code) return false;
+                const isNotExpired = !c.expirationDate || new Date(c.expirationDate) > new Date();
+                const usedCount = Array.isArray(c.usedBy) ? c.usedBy.length : 0;
+                const notExhausted = !c.usageLimit || usedCount < c.usageLimit;
+                return isNotExpired && notExhausted;
+            });
             const deals = safeProducts.filter(p => (Number(p?.discount) || 0) > 0 && (Number(p?.stock) || 0) > 0);
 
             if (activeCoupons.length > 0) {
                 const couponText = activeCoupons
                     .filter(c => c?.code)
-                    .map(c => `🎫 **${c.code}** (${c.discountType === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`)
+                    .map(c => `🎫 **${c.code}** (${c.type === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`)
                     .join("\n");
                 return { text: `¡Sí! Tenemos estos cupones disponibles para ti:\n\n${couponText}\n\n¡Úsalos al finalizar tu compra! 🛒` };
             } else if (deals.length > 0) {
@@ -686,7 +692,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                         </div>
                     </div>
 
-                    <div className="bg-[#111] px-4 py-2 border-b border-white/5">
+                    <div className={`px-4 py-2 border-b ${isDarkMode ? 'bg-[#111] border-white/5' : 'bg-slate-50 border-slate-200'}`}>
                         <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
                             {quickActions.map(a => (
                                 <button

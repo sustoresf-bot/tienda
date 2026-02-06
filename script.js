@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 // Lazy loaded components for code splitting
 const SustIABot = lazy(() => import('./components/SustIABot.js'));
 const AdminPanel = lazy(() => import('./components/AdminPanel.js'));
-const CheckoutPanel = lazy(() => import('./components/CheckoutPanel.js'));
+// const CheckoutPanel = lazy(() => import('./components/CheckoutPanel.js')); // Not rendered — checkout UI is inline in App
 import {
     ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
     Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home,
@@ -579,7 +579,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
 
     if (slides.length === 0) {
         return fallbackUrl ? (
-            <img src={fallbackUrl} style={{ opacity: imageOpacity }} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`} />
+            <img src={fallbackUrl} alt="Banner" style={{ opacity: imageOpacity }} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`} />
         ) : (
             <div className={`absolute inset-0 opacity-60 ${darkMode ? 'bg-gradient-to-br from-orange-900/40 via-[#0a0a0a] to-slate-900/40' : 'bg-gradient-to-br from-orange-200/60 via-white to-slate-200/60'}`}>
                 <div className={`absolute inset-0 bg-[url('/noise.svg')] ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
@@ -600,7 +600,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
             >
                 {slides.map((slide, idx) => (
                     <div key={slide.id || `${idx}-${slide.targetId || slide.productId || slide.promoId || 'slide'}`} className="w-full h-full flex-shrink-0 relative">
-                        <img src={slide.imageUrl} style={{ opacity: imageOpacity }} className={imageClass} />
+                        <img src={slide.imageUrl} alt="Banner" style={{ opacity: imageOpacity }} className={imageClass} />
                     </div>
                 ))}
             </div>
@@ -2533,10 +2533,8 @@ function App() {
         }
     }, [settings?.primaryColor, settings?.secondaryColor, settings?.accentColor]);
 
-    // Dark/Light Mode Effect
+    // Dark/Light Mode Effect (localStorage already saved in the dark mode sync effect above)
     useEffect(() => {
-        localStorage.setItem('sustore_dark_mode', JSON.stringify(darkMode));
-
         let lightModeStyle = document.getElementById('light-mode-styles');
         if (!lightModeStyle) {
             lightModeStyle = document.createElement('style');
@@ -4701,10 +4699,14 @@ function App() {
             if (o.items) {
                 o.items.forEach(item => {
                     const prod = products.find(p => p.id === item.productId || p.id === item.id);
-                    const cat = prod ? prod.category : 'Otros';
-                    if (!categoryStats[cat]) categoryStats[cat] = { name: cat, revenue: 0, items: 0, percentage: 0 };
-                    categoryStats[cat].revenue += (item.unit_price * item.quantity);
-                    categoryStats[cat].items += item.quantity;
+                    const cats = prod
+                        ? (Array.isArray(prod.categories) && prod.categories.length > 0 ? prod.categories : (prod.category ? [prod.category] : ['Otros']))
+                        : ['Otros'];
+                    cats.forEach(cat => {
+                        if (!categoryStats[cat]) categoryStats[cat] = { name: cat, revenue: 0, items: 0, percentage: 0 };
+                        categoryStats[cat].revenue += (item.unit_price * item.quantity);
+                        categoryStats[cat].items += item.quantity;
+                    });
                 });
             }
         });
@@ -4862,7 +4864,7 @@ function App() {
                                     <div key={idx} className={`flex justify-between items-center p-4 rounded-xl border transition group duration-300 ${darkMode ? 'bg-slate-900/40 border-slate-800 hover:border-orange-900/30' : 'bg-white border-slate-100 hover:border-orange-200 shadow-sm'}`}>
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 flex items-center justify-center rounded-lg p-1 shadow-md group-hover:scale-105 transition border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
-                                                {item.image ? <img src={item.image} className="w-full h-full object-contain" /> : <Package className="text-slate-400" />}
+                                                {item.image ? <img src={item.image} alt={item.title || 'Producto'} className="w-full h-full object-contain" /> : <Package className="text-slate-400" />}
                                             </div>
                                             <div>
                                                 <p className={`font-bold text-sm transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</p>
@@ -5060,7 +5062,7 @@ function App() {
                     <div className={`md:w-1/2 p-8 md:p-12 flex flex-col ${darkMode ? 'bg-[#080808]' : 'bg-white'}`}>
                         <div className="mb-8">
                             <span className={`inline-block px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-4 border ${darkMode ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                                {isPromo ? 'COMBOS & PROMOCIONES' : selectedProduct.category}
+                                {isPromo ? 'COMBOS & PROMOCIONES' : (Array.isArray(selectedProduct.categories) && selectedProduct.categories.length > 0 ? selectedProduct.categories[0] : (selectedProduct.category || 'Sin categoría'))}
                             </span>
                             <h2 className={`text-3xl md:text-4xl font-black leading-[1.1] mb-6 ${darkMode ? 'text-white neon-text-small' : 'text-slate-900'}`}>{selectedProduct.name}</h2>
                             <p className={`text-sm md:text-base leading-relaxed line-clamp-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -5491,7 +5493,7 @@ function App() {
                     {cartItems.map((item, idx) => (
                         <div key={idx} className={`border p-4 rounded-2xl flex gap-4 transition group animate-fade-up transition-colors duration-300 ${darkMode ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.05] hover:border-orange-500/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-orange-200'}`} style={{ animationDelay: `${idx * 0.05}s` }}>
                             <div className={`w-16 h-16 rounded-xl overflow-hidden shadow-inner border flex-shrink-0 transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-white/5' : 'bg-white border-slate-200'}`}>
-                                <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} alt={item.name || 'Producto'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                             </div>
                             <div className="flex-1 flex flex-col justify-center">
                                 <p className={`font-bold text-sm leading-tight mb-1 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.name}</p>
@@ -6424,7 +6426,7 @@ function App() {
                                                             className={`aspect-square flex items-center justify-center relative overflow-hidden cursor-zoom-in ${darkMode ? 'bg-slate-900/50' : 'bg-slate-50'}`}
                                                             onClick={() => setSelectedProduct({ ...promo, isPromo: true, stock: maxPurchasable })}
                                                         >
-                                                            <img src={promo.image} className="w-full h-full object-contain transition duration-700 group-hover:scale-110" />
+                                                            <img src={promo.image} alt={promo.name || 'Promo'} className="w-full h-full object-contain transition duration-700 group-hover:scale-110" />
                                                             <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent ${darkMode ? 'from-[#0a0a0a]' : 'from-white/50'}`}></div>
                                                             <div className="absolute top-4 right-4 bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                                                                 Oferta Limitada
@@ -7183,7 +7185,7 @@ function App() {
                                             return (
                                                 <div key={fid} className={`p-4 rounded-2xl flex items-center gap-4 relative group transition border ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-slate-600' : 'bg-white border-slate-200 hover:border-orange-400 hover:shadow-md'}`}>
                                                     <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
-                                                        <img src={p.image} className="w-full h-full object-contain" />
+                                                        <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                     </div>
 
                                                     <div className="flex-1 min-w-0">
@@ -7482,6 +7484,16 @@ function App() {
                                         {(isAdmin(currentUser?.email) || isEditor(currentUser?.email)) && (
                                             <button onClick={() => { setAdminTab('promos'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'promos' ? 'bg-purple-900/20 text-purple-400 border border-purple-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
                                                 <Tag className="w-5 h-5" /> Promos
+                                            </button>
+                                        )}
+
+                                        {/* Carrusel - Available for business/premium plans */}
+                                        {isAdmin(currentUser?.email) && (
+                                            <button onClick={() => { setAdminTab('carousel'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'carousel' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <Play className="w-5 h-5" /> Carrusel
+                                                {!['business', 'premium'].includes(settings?.subscriptionPlan) && (
+                                                    <Lock className="w-3 h-3 text-yellow-500 ml-auto" />
+                                                )}
                                             </button>
                                         )}
 
@@ -9465,6 +9477,278 @@ function App() {
 
 
 
+                                    {/* TAB: CARRUSEL */}
+                                    {adminTab === 'carousel' && (
+                                        <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
+                                            {!['business', 'premium'].includes(settings?.subscriptionPlan) ? (
+                                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                                    <div className="w-20 h-20 bg-yellow-900/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
+                                                        <Lock className="w-10 h-10 text-yellow-500" />
+                                                    </div>
+                                                    <h3 className="text-2xl font-black text-white mb-4">Carrusel Bloqueado</h3>
+                                                    <p className="text-slate-400 mb-6 max-w-md">El carrusel de banners del home está disponible a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>. Mejorá tu plan para personalizar los slides de tu tienda.</p>
+                                                    <button
+                                                        onClick={() => setShowPlansModal(true)}
+                                                        className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
+                                                    >
+                                                        <Zap className="w-5 h-5" /> Ver Planes Disponibles
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                        <div>
+                                                            <h1 className="text-3xl md:text-4xl font-black text-white neon-text">Carrusel</h1>
+                                                            <p className="text-slate-500 mt-2">Administrá los banners rotativos del home de tu tienda.</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-6">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Play className="w-5 h-5 text-orange-400" /> Configuración del Carrusel
+                                                            </h3>
+
+                                                            <div className="space-y-6">
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Mostrar carrusel</p>
+                                                                            <p className="text-xs text-slate-500">Si está apagado, se usa la imagen Hero tradicional.</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showHomeBannerCarousel: settings?.showHomeBannerCarousel === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showHomeBannerCarousel !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showHomeBannerCarousel !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cambio automático (segundos)</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            min="1"
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={Number.isFinite(Number(settings?.homeBannerAutoplayMs)) ? Math.max(1, Math.round(Number(settings.homeBannerAutoplayMs) / 1000)) : 5}
+                                                                            onChange={(e) => {
+                                                                                const seconds = Number(e.target.value);
+                                                                                const safeSeconds = Number.isFinite(seconds) ? Math.max(1, seconds) : 5;
+                                                                                setSettings({ ...settings, homeBannerAutoplayMs: Math.round(safeSeconds * 1000) });
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                                    <div className="lg:col-span-1">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen del slide</label>
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="image/*"
+                                                                            onChange={(e) => handleImageUpload(e, setNewHomeBanner, 'imageUrl', 1400)}
+                                                                            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
+                                                                        />
+                                                                        {newHomeBanner?.imageUrl && (
+                                                                            <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-28">
+                                                                                <img src={newHomeBanner.imageUrl} className="w-full h-full object-cover" alt="Banner preview" />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="lg:col-span-2 space-y-4">
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Acción al hacer click</label>
+                                                                                <select
+                                                                                    className="input-cyber w-full p-3"
+                                                                                    value={newHomeBanner?.targetType || 'none'}
+                                                                                    onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetType: e.target.value, targetId: '' }))}
+                                                                                >
+                                                                                    <option value="none">Solo mostrar (sin link)</option>
+                                                                                    <option value="product">Abrir producto</option>
+                                                                                    <option value="promo">Abrir promo</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Orden (0 = primero)</label>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    className="input-cyber w-full p-3"
+                                                                                    value={Number.isFinite(Number(newHomeBanner?.order)) ? Number(newHomeBanner.order) : 0}
+                                                                                    onChange={(e) => setNewHomeBanner(prev => ({ ...prev, order: e.target.value }))}
+                                                                                />
+                                                                                <p className="text-xs text-slate-500 mt-2">Menor número aparece primero (0, 1, 2...).</p>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {newHomeBanner?.targetType !== 'none' && (
+                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                <div>
+                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                                        {newHomeBanner?.targetType === 'promo' ? 'Promo al hacer click' : 'Producto al hacer click'}
+                                                                                    </label>
+                                                                                    <select
+                                                                                        className="input-cyber w-full p-3"
+                                                                                        value={newHomeBanner?.targetId || ''}
+                                                                                        onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetId: e.target.value }))}
+                                                                                    >
+                                                                                        <option value="">Seleccionar...</option>
+                                                                                        {(newHomeBanner?.targetType === 'promo' ? [...promos] : [...products])
+                                                                                            .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''))
+                                                                                            .map(item => (
+                                                                                                <option key={item.id} value={item.id}>{item.name}</option>
+                                                                                            ))}
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 flex items-center gap-4">
+                                                                                    {(() => {
+                                                                                        const isPromo = newHomeBanner?.targetType === 'promo';
+                                                                                        const item = isPromo
+                                                                                            ? promos.find(p => p.id === newHomeBanner?.targetId)
+                                                                                            : products.find(p => p.id === newHomeBanner?.targetId);
+                                                                                        const img = isPromo ? item?.image : item?.image;
+                                                                                        return (
+                                                                                            <>
+                                                                                                <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
+                                                                                                    {img ? <img src={img} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon className="w-6 h-6 text-slate-600" />}
+                                                                                                </div>
+                                                                                                <div className="min-w-0">
+                                                                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Vista previa</p>
+                                                                                                    <p className="font-black text-white truncate">{item?.name || 'Sin selección'}</p>
+                                                                                                </div>
+                                                                                            </>
+                                                                                        );
+                                                                                    })()}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                                                            <div className="flex items-center justify-between flex-1 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                                <div>
+                                                                                    <p className="font-bold text-white">Slide habilitado</p>
+                                                                                    <p className="text-xs text-slate-500">Si está apagado no se muestra.</p>
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={() => setNewHomeBanner(prev => ({ ...prev, enabled: prev?.enabled === false ? true : false }))}
+                                                                                    className={`w-14 h-8 rounded-full transition relative ${newHomeBanner?.enabled !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                                >
+                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${newHomeBanner?.enabled !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                                </button>
+                                                                            </div>
+
+                                                                            <div className="flex gap-3">
+                                                                                {editingHomeBannerId && (
+                                                                                    <button
+                                                                                        onClick={resetHomeBannerForm}
+                                                                                        className="px-6 py-3 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition"
+                                                                                    >
+                                                                                        Cancelar
+                                                                                    </button>
+                                                                                )}
+                                                                                <button
+                                                                                    onClick={saveHomeBannerFn}
+                                                                                    className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition"
+                                                                                >
+                                                                                    {editingHomeBannerId ? 'Guardar Slide' : 'Agregar Slide'}
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-3">
+                                                                    {homeBanners.length === 0 ? (
+                                                                        <p className="text-slate-500 text-sm">Todavía no hay slides en el carrusel.</p>
+                                                                    ) : (
+                                                                        homeBanners.map(b => {
+                                                                            const targetType = b.targetType || (b.promoId ? 'promo' : b.productId ? 'product' : 'none');
+                                                                            const targetId = b.targetId || b.promoId || b.productId || '';
+                                                                            const targetItem = targetType === 'promo'
+                                                                                ? promos.find(p => p.id === targetId)
+                                                                                : targetType === 'product'
+                                                                                    ? products.find(p => p.id === targetId)
+                                                                                    : null;
+                                                                            const targetName = targetType === 'none'
+                                                                                ? 'Solo imagen'
+                                                                                : targetItem?.name || (targetType === 'promo' ? 'Promo inexistente' : 'Producto inexistente');
+                                                                            const isEnabled = b?.enabled !== false;
+                                                                            return (
+                                                                                <div key={b.id} className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-slate-900/40 rounded-2xl border border-slate-800">
+                                                                                    <div className="w-full md:w-40 h-20 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex-shrink-0">
+                                                                                        {b?.imageUrl ? (
+                                                                                            <img src={b.imageUrl} className="w-full h-full object-cover" alt="Slide" />
+                                                                                        ) : null}
+                                                                                    </div>
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <div className="flex items-center gap-3 flex-wrap">
+                                                                                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
+                                                                                                {targetItem?.image ? <img src={targetItem.image} className="w-full h-full object-cover" alt="Target" /> : <ImageIcon className="w-4 h-4 text-slate-600" />}
+                                                                                            </div>
+                                                                                            <p className="font-black text-white truncate">{targetName}</p>
+                                                                                            <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${isEnabled ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-800/30'}`}>
+                                                                                                {isEnabled ? 'ACTIVO' : 'PAUSADO'}
+                                                                                            </span>
+                                                                                            <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
+                                                                                                {targetType === 'promo' ? 'PROMO' : targetType === 'product' ? 'PRODUCTO' : 'SIN LINK'}
+                                                                                            </span>
+                                                                                            <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
+                                                                                                ORDEN {Number.isFinite(Number(b.order)) ? Number(b.order) : 0}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <p className="text-xs text-slate-500 mt-1 truncate">{targetType === 'none' ? 'Click desactivado' : targetId}</p>
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <button
+                                                                                            onClick={() => editHomeBannerFn(b)}
+                                                                                            className="px-4 py-2 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition flex items-center gap-2"
+                                                                                        >
+                                                                                            <Edit className="w-4 h-4" /> Editar
+                                                                                        </button>
+                                                                                        <button
+                                                                                            onClick={() => deleteHomeBannerFn(b)}
+                                                                                            className="px-4 py-2 rounded-xl font-bold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition flex items-center gap-2"
+                                                                                        >
+                                                                                            <Trash2 className="w-4 h-4" /> Eliminar
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        })
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Save Button for carousel settings - only for super admin */}
+                                                        {currentUser?.email === SUPER_ADMIN_EMAIL && (
+                                                        <div className="fixed bottom-8 right-8 z-50">
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        setIsLoading(true);
+                                                                        const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                                                                        await setDoc(settingsRef, settings, { merge: true });
+                                                                        showToast("Configuración del carrusel guardada", "success");
+                                                                    } catch (e) {
+                                                                        console.error(e);
+                                                                        showToast("Error al guardar", "error");
+                                                                    } finally {
+                                                                        setIsLoading(false);
+                                                                    }
+                                                                }}
+                                                                className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
+                                                            >
+                                                                <Save className="w-5 h-5" /> Guardar Cambios
+                                                            </button>
+                                                        </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+
                                     {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
                                     {adminTab === 'settings' && (
                                         <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
@@ -9601,12 +9885,14 @@ function App() {
                                                                 </div>
                                                                 <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
                                                                 <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
-                                                                <div className="text-2xl font-black text-purple-400 mb-6">$14.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                                                <div className="text-2xl font-black text-purple-400 mb-1">$13.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                                                <p className="text-xs text-green-400 font-bold mb-6">🔥 Oferta especial</p>
 
                                                                 <ul className="space-y-2 text-sm text-slate-300">
                                                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
                                                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
                                                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Carrusel de Banners</li>
                                                                 </ul>
                                                             </button>
 
@@ -10029,222 +10315,6 @@ function App() {
                                                                     <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
                                                                         <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Play className="w-5 h-5 text-orange-400" /> Carrusel Home
-                                                        </h3>
-
-                                                        <div className="space-y-6">
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                    <div>
-                                                                        <p className="font-bold text-white">Mostrar carrusel</p>
-                                                                        <p className="text-xs text-slate-500">Si está apagado, se usa la imagen Hero tradicional.</p>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showHomeBannerCarousel: settings?.showHomeBannerCarousel === false ? true : false })}
-                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showHomeBannerCarousel !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showHomeBannerCarousel !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cambio automático (segundos)</label>
-                                                                    <input
-                                                                        type="number"
-                                                                        min="1"
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={Number.isFinite(Number(settings?.homeBannerAutoplayMs)) ? Math.max(1, Math.round(Number(settings.homeBannerAutoplayMs) / 1000)) : 5}
-                                                                        onChange={(e) => {
-                                                                            const seconds = Number(e.target.value);
-                                                                            const safeSeconds = Number.isFinite(seconds) ? Math.max(1, seconds) : 5;
-                                                                            setSettings({ ...settings, homeBannerAutoplayMs: Math.round(safeSeconds * 1000) });
-                                                                        }}
-                                                                    />
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                                <div className="lg:col-span-1">
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen del slide</label>
-                                                                    <input
-                                                                        type="file"
-                                                                        accept="image/*"
-                                                                        onChange={(e) => handleImageUpload(e, setNewHomeBanner, 'imageUrl', 1400)}
-                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
-                                                                    />
-                                                                    {newHomeBanner?.imageUrl && (
-                                                                        <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-28">
-                                                                            <img src={newHomeBanner.imageUrl} className="w-full h-full object-cover" alt="Banner preview" />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                <div className="lg:col-span-2 space-y-4">
-                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Acción al hacer click</label>
-                                                                            <select
-                                                                                className="input-cyber w-full p-3"
-                                                                                value={newHomeBanner?.targetType || 'none'}
-                                                                                onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetType: e.target.value, targetId: '' }))}
-                                                                            >
-                                                                                <option value="none">Solo mostrar (sin link)</option>
-                                                                                <option value="product">Abrir producto</option>
-                                                                                <option value="promo">Abrir promo</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Orden (0 = primero)</label>
-                                                                            <input
-                                                                                type="number"
-                                                                                className="input-cyber w-full p-3"
-                                                                                value={Number.isFinite(Number(newHomeBanner?.order)) ? Number(newHomeBanner.order) : 0}
-                                                                                onChange={(e) => setNewHomeBanner(prev => ({ ...prev, order: e.target.value }))}
-                                                                            />
-                                                                            <p className="text-xs text-slate-500 mt-2">Menor número aparece primero (0, 1, 2...).</p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {newHomeBanner?.targetType !== 'none' && (
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                            <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                                    {newHomeBanner?.targetType === 'promo' ? 'Promo al hacer click' : 'Producto al hacer click'}
-                                                                                </label>
-                                                                                <select
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={newHomeBanner?.targetId || ''}
-                                                                                    onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetId: e.target.value }))}
-                                                                                >
-                                                                                    <option value="">Seleccionar...</option>
-                                                                                    {(newHomeBanner?.targetType === 'promo' ? [...promos] : [...products])
-                                                                                        .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''))
-                                                                                        .map(item => (
-                                                                                            <option key={item.id} value={item.id}>{item.name}</option>
-                                                                                        ))}
-                                                                                </select>
-                                                                            </div>
-                                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 flex items-center gap-4">
-                                                                                {(() => {
-                                                                                    const isPromo = newHomeBanner?.targetType === 'promo';
-                                                                                    const item = isPromo
-                                                                                        ? promos.find(p => p.id === newHomeBanner?.targetId)
-                                                                                        : products.find(p => p.id === newHomeBanner?.targetId);
-                                                                                    const img = isPromo ? item?.image : item?.image;
-                                                                                    return (
-                                                                                        <>
-                                                                                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
-                                                                                                {img ? <img src={img} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon className="w-6 h-6 text-slate-600" />}
-                                                                                            </div>
-                                                                                            <div className="min-w-0">
-                                                                                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Vista previa</p>
-                                                                                                <p className="font-black text-white truncate">{item?.name || 'Sin selección'}</p>
-                                                                                            </div>
-                                                                                        </>
-                                                                                    );
-                                                                                })()}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-
-                                                                    <div className="flex flex-col md:flex-row md:items-center gap-4">
-                                                                        <div className="flex items-center justify-between flex-1 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                            <div>
-                                                                                <p className="font-bold text-white">Slide habilitado</p>
-                                                                                <p className="text-xs text-slate-500">Si está apagado no se muestra.</p>
-                                                                            </div>
-                                                                            <button
-                                                                                onClick={() => setNewHomeBanner(prev => ({ ...prev, enabled: prev?.enabled === false ? true : false }))}
-                                                                                className={`w-14 h-8 rounded-full transition relative ${newHomeBanner?.enabled !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                            >
-                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${newHomeBanner?.enabled !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                            </button>
-                                                                        </div>
-
-                                                                        <div className="flex gap-3">
-                                                                            {editingHomeBannerId && (
-                                                                                <button
-                                                                                    onClick={resetHomeBannerForm}
-                                                                                    className="px-6 py-3 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition"
-                                                                                >
-                                                                                    Cancelar
-                                                                                </button>
-                                                                            )}
-                                                                            <button
-                                                                                onClick={saveHomeBannerFn}
-                                                                                className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition"
-                                                                            >
-                                                                                {editingHomeBannerId ? 'Guardar Slide' : 'Agregar Slide'}
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="space-y-3">
-                                                                {homeBanners.length === 0 ? (
-                                                                    <p className="text-slate-500 text-sm">Todavía no hay slides en el carrusel.</p>
-                                                                ) : (
-                                                                    homeBanners.map(b => {
-                                                                        const targetType = b.targetType || (b.promoId ? 'promo' : b.productId ? 'product' : 'none');
-                                                                        const targetId = b.targetId || b.promoId || b.productId || '';
-                                                                        const targetItem = targetType === 'promo'
-                                                                            ? promos.find(p => p.id === targetId)
-                                                                            : targetType === 'product'
-                                                                                ? products.find(p => p.id === targetId)
-                                                                                : null;
-                                                                        const targetName = targetType === 'none'
-                                                                            ? 'Solo imagen'
-                                                                            : targetItem?.name || (targetType === 'promo' ? 'Promo inexistente' : 'Producto inexistente');
-                                                                        const isEnabled = b?.enabled !== false;
-                                                                        return (
-                                                                            <div key={b.id} className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-slate-900/40 rounded-2xl border border-slate-800">
-                                                                                <div className="w-full md:w-40 h-20 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex-shrink-0">
-                                                                                    {b?.imageUrl ? (
-                                                                                        <img src={b.imageUrl} className="w-full h-full object-cover" alt="Slide" />
-                                                                                    ) : null}
-                                                                                </div>
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <div className="flex items-center gap-3 flex-wrap">
-                                                                                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
-                                                                                            {targetItem?.image ? <img src={targetItem.image} className="w-full h-full object-cover" alt="Target" /> : <ImageIcon className="w-4 h-4 text-slate-600" />}
-                                                                                        </div>
-                                                                                        <p className="font-black text-white truncate">{targetName}</p>
-                                                                                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${isEnabled ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-800/30'}`}>
-                                                                                            {isEnabled ? 'ACTIVO' : 'PAUSADO'}
-                                                                                        </span>
-                                                                                        <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
-                                                                                            {targetType === 'promo' ? 'PROMO' : targetType === 'product' ? 'PRODUCTO' : 'SIN LINK'}
-                                                                                        </span>
-                                                                                        <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
-                                                                                            ORDEN {Number.isFinite(Number(b.order)) ? Number(b.order) : 0}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    <p className="text-xs text-slate-500 mt-1 truncate">{targetType === 'none' ? 'Click desactivado' : targetId}</p>
-                                                                                </div>
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <button
-                                                                                        onClick={() => editHomeBannerFn(b)}
-                                                                                        className="px-4 py-2 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition flex items-center gap-2"
-                                                                                    >
-                                                                                        <Edit className="w-4 h-4" /> Editar
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={() => deleteHomeBannerFn(b)}
-                                                                                        className="px-4 py-2 rounded-xl font-bold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition flex items-center gap-2"
-                                                                                    >
-                                                                                        <Trash2 className="w-4 h-4" /> Eliminar
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-                                                                        );
-                                                                    })
                                                                 )}
                                                             </div>
                                                         </div>
@@ -11548,7 +11618,8 @@ function App() {
                                                 </div>
                                             )}
 
-                                            {/* Save Button */}
+                                            {/* Save Button - only for super admin */}
+                                            {currentUser?.email === SUPER_ADMIN_EMAIL && (
                                             <div className="fixed bottom-8 right-8 z-50">
                                                 <button
                                                     onClick={async () => {
@@ -11569,6 +11640,7 @@ function App() {
                                                     <Save className="w-5 h-5" /> Guardar Cambios
                                                 </button>
                                             </div>
+                                            )}
                                         </div>
                                     )
                                     }
@@ -12381,6 +12453,7 @@ function App() {
                         openCart: () => setView('cart')
                     }}
                     coupons={coupons}
+                    appId={appId}
                 />
             </Suspense>
         </div >
@@ -12460,7 +12533,8 @@ const PlansModalContent = ({ settings, onClose }) => {
                 '🔥 5 Promociones simultáneas',
                 '🎫 Sistema de cupones',
                 '📊 Analítica de clientes',
-                '📲 Botón WhatsApp flotante'
+                '📲 Botón WhatsApp flotante',
+                '🎠 Carrusel de Banners'
             ],
             cycles: [
                 { id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },

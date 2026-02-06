@@ -193,10 +193,10 @@ export default async function handler(req, res) {
                                                 <td width="48%" valign="top" class="card">
                                                     <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Método de Entrega</div>
                                                     <div style="font-size: 14px; color: #e2e8f0; line-height: 1.4; font-weight: 500; margin-bottom: 4px;">
-                                                        ${shippingMethod || 'Envío'}
+                                                        ${escapeHtml(shippingMethod || 'Envío')}
                                                     </div>
                                                     <div style="font-size: 12px; color: #94a3b8; line-height: 1.4;">
-                                                        ${finalShippingAddress}
+                                                        ${escapeHtml(finalShippingAddress)}
                                                     </div>
                                                 </td>
                                                 <td width="4%"></td>
