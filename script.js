@@ -22,6 +22,26 @@ import {
     where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter
 } from 'firebase/firestore';
 
+let app;
+let auth;
+let db;
+
+let publicConfigPromise = null;
+async function getPublicConfig() {
+    if (publicConfigPromise) return publicConfigPromise;
+    publicConfigPromise = (async () => {
+        try {
+            const res = await fetch('/api/checkout?action=public_config', { method: 'GET' });
+            if (!res.ok) return {};
+            const data = await res.json().catch(() => ({}));
+            return data && typeof data === 'object' ? data : {};
+        } catch (e) {
+            return {};
+        }
+    })();
+    return publicConfigPromise;
+}
+
 const firebaseConfig = {
     apiKey: "",
     authDomain: "sustore-63266.firebaseapp.com",
@@ -32,9 +52,21 @@ const firebaseConfig = {
     measurementId: "G-X3K7XGYPRD"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+async function initFirebase() {
+    try {
+        const cfg = await getPublicConfig();
+        const firebaseApiKey = String(cfg?.firebaseApiKey || '').trim();
+        if (firebaseApiKey) firebaseConfig.apiKey = firebaseApiKey;
+    } catch (e) { }
+
+    if (!firebaseConfig.apiKey) {
+        throw new Error('Firebase Web API Key no configurada. Configura FIREBASE_WEB_API_KEY en Vercel/entorno o devuelve firebaseApiKey en /api/checkout?action=public_config');
+    }
+
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+}
 // ID interno de la app (no es el appId de Firebase). Puedes cambiarlo si quieres diferenciar entornos.
 const DEFAULT_APP_ID = "sustore-63266-prod";
 const APP_VERSION = "3.0.0";
@@ -44,9 +76,7 @@ async function getMercadoPagoPublicKey() {
     if (mpPublicKeyPromise) return mpPublicKeyPromise;
     mpPublicKeyPromise = (async () => {
         try {
-            const res = await fetch('/api/checkout?action=public_config', { method: 'GET' });
-            if (!res.ok) return null;
-            const data = await res.json().catch(() => ({}));
+            const data = await getPublicConfig();
             const key = String(data?.mpPublicKey || '').trim();
             return key || null;
         } catch (e) {
@@ -12661,9 +12691,15 @@ const rootElement = document.getElementById('root');
 if (!rootElement) {
     throw new Error('No se encontró el contenedor #root');
 }
-const root = createRoot(rootElement);
-root.render(
-    <ErrorBoundary>
-        <App />
-    </ErrorBoundary>
-);
+
+async function bootstrap() {
+    await initFirebase();
+    const root = createRoot(rootElement);
+    root.render(
+        <ErrorBoundary>
+            <App />
+        </ErrorBoundary>
+    );
+}
+
+bootstrap();

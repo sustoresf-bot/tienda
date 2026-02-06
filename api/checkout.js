@@ -24,8 +24,12 @@ export default async function handler(req, res) {
             }
 
             const mpPublicKey = String(process.env.MP_PUBLIC_KEY || '').trim();
+            const firebaseApiKey = String(process.env.FIREBASE_WEB_API_KEY || '').trim();
             res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400');
-            return res.status(200).json({ mpPublicKey: mpPublicKey || null });
+            return res.status(200).json({
+                mpPublicKey: mpPublicKey || null,
+                firebaseApiKey: firebaseApiKey || null,
+            });
         } catch (error) {
             return res.status(500).json({ error: 'Internal error' });
         }
