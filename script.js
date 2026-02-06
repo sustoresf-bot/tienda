@@ -3616,7 +3616,7 @@ function App() {
         }
     };
 
-    // 1.1 Recuperar Contraseña
+    // 1.1 Recuperar Contraseña (vía backend + Nodemailer, mismo Gmail que tickets)
     const handleForgotPassword = async () => {
         const normalizedEmail = String(authData.email || '').trim().toLowerCase();
         if (!normalizedEmail || !normalizedEmail.includes('@')) {
@@ -3625,22 +3625,19 @@ function App() {
         }
         setIsLoading(true);
         try {
-            await sendPasswordResetEmail(auth, normalizedEmail);
-            showToast(`¡Listo! Enviamos el link a ${normalizedEmail}. Revisa tu email (y spam).`, "success");
+            const res = await fetch('/api/auth/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '' },
+                body: JSON.stringify({ email: normalizedEmail })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.error || 'Error al enviar el email');
+            }
+            showToast(`¡Listo! Enviamos el link de recuperación a ${normalizedEmail}. Revisá tu email.`, "success");
         } catch (e) {
             console.error("Error reset pass:", e);
-            const code = String(e?.code || '');
-            if (code === 'auth/user-not-found') {
-                showToast("No existe una cuenta registrada con este email.", "error");
-            } else if (code === 'auth/invalid-email') {
-                showToast("El email es inválido.", "error");
-            } else if (code === 'auth/operation-not-allowed') {
-                showToast("El envío de recuperación no está habilitado en Firebase Auth (Email/Password).", "error");
-            } else if (code === 'auth/too-many-requests') {
-                showToast("Demasiados intentos. Probá más tarde.", "error");
-            } else {
-                showToast("Error al enviar email: " + (e?.message || 'Error'), "error");
-            }
+            showToast(e?.message || "Error al enviar el email de recuperación.", "error");
         } finally {
             setIsLoading(false);
         }
