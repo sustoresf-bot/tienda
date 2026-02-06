@@ -9,13 +9,14 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",
+    "@tailwindcss/cli": "^4.1.18",
     "autoprefixer": "^10.4.24",
     "esbuild": "^0.27.3",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18"
   },
   "scripts": {
-    "build": "node build.mjs && npx tailwindcss -c tailwind.config.cjs -i tailwind.input.css -o assets/tailwind.css --minify",
+    "build": "node build.mjs && npx @tailwindcss/cli -c tailwind.config.cjs -i tailwind.input.css -o assets/tailwind.css --minify",
     "start": "node dev-server.mjs",
     "test": "npx playwright test"
   }
