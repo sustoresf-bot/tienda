@@ -630,27 +630,27 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     ];
 
     return (
-        <div className="fixed bottom-6 right-6 left-3 sm:left-auto z-[9999] flex flex-col items-end pointer-events-none">
+        <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-[9999] flex flex-col items-end pointer-events-none">
             {isOpen && (
-                <div className="bg-[#0a0a0a] border border-yellow-500/30 rounded-2xl w-full max-w-sm sm:max-w-none sm:w-80 md:w-96 h-[min(550px,75dvh)] shadow-2xl flex flex-col mb-4 animate-fade-up overflow-hidden font-sans pointer-events-auto">
-                    <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-4 flex justify-between items-center shadow-md relative z-10">
+                <div className="bg-[#0f0f0f]/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] w-full sm:w-80 md:w-96 h-[min(600px,80dvh)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col mb-4 animate-fade-up overflow-hidden font-sans pointer-events-auto ring-1 ring-white/10">
+                    <div className="bg-gradient-to-r from-yellow-500 to-amber-600 p-5 flex justify-between items-center relative z-10">
                         <div className="flex items-center gap-3">
-                            <div className="p-1 bg-white/10 rounded-full backdrop-blur-sm overflow-hidden border border-white/20">
-                                <img src={botImage} className="w-8 h-8 object-cover rounded-full opacity-90" alt="SustIA" />
+                            <div className="p-1 bg-white/20 rounded-full backdrop-blur-md overflow-hidden border border-white/30">
+                                <img src={botImage} className="w-9 h-9 object-cover rounded-full" alt="SustIA" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-white text-sm">SustIA</h3>
-                                <p className="text-[10px] text-white/80 flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                                    Asistente Virtual
+                                <h3 className="font-black text-white text-sm tracking-tight">SustIA AI</h3>
+                                <p className="text-[10px] text-white/90 font-bold flex items-center gap-1.5">
+                                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
+                                    En línea
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={clearChat} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-lg transition" title="Limpiar chat">
+                        <div className="flex items-center gap-1">
+                            <button onClick={clearChat} className="text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors" title="Limpiar chat">
                                 <Trash2 className="w-5 h-5" />
                             </button>
-                            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-lg transition" title="Cerrar">
+                            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors" title="Cerrar">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -674,14 +674,14 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-[#111] custom-scrollbar relative">
+                    <div className="flex-1 overflow-y-auto p-5 space-y-6 bg-[#0a0a0a]/50 custom-scrollbar relative">
                         {messages.map((m, i) => (
-                            <div key={i} className={`flex flex-col ${m.role === 'client' ? 'items-end' : 'items-start'}`}>
-                                <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${m.role === 'client'
-                                    ? 'bg-yellow-600 text-white rounded-br-sm'
-                                    : 'bg-[#1a1a1a] text-slate-200 rounded-bl-sm border border-white/5'
+                            <div key={i} className={`flex flex-col ${m.role === 'client' ? 'items-end' : 'items-start'} animate-fade-in`}>
+                                <div className={`max-w-[85%] p-4 rounded-2xl text-[13px] leading-relaxed shadow-lg ${m.role === 'client'
+                                    ? 'bg-gradient-to-br from-yellow-500 to-amber-600 text-white rounded-tr-none border border-white/10'
+                                    : 'bg-[#1a1a1a] text-slate-200 rounded-tl-none border border-white/5'
                                     }`}>
-                                    <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
+                                    <p className="whitespace-pre-wrap">{m.text}</p>
                                 </div>
 
                                 {m.products && m.products.length > 0 && (

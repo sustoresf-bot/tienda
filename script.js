@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
     ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
@@ -555,7 +555,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
         const id = activeSlide?.targetId || activeSlide?.promoId || activeSlide?.productId || '';
         return type !== 'none' && !!id;
     })();
-    const imageOpacity = 0.15;
+    const imageOpacity = 0.85;
     const imageClass = `w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`;
 
     const goPrev = () => {
@@ -681,18 +681,18 @@ const Toast = ({ message, type, onClose }) => {
 };
 
 // Componente Modal de Confirmación
-const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDangerous = false }) => {
+const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDangerous = false, darkMode = true }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-up p-4">
-            <div className={`glass p-8 rounded-[2rem] max-w-sm w-full border ${isDangerous ? 'border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]' : 'border-slate-700 shadow-2xl'}`}>
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto ${isDangerous ? 'bg-red-900/20 text-red-500' : 'bg-orange-900/20 text-orange-500'}`}>
+            <div className={`p-8 rounded-[2rem] max-w-sm w-full border transition-all duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 shadow-2xl' : 'bg-white border-slate-200 shadow-xl'} ${isDangerous && darkMode ? 'border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]' : isDangerous ? 'border-red-200 shadow-red-100' : ''}`}>
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto transition-colors duration-300 ${isDangerous ? 'bg-red-500/20 text-red-500' : (darkMode ? 'bg-orange-900/20 text-orange-500' : 'bg-orange-50 text-orange-600')}`}>
                     {isDangerous ? <AlertTriangle className="w-8 h-8" /> : <Info className="w-8 h-8" />}
                 </div>
-                <h3 className="text-xl font-black text-center mb-2 text-white">{title}</h3>
-                <p className="text-slate-400 text-center mb-8 text-sm leading-relaxed">{message}</p>
+                <h3 className={`text-xl font-black text-center mb-2 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{title}</h3>
+                <p className={`text-center mb-8 text-sm leading-relaxed transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{message}</p>
                 <div className="flex gap-3">
-                    <button onClick={onCancel} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">{cancelText}</button>
+                    <button onClick={onCancel} className={`flex-1 py-3 rounded-xl font-bold transition ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>{cancelText}</button>
                     <button onClick={onConfirm} className={`flex-1 py-3 text-white rounded-xl font-bold transition shadow-lg ${isDangerous ? 'bg-red-600 hover:bg-red-500 shadow-red-600/30' : 'bg-orange-600 hover:bg-orange-500 shadow-orange-600/30'}`}>{confirmText}</button>
                 </div>
             </div>
@@ -789,7 +789,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const cardBg = darkMode ? 'bg-[#0a0a0a]' : 'bg-white';
     const cardBorder = darkMode ? 'border-slate-800/50' : 'border-slate-200';
     const cardHoverBorder = darkMode ? 'hover:border-orange-500/50' : 'hover:border-orange-400';
-    const cardShadow = darkMode ? 'hover:shadow-[0_0_30px_rgba(249,115,22,0.1)]' : 'shadow-md hover:shadow-xl hover:shadow-orange-100';
+    const cardShadow = darkMode ? 'hover:shadow-[0_0_30px_rgba(249,115,22,0.1)]' : 'shadow-sm hover:shadow-xl hover:shadow-orange-200/50';
     const imageBg = darkMode ? 'bg-gradient-to-b from-slate-900 to-[#0a0a0a]' : 'bg-gradient-to-b from-slate-100 to-white';
     const textPrimary = darkMode ? 'text-white' : 'text-slate-900';
     const textSecondary = darkMode ? 'text-slate-400' : 'text-slate-600';
@@ -811,7 +811,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                             loading="lazy"
                             decoding="async"
                             onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.nextSibling.style.display = 'flex'; }}
-                            className={`max-w-full max-h-full rounded-xl sm:rounded-2xl border-4 ${darkMode ? 'border-cyan-500/30' : 'border-orange-300'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-105 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                            className={`max-w-full max-h-full rounded-xl sm:rounded-2xl border-2 ${darkMode ? 'border-orange-500/20' : 'border-slate-100'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-105 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                         />
                     </div>
                 ) : null}
@@ -1745,7 +1745,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     return true;
 });
 
-const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
+const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove, darkMode = true }) => {
     const [catName, setCatName] = React.useState('');
 
     if (!isOpen) return null;
@@ -1759,42 +1759,42 @@ const CategoryModal = ({ isOpen, onClose, categories, onAdd, onRemove }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-4">
-            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem] max-w-md w-full relative">
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white transition">
+        <div className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-4" onClick={onClose}>
+            <div className={`p-8 rounded-[2rem] max-w-md w-full relative border transition-all duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200 shadow-xl'}`} onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className={`absolute top-4 right-4 transition ${darkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
                     <X className="w-6 h-6" />
                 </button>
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <h3 className={`text-2xl font-bold mb-6 flex items-center gap-2 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                     <FolderPlus className="w-6 h-6 text-orange-400" /> Gestionar Categorías
                 </h3>
 
                 <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
                     <input
-                        className="input-cyber flex-1 p-3"
+                        className={`flex-1 p-3 rounded-xl border transition-all duration-300 ${darkMode ? 'bg-slate-900 border-slate-700 text-white focus:border-orange-500 outline-none' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-orange-500 outline-none'}`}
                         placeholder="Nueva categoría..."
                         value={catName}
                         onChange={(e) => setCatName(e.target.value)}
                         autoFocus
                     />
-                    <button type="submit" className="bg-orange-600 hover:bg-orange-500 text-white p-3 rounded-xl font-bold transition">
+                    <button type="submit" className="bg-orange-600 hover:bg-orange-500 text-white p-3 rounded-xl font-bold transition shadow-lg shadow-orange-600/20">
                         <Plus className="w-5 h-5" />
                     </button>
                 </form>
 
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                     {categories.map((cat, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800 group hover:border-slate-700 transition">
-                            <span className="text-slate-300 font-medium">{cat}</span>
+                        <div key={index} className={`flex items-center justify-between p-3 rounded-xl border group transition-all duration-300 ${darkMode ? 'bg-slate-900/50 border-slate-800 hover:border-slate-700' : 'bg-slate-50 border-slate-100 hover:border-slate-200'}`}>
+                            <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{cat}</span>
                             <button
                                 onClick={() => onRemove(cat)}
-                                className="text-slate-600 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                                className={`transition opacity-0 group-hover:opacity-100 ${darkMode ? 'text-slate-600 hover:text-red-500' : 'text-slate-400 hover:text-red-600'}`}
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
                     ))}
                     {categories.length === 0 && (
-                        <p className="text-center text-slate-600 italic py-4">No hay categorías definidas</p>
+                        <p className={`text-center italic py-4 transition-colors duration-300 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>No hay categorías definidas</p>
                     )}
                 </div>
             </div>
@@ -5484,40 +5484,43 @@ function App() {
         if (!order) return null;
 
         return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
-                <div className="glass rounded-[2rem] w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border border-slate-800 relative">
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up" onClick={onClose}>
+                <div 
+                    className={`rounded-[2rem] w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border relative transition-colors duration-300 ${darkMode ? 'glass border-slate-800' : 'bg-white border-slate-200'}`}
+                    onClick={e => e.stopPropagation()}
+                >
                     {/* Header del Modal */}
-                    <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                    <div className={`p-8 border-b flex justify-between items-center transition-colors duration-300 ${darkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50/50'}`}>
                         <div>
-                            <h3 className="text-2xl font-black text-white flex items-center gap-2 neon-text">
-                                DETALLE DE PEDIDO <span className="text-orange-400">#{order.orderId}</span>
+                            <h3 className={`text-2xl font-black flex items-center gap-2 transition-colors duration-300 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                                DETALLE DE PEDIDO <span className="text-orange-500">#{order.orderId}</span>
                             </h3>
                             <div className="flex items-center gap-4 mt-2">
-                                <span className="text-slate-400 text-xs flex items-center gap-1 font-bold tracking-wider">
+                                <span className={`text-xs flex items-center gap-1 font-bold tracking-wider transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                     <Clock className="w-3 h-3" /> {new Date(order.date).toLocaleString()}
                                 </span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-black tracking-widest ${order.status === 'Realizado' ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30'}`}>
+                                <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-black tracking-widest transition-colors duration-300 ${order.status === 'Realizado' ? (darkMode ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-green-100 text-green-600 border-green-200') : (darkMode ? 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30' : 'bg-yellow-100 text-yellow-600 border-yellow-200')}`}>
                                     {order.status}
                                 </span>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-3 bg-slate-800 rounded-full hover:bg-slate-700 hover:text-white transition shadow-lg border border-slate-700">
-                            <X className="w-5 h-5 text-slate-400" />
+                        <button onClick={onClose} className={`p-3 rounded-full transition shadow-lg border ${darkMode ? 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-400 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-500 hover:text-slate-900'}`}>
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
 
                     {/* Contenido Scrollable */}
-                    <div className="p-8 overflow-y-auto space-y-8 custom-scrollbar bg-[#050505]">
+                    <div className={`p-8 overflow-y-auto space-y-8 custom-scrollbar transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-white'}`}>
 
                         {/* Estado Visual */}
-                        <div className="flex justify-between items-center bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-inner">
+                        <div className={`flex justify-between items-center p-6 rounded-2xl border shadow-inner transition-colors duration-300 ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                             <div className="flex items-center gap-4">
-                                <div className={`p-4 rounded-full shadow-lg ${order.status === 'Realizado' ? 'bg-green-500/20 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-yellow-500/20 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.2)]'}`}>
+                                <div className={`p-4 rounded-full shadow-lg transition-all duration-300 ${order.status === 'Realizado' ? (darkMode ? 'bg-green-500/20 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-green-100 text-green-600') : (darkMode ? 'bg-yellow-500/20 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'bg-yellow-100 text-yellow-600')}`}>
                                     {order.status === 'Realizado' ? <CheckCircle className="w-8 h-8" /> : <Clock className="w-8 h-8" />}
                                 </div>
                                 <div>
-                                    <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Estado Actual</p>
-                                    <p className={`text-xl font-black ${order.status === 'Realizado' ? 'text-green-400' : 'text-yellow-400'}`}>
+                                    <p className={`text-xs uppercase font-bold tracking-widest mb-1 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Estado Actual</p>
+                                    <p className={`text-xl font-black transition-colors duration-300 ${order.status === 'Realizado' ? (darkMode ? 'text-green-400' : 'text-green-600') : (darkMode ? 'text-yellow-400' : 'text-yellow-600')}`}>
                                         {order.status === 'Realizado' ? 'Entregado / Finalizado' : 'Pendiente de Pago/Envío'}
                                     </p>
                                 </div>
@@ -5527,40 +5530,40 @@ function App() {
                         {/* Columnas de Info */}
                         <div className="grid md:grid-cols-2 gap-6">
                             {/* Cliente */}
-                            <div className="bg-slate-900/30 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
-                                <h4 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                            <div className={`p-6 rounded-2xl border transition duration-300 ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:border-slate-700' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}>
+                                <h4 className={`text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b pb-2 transition-colors duration-300 ${darkMode ? 'text-slate-500 border-slate-800' : 'text-slate-400 border-slate-100'}`}>
                                     <User className="w-4 h-4" /> Datos del Cliente
                                 </h4>
                                 <div className="space-y-3">
-                                    <p className="text-white font-bold text-lg">{order.customer.name}</p>
+                                    <p className={`font-bold text-lg transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.name}</p>
                                     <div className="space-y-1">
-                                        <p className="text-slate-400 text-sm flex justify-between border-b border-dashed border-slate-800/50 pb-1">
-                                            <span>Email:</span> <span className="text-white font-medium">{order.customer.email}</span>
+                                        <p className={`text-sm flex justify-between border-b border-dashed pb-1 transition-colors duration-300 ${darkMode ? 'text-slate-400 border-slate-800/50' : 'text-slate-600 border-slate-100'}`}>
+                                            <span>Email:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.email}</span>
                                         </p>
-                                        <p className="text-slate-400 text-sm flex justify-between border-b border-dashed border-slate-800/50 pb-1">
-                                            <span>Teléfono:</span> <span className="text-white font-medium">{order.customer.phone || '-'}</span>
+                                        <p className={`text-sm flex justify-between border-b border-dashed pb-1 transition-colors duration-300 ${darkMode ? 'text-slate-400 border-slate-800/50' : 'text-slate-600 border-slate-100'}`}>
+                                            <span>Teléfono:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.phone || '-'}</span>
                                         </p>
-                                        <p className="text-slate-400 text-sm flex justify-between">
-                                            <span>DNI:</span> <span className="text-white font-medium">{order.customer.dni || '-'}</span>
+                                        <p className={`text-sm flex justify-between transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                            <span>DNI:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.dni || '-'}</span>
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Envío */}
-                            <div className="bg-slate-900/30 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
-                                <h4 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                            <div className={`p-6 rounded-2xl border transition duration-300 ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:border-slate-700' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}>
+                                <h4 className={`text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b pb-2 transition-colors duration-300 ${darkMode ? 'text-slate-500 border-slate-800' : 'text-slate-400 border-slate-100'}`}>
                                     <Truck className="w-4 h-4" /> Datos de Entrega
                                 </h4>
                                 <div className="space-y-3">
-                                    <p className="text-white font-medium text-sm leading-relaxed min-h-[3rem]">
+                                    <p className={`font-medium text-sm leading-relaxed min-h-[3rem] transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-800'}`}>
                                         {order.shippingAddress || 'Retiro en sucursal'}
                                     </p>
-                                    <div className="pt-2 mt-2 border-t border-slate-800/50">
-                                        <p className="text-slate-400 text-xs uppercase font-bold mb-1">Método de Pago</p>
+                                    <div className={`pt-2 mt-2 border-t transition-colors duration-300 ${darkMode ? 'border-slate-800/50' : 'border-slate-100'}`}>
+                                        <p className={`text-xs uppercase font-bold mb-1 transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Método de Pago</p>
                                         <div className="flex items-center gap-2">
-                                            <CreditCard className="w-4 h-4 text-orange-400" />
-                                            <p className="text-orange-400 font-black text-sm uppercase">{order.paymentMethod}</p>
+                                            <CreditCard className="w-4 h-4 text-orange-500" />
+                                            <p className="text-orange-500 font-black text-sm uppercase">{order.paymentMethod}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -5569,25 +5572,25 @@ function App() {
 
                         {/* Lista de Productos */}
                         <div>
-                            <h4 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                            <h4 className={`text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 border-b pb-2 transition-colors duration-300 ${darkMode ? 'text-slate-500 border-slate-800' : 'text-slate-400 border-slate-100'}`}>
                                 <Package className="w-4 h-4" /> Productos ({order.items.length})
                             </h4>
                             <div className="space-y-3">
                                 {order.items.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-orange-900/30 transition group">
+                                    <div key={idx} className={`flex justify-between items-center p-4 rounded-xl border transition group duration-300 ${darkMode ? 'bg-slate-900/40 border-slate-800 hover:border-orange-900/30' : 'bg-white border-slate-100 hover:border-orange-200 shadow-sm'}`}>
                                         <div className="flex items-center gap-4">
-                                            <div className="bg-white w-12 h-12 flex items-center justify-center rounded-lg p-1 shadow-md group-hover:scale-105 transition">
-                                                {item.image ? <img src={item.image} className="w-full h-full object-contain" /> : <Package className="text-black" />}
+                                            <div className={`w-12 h-12 flex items-center justify-center rounded-lg p-1 shadow-md group-hover:scale-105 transition border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                                                {item.image ? <img src={item.image} className="w-full h-full object-contain" /> : <Package className="text-slate-400" />}
                                             </div>
                                             <div>
-                                                <p className="text-white font-bold text-sm">{item.title}</p>
-                                                <p className="text-slate-500 text-xs flex items-center gap-2">
-                                                    <span className="bg-slate-800 text-slate-300 px-1.5 rounded text-[10px] font-bold">x{item.quantity}</span>
+                                                <p className={`font-bold text-sm transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</p>
+                                                <p className={`text-xs flex items-center gap-2 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                                                    <span className={`px-1.5 rounded text-[10px] font-bold transition-colors duration-300 ${darkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>x{item.quantity}</span>
                                                     <span>${item.unit_price.toLocaleString()} c/u</span>
                                                 </p>
                                             </div>
                                         </div>
-                                        <span className="text-white font-mono font-bold text-lg tracking-tight">
+                                        <span className={`font-mono font-bold text-lg tracking-tight transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                             ${(item.unit_price * item.quantity).toLocaleString()}
                                         </span>
                                     </div>
@@ -5596,14 +5599,14 @@ function App() {
                         </div>
 
                         {/* Resumen Financiero */}
-                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3 shadow-lg">
-                            <div className="flex justify-between text-slate-400 text-sm font-medium">
+                        <div className={`p-6 rounded-2xl border space-y-3 shadow-lg transition-colors duration-300 ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                            <div className={`flex justify-between text-sm font-medium transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                 <span>Subtotal Productos</span>
                                 <span>${(order.subtotal || order.total).toLocaleString()}</span>
                             </div>
 
                             {order.discount > 0 && (
-                                <div className="flex justify-between text-green-400 text-sm font-bold bg-green-900/10 p-2 rounded-lg border border-green-900/30 dashed-border">
+                                <div className={`flex justify-between text-sm font-bold p-2 rounded-lg border border-dashed transition-colors duration-300 ${darkMode ? 'text-green-400 bg-green-900/10 border-green-900/30' : 'text-green-600 bg-green-50 border-green-200'}`}>
                                     <span className="flex items-center gap-2">
                                         <Ticket className="w-3 h-3" /> Descuento ({order.discountCode || 'Cupón'})
                                     </span>
@@ -5611,9 +5614,9 @@ function App() {
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-800 border-dashed">
-                                <span className="text-white font-bold text-lg">Total Abonado</span>
-                                <span className="text-3xl font-black text-orange-400 neon-text tracking-tighter">
+                            <div className={`flex justify-between items-center mt-4 pt-4 border-t border-dashed transition-colors duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+                                <span className={`font-bold text-lg transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Total Abonado</span>
+                                <span className={`text-3xl font-black tracking-tighter transition-colors duration-300 ${darkMode ? 'text-orange-500 neon-text' : 'text-orange-600'}`}>
                                     ${order.total.toLocaleString()}
                                 </span>
                             </div>
@@ -5641,52 +5644,56 @@ function App() {
         });
 
         return (
-            <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up">
-                <div className="glass rounded-[2rem] w-full max-w-lg overflow-hidden relative shadow-2xl border border-purple-500/20 bg-[#050505]">
-                    <button onClick={() => setShowCouponModal(false)} className="absolute top-6 right-6 p-2 bg-slate-900 rounded-full text-slate-400 hover:text-white transition z-10 hover:bg-slate-800">
+            <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up" onClick={() => setShowCouponModal(false)}>
+                <div className={`rounded-[2rem] w-full max-w-lg overflow-hidden relative shadow-2xl border transition-colors duration-300 ${darkMode ? 'border-purple-500/20 bg-[#050505]' : 'border-slate-200 bg-white'}`} onClick={e => e.stopPropagation()}>
+                    <button onClick={() => setShowCouponModal(false)} className={`absolute top-6 right-6 p-2 rounded-full transition z-10 ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}>
                         <X className="w-5 h-5" />
                     </button>
 
-                    <div className="p-8 bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-b border-slate-800">
-                        <h3 className="text-2xl font-black text-white mb-2 flex items-center gap-3">
-                            <div className="bg-purple-900/20 p-2 rounded-lg border border-purple-500/30">
-                                <Gift className="w-6 h-6 text-purple-400" />
+                    <div className={`p-8 border-b transition-colors duration-300 ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-gradient-to-br from-slate-50 to-white border-slate-100'}`}>
+                        <h3 className={`text-2xl font-black mb-2 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                            <div className={`p-2 rounded-lg border transition-colors duration-300 ${darkMode ? 'bg-purple-900/20 border-purple-500/30' : 'bg-purple-50 border-purple-200'}`}>
+                                <Gift className={`w-6 h-6 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
                             </div>
                             Mis Beneficios
                         </h3>
-                        <p className="text-slate-400 text-sm">Selecciona un cupón para aplicar el descuento a tu compra.</p>
+                        <p className={`transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'} text-sm`}>Selecciona un cupón para aplicar el descuento a tu compra.</p>
                     </div>
 
-                    <div className="p-8 space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar bg-[#050505]">
+                    <div className={`p-8 space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-white'}`}>
                         {availableCoupons.length === 0 ? (
-                            <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-2xl">
-                                <Ticket className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                                <p className="text-slate-400 font-bold text-lg">No tienes cupones disponibles.</p>
-                                <p className="text-slate-600 text-sm mt-2">Mantente atento a nuestras redes sociales.</p>
+                            <div className={`text-center py-12 border-2 border-dashed rounded-2xl transition-colors duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                                <Ticket className={`w-16 h-16 mx-auto mb-4 transition-colors duration-300 ${darkMode ? 'text-slate-700' : 'text-slate-300'}`} />
+                                <p className={`font-bold text-lg transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>No tienes cupones disponibles.</p>
+                                <p className={`transition-colors duration-300 ${darkMode ? 'text-slate-600' : 'text-slate-400'} text-sm mt-2`}>Mantente atento a nuestras redes sociales.</p>
                             </div>
                         ) : availableCoupons.map(c => {
                             const canApply = cartSubtotal >= (c.minPurchase || 0);
                             return (
-                                <div key={c.id} onClick={() => canApply && selectCoupon(c)} className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group ${canApply ? 'bg-slate-900 border-slate-700 hover:border-purple-500 cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:scale-[1.02]' : 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed grayscale'}`}>
+                                <div key={c.id} onClick={() => canApply && selectCoupon(c)} className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group ${
+                                    canApply 
+                                        ? (darkMode ? 'bg-slate-900 border-slate-700 hover:border-purple-500 cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:scale-[1.02]' : 'bg-white border-slate-200 hover:border-purple-500 cursor-pointer hover:shadow-xl hover:scale-[1.02]') 
+                                        : (darkMode ? 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed grayscale' : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed grayscale')
+                                }`}>
                                     {/* Decoración lateral */}
-                                    <div className={`absolute top-0 left-0 w-2 h-full ${canApply ? 'bg-purple-500' : 'bg-slate-700'}`}></div>
+                                    <div className={`absolute top-0 left-0 w-2 h-full transition-colors duration-300 ${canApply ? 'bg-purple-500' : (darkMode ? 'bg-slate-700' : 'bg-slate-300')}`}></div>
 
                                     <div className="p-5 pl-8 flex justify-between items-center">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <span className="font-black text-xl text-white tracking-widest font-mono">{c.code}</span>
-                                                <span className="text-[10px] bg-purple-900/30 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30 uppercase font-bold">
+                                                <span className={`font-black text-xl tracking-widest font-mono transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{c.code}</span>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold transition-colors duration-300 ${darkMode ? 'bg-purple-900/30 text-purple-300 border-purple-500/30' : 'bg-purple-50 text-purple-600 border-purple-200'}`}>
                                                     {c.type === 'fixed' ? 'DESCUENTO FIJO' : 'PORCENTAJE'}
                                                 </span>
                                             </div>
-                                            <p className="text-purple-400 font-bold text-sm">
+                                            <p className={`font-bold text-sm transition-colors duration-300 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
                                                 {c.type === 'fixed' ? `Ahorra $${c.value}` : `${c.value}% de Descuento`}
-                                                {c.maxDiscount > 0 && <span className="text-slate-500 text-xs ml-1 font-normal">(Tope ${c.maxDiscount})</span>}
+                                                {c.maxDiscount > 0 && <span className={`transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'} text-xs ml-1 font-normal`}>(Tope ${c.maxDiscount})</span>}
                                             </p>
 
                                             {/* Validación visual de mínimo de compra */}
                                             {c.minPurchase > 0 && (
-                                                <p className={`text-xs mt-3 font-bold flex items-center gap-1 ${canApply ? 'text-slate-500' : 'text-red-400'}`}>
+                                                <p className={`text-xs mt-3 font-bold flex items-center gap-1 transition-colors duration-300 ${canApply ? (darkMode ? 'text-slate-500' : 'text-slate-400') : 'text-red-400'}`}>
                                                     {canApply ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
                                                     Compra mínima: ${c.minPurchase}
                                                 </p>
@@ -5748,14 +5755,14 @@ function App() {
 
         return (
             <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-4" onClick={() => setSelectedProduct(null)}>
-                <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative h-full md:h-auto overflow-y-auto md:overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className={`border rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative h-full md:h-auto overflow-y-auto md:overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`} onClick={e => e.stopPropagation()}>
 
                     {/* Imagen con Zoom y Efectos */}
-                    <div className="md:w-1/2 h-72 md:h-[550px] bg-gradient-to-b from-slate-900 to-[#0a0a0a] p-8 md:p-12 flex items-center justify-center relative overflow-hidden group">
+                    <div className={`md:w-1/2 h-72 md:h-[550px] p-8 md:p-12 flex items-center justify-center relative overflow-hidden group ${darkMode ? 'bg-gradient-to-b from-slate-900 to-[#0a0a0a]' : 'bg-gradient-to-b from-slate-100 to-white'}`}>
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
                         <img
                             src={selectedProduct.image}
-                            className="w-full h-full object-contain drop-shadow-[0_0_50px_rgba(255,255,255,0.15)] z-10 transition-transform duration-700 hover:scale-110"
+                            className={`w-full h-full object-contain z-10 transition-transform duration-700 hover:scale-110 ${darkMode ? 'drop-shadow-[0_0_50px_rgba(255,255,255,0.15)]' : 'drop-shadow-[0_0_50px_rgba(0,0,0,0.1)]'}`}
                         />
                         {/* Badges de Estado */}
                         {!hasStock && (
@@ -5768,32 +5775,32 @@ function App() {
                     </div>
 
                     {/* Panel de Información y Acción */}
-                    <div className="md:w-1/2 p-8 md:p-12 flex flex-col bg-[#080808]">
+                    <div className={`md:w-1/2 p-8 md:p-12 flex flex-col ${darkMode ? 'bg-[#080808]' : 'bg-white'}`}>
                         <div className="mb-8">
-                            <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-4 border border-orange-500/20">
+                            <span className={`inline-block px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] rounded mb-4 border ${darkMode ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
                                 {isPromo ? 'COMBOS & PROMOCIONES' : selectedProduct.category}
                             </span>
-                            <h2 className="text-3xl md:text-4xl font-black text-white leading-[1.1] mb-6 neon-text-small">{selectedProduct.name}</h2>
-                            <p className="text-slate-400 text-sm md:text-base leading-relaxed line-clamp-4">
+                            <h2 className={`text-3xl md:text-4xl font-black leading-[1.1] mb-6 ${darkMode ? 'text-white neon-text-small' : 'text-slate-900'}`}>{selectedProduct.name}</h2>
+                            <p className={`text-sm md:text-base leading-relaxed line-clamp-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                 {selectedProduct.description || ''}
                             </p>
                         </div>
 
                         {/* Lista de productos para Promos */}
                         {isPromo && selectedProduct.items && (
-                            <div className="mb-8 space-y-3 bg-purple-500/5 p-6 rounded-2xl border border-purple-500/20 shadow-inner">
-                                <p className="text-[10px] uppercase font-black text-purple-400 tracking-[0.2em] flex items-center gap-2">
+                            <div className={`mb-8 space-y-3 p-6 rounded-2xl border shadow-inner ${darkMode ? 'bg-purple-500/5 border-purple-500/20' : 'bg-purple-50 border-purple-200'}`}>
+                                <p className={`text-[10px] uppercase font-black tracking-[0.2em] flex items-center gap-2 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
                                     <Sparkles className="w-3 h-3" /> Este pack incluye:
                                 </p>
                                 <div className="space-y-2">
                                     {selectedProduct.items.map((item, idx) => {
                                         const p = products.find(prod => prod.id === item.productId);
                                         return (
-                                            <div key={idx} className="flex items-center gap-3 text-sm text-slate-300 group/item">
-                                                <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-[10px] font-black text-purple-400 group-hover/item:bg-purple-500 group-hover/item:text-white transition">
+                                            <div key={idx} className={`flex items-center gap-3 text-sm group/item ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black group-hover/item:text-white transition ${darkMode ? 'bg-purple-500/20 text-purple-400 group-hover/item:bg-purple-500' : 'bg-purple-100 text-purple-600 group-hover/item:bg-purple-600'}`}>
                                                     {item.quantity}x
                                                 </div>
-                                                <span className="font-bold group-hover/item:text-white transition">{p?.name || 'Producto del Packs'}</span>
+                                                <span className={`font-bold transition ${darkMode ? 'group-hover:text-white' : 'group-hover:text-slate-900'}`}>{p?.name || 'Producto del Packs'}</span>
                                             </div>
                                         );
                                     })}
@@ -5802,15 +5809,15 @@ function App() {
                         )}
 
                         {/* Footer con Precio y Carrito */}
-                        <div className="mt-auto pt-8 border-t border-white/5 flex flex-col gap-6">
+                        <div className={`mt-auto pt-8 border-t flex flex-col gap-6 ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
                             <div className="flex items-end justify-between">
                                 <div className="flex flex-col">
-                                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Inversión Total</span>
+                                    <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Inversión Total</span>
                                     <div className="flex items-center gap-3">
                                         {selectedProduct.discount > 0 && !isPromo && (
-                                            <span className="text-sm text-slate-600 line-through font-bold">${(selectedProduct.basePrice * qty).toLocaleString()}</span>
+                                            <span className={`text-sm line-through font-bold ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>${(selectedProduct.basePrice * qty).toLocaleString()}</span>
                                         )}
-                                        <span className="text-4xl font-black text-white tracking-tighter">
+                                        <span className={`text-4xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                             ${(displayPrice * qty).toLocaleString()}
                                         </span>
                                     </div>
@@ -5824,19 +5831,19 @@ function App() {
 
                             <div className="flex gap-3">
                                 {/* Selector de Cantidad */}
-                                <div className="flex items-center gap-3 bg-slate-900 rounded-2xl p-2 border border-slate-800">
+                                <div className={`flex items-center gap-3 rounded-2xl p-2 border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
                                         disabled={qty <= 1}
-                                        className="w-12 h-12 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className={`w-12 h-12 flex items-center justify-center rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}
                                     >
                                         <Minus className="w-5 h-5" />
                                     </button>
-                                    <span className="text-xl font-bold w-8 text-center text-white font-mono">{qty}</span>
+                                    <span className={`text-xl font-bold w-8 text-center font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setQty(Math.min(availableToAdd, qty + 1)); }}
                                         disabled={qty >= availableToAdd}
-                                        className="w-12 h-12 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className={`w-12 h-12 flex items-center justify-center rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}
                                     >
                                         <Plus className="w-5 h-5" />
                                     </button>
@@ -5848,8 +5855,8 @@ function App() {
                                     className={`flex-1 py-5 rounded-2xl font-black transition flex items-center justify-center gap-3 shadow-2xl ${added
                                         ? 'bg-green-500 text-white'
                                         : (hasStock && !isMaxInCart)
-                                            ? 'bg-white text-black hover:bg-orange-400 hover:text-white hover:scale-[1.02] active:scale-[0.98]'
-                                            : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
+                                            ? (darkMode ? 'bg-white text-black hover:bg-orange-400 hover:text-white hover:scale-[1.02] active:scale-[0.98]' : 'bg-slate-900 text-white hover:bg-orange-600 hover:scale-[1.02] active:scale-[0.98]')
+                                            : (darkMode ? 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed' : 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed')
                                         }`}
                                 >
                                     {added ? (
@@ -5869,7 +5876,7 @@ function App() {
                         {/* Botón Cerrar */}
                         <button
                             onClick={() => setSelectedProduct(null)}
-                            className="absolute top-4 right-4 md:top-6 md:right-6 p-4 bg-black/60 md:bg-white/5 hover:bg-white/10 text-white md:text-slate-400 hover:text-white rounded-full transition-all border border-white/20 md:border-white/5 z-[30] shadow-2xl backdrop-blur-md"
+                            className={`absolute top-4 right-4 md:top-6 md:right-6 p-4 rounded-full transition-all border z-[30] shadow-2xl backdrop-blur-md ${darkMode ? 'bg-black/60 md:bg-white/5 hover:bg-white/10 text-white md:text-slate-400 hover:text-white border-white/20 md:border-white/5' : 'bg-white/60 md:bg-slate-900/5 hover:bg-slate-900/10 text-slate-900 md:text-slate-500 hover:text-slate-900 border-slate-200 md:border-slate-900/5'}`}
                             title="Cerrar detalle"
                         >
                             <X className="w-6 h-6 md:w-5 md:h-5" />
@@ -5958,24 +5965,24 @@ function App() {
         };
 
         return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up">
-                <div className="bg-[#0a0a0a] rounded-[2rem] w-full max-w-lg border border-slate-800 shadow-2xl relative overflow-hidden">
-                    <button onClick={() => setShowManualSaleModal(false)} className="absolute top-6 right-6 p-2 bg-slate-900 rounded-full text-slate-400 hover:text-white transition z-10">
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up" onClick={() => setShowManualSaleModal(false)}>
+                <div className={`rounded-[2rem] w-full max-w-lg border shadow-2xl relative overflow-hidden transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`} onClick={e => e.stopPropagation()}>
+                    <button onClick={() => setShowManualSaleModal(false)} className={`absolute top-6 right-6 p-2 rounded-full transition z-10 ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-400 hover:text-slate-900'}`}>
                         <X className="w-5 h-5" />
                     </button>
 
-                    <div className="p-8 border-b border-slate-800">
-                        <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                    <div className={`p-8 border-b transition-colors duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+                        <h3 className={`text-2xl font-black flex items-center gap-3 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                             <Store className="w-6 h-6 text-green-400" /> Registrar Venta Manual
                         </h3>
-                        <p className="text-slate-500 text-sm mt-1">Para ventas fuera de la plataforma web.</p>
+                        <p className={`text-sm mt-1 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Para ventas fuera de la plataforma web.</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-8 space-y-4">
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Producto</label>
+                            <label className={`text-xs font-bold uppercase tracking-widest block mb-1 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Producto</label>
                             <select
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                className={`w-full rounded-xl p-3 focus:border-green-500 outline-none transition-all duration-300 ${darkMode ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-slate-50 border border-slate-200 text-slate-900'}`}
                                 value={saleData.productId}
                                 onChange={handleProductChange}
                             >
@@ -5990,21 +5997,21 @@ function App() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Cantidad</label>
+                                <label className={`text-xs font-bold uppercase tracking-widest block mb-1 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Cantidad</label>
                                 <input
                                     type="number"
                                     min="1"
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                    className={`w-full rounded-xl p-3 focus:border-green-500 outline-none transition-all duration-300 ${darkMode ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-slate-50 border border-slate-200 text-slate-900'}`}
                                     value={saleData.quantity}
                                     onChange={e => setSaleData({ ...saleData, quantity: Number(e.target.value) })}
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Precio Unit. ($)</label>
+                                <label className={`text-xs font-bold uppercase tracking-widest block mb-1 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Precio Unit. ($)</label>
                                 <input
                                     type="number"
                                     min="0"
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                    className={`w-full rounded-xl p-3 focus:border-green-500 outline-none transition-all duration-300 ${darkMode ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-slate-50 border border-slate-200 text-slate-900'}`}
                                     value={saleData.price}
                                     onChange={e => setSaleData({ ...saleData, price: Number(e.target.value) })}
                                 />
@@ -6012,18 +6019,18 @@ function App() {
                         </div>
 
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Cliente / Notas</label>
+                            <label className={`text-xs font-bold uppercase tracking-widest block mb-1 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Cliente / Notas</label>
                             <input
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                className={`w-full rounded-xl p-3 focus:border-green-500 outline-none transition-all duration-300 ${darkMode ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-slate-50 border border-slate-200 text-slate-900'}`}
                                 value={saleData.customerName}
                                 onChange={e => setSaleData({ ...saleData, customerName: e.target.value })}
                             />
                         </div>
 
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Método de Pago</label>
+                            <label className={`text-xs font-bold uppercase tracking-widest block mb-1 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Método de Pago</label>
                             <select
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-green-500 outline-none"
+                                className={`w-full rounded-xl p-3 focus:border-green-500 outline-none transition-all duration-300 ${darkMode ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-slate-50 border border-slate-200 text-slate-900'}`}
                                 value={saleData.paymentMethod}
                                 onChange={e => setSaleData({ ...saleData, paymentMethod: e.target.value })}
                             >
@@ -6057,28 +6064,38 @@ function App() {
         const worstPeriod = sortedByVal[sortedByVal.length - 1];
 
         return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up">
-                <div className="bg-[#050505] rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col border border-slate-800 shadow-2xl relative overflow-hidden">
+            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up" onClick={() => setMetricsDetail(null)}>
+                <div 
+                    className={`rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col border shadow-2xl relative overflow-hidden transition-colors duration-300 ${darkMode ? 'bg-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}
+                    onClick={e => e.stopPropagation()}
+                >
                     {/* Header */}
-                    <div className="p-8 border-b border-slate-800 bg-slate-900/20 flex justify-between items-center">
+                    <div className={`p-8 border-b flex justify-between items-center ${darkMode ? 'border-slate-800 bg-slate-900/20' : 'border-slate-100 bg-slate-50/50'}`}>
                         <div>
                             <h3 className={`text-3xl font-black ${colorClass} flex items-center gap-3`}>
                                 <BarChart className="w-8 h-8" /> {title} - Analítica
                             </h3>
                             <p className="text-slate-500 text-sm mt-1">Desglose detallado de tu rendimiento.</p>
                         </div>
-                        <button onClick={() => setMetricsDetail(null)} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition border border-slate-700">
+                        <button 
+                            onClick={() => setMetricsDetail(null)} 
+                            className={`p-3 rounded-full transition border ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white border-slate-700' : 'bg-slate-100 text-slate-500 hover:text-slate-900 border-slate-200'}`}
+                        >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
                     {/* Controls */}
-                    <div className="p-6 flex gap-4 bg-slate-900/10 border-b border-slate-800/50 justify-center">
+                    <div className={`p-6 flex gap-4 border-b justify-center ${darkMode ? 'bg-slate-900/10 border-slate-800/50' : 'bg-slate-50/50 border-slate-100'}`}>
                         {['daily', 'monthly', 'yearly'].map(t => (
                             <button
                                 key={t}
                                 onClick={() => setTimeframe(t)}
-                                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition ${timeframe === t ? 'bg-slate-100 text-black' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
+                                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition ${
+                                    timeframe === t 
+                                        ? (darkMode ? 'bg-slate-100 text-black' : 'bg-slate-900 text-white') 
+                                        : (darkMode ? 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800' : 'bg-white text-slate-400 hover:text-slate-600 border border-slate-200')
+                                }`}
                             >
                                 {t === 'daily' ? 'Diario' : t === 'monthly' ? 'Mensual' : 'Anual'}
                             </button>
@@ -6086,26 +6103,26 @@ function App() {
                     </div>
 
                     {/* Stats Highlights */}
-                    <div className="grid grid-cols-2 gap-4 p-6 bg-slate-900/5">
-                        <div className="bg-green-900/10 border border-green-500/20 p-4 rounded-2xl flex items-center gap-4">
-                            <div className="p-3 bg-green-500/20 rounded-xl text-green-400">
+                    <div className={`grid grid-cols-2 gap-4 p-6 ${darkMode ? 'bg-slate-900/5' : 'bg-slate-50/30'}`}>
+                        <div className={`border p-4 rounded-2xl flex items-center gap-4 ${darkMode ? 'bg-green-900/10 border-green-500/20' : 'bg-green-50 border-green-100'}`}>
+                            <div className={`p-3 rounded-xl ${darkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-600'}`}>
                                 <TrendingUp className="w-6 h-6" />
                             </div>
                             <div>
                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Mejor Periodo</p>
-                                <p className="text-green-400 font-black text-lg">
+                                <p className={`${darkMode ? 'text-green-400' : 'text-green-600'} font-black text-lg`}>
                                     {bestPeriod ? `$${bestPeriod.revenue.toLocaleString()}` : '-'}
                                 </p>
                                 <p className="text-[10px] text-slate-500 font-mono">{bestPeriod?.date || '-'}</p>
                             </div>
                         </div>
-                        <div className="bg-red-900/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-4">
-                            <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
+                        <div className={`border p-4 rounded-2xl flex items-center gap-4 ${darkMode ? 'bg-red-900/10 border-red-500/20' : 'bg-red-50 border-red-100'}`}>
+                            <div className={`p-3 rounded-xl ${darkMode ? 'bg-red-500/20 text-red-400' : 'bg-red-100 text-red-600'}`}>
                                 <TrendingDown className="w-6 h-6" />
                             </div>
                             <div>
                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Peor Periodo</p>
-                                <p className="text-red-400 font-black text-lg">
+                                <p className={`${darkMode ? 'text-red-400' : 'text-red-600'} font-black text-lg`}>
                                     {worstPeriod ? `$${worstPeriod.revenue.toLocaleString()}` : '-'}
                                 </p>
                                 <p className="text-[10px] text-slate-500 font-mono">{worstPeriod?.date || '-'}</p>
@@ -6116,35 +6133,37 @@ function App() {
                     {/* CSS Bar Chart */}
                     <div className="flex-1 p-6 relative flex items-end justify-between gap-2 overflow-x-auto custom-scrollbar">
                         {data.length === 0 ? (
-                            <div className="w-full text-center text-slate-500 my-auto">No hay datos para mostrar el gráfico.</div>
+                            <div className={`w-full text-center my-auto transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>No hay datos para mostrar el gráfico.</div>
                         ) : (
                             (() => {
                                 const maxVal = Math.max(...data.map(d => d.revenue), 1); // Avoid div/0
                                 return data.slice().map((item, idx) => {
                                     const heightPct = (item.revenue / maxVal) * 100;
-                                    const isPositive = metricsDetail.type !== 'net_income' || item.revenue >= 0;
-                                    // For net income, handle negative later if needed, assuming revenue is always positive here
-
+                                    
                                     return (
-                                        <div key={idx} className="flex flex-col items-center justify-end h-full gap-2 group min-w-[60px] cursor-pointer hover:bg-slate-900/30 rounded-xl p-1 transition-all">
+                                        <div key={idx} className={`flex flex-col items-center justify-end h-full gap-2 group min-w-[60px] cursor-pointer rounded-xl p-1 transition-all ${darkMode ? 'hover:bg-slate-900/30' : 'hover:bg-slate-100'}`}>
                                             {/* Tooltip on Hover */}
-                                            <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl pointer-events-none transition z-50 shadow-xl max-w-[min(240px,70vw)] whitespace-normal break-words">
-                                                <p className="text-white font-bold">{item.date}</p>
+                                            <div className={`opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 border px-3 py-2 rounded-xl pointer-events-none transition z-50 shadow-xl max-w-[min(240px,70vw)] whitespace-normal break-words ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                                <p className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.date}</p>
                                                 <p className={`font-black ${colorClass}`}>${item.revenue.toLocaleString()}</p>
-                                                <p className="text-[10px] text-slate-500">{item.orders} Pedidos</p>
+                                                <p className={`text-[10px] ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{item.orders} Pedidos</p>
                                             </div>
 
                                             {/* Bar */}
                                             <div
-                                                className={`w-4 bg-gradient-to-t ${metricsDetail.type === 'revenue' ? 'from-green-900/50 to-green-500' : 'from-orange-900/50 to-orange-500'} rounded-t-full relative transition-all duration-500 group-hover:w-6 group-hover:brightness-125`}
+                                                className={`w-4 bg-gradient-to-t rounded-t-full relative transition-all duration-500 group-hover:w-6 group-hover:brightness-125 ${
+                                                    metricsDetail.type === 'revenue' 
+                                                        ? (darkMode ? 'from-green-900/50 to-green-500' : 'from-green-200 to-green-600') 
+                                                        : (darkMode ? 'from-orange-900/50 to-orange-500' : 'from-orange-200 to-orange-600')
+                                                }`}
                                                 style={{ height: `${Math.max(heightPct, 5)}%` }} // Min height 5%
                                             >
                                                 {/* Glow alignment */}
-                                                <div className={`absolute top-0 left-0 right-0 h-4 rounded-full ${metricsDetail.type === 'revenue' ? 'bg-green-400' : 'bg-orange-400'} blur-md opacity-20`}></div>
+                                                <div className={`absolute top-0 left-0 right-0 h-4 rounded-full blur-md opacity-20 ${metricsDetail.type === 'revenue' ? 'bg-green-400' : 'bg-orange-400'}`}></div>
                                             </div>
 
                                             {/* Label */}
-                                            <p className="text-[10px] text-slate-600 font-bold -rotate-45 group-hover:rotate-0 group-hover:text-white transition origin-center mt-2 truncate w-full text-center">
+                                            <p className={`text-[10px] font-bold -rotate-45 group-hover:rotate-0 transition origin-center mt-2 truncate w-full text-center ${darkMode ? 'text-slate-600 group-hover:text-white' : 'text-slate-400 group-hover:text-slate-900'}`}>
                                                 {timeframe === 'monthly' ? item.date.slice(5) : timeframe === 'daily' ? item.date.slice(5) : item.date}
                                             </p>
                                         </div>
@@ -6166,46 +6185,46 @@ function App() {
             return (
                 <div className="py-20 flex flex-col items-center gap-4 opacity-50">
                     <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-                    <p className="text-xs font-black tracking-widest text-slate-500">SINCRONIZANDO DATOS...</p>
+                    <p className={`text-xs font-black tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>SINCRONIZANDO DATOS...</p>
                 </div>
             );
         }
         if (cartItems.length === 0) {
             return (
                 <div className="py-20 text-center flex flex-col items-center gap-6">
-                    <div className="p-6 rounded-full bg-white/5 border border-white/5">
-                        <ShoppingCart className="w-12 h-12 text-slate-700" />
+                    <div className={`p-6 rounded-full border transition-colors duration-300 ${darkMode ? 'bg-white/5 border-white/5' : 'bg-slate-100 border-slate-200'}`}>
+                        <ShoppingCart className={`w-12 h-12 transition-colors duration-300 ${darkMode ? 'text-slate-700' : 'text-slate-300'}`} />
                     </div>
-                    <p className="text-sm font-black uppercase tracking-widest text-slate-500 italic">No hay productos activos</p>
+                    <p className={`text-sm font-black uppercase tracking-widest italic transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>No hay productos activos</p>
                 </div>
             );
         }
         return (
             <>
                 <div className="flex justify-between items-center px-2">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contenido del Carrito</p>
+                    <p className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Contenido del Carrito</p>
                     <p className="text-xs font-bold text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full">{cartItems.length} ITEMS</p>
                 </div>
                 <div className="space-y-3">
                     {cartItems.map((item, idx) => (
-                        <div key={idx} className="bg-white/[0.03] border border-white/10 p-4 rounded-2xl flex gap-4 transition hover:bg-white/[0.05] hover:border-orange-500/20 group animate-fade-up" style={{ animationDelay: `${idx * 0.05}s` }}>
-                            <div className="w-16 h-16 bg-[#0a0a0a] rounded-xl overflow-hidden shadow-inner border border-white/5 flex-shrink-0">
+                        <div key={idx} className={`border p-4 rounded-2xl flex gap-4 transition group animate-fade-up transition-colors duration-300 ${darkMode ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.05] hover:border-orange-500/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-orange-200'}`} style={{ animationDelay: `${idx * 0.05}s` }}>
+                            <div className={`w-16 h-16 rounded-xl overflow-hidden shadow-inner border flex-shrink-0 transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-white/5' : 'bg-white border-slate-200'}`}>
                                 <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                             </div>
                             <div className="flex-1 flex flex-col justify-center">
-                                <p className="font-bold text-white text-sm leading-tight mb-1">{item.name}</p>
+                                <p className={`font-bold text-sm leading-tight mb-1 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.name}</p>
                                 <div className="flex justify-between items-center">
-                                    <p className="text-xs text-slate-500">Cant: <span className="text-white font-mono font-bold">{item.quantity}</span></p>
+                                    <p className={`text-xs transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Cant: <span className={`font-mono font-bold transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.quantity}</span></p>
                                     <p className="text-orange-400 font-black font-mono text-xs">${Number(item.price).toLocaleString()}</p>
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
-                <div className="pt-6 border-t border-white/5">
-                    <div className="flex justify-between items-center bg-orange-500/5 p-6 rounded-2xl border border-orange-500/20">
-                        <p className="text-slate-400 font-bold">Valor Total</p>
-                        <p className="text-2xl font-black text-white font-mono">${cartItems.reduce((acc, i) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}</p>
+                <div className={`pt-6 border-t transition-colors duration-300 ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                    <div className={`flex justify-between items-center p-6 rounded-2xl border transition-colors duration-300 ${darkMode ? 'bg-orange-500/5 border-orange-500/20' : 'bg-orange-50 border-orange-100'}`}>
+                        <p className={`font-bold transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Valor Total</p>
+                        <p className={`text-2xl font-black font-mono transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>${cartItems.reduce((acc, i) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}</p>
                     </div>
                 </div>
             </>
@@ -6231,13 +6250,13 @@ function App() {
             <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
                 {/* Datos de Identidad */}
                 <div className="space-y-6">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                         <User className="w-3 h-3" /> Datos Identidad
                     </p>
                     <div className="grid grid-cols-1 gap-6">
                         <div>
                             <input
-                                className="input-cyber w-full p-4 text-sm"
+                                className={`w-full p-4 text-sm transition-all duration-300 ${darkMode ? 'input-cyber' : 'bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 placeholder:text-slate-400'}`}
                                 placeholder="Nombre Completo"
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -6246,7 +6265,7 @@ function App() {
                         </div>
                         <div>
                             <input
-                                className="input-cyber w-full p-4 text-sm font-mono"
+                                className={`w-full p-4 text-sm font-mono transition-all duration-300 ${darkMode ? 'input-cyber' : 'bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 placeholder:text-slate-400'}`}
                                 placeholder="Username / Alias"
                                 value={formData.username}
                                 onChange={e => setFormData({ ...formData, username: e.target.value })}
@@ -6254,7 +6273,7 @@ function App() {
                         </div>
                         <div>
                             <input
-                                className={`input-cyber w-full p-4 text-sm font-mono ${isSuperAdminProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                className={`w-full p-4 text-sm font-mono transition-all duration-300 ${darkMode ? 'input-cyber' : 'bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 placeholder:text-slate-400'} ${isSuperAdminProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 placeholder="Email de la cuenta (Principal)"
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -6265,13 +6284,13 @@ function App() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <input
-                                className="input-cyber w-full p-4 text-sm font-mono"
+                                className={`w-full p-4 text-sm font-mono transition-all duration-300 ${darkMode ? 'input-cyber' : 'bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 placeholder:text-slate-400'}`}
                                 placeholder="DNI"
                                 value={formData.dni}
                                 onChange={e => setFormData({ ...formData, dni: e.target.value })}
                             />
                             <input
-                                className="input-cyber w-full p-4 text-sm font-mono"
+                                className={`w-full p-4 text-sm font-mono transition-all duration-300 ${darkMode ? 'input-cyber' : 'bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 placeholder:text-slate-400'}`}
                                 placeholder="Teléfono"
                                 value={formData.phone}
                                 onChange={e => setFormData({ ...formData, phone: e.target.value })}
@@ -6282,7 +6301,7 @@ function App() {
 
                 {/* Seguridad y Rol */}
                 <div className="space-y-6 pt-4">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                         <Lock className="w-3 h-3" /> Seguridad & Rol
                     </p>
                     <div className="space-y-4">
@@ -6290,22 +6309,22 @@ function App() {
                             <div className="relative group">
                                 <input
                                     type="password"
-                                    className="input-cyber w-full p-4 text-sm font-mono"
+                                    className={`w-full p-4 text-sm font-mono transition-all duration-300 ${darkMode ? 'input-cyber' : 'bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 placeholder:text-slate-400'}`}
                                     placeholder="Nueva Contraseña (Dejar vacío para no cambiar)"
                                     value={formData.newPassword}
                                     onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
                                 />
                             </div>
-                            <p className="text-[9px] text-slate-600 mt-2 ml-1 italic">Mínimo 6 caracteres para actualizar.</p>
+                            <p className={`text-[9px] mt-2 ml-1 italic transition-colors duration-300 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>Mínimo 6 caracteres para actualizar.</p>
                         </div>
 
-                        <div className={`flex bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 ${isSuperAdminProfile ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <div className={`flex p-1.5 rounded-2xl border transition-all duration-300 ${darkMode ? 'bg-slate-900/50 border-white/5' : 'bg-slate-100 border-slate-200'} ${isSuperAdminProfile ? 'opacity-50 pointer-events-none' : ''}`}>
                             {['user', 'editor', 'admin'].map(r => (
                                 <button
                                     key={r}
                                     type="button"
                                     onClick={() => setFormData({ ...formData, role: r })}
-                                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.role === r ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'
+                                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.role === r ? (darkMode ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-white text-indigo-600 shadow-sm') : (darkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')
                                         }`}
                                 >
                                     {r}
@@ -6481,21 +6500,21 @@ function App() {
             <div className="fixed inset-0 z-[1000] flex justify-end animate-fade-in pointer-events-none">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={closeDrawer} />
 
-                <div className="w-full max-w-xl bg-[#0a0a0a] border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col h-full pointer-events-auto relative overflow-hidden animate-slide-left">
+                <div className={`w-full max-w-xl border-l shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col h-full pointer-events-auto relative overflow-hidden animate-slide-left transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-slate-200'}`}>
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-600 via-orange-500 to-pink-600"></div>
 
-                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                    <div className={`p-8 border-b flex justify-between items-center transition-colors duration-300 ${darkMode ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50/50'}`}>
                         <div>
-                            <h2 className="text-xl font-black text-white tracking-widest uppercase">
+                            <h2 className={`text-xl font-black tracking-widest uppercase transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                 {type === 'cart' ? 'Auditoría de Carrito' : 'Configurar Cuenta'}
                             </h2>
-                            <p className="text-[10px] font-bold text-slate-500 mt-1 tracking-widest flex items-center gap-2">
+                            <p className={`text-[10px] font-bold mt-1 tracking-widest flex items-center gap-2 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                                 <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
                                 ID: {user.id.slice(-8).toUpperCase()} • {user.email}
                             </p>
                         </div>
-                        <button onClick={closeDrawer} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
-                            <X className="w-5 h-5 text-slate-400 group-hover:text-white" />
+                        <button onClick={closeDrawer} className={`p-3 rounded-2xl transition-all border group ${darkMode ? 'bg-white/5 hover:bg-white/10 border-white/5' : 'bg-slate-100 hover:bg-slate-200 border-slate-200'}`}>
+                            <X className={`w-5 h-5 transition-colors duration-300 ${darkMode ? 'text-slate-400 group-hover:text-white' : 'text-slate-500 group-hover:text-slate-900'}`} />
                         </button>
                     </div>
 
@@ -6761,7 +6780,7 @@ function App() {
                                 </div>
                             )}
                             <div className="flex flex-col">
-                                <span className={`text-xl sm:text-2xl md:text-4xl font-black tracking-tighter italic group-hover:text-orange-500 transition-all duration-300 leading-none ${darkMode ? 'text-white' : 'text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] filter'}`}>
+                                <span className={`text-xl sm:text-2xl md:text-4xl font-black tracking-tighter italic group-hover:text-orange-500 transition-all duration-300 leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {!settingsLoaded ? (
                                         <span className={`inline-block h-6 sm:h-8 w-20 sm:w-32 rounded animate-pulse ${darkMode ? 'bg-slate-700/50' : 'bg-slate-200'}`}></span>
                                     ) : (settings?.storeName || '')}
@@ -6971,7 +6990,7 @@ function App() {
                                             <span className="bg-orange-500 text-black px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
                                                 {settings?.heroBadge || ''}
                                             </span>
-                                            <h1 className={`text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.9] mb-4 ${darkMode ? 'text-white drop-shadow-2xl neon-text' : 'text-slate-900'}`}>
+                                            <h1 className={`text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.9] mb-4 ${darkMode ? 'text-white drop-shadow-2xl' : 'text-slate-900'}`}>
                                                 {settings?.heroTitle1 || ''} <br />
                                                 <span className={`text-transparent bg-clip-text bg-gradient-to-r ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || ''}
@@ -7017,32 +7036,32 @@ function App() {
                                     <>
                                         {/* Beneficio 1 */}
                                         {settings?.showFeature1 !== false && (
-                                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                                <div className="w-10 h-10 rounded-full bg-orange-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
-                                                    <Zap className="w-5 h-5 text-orange-400" />
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center tech-glow transition duration-500 group ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-orange-900/20' : 'bg-orange-100'}`}>
+                                                    <Zap className={`w-5 h-5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />
                                                 </div>
-                                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature1Title || ''}</h3>
-                                                <p className="text-slate-400 text-[11px]">{settings?.feature1Desc || ''}</p>
+                                                <h3 className={`text-base font-bold mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{settings?.feature1Title || ''}</h3>
+                                                <p className={`text-[11px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{settings?.feature1Desc || ''}</p>
                                             </div>
                                         )}
                                         {/* Beneficio 2 */}
                                         {settings?.showFeature2 !== false && (
-                                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                                <div className="w-10 h-10 rounded-full bg-purple-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
-                                                    <Shield className="w-5 h-5 text-purple-400" />
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center tech-glow transition duration-500 group ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-purple-900/20' : 'bg-purple-100'}`}>
+                                                    <Shield className={`w-5 h-5 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
                                                 </div>
-                                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature2Title || ''}</h3>
-                                                <p className="text-slate-400 text-[11px]">{settings?.feature2Desc || ''}</p>
+                                                <h3 className={`text-base font-bold mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{settings?.feature2Title || ''}</h3>
+                                                <p className={`text-[11px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{settings?.feature2Desc || ''}</p>
                                             </div>
                                         )}
                                         {/* Beneficio 3 */}
                                         {settings?.showFeature3 !== false && (
-                                            <div className="p-4 rounded-[1.5rem] bg-slate-900/30 border border-slate-800 backdrop-blur-sm flex flex-col items-center text-center tech-glow hover:bg-slate-900/50 transition duration-500 group">
-                                                <div className="w-10 h-10 rounded-full bg-green-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition">
-                                                    <Headphones className="w-5 h-5 text-green-400" />
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center tech-glow transition duration-500 group ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-green-900/20' : 'bg-green-100'}`}>
+                                                    <Headphones className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
                                                 </div>
-                                                <h3 className="text-base font-bold text-white mb-1">{settings?.feature3Title || ''}</h3>
-                                                <p className="text-slate-400 text-[11px]">{settings?.feature3Desc || ''}</p>
+                                                <h3 className={`text-base font-bold mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{settings?.feature3Title || ''}</h3>
+                                                <p className={`text-[11px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{settings?.feature3Desc || ''}</p>
                                             </div>
                                         )}
                                     </>
@@ -7051,7 +7070,7 @@ function App() {
                         )}
 
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className={`sticky top-16 sm:top-20 z-40 backdrop-blur-xl py-3 sm:py-4 mb-6 sm:mb-8 -mx-4 px-4 border-y ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
+                        <div id="catalog" className={`sticky top-16 sm:top-20 z-40 backdrop-blur-xl py-3 sm:py-4 mb-6 sm:mb-8 -mx-4 px-4 border-y transition-colors duration-300 ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/90 border-slate-200'}`}>
                             <div
                                 ref={categoriesScrollRef}
                                 onMouseDown={handleMouseDownCategories}
@@ -7116,21 +7135,21 @@ function App() {
                                                 const hasStock = maxPurchasable > 0;
 
                                                 return (
-                                                    <div key={promo.id} className="bg-gradient-to-br from-purple-900/10 to-blue-900/10 rounded-[2.5rem] border border-purple-500/30 overflow-hidden group shadow-[0_0_30px_rgba(168,85,247,0.1)] hover:shadow-[0_0_50px_rgba(168,85,247,0.2)] transition duration-500 relative flex flex-col">
+                                                    <div key={promo.id} className={`rounded-[2.5rem] border overflow-hidden group transition duration-500 relative flex flex-col ${darkMode ? 'bg-gradient-to-br from-purple-900/10 to-blue-900/10 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.1)] hover:shadow-[0_0_50px_rgba(168,85,247,0.2)]' : 'bg-white border-purple-200 shadow-sm hover:shadow-xl'}`}>
                                                         <div
-                                                            className="aspect-square bg-slate-900/50 flex items-center justify-center relative overflow-hidden cursor-zoom-in"
+                                                            className={`aspect-square flex items-center justify-center relative overflow-hidden cursor-zoom-in ${darkMode ? 'bg-slate-900/50' : 'bg-slate-50'}`}
                                                             onClick={() => setSelectedProduct({ ...promo, isPromo: true, stock: maxPurchasable })}
                                                         >
                                                             <img src={promo.image} className="w-full h-full object-contain transition duration-700 group-hover:scale-110" />
-                                                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
+                                                            <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent ${darkMode ? 'from-[#0a0a0a]' : 'from-white/50'}`}></div>
                                                             <div className="absolute top-4 right-4 bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                                                                 Oferta Limitada
                                                             </div>
                                                         </div>
 
                                                         <div className="p-8 flex-1 flex flex-col">
-                                                            <h3 className="text-2xl font-black text-white mb-2 leading-tight">{promo.name}</h3>
-                                                            <p className="text-purple-300 text-sm mb-6 flex-1">{promo.description}</p>
+                                                            <h3 className={`text-2xl font-black mb-2 leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{promo.name}</h3>
+                                                            <p className={`text-sm mb-6 flex-1 ${darkMode ? 'text-purple-300' : 'text-purple-600'}`}>{promo.description}</p>
 
                                                             {/* Lista de productos incluidos */}
                                                             <div className="mb-6 space-y-2">
@@ -7138,15 +7157,15 @@ function App() {
                                                                 {promo.items.map((item, idx) => {
                                                                     const p = products.find(prod => prod.id === item.productId);
                                                                     return (
-                                                                        <div key={idx} className="flex items-center gap-2 text-sm text-slate-400">
-                                                                            <CheckCircle className="w-3 h-3 text-purple-500" />
-                                                                            <span className="text-white font-bold">{item.quantity}x</span> {p ? p.name : 'Producto'}
+                                                                        <div key={idx} className={`flex items-center gap-2 text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                                            <CheckCircle className={`w-3.5 h-3.5 ${darkMode ? 'text-purple-500' : 'text-purple-600'}`} />
+                                                                            <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.quantity}x</span> {p ? p.name : 'Producto'}
                                                                         </div>
                                                                     );
                                                                 })}
                                                             </div>
 
-                                                            <div className="flex items-center justify-between mt-auto pt-6 border-t border-white/5">
+                                                            <div className={`flex items-center justify-between mt-auto pt-6 border-t ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
                                                                 <div className="flex flex-col">
                                                                     <span className="text-slate-500 text-xs font-bold line-through decoration-red-500 decoration-2">
                                                                         ${promo.items.reduce((acc, item) => {
@@ -7154,28 +7173,26 @@ function App() {
                                                                             return acc + ((Number(p?.basePrice) || 0) * item.quantity);
                                                                         }, 0).toLocaleString()}
                                                                     </span>
-                                                                    <span className="text-3xl font-black text-white neon-text text-purple-400">
+                                                                    <span className={`text-3xl font-black ${darkMode ? 'text-purple-400 neon-text' : 'text-purple-600'}`}>
                                                                         ${Number(promo.price).toLocaleString()}
                                                                     </span>
                                                                 </div>
                                                                 <button
                                                                     onClick={() => {
                                                                         if (!hasStock) return showToast("Sin stock disponible para esta promo.", "warning");
-                                                                        // Lógica especial para agregar Promo al carrito
-                                                                        // Tratamos la promo como un "producto" pero con un flag especial
                                                                         const promoProduct = {
                                                                             id: promo.id,
                                                                             name: promo.name,
                                                                             basePrice: promo.price,
                                                                             image: promo.image,
                                                                             isPromo: true,
-                                                                            items: promo.items, // Guardamos la def de items para validar stock
-                                                                            stock: maxPurchasable // Stock virtual calculado
+                                                                            items: promo.items,
+                                                                            stock: maxPurchasable
                                                                         };
                                                                         manageCart(promoProduct, 1);
                                                                     }}
                                                                     disabled={!hasStock}
-                                                                    className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition shadow-lg ${hasStock ? 'bg-white text-black hover:bg-purple-400 hover:text-white hover:scale-105' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+                                                                    className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition shadow-lg ${hasStock ? (darkMode ? 'bg-white text-black hover:bg-purple-400 hover:text-white hover:scale-105' : 'bg-slate-900 text-white hover:bg-purple-600 hover:scale-105') : (darkMode ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-200 text-slate-400 cursor-not-allowed')}`}
                                                                 >
                                                                     {hasStock ? <ShoppingCart className="w-5 h-5" /> : <X className="w-5 h-5" />}
                                                                     {hasStock ? 'AGREGAR' : 'AGOTADO'}
@@ -7188,15 +7205,15 @@ function App() {
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center p-20 text-center border border-dashed border-slate-800 rounded-[3rem] bg-slate-950/30">
-                                        <div className="p-8 bg-slate-900 rounded-full mb-6 shadow-2xl border border-slate-800">
-                                            <Tag className="w-16 h-16 text-slate-600" />
+                                    <div className={`flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
+                                        <div className={`p-8 rounded-full mb-6 shadow-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                            <Tag className={`w-16 h-16 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
                                         </div>
-                                        <h3 className="text-2xl font-black text-white mb-2">Sin Promociones Activas</h3>
+                                        <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Sin Promociones Activas</h3>
                                         <p className="text-slate-500 max-w-sm">No hay promociones disponibles en este momento. ¡Volvé pronto!</p>
                                         <button
                                             onClick={() => setSelectedCategory('')}
-                                            className="mt-6 px-6 py-3 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition border border-orange-500/20"
+                                            className={`mt-6 px-6 py-3 rounded-xl font-bold transition border ${darkMode ? 'bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 border-orange-500/20' : 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200'}`}
                                         >
                                             Ver Todo el Catálogo
                                         </button>
@@ -7207,29 +7224,29 @@ function App() {
 
                         {/* Grid de Productos - Filtrando productos inválidos (ej: tests) */}
                         {products.filter(p => p.isActive !== false).length === 0 ? (
-                            // Empty State explícito (sin componente externo para "bulk")
-                            <div className="flex flex-col items-center justify-center p-20 text-center border-2 border-dashed border-slate-800 rounded-[3rem] bg-slate-950/30">
-                                <div className="p-8 bg-slate-900 rounded-full mb-6 shadow-2xl border border-slate-800">
-                                    <Package className="w-16 h-16 text-slate-600" />
+                            {/* Empty State explícito (sin componente externo para "bulk") */}
+                            <div className={`flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
+                                <div className={`p-8 rounded-full mb-6 shadow-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <Package className={`w-16 h-16 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
                                 </div>
-                                <h3 className="text-2xl font-black text-white mb-2">Catálogo Vacío</h3>
+                                <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Catálogo Vacío</h3>
                                 <p className="text-slate-500 max-w-sm">No hay productos disponibles en este momento. Por favor revisa más tarde o contacta soporte.</p>
                             </div>
                         ) : (
                             <>
                                 {filteredProducts.length === 0 && selectedCategory !== 'Promos' && (
                                     <div className="flex flex-col items-center justify-center p-20 text-center col-span-full animate-fade-in w-full">
-                                        <div className="p-6 bg-slate-900/50 rounded-full mb-4 inline-block border border-slate-800">
-                                            <Search className="w-12 h-12 text-slate-500" />
+                                        <div className={`p-6 rounded-full mb-4 inline-block border ${darkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                            <Search className={`w-12 h-12 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
                                         </div>
-                                        <h3 className="text-xl font-bold text-white mb-2">No se encontraron resultados</h3>
+                                        <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>No se encontraron resultados</h3>
                                         <p className="text-slate-500 mb-6 max-w-md mx-auto">
-                                            No hay productos que coincidan con <span className="text-white font-bold">"{searchQuery}"</span>
-                                            {selectedCategory && <span> en la categoría <span className="text-white font-bold">{selectedCategory}</span></span>}.
+                                            No hay productos que coincidan con <span className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold`}>"{searchQuery}"</span>
+                                            {selectedCategory && <span> en la categoría <span className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold`}>{selectedCategory}</span></span>}.
                                         </p>
                                         <button
                                             onClick={() => { setSearchQuery(''); setSelectedCategory(''); }}
-                                            className="px-6 py-3 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition border border-orange-500/20"
+                                            className={`px-6 py-3 rounded-xl font-bold transition border ${darkMode ? 'bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 border-orange-500/20' : 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200'}`}
                                         >
                                             Limpiar filtros
                                         </button>
@@ -7261,10 +7278,10 @@ function App() {
                     <div className="max-w-6xl mx-auto animate-fade-up px-4 md:px-8 pb-20">
                         <div className="flex flex-col gap-4 mb-8 pt-8 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-4">
-                                <button onClick={() => setView('store')} className="p-3 bg-slate-900 rounded-full text-slate-400 hover:text-white transition hover:bg-slate-800 group">
+                                <button onClick={() => setView('store')} className={`p-3 rounded-full transition group ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}>
                                     <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition" />
                                 </button>
-                                <h1 className={`text-4xl font-black flex items-center gap-3 ${darkMode ? 'text-white neon-text' : 'text-slate-900'}`}>
+                                <h1 className={`text-4xl font-black flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                     <ShoppingBag className="w-10 h-10 text-orange-500" /> Mi Carrito
                                 </h1>
                             </div>
@@ -7304,39 +7321,39 @@ function App() {
                                 {/* Lista de Items */}
                                 <div className="lg:col-span-2 space-y-4">
                                     {cart.map((item) => (
-                                        <div key={item.product.id} className="bg-[#0a0a0a] border border-slate-800 p-4 md:p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center group relative overflow-hidden hover:border-orange-900/50 transition duration-300">
+                                        <div key={item.product.id} className={`p-4 md:p-6 rounded-3xl border flex flex-col md:flex-row gap-6 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm hover:shadow-md'}`}>
                                             {/* Imagen */}
-                                            <div className="w-full md:w-32 h-32 bg-white rounded-2xl flex items-center justify-center p-2 flex-shrink-0 shadow-lg">
+                                            <div className="w-full md:w-32 h-32 bg-white rounded-2xl flex items-center justify-center p-2 flex-shrink-0 shadow-lg border border-slate-100">
                                                 <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain" />
                                             </div>
 
                                             {/* Info */}
                                             <div className="flex-1 w-full text-center md:text-left z-10">
                                                 <div className="flex justify-between items-start w-full">
-                                                    <h3 className="font-bold text-white text-lg truncate mb-1 pr-4">{item.product.name}</h3>
-                                                    <button onClick={() => manageCart(item.product, -item.quantity)} className="text-slate-600 hover:text-red-500 transition p-2 bg-slate-900 rounded-lg hover:bg-red-900/20">
+                                                    <h3 className={`font-bold text-lg truncate mb-1 pr-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.product.name}</h3>
+                                                    <button onClick={() => manageCart(item.product, -item.quantity)} className={`p-2 rounded-lg transition ${darkMode ? 'text-slate-600 hover:text-red-500 bg-slate-900 hover:bg-red-900/20' : 'text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50'}`}>
                                                         <Trash2 className="w-5 h-5" />
                                                     </button>
                                                 </div>
 
-                                                <p className="text-orange-400 font-bold text-sm mb-4">
-                                                    ${calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0).toLocaleString()} <span className="text-slate-600 font-normal">unitario</span>
+                                                <p className="text-orange-500 font-bold text-sm mb-4">
+                                                    ${calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0).toLocaleString()} <span className="text-slate-500 font-normal">unitario</span>
                                                 </p>
 
                                                 {/* Controles de Cantidad */}
                                                 <div className="flex items-center justify-center md:justify-start gap-4">
-                                                    <div className="flex items-center gap-3 bg-slate-900 rounded-xl p-1 border border-slate-700">
-                                                        <button onClick={() => manageCart(item.product, -1)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+                                                    <div className={`flex items-center gap-3 rounded-xl p-1 border ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                                        <button onClick={() => manageCart(item.product, -1)} className={`w-10 h-10 flex items-center justify-center rounded-lg transition ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}>
                                                             <Minus className="w-4 h-4" />
                                                         </button>
-                                                        <span className="text-base font-bold w-8 text-center text-white">{item.quantity}</span>
-                                                        <button onClick={() => manageCart(item.product, 1)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+                                                        <span className={`text-base font-bold w-8 text-center ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.quantity}</span>
+                                                        <button onClick={() => manageCart(item.product, 1)} className={`w-10 h-10 flex items-center justify-center rounded-lg transition ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}>
                                                             <Plus className="w-4 h-4" />
                                                         </button>
                                                     </div>
-                                                    <div className="hidden md:block h-8 w-px bg-slate-800 mx-2"></div>
+                                                    <div className={`hidden md:block h-8 w-px mx-2 ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
                                                     <p className="text-xs text-slate-500 font-bold uppercase hidden md:block">
-                                                        Subtotal: <span className="text-white text-lg ml-1">${(calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0) * (item.quantity || 0)).toLocaleString()}</span>
+                                                        Subtotal: <span className={`text-lg ml-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>${(calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0) * (item.quantity || 0)).toLocaleString()}</span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -7345,12 +7362,12 @@ function App() {
                                 </div>
 
                                 {/* Resumen y Checkout */}
-                                <div className={`border p-8 rounded-[2.5rem] h-fit sticky top-28 shadow-2xl ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
-                                    <h3 className={`text-2xl font-black mb-8 border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>Resumen de Compra</h3>
+                                <div className={`border p-8 rounded-[2.5rem] h-fit sticky top-28 shadow-2xl transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <h3 className={`text-2xl font-black mb-8 border-b pb-4 transition-colors duration-300 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>Resumen de Compra</h3>
 
                                     {/* Sección de Cupones */}
                                     <div className="mb-8">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block flex items-center gap-2">
+                                        <label className={`text-xs font-bold uppercase tracking-widest mb-3 block flex items-center gap-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                                             <Tag className="w-4 h-4" /> Cupón de Descuento
                                         </label>
                                         {appliedCoupon ? (
@@ -7362,12 +7379,12 @@ function App() {
                                                         {appliedCoupon.type === 'fixed' ? `$${appliedCoupon.value} OFF` : `${appliedCoupon.value}% OFF`}
                                                     </p>
                                                 </div>
-                                                <button onClick={() => setAppliedCoupon(null)} className="p-2 bg-slate-900/50 rounded-full text-purple-300 hover:text-red-400 hover:bg-red-900/30 transition relative z-10 border border-transparent hover:border-red-500/30">
+                                                <button onClick={() => setAppliedCoupon(null)} className={`p-2 rounded-full transition relative z-10 border border-transparent hover:border-red-500/30 ${darkMode ? 'bg-slate-900/50 text-purple-300 hover:text-red-400 hover:bg-red-900/30' : 'bg-white text-purple-600 hover:text-red-600 hover:bg-red-50'}`}>
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         ) : (
-                                            <button onClick={() => setShowCouponModal(true)} className="w-full py-4 border border-dashed border-slate-700 hover:border-purple-500 bg-slate-900/30 hover:bg-purple-900/10 text-slate-400 hover:text-purple-300 rounded-2xl transition flex items-center justify-center gap-2 text-sm font-bold group">
+                                            <button onClick={() => setShowCouponModal(true)} className={`w-full py-4 border border-dashed rounded-2xl transition flex items-center justify-center gap-2 text-sm font-bold group ${darkMode ? 'border-slate-700 hover:border-purple-500 bg-slate-900/30 hover:bg-purple-900/10 text-slate-400 hover:text-purple-300' : 'border-slate-300 hover:border-purple-500 bg-slate-50 hover:bg-purple-50 text-slate-500 hover:text-purple-600'}`}>
                                                 <Ticket className="w-5 h-5 group-hover:rotate-12 transition" /> Ver cupones disponibles
                                             </button>
                                         )}
@@ -7461,11 +7478,11 @@ function App() {
 
                                     {checkoutData.shippingMethod === 'Delivery' && (
                                         <div className="space-y-5 relative z-10 animate-fade-up mt-4">
-                                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest pl-2">Datos de Destino</h3>
+                                            <h3 className={`text-sm font-bold uppercase tracking-widest pl-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Datos de Destino</h3>
                                             <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Dirección y Altura</label>
+                                                <label className={`text-xs font-bold uppercase ml-2 mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Dirección y Altura</label>
                                                 <input
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition font-medium"
+                                                    className={`w-full border rounded-xl p-4 transition font-medium outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 ${darkMode ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-600' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                                                     placeholder="Ej: Av. Santa Fe 1234"
                                                     value={checkoutData.address || ''}
                                                     onChange={e => setCheckoutData({ ...checkoutData, address: e.target.value })}
@@ -7473,18 +7490,18 @@ function App() {
                                             </div>
                                             <div className="grid grid-cols-2 gap-5">
                                                 <div>
-                                                    <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Ciudad</label>
+                                                    <label className={`text-xs font-bold uppercase ml-2 mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Ciudad</label>
                                                     <input
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-orange-500 outline-none transition font-medium"
+                                                        className={`w-full border rounded-xl p-4 transition font-medium outline-none focus:border-orange-500 ${darkMode ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-600' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                                                         placeholder="Ej: Rosario"
                                                         value={checkoutData.city || ''}
                                                         onChange={e => setCheckoutData({ ...checkoutData, city: e.target.value })}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Provincia</label>
+                                                    <label className={`text-xs font-bold uppercase ml-2 mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Provincia</label>
                                                     <input
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-orange-500 outline-none transition font-medium"
+                                                        className={`w-full border rounded-xl p-4 transition font-medium outline-none focus:border-orange-500 ${darkMode ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-600' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                                                         placeholder="Ej: Santa Fe"
                                                         value={checkoutData.province || ''}
                                                         onChange={e => setCheckoutData({ ...checkoutData, province: e.target.value })}
@@ -7492,9 +7509,9 @@ function App() {
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase ml-2 mb-1 block">Código Postal</label>
+                                                <label className={`text-xs font-bold uppercase ml-2 mb-1 block ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Código Postal</label>
                                                 <input
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 focus:border-orange-500 outline-none transition font-medium"
+                                                    className={`w-full border rounded-xl p-4 transition font-medium outline-none focus:border-orange-500 ${darkMode ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-600' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                                                     placeholder="Ej: 2000"
                                                     value={checkoutData.zipCode || ''}
                                                     onChange={e => setCheckoutData({ ...checkoutData, zipCode: e.target.value })}
@@ -7694,31 +7711,30 @@ function App() {
                 {view === 'profile' && currentUser && currentUser.id && currentUser.email && currentUser.name && (
                     <div className="max-w-6xl mx-auto pt-8 animate-fade-up px-4 md:px-8 pb-20">
                         {/* Tarjeta de Usuario */}
-                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 md:p-12 rounded-[3rem] mb-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl">
+                        <div className={`p-8 md:p-12 rounded-[3rem] mb-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl border transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                             {/* Decoración Fondo */}
-                            {/* Decoración Fondo */}
-                            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-[120px] pointer-events-none"></div>
-                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
+                            <div className={`absolute top-0 right-0 w-96 h-96 rounded-full blur-[120px] pointer-events-none ${darkMode ? 'bg-orange-500/5' : 'bg-orange-500/10'}`}></div>
+                            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-[100px] pointer-events-none ${darkMode ? 'bg-blue-600/5' : 'bg-blue-600/10'}`}></div>
 
                             {/* Avatar */}
-                            <div className="w-28 h-28 rounded-[2rem] bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center text-5xl font-black text-white shadow-2xl z-10 transform rotate-3 border-4 border-[#0a0a0a]">
+                            <div className={`w-28 h-28 rounded-[2rem] bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center text-5xl font-black text-white shadow-2xl z-10 transform rotate-3 border-4 ${darkMode ? 'border-[#0a0a0a]' : 'border-white'}`}>
                                 {currentUser.name.charAt(0)}
                             </div>
 
                             {/* Info */}
                             <div className="text-center md:text-left z-10 flex-1">
-                                <h2 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">{currentUser.name}</h2>
-                                <p className="text-slate-400 flex items-center justify-center md:justify-start gap-2 font-medium mb-4">
+                                <h2 className={`text-4xl md:text-5xl font-black mb-2 tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{currentUser.name}</h2>
+                                <p className={`flex items-center justify-center md:justify-start gap-2 font-medium mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                     <Mail className="w-4 h-4 text-orange-500" /> {currentUser.email}
                                 </p>
                                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                                    <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-500 font-mono flex items-center gap-2">
+                                    <span className={`px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2 border ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                                         <User className="w-3 h-3" /> {currentUser.dni || 'Sin DNI'}
                                     </span>
-                                    <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-500 font-mono flex items-center gap-2">
+                                    <span className={`px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2 border ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                                         <Phone className="w-3 h-3" /> {currentUser.phone || 'Sin Teléfono'}
                                     </span>
-                                    <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-500 font-mono flex items-center gap-2">
+                                    <span className={`px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2 border ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                                         <Shield className="w-3 h-3" /> {getRole(currentUser.email).toUpperCase()}
                                     </span>
                                 </div>
@@ -7727,19 +7743,19 @@ function App() {
                             {/* Acciones */}
                             <div className="flex flex-col gap-3 z-10 w-full md:w-auto">
                                 {hasAccess(currentUser.email) && (
-                                    <button onClick={() => setView('admin')} className="px-6 py-4 bg-slate-900 border border-orange-500/30 text-orange-400 hover:bg-orange-900/20 rounded-2xl font-bold transition flex items-center justify-center gap-2 shadow-lg hover:shadow-orange-500/10">
+                                    <button onClick={() => setView('admin')} className={`px-6 py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2 shadow-lg border ${darkMode ? 'bg-slate-900 border-orange-500/30 text-orange-400 hover:bg-orange-900/20 hover:shadow-orange-500/10' : 'bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100'}`}>
                                         <Shield className="w-5 h-5" /> Panel Admin
                                     </button>
                                 )}
-                                <button onClick={() => { localStorage.removeItem('sustore_user_data'); setCurrentUser(null); setView('store') }} className="px-6 py-4 bg-red-900/10 border border-red-500/20 text-red-500 hover:bg-red-900/20 rounded-2xl font-bold transition flex items-center justify-center gap-2 hover:border-red-500/40">
+                                <button onClick={() => { localStorage.removeItem('sustore_user_data'); setCurrentUser(null); setView('store') }} className={`px-6 py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2 border ${darkMode ? 'bg-red-900/10 border-red-500/20 text-red-500 hover:bg-red-900/20 hover:border-red-500/40' : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'}`}>
                                     <LogOut className="w-5 h-5" /> Cerrar Sesión
                                 </button>
                             </div>
                         </div>
 
                         {/* SECCIÓN: MIS CUPONES (NUEVO) */}
-                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-12 shadow-2xl animate-fade-up">
-                            <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                        <div className={`p-8 rounded-[2.5rem] mb-12 shadow-2xl animate-fade-up border transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                            <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                 <Ticket className="text-purple-400 w-6 h-6" /> Mis Cupones Disponibles
                             </h3>
 
@@ -7752,23 +7768,23 @@ function App() {
                                             (c.targetType === 'specific_email' && c.targetUser === currentUser.email)
                                         );
 
-                                        if (myCoupons.length === 0) return <p className="text-slate-500 italic">No tienes cupones disponibles en este momento.</p>;
+                                        if (myCoupons.length === 0) return <p className={`${darkMode ? 'text-slate-500' : 'text-slate-400'} italic`}>No tienes cupones disponibles en este momento.</p>;
 
                                         return myCoupons.map(c => (
-                                            <div key={c.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex items-center justify-between group hover:border-purple-500/30 transition">
+                                            <div key={c.id} className={`p-4 rounded-xl flex items-center justify-between group transition border ${darkMode ? 'bg-slate-900/50 border-slate-800 hover:border-purple-500/30' : 'bg-slate-50 border-slate-100 hover:border-purple-300 hover:bg-white'}`}>
                                                 <div>
-                                                    <p className="font-black text-white text-lg tracking-widest">{c.code}</p>
-                                                    <p className="text-purple-400 text-sm font-bold">
+                                                    <p className={`font-black text-lg tracking-widest ${darkMode ? 'text-white' : 'text-slate-900'}`}>{c.code}</p>
+                                                    <p className={`text-sm font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
                                                         {c.type === 'fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}
                                                     </p>
-                                                    {c.expirationDate && <p className="text-[10px] text-slate-500 mt-1">Vence: {c.expirationDate}</p>}
+                                                    {c.expirationDate && <p className={`text-[10px] mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Vence: {c.expirationDate}</p>}
                                                 </div>
                                                 <button
                                                     onClick={() => {
                                                         navigator.clipboard.writeText(c.code);
                                                         showToast("Código copiado", "success");
                                                     }}
-                                                    className="px-4 py-2 bg-purple-900/20 text-purple-400 rounded-lg text-xs font-bold hover:bg-purple-500 hover:text-white transition border border-purple-500/20"
+                                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition border ${darkMode ? 'bg-purple-900/20 text-purple-400 border-purple-500/20 hover:bg-purple-500 hover:text-white' : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white'}`}
                                                 >
                                                     COPIAR
                                                 </button>
@@ -7777,11 +7793,11 @@ function App() {
                                     })()}
                                 </div>
 
-                                <div className="bg-slate-900/30 p-6 rounded-2xl border border-slate-800">
-                                    <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Canjear Código</h4>
+                                <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                                    <h4 className={`font-bold mb-4 text-sm uppercase tracking-wider ${darkMode ? 'text-white' : 'text-slate-900'}`}>Canjear Código</h4>
                                     <div className="flex gap-2">
                                         <input
-                                            className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none uppercase font-mono"
+                                            className={`flex-1 rounded-xl p-3 outline-none uppercase font-mono border ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-white border-slate-200 text-slate-900 focus:border-purple-400'}`}
                                             placeholder="CÓDIGO"
                                             id="couponRedeemInput"
                                         />
@@ -7802,7 +7818,7 @@ function App() {
                                             Validar
                                         </button>
                                     </div>
-                                    <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+                                    <p className={`text-xs mt-3 leading-relaxed ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                                         Ingresa el código aquí para verificar si es válido. Llévalo al checkout para aplicar el descuento.
                                     </p>
                                 </div>
@@ -7813,7 +7829,7 @@ function App() {
                             {/* Columna Izquierda: Historial de Pedidos */}
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                                    <h3 className={`text-2xl font-black flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                         <ShoppingBag className="text-orange-400 w-6 h-6" /> Tus Compras
                                     </h3>
                                 </div>
@@ -7825,7 +7841,7 @@ function App() {
 
                                     if (purchasedItems.length === 0) {
                                         return (
-                                            <div className="p-12 border-2 border-dashed border-slate-800 rounded-[2rem] text-center text-slate-500 bg-slate-900/20">
+                                            <div className={`p-12 border-2 border-dashed rounded-[2rem] text-center bg-slate-900/20 ${darkMode ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400 bg-slate-50'}`}>
                                                 <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-50" />
                                                 <p className="font-bold">Aún no tienes compras finalizadas.</p>
                                                 <button onClick={() => setView('store')} className="mt-4 text-orange-400 hover:underline text-sm font-bold">Ir a la tienda</button>
@@ -7836,18 +7852,18 @@ function App() {
                                     return (
                                         <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
                                             {purchasedItems.sort((a, b) => new Date(b.date) - new Date(a.date)).map((item, idx) => (
-                                                <div key={idx} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-2xl flex items-center gap-4 group hover:border-orange-500/50 transition duration-300">
-                                                    <div className="w-16 h-16 bg-white rounded-xl p-1 flex-shrink-0">
+                                                <div key={idx} className={`p-4 rounded-2xl flex items-center gap-4 group transition duration-300 border ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-500/50' : 'bg-white border-slate-200 hover:border-orange-400 hover:shadow-md'}`}>
+                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
                                                         <img src={item.image} className="w-full h-full object-contain" alt={item.title} />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <h4 className="text-white font-bold text-sm truncate group-hover:text-orange-400 transition">{item.title}</h4>
-                                                        <p className="text-xs text-slate-500 font-mono mt-1">{new Date(item.date).toLocaleDateString()}</p>
+                                                        <h4 className={`font-bold text-sm truncate transition group-hover:text-orange-500 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
+                                                        <p className={`text-xs font-mono mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{new Date(item.date).toLocaleDateString()}</p>
                                                     </div>
                                                     <div className="text-right flex flex-col items-end gap-1">
-                                                        <p className="text-white font-black">${item.unit_price.toLocaleString()}</p>
+                                                        <p className={`font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>${item.unit_price.toLocaleString()}</p>
                                                         {item.quantity > 1 && (
-                                                            <span className="text-[10px] text-slate-500 font-bold">x{item.quantity} und.</span>
+                                                            <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>x{item.quantity} und.</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -7861,16 +7877,16 @@ function App() {
                             <div className="space-y-6">
 
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                                    <h3 className={`text-2xl font-black flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                         <Heart className="text-red-500 w-6 h-6 fill-current" /> Mis Favoritos
                                     </h3>
-                                    <span className="text-xs font-bold text-slate-500 bg-slate-900 px-3 py-1 rounded-full">
+                                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${darkMode ? 'text-slate-500 bg-slate-900' : 'text-slate-600 bg-slate-100'}`}>
                                         {currentUser.favorites?.length || 0} Guardados
                                     </span>
                                 </div>
 
                                 {!currentUser.favorites || currentUser.favorites.length === 0 ? (
-                                    <div className="p-12 border-2 border-dashed border-slate-800 rounded-[2rem] text-center text-slate-500 bg-slate-900/20">
+                                    <div className={`p-12 border-2 border-dashed rounded-[2rem] text-center bg-slate-900/20 ${darkMode ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400 bg-slate-50'}`}>
                                         <Heart className="w-12 h-12 mx-auto mb-4 opacity-50" />
                                         <p className="font-bold">Tu lista de deseos está vacía.</p>
                                         <p className="text-xs mt-2 max-w-xs mx-auto">Guarda productos haciendo click en el corazón de las tarjetas.</p>
@@ -7881,27 +7897,27 @@ function App() {
                                             const p = products.find(prod => prod.id === fid);
                                             if (!p) return null;
                                             return (
-                                                <div key={fid} className="bg-[#0a0a0a] border border-slate-800 p-4 rounded-2xl flex items-center gap-4 relative group hover:border-slate-600 transition">
-                                                    <div className="w-16 h-16 bg-white rounded-xl p-1 flex-shrink-0">
+                                                <div key={fid} className={`p-4 rounded-2xl flex items-center gap-4 relative group transition border ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-slate-600' : 'bg-white border-slate-200 hover:border-orange-400 hover:shadow-md'}`}>
+                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
                                                         <img src={p.image} className="w-full h-full object-contain" />
                                                     </div>
 
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="font-bold text-white line-clamp-1 group-hover:text-orange-400 transition">{p.name}</p>
-                                                        <p className="text-orange-400 font-bold text-sm mt-1">${p.basePrice.toLocaleString()}</p>
+                                                        <p className={`font-bold line-clamp-1 transition group-hover:text-orange-500 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{p.name}</p>
+                                                        <p className="text-orange-500 font-bold text-sm mt-1">${p.basePrice.toLocaleString()}</p>
                                                     </div>
 
                                                     <div className="flex gap-2">
                                                         <button
                                                             onClick={() => toggleFavorite(p)}
-                                                            className="p-3 bg-slate-900 text-red-400 hover:bg-red-900/20 rounded-xl transition border border-slate-800 hover:border-red-500/30"
+                                                            className={`p-3 rounded-xl transition border ${darkMode ? 'bg-slate-900 text-red-400 border-slate-800 hover:bg-red-900/20 hover:border-red-500/30' : 'bg-red-50 text-red-500 border-red-100 hover:bg-red-100'}`}
                                                             title="Eliminar de favoritos"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
                                                         <button
                                                             onClick={() => manageCart(p, 1)}
-                                                            className="p-3 bg-slate-900 text-orange-400 hover:bg-orange-900/20 rounded-xl transition border border-slate-800 hover:border-orange-500/30"
+                                                            className={`p-3 rounded-xl transition border ${darkMode ? 'bg-slate-900 text-orange-400 border-slate-800 hover:bg-orange-900/20 hover:border-orange-500/30' : 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-100'}`}
                                                             title="Agregar al carrito"
                                                         >
                                                             <Plus className="w-4 h-4" />
@@ -12523,49 +12539,49 @@ function App() {
             {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
             {
                 view !== 'admin' && view !== 'login' && view !== 'register' && (
-                    <footer className="bg-[#050505] border-t border-slate-900 pt-16 pb-8 relative overflow-hidden">
+                    <footer className={`pt-16 pb-8 relative overflow-hidden transition-colors duration-300 border-t ${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-slate-100 border-slate-200'}`}>
                         {/* Decoración de Fondo */}
-                        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-900/50 to-transparent"></div>
-                        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-900/5 rounded-full blur-[100px] pointer-events-none"></div>
+                        <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent`}></div>
+                        <div className={`absolute -top-40 -right-40 w-96 h-96 rounded-full blur-[100px] pointer-events-none ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'}`}></div>
 
                         <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
                             {/* Columna 1: Marca */}
                             <div className="md:col-span-2 space-y-6">
-                                <h2 className="text-3xl font-black text-white tracking-tighter italic">
+                                <h2 className={`text-3xl font-black tracking-tighter italic ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {settingsLoaded ? (settings?.storeName || '') : ''}
                                     <span className="text-orange-500">{settings?.footerSuffix || '.SF'}</span>
                                 </h2>
-                                <p className="text-slate-500 max-w-sm leading-relaxed text-sm">
+                                <p className={`max-w-sm leading-relaxed text-sm ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>
                                     {settings?.footerDescription || 'Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.'}
                                 </p>
                                 <div className="flex gap-3 pt-2 flex-wrap">
                                     {settings?.showInstagram !== false && settings?.instagramLink && (
-                                        <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-pink-400 hover:bg-pink-900/10 transition border border-slate-800 hover:border-pink-500/30">
+                                        <button onClick={() => window.open(settings?.instagramLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-pink-400 hover:bg-pink-900/10 hover:border-pink-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-pink-600 hover:bg-pink-50 hover:border-pink-300'}`}>
                                             <Instagram className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showWhatsapp === true && settings?.whatsappLink && (
-                                        <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-900/10 transition border border-slate-800 hover:border-green-500/30">
+                                        <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-green-400 hover:bg-green-900/10 hover:border-green-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-green-600 hover:bg-green-50 hover:border-green-300'}`}>
                                             <MessageCircle className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showFacebook && settings?.facebookLink && (
-                                        <button onClick={() => window.open(settings?.facebookLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-900/10 transition border border-slate-800 hover:border-blue-500/30">
+                                        <button onClick={() => window.open(settings?.facebookLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-blue-400 hover:bg-blue-900/10 hover:border-blue-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-300'}`}>
                                             <Facebook className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showTwitter && settings?.twitterLink && (
-                                        <button onClick={() => window.open(settings?.twitterLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-sky-900/10 transition border border-slate-800 hover:border-sky-500/30">
+                                        <button onClick={() => window.open(settings?.twitterLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-sky-400 hover:bg-sky-900/10 hover:border-sky-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-sky-600 hover:bg-sky-50 hover:border-sky-300'}`}>
                                             <Twitter className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showTiktok && settings?.tiktokLink && (
-                                        <button onClick={() => window.open(settings?.tiktokLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-900/10 transition border border-slate-800 hover:border-rose-500/30">
+                                        <button onClick={() => window.open(settings?.tiktokLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-rose-400 hover:bg-rose-900/10 hover:border-rose-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-300'}`}>
                                             <Music className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showYoutube && settings?.youtubeLink && (
-                                        <button onClick={() => window.open(settings?.youtubeLink, '_blank')} className="p-2 bg-slate-900 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/10 transition border border-slate-800 hover:border-red-500/30">
+                                        <button onClick={() => window.open(settings?.youtubeLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-red-400 hover:bg-red-900/10 hover:border-red-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-red-600 hover:bg-red-50 hover:border-red-300'}`}>
                                             <Youtube className="w-5 h-5" />
                                         </button>
                                     )}
@@ -12574,21 +12590,21 @@ function App() {
 
                             {/* Columna 2: Quick Links */}
                             <div className="space-y-6">
-                                <h3 className="text-white font-bold uppercase tracking-widest text-xs">Enlaces Rápidos</h3>
-                                <ul className="space-y-3 text-sm text-slate-500 font-medium">
+                                <h3 className={`font-bold uppercase tracking-widest text-xs ${darkMode ? 'text-white' : 'text-slate-900'}`}>Enlaces Rápidos</h3>
+                                <ul className={`space-y-3 text-sm font-medium ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>
                                     <li>
-                                        <button onClick={() => setView('store')} className="hover:text-orange-400 transition flex items-center gap-2 group">
-                                            <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Inicio
+                                        <button onClick={() => setView('store')} className="hover:text-orange-500 transition flex items-center gap-2 group">
+                                            <span className="w-0 group-hover:w-2 h-px bg-orange-500 transition-all duration-300"></span> Inicio
                                         </button>
                                     </li>
                                     <li>
-                                        <button onClick={() => setView('profile')} className="hover:text-orange-400 transition flex items-center gap-2 group">
-                                            <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Mi Cuenta
+                                        <button onClick={() => setView('profile')} className="hover:text-orange-500 transition flex items-center gap-2 group">
+                                            <span className="w-0 group-hover:w-2 h-px bg-orange-500 transition-all duration-300"></span> Mi Cuenta
                                         </button>
                                     </li>
                                     <li>
-                                        <button onClick={() => setView('guide')} className="hover:text-orange-400 transition flex items-center gap-2 group">
-                                            <span className="w-0 group-hover:w-2 h-px bg-orange-400 transition-all duration-300"></span> Ayuda & Soporte
+                                        <button onClick={() => setView('guide')} className="hover:text-orange-500 transition flex items-center gap-2 group">
+                                            <span className="w-0 group-hover:w-2 h-px bg-orange-500 transition-all duration-300"></span> Ayuda & Soporte
                                         </button>
                                     </li>
                                 </ul>
@@ -12597,10 +12613,10 @@ function App() {
                             {/* Columna 3: Soporte */}
                             {settings?.showFooterContact !== false && (
                                 <div className="space-y-6">
-                                    <h3 className="text-white font-bold uppercase tracking-widest text-xs">
+                                    <h3 className={`font-bold uppercase tracking-widest text-xs ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                         {settings?.footerContactTitle || 'Contacto'}
                                     </h3>
-                                    <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                    <p className={`text-sm leading-relaxed mb-4 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>
                                         {settings?.footerContactDescription || '¿Tienes alguna duda? Estamos aquí para ayudarte.'}
                                     </p>
                                     <button
@@ -12614,7 +12630,7 @@ function App() {
                                                 window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${settings.storeEmail}`, '_blank');
                                             }
                                         }}
-                                        className="px-6 py-3 bg-orange-900/10 text-orange-400 rounded-xl text-sm font-bold border border-orange-500/20 hover:bg-orange-500 hover:text-white transition w-full md:w-auto"
+                                        className={`px-6 py-3 rounded-xl text-sm font-bold transition w-full md:w-auto border ${darkMode ? 'bg-orange-900/10 text-orange-400 border-orange-500/20 hover:bg-orange-500 hover:text-white' : 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-500 hover:text-white hover:border-orange-500'}`}
                                     >
                                         {settings?.footerContactButtonText || 'Contactar Soporte'}
                                     </button>
@@ -12623,17 +12639,17 @@ function App() {
                         </div>
 
                         {/* Copyright Bar */}
-                        <div className="border-t border-slate-900 bg-[#020202]">
+                        <div className={`border-t transition-colors duration-300 ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-slate-200/50'}`}>
                             <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                                <p className="text-slate-600 text-xs font-mono">
+                                <p className={`text-xs font-mono ${darkMode ? 'text-slate-600' : 'text-slate-500'}`}>
                                     © 2026 Sustore. Todos los derechos reservados.
                                 </p>
                                 <div className="flex gap-6">
                                     {settings?.showPrivacyPolicy !== false && (
-                                        <span onClick={() => setView('privacy')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Privacy Policy</span>
+                                        <span onClick={() => setView('privacy')} className={`text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-orange-500 transition underline underline-offset-4 ${darkMode ? 'text-slate-700 decoration-slate-900' : 'text-slate-500 decoration-slate-300'}`}>Privacy Policy</span>
                                     )}
                                     {settings?.showTermsOfService !== false && (
-                                        <span onClick={() => setView('terms')} className="text-slate-700 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-slate-400 transition underline decoration-slate-900 underline-offset-4">Terms of Service</span>
+                                        <span onClick={() => setView('terms')} className={`text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-orange-500 transition underline underline-offset-4 ${darkMode ? 'text-slate-700 decoration-slate-900' : 'text-slate-500 decoration-slate-300'}`}>Terms of Service</span>
                                     )}
                                 </div>
                             </div>
@@ -13060,6 +13076,7 @@ function App() {
                 onConfirm={confirmModal.onConfirm}
                 onCancel={confirmModal.onCancel || (() => setConfirmModal(prev => ({ ...prev, isOpen: false })))}
                 isDangerous={true}
+                darkMode={darkMode}
             />
             {/* --- SUSTIA CHATBOT (AI) --- */}
             <CategoryModal
@@ -13068,6 +13085,7 @@ function App() {
                 categories={settings?.categories || []}
                 onAdd={(newCat) => setSettings({ ...settings, categories: [...(settings?.categories || []), newCat] })}
                 onRemove={(cat) => setSettings({ ...settings, categories: (settings?.categories || []).filter(c => c !== cat) })}
+                darkMode={darkMode}
             />
             <SustIABot
                 settings={settings}
