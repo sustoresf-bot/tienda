@@ -1,12 +1,11 @@
 // Service Worker para Tienda Online
 // Permite funcionamiento offline y mejor rendimiento
 
-const CACHE_NAME = 'tienda-cache-v6';
+const CACHE_NAME = 'tienda-cache-v7';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/styles.css',
-    '/assets/app.js',
     '/assets/tailwind.css',
     '/manifest.json',
     '/icon-192.png',
@@ -72,14 +71,16 @@ self.addEventListener('fetch', (event) => {
     if (isAsset) {
         event.respondWith((async () => {
             const cache = await caches.open(CACHE_NAME);
-            const cached = await cache.match(event.request);
-            const network = fetch(event.request).then(async (res) => {
-                if (res.status === 200) {
+            try {
+                const res = await fetch(event.request);
+                if (res && res.status === 200) {
                     await cache.put(event.request, res.clone());
                 }
                 return res;
-            }).catch(() => null);
-            return cached || network || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+            } catch {
+                const cached = await cache.match(event.request);
+                return cached || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+            }
         })());
         return;
     }

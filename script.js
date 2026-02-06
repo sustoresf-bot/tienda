@@ -3618,20 +3618,28 @@ function App() {
 
     // 1.1 Recuperar Contraseña
     const handleForgotPassword = async () => {
-        if (!authData.email || !authData.email.includes('@')) {
-            showToast("Ingresa tu email en el campo de arriba para recuperar la contraseña.", "warning");
+        const normalizedEmail = String(authData.email || '').trim().toLowerCase();
+        if (!normalizedEmail || !normalizedEmail.includes('@')) {
+            showToast("Ingresa tu email (válido) en el campo de arriba para recuperar la contraseña.", "warning");
             return;
         }
         setIsLoading(true);
         try {
-            await sendPasswordResetEmail(auth, authData.email);
-            showToast("¡Listo! Revisa tu email (y spam) para restablecer tu contraseña.", "success");
+            await sendPasswordResetEmail(auth, normalizedEmail);
+            showToast(`¡Listo! Enviamos el link a ${normalizedEmail}. Revisa tu email (y spam).`, "success");
         } catch (e) {
             console.error("Error reset pass:", e);
-            if (e.code === 'auth/user-not-found') {
+            const code = String(e?.code || '');
+            if (code === 'auth/user-not-found') {
                 showToast("No existe una cuenta registrada con este email.", "error");
+            } else if (code === 'auth/invalid-email') {
+                showToast("El email es inválido.", "error");
+            } else if (code === 'auth/operation-not-allowed') {
+                showToast("El envío de recuperación no está habilitado en Firebase Auth (Email/Password).", "error");
+            } else if (code === 'auth/too-many-requests') {
+                showToast("Demasiados intentos. Probá más tarde.", "error");
             } else {
-                showToast("Error al enviar email: " + e.message, "error");
+                showToast("Error al enviar email: " + (e?.message || 'Error'), "error");
             }
         } finally {
             setIsLoading(false);
