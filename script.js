@@ -5916,19 +5916,6 @@ function App() {
                         <Lock className="w-3 h-3" /> Seguridad & Rol
                     </p>
                     <div className="space-y-4">
-                        <div>
-                            <div className="relative group">
-                                <input
-                                    type="password"
-                                    className={`w-full p-4 text-sm font-mono transition-all duration-300 ${darkMode ? 'input-cyber' : 'bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 placeholder:text-slate-400'}`}
-                                    placeholder="Nueva Contraseña (Dejar vacío para no cambiar)"
-                                    value={formData.newPassword}
-                                    onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
-                                />
-                            </div>
-                            <p className={`text-[9px] mt-2 ml-1 italic transition-colors duration-300 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>Mínimo 6 caracteres para actualizar.</p>
-                        </div>
-
                         <div className={`flex p-1.5 rounded-2xl border transition-all duration-300 ${darkMode ? 'bg-slate-900/50 border-white/5' : 'bg-slate-100 border-slate-200'} ${isSuperAdminProfile ? 'opacity-50 pointer-events-none' : ''}`}>
                             {['user', 'editor', 'admin'].map(r => (
                                 <button
