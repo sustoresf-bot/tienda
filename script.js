@@ -1483,13 +1483,13 @@ function AdminHowToUse({ guideKey }) {
 
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-[20050] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+                    className="fixed inset-0 z-[20050] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-fade-in"
                     onClick={() => setIsOpen(false)}
                     role="dialog"
                     aria-modal="true"
                 >
                     <div
-                        className={`w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#0a0a0a] border ${c.border} rounded-[2rem] shadow-2xl overflow-hidden animate-fade-up`}
+                        className={`w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#0a0a0a] border ${c.border} rounded-[2rem] shadow-2xl overflow-hidden animate-fade-up my-auto flex-shrink-0`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className={`relative p-6 md:p-8 border-b border-slate-800/50 overflow-hidden flex-shrink-0`}>
@@ -7637,11 +7637,11 @@ function App() {
                         </h2>
                         <div className={`border p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-[3rem] shadow-2xl space-y-6 sm:space-y-8 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                             {[
-                                { title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
-                                { title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
-                                { title: settings?.guideStep3Title || "Datos de Envío", text: settings?.guideStep3Text || "Completa la información de entrega. Hacemos envíos a todo el país." },
-                                { title: settings?.guideStep4Title || "Pago y Confirmación", text: settings?.guideStep4Text || "Elige tu método de pago preferido. Si es transferencia, recibirás los datos por email." },
-                                { title: settings?.guideStep5Title || "¡Listo!", text: settings?.guideStep5Text || "Recibirás un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
+                                { num: 1, title: settings?.guideStep1Title || "Selecciona Productos", text: settings?.guideStep1Text || "Navega por nuestro catálogo y añade lo que te guste al carrito con el botón '+'." },
+                                { num: 2, title: settings?.guideStep2Title || "Revisa tu Carrito", text: settings?.guideStep2Text || "Verifica las cantidades. Si tienes un cupón de descuento, ¡es el momento de usarlo!" },
+                                { num: 3, title: settings?.guideStep3Title || "Datos de Envío", text: settings?.guideStep3Text || "Completa la información de entrega. Hacemos envíos a todo el país." },
+                                { num: 4, title: settings?.guideStep4Title || "Pago y Confirmación", text: settings?.guideStep4Text || "Elige tu método de pago preferido. Si es transferencia, recibirás los datos por email." },
+                                { num: 5, title: settings?.guideStep5Title || "¡Listo!", text: settings?.guideStep5Text || "Recibirás un correo con el seguimiento de tu pedido. ¡Disfruta tu compra!" }
                             ].filter((step, idx) => {
                                 // Filtrar pasos que están desactivados
                                 if (idx === 0 && settings?.showGuideStep1 === false) return false;
@@ -7651,9 +7651,9 @@ function App() {
                                 if (idx === 4 && settings?.showGuideStep5 === false) return false;
                                 return true;
                             }).map((step, idx) => (
-                                <div key={idx} className="flex gap-6 items-start">
+                                <div key={step.num} className="flex gap-6 items-start">
                                     <div className={`w-10 h-10 rounded-full font-black flex items-center justify-center border flex-shrink-0 mt-1 ${darkMode ? 'bg-orange-900/20 text-orange-400 border-orange-500/20' : 'bg-orange-100 text-orange-600 border-orange-200'}`}>
-                                        {idx + 1}
+                                        {step.num}
                                     </div>
                                     <div>
                                         <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{step.title}</h3>
@@ -7677,7 +7677,7 @@ function App() {
 
                                 <p>Este Aviso de Privacidad para <strong>{settings?.storeName || 'Sustore'}</strong> ("nosotros", "nos" o "nuestro"), describe cómo y por qué podríamos acceder, recopilar, almacenar, usar y/o compartir ("proceso") su información personal cuando utiliza nuestros servicios ("Servicios"), incluso cuando:</p>
                                 <ul className="list-disc pl-5 space-y-2">
-                                    <li>Visita nuestro sitio web en <a href="https://sustore.vercel.app" className="text-orange-500 hover:underline">https://sustore.vercel.app</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
+                                    <li>Visita nuestro sitio web en <a href={settings?.seoUrl || '#'} className="text-orange-500 hover:underline">{settings?.seoUrl || '[URL del sitio]'}</a> o cualquier sitio web nuestro que enlace a este Aviso de Privacidad.</li>
                                     <li>Interactúe con nosotros de otras maneras relacionadas, incluido cualquier marketing o evento.</li>
                                 </ul>
 
@@ -7714,10 +7714,8 @@ function App() {
                                 <p>Para preguntas sobre este aviso, puede escribirnos a:</p>
                                 <div className={`p-6 rounded-xl border font-mono text-sm leading-relaxed ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                                     <strong>{settings?.storeName || 'Sustore'}</strong><br />
-                                    Saavedra 7568<br />
-                                    Santa Fe, 3000<br />
-                                    Argentina<br />
-                                    <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${settings?.sellerEmail}`} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline">{settings?.sellerEmail || '[Email de contacto]'}</a>
+                                    {settings?.storeAddress || '[Dirección de contacto]'}<br />
+                                    <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${settings?.storeEmail}`} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline">{settings?.storeEmail || '[Email de contacto]'}</a>
                                 </div>
                             </div>
                         </div>
@@ -8472,7 +8470,8 @@ function App() {
                                                                 <input
                                                                     className="input-cyber w-full p-4 mt-2"
                                                                     placeholder="Nombre del Inversor Externo"
-                                                                    onChange={e => setNewInvestment({ ...newInvestment, investor: e.target.value })}
+                                                                    value={newInvestment.investorCustomName || ''}
+                                                                    onChange={e => setNewInvestment({ ...newInvestment, investorCustomName: e.target.value })}
                                                                 />
                                                             )}
                                                         </div>
@@ -8508,12 +8507,17 @@ function App() {
                                                         </div>
                                                         <button
                                                             onClick={async () => {
-                                                                if (!newInvestment.investor || newInvestment.amount <= 0) return showToast("Completa los datos correctamente.", "warning");
+                                                                const finalInvestor = newInvestment.investor === 'other'
+                                                                    ? (newInvestment.investorCustomName || '').trim()
+                                                                    : newInvestment.investor;
+                                                                if (!finalInvestor || newInvestment.amount <= 0) return showToast("Completa los datos correctamente.", "warning");
+                                                                const { investorCustomName, ...investmentData } = newInvestment;
                                                                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'investments'), {
-                                                                    ...newInvestment,
+                                                                    ...investmentData,
+                                                                    investor: finalInvestor,
                                                                     timestamp: new Date().toISOString()
                                                                 });
-                                                                setNewInvestment({ investor: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
+                                                                setNewInvestment({ investor: '', investorCustomName: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
                                                                 showToast("Inversión registrada correctamente.", "success");
                                                             }}
                                                             className="w-full mt-2 bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-orange-500/20"
@@ -12040,47 +12044,7 @@ function App() {
                         ))
                 }
 
-                {/* 8. VISTA POLÍTICA DE PRIVACIDAD */}
-                {
-                    view === 'privacy' && (
-                        <div className="max-w-4xl mx-auto py-20 px-6 animate-fade-up">
-                            <div className="glass p-12 rounded-[3rem] border border-slate-800">
-                                <div className="prose prose-invert max-w-none">
-                                    <h1 className="text-5xl font-black mb-12 tracking-tighter italic">
-                                        Política de <span className="text-orange-500 text-6xl">Privacidad</span>
-                                    </h1>
-                                    <p className="text-slate-400 text-lg leading-relaxed">
-                                        En <strong>{settings?.storeName || 'SUSTORE'}</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política describe cómo recolectamos, usamos y resguardamos tu información.
-                                    </p>
-                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">1. Información Recolectada</h2>
-                                    <p className="text-slate-500 leadind-relaxed">
-                                        Recolectamos datos básicos como nombre, correo electrónico y número de teléfono únicamente cuando te registras o realizas un pedido para procesar tu compra correctamente.
-                                    </p>
-                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">2. Uso de los Datos</h2>
-                                    <p className="text-slate-500 leadind-relaxed">
-                                        Tu información se utiliza exclusivamente para:
-                                    </p>
-                                    <ul className="list-disc pl-6 text-slate-500 space-y-2">
-                                        <li>Gestionar tus pedidos y entregas.</li>
-                                        <li>Enviar actualizaciones sobre el estado de tu compra.</li>
-                                        <li>Mejorar nuestros servicios y experiencia de usuario.</li>
-                                    </ul>
-                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">3. Seguridad</h2>
-                                    <p className="text-slate-500 leadind-relaxed">
-                                        Implementamos medidas de seguridad robustas y encriptación de datos para asegurar que tu información esté protegida contra accesos no autorizados.
-                                    </p>
-                                    <h2 className="text-2xl font-bold text-white mt-12 mb-6">4. Contacto</h2>
-                                    <p className="text-slate-500 leadind-relaxed mb-12">
-                                        Si tienes dudas sobre nuestra política de privacidad, contáctanos a <span className="text-orange-400">{settings?.storeEmail || 'soporte@tuempresa.com'}</span>.
-                                    </p>
-                                    <button onClick={() => setView('store')} className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold transition flex items-center gap-3 border border-slate-700">
-                                        <ArrowLeft className="w-5 h-5" /> Volver a la Tienda
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                }
+                {/* 8. VISTA POLÍTICA DE PRIVACIDAD — Removed duplicate: the theme-aware version is rendered above (view === 'privacy') */}
                 {/* 9. VISTA TÉRMINOS Y CONDICIONES */}
                 {
                     view === 'terms' && (
@@ -12097,7 +12061,7 @@ function App() {
                                         Nosotros somos <strong>{settings?.storeName || 'Sustore'}</strong> ("<strong>Empresa</strong>", "<strong>nosotros</strong>", "<strong>nos</strong>", "<strong>nuestro</strong>").
                                     </p>
                                     <p className="text-slate-500 leading-relaxed mb-4">
-                                        Operamos el sitio web <a href="https://sustore.vercel.app" className="text-orange-400 hover:underline">https://sustore.vercel.app</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
+                                        Operamos el sitio web <a href={settings?.seoUrl || '#'} className="text-orange-400 hover:underline">{settings?.seoUrl || '[URL del sitio]'}</a> (el "<strong>Sitio</strong>"), así como cualquier otro producto y servicio relacionado que haga referencia o se vincule con estos términos legales (los "<strong>Términos Legales</strong>") (colectivamente, los "<strong>Servicios</strong>").
                                     </p>
                                     <p className="text-slate-500 leading-relaxed mb-4">
                                         Puede contactarnos por correo electrónico a la dirección proporcionada al final de este documento.
@@ -12325,7 +12289,7 @@ function App() {
                         <div className={`border-t transition-colors duration-300 ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-slate-200/50'}`}>
                             <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <p className={`text-xs font-mono ${darkMode ? 'text-slate-600' : 'text-slate-500'}`}>
-                                    © 2026 Sustore. Todos los derechos reservados.
+                                    {settings?.footerCopyright || `© ${new Date().getFullYear()} Sustore. Todos los derechos reservados.`}
                                 </p>
                                 <div className="flex gap-6">
                                     {settings?.showPrivacyPolicy !== false && (
