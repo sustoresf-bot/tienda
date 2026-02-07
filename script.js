@@ -4660,7 +4660,7 @@ function App() {
 
         if (newCoupon.type === 'percentage' && Number(newCoupon.value) > 100) return showToast("El porcentaje no puede ser mayor a 100%.", "warning");
 
-        if (newCoupon.targetType === 'specific_user' && !newCoupon.targetUser.includes('@')) {
+        if (newCoupon.targetType === 'specific_email' && (!newCoupon.targetUser || !newCoupon.targetUser.includes('@'))) {
             return showToast("Si el cupón es para un usuario específico, ingresa un email válido.", "warning");
         }
 
@@ -4673,7 +4673,7 @@ function App() {
                 maxDiscount: Number(newCoupon.maxDiscount || 0),
                 usageLimit: Number(newCoupon.usageLimit || 0),
                 perUserLimit: Number(newCoupon.perUserLimit || 1),
-                targetUser: newCoupon.targetType === 'global' ? '' : newCoupon.targetUser,
+                targetUser: newCoupon.targetType === 'global' ? '' : (newCoupon.targetUser || '').trim().toLowerCase(),
                 createdAt: new Date().toISOString(),
                 usedBy: [] // Inicializar array de usos
             };
@@ -5255,11 +5255,16 @@ function App() {
         // Filtrado de cupones válidos
         const availableCoupons = coupons.filter(c => {
             const isNotExpired = !c.expirationDate || new Date(c.expirationDate) > new Date();
-            const isUserTarget = !c.targetUser || (currentUser && c.targetUser === currentUser.email);
-            const isGlobal = c.targetType === 'global';
-            const usedCount = c.usedBy ? c.usedBy.length : 0;
+            const currentEmailLower = (currentUser?.email || '').toLowerCase();
+            const targetEmailLower = (c.targetUser || '').toLowerCase();
+            const isSpecificEmail = c.targetType === 'specific_email';
+            const isUserTarget = isSpecificEmail
+                ? (!!currentUser && !!targetEmailLower && targetEmailLower === currentEmailLower)
+                : !c.targetUser;
+            const isGlobal = c.targetType === 'global' || (!c.targetType && !c.targetUser);
+            const usedCount = Array.isArray(c.usedBy) ? c.usedBy.length : 0;
             const notExhausted = !c.usageLimit || usedCount < c.usageLimit;
-            const userNotUsed = currentUser && c.usedBy && !c.usedBy.includes(currentUser.id);
+            const userNotUsed = !currentUser || !Array.isArray(c.usedBy) || !c.usedBy.includes(currentUser.id);
 
             return isNotExpired && (isUserTarget || isGlobal) && notExhausted && userNotUsed;
         });
@@ -5293,38 +5298,43 @@ function App() {
                             return (
                                 <div key={c.id} onClick={() => canApply && selectCoupon(c)} className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group ${
                                     canApply 
-                                        ? (darkMode ? 'bg-slate-900 border-slate-700 hover:border-purple-500 cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:scale-[1.02]' : 'bg-white border-slate-200 hover:border-purple-500 cursor-pointer hover:shadow-xl hover:scale-[1.02]') 
-                                        : (darkMode ? 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed grayscale' : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed grayscale')
+                                        ? (darkMode ? 'bg-[#0a0a0a] border-slate-700 hover:border-purple-500 cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:scale-[1.01]' : 'bg-white border-slate-200 hover:border-purple-500 cursor-pointer hover:shadow-xl hover:scale-[1.01]') 
+                                        : (darkMode ? 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed' : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed')
                                 }`}>
-                                    {/* Decoración lateral */}
-                                    <div className={`absolute top-0 left-0 w-2 h-full transition-colors duration-300 ${canApply ? 'bg-purple-500' : (darkMode ? 'bg-slate-700' : 'bg-slate-300')}`}></div>
+                                    <div className={`absolute top-0 left-0 w-1.5 h-full transition-colors duration-300 ${canApply ? 'bg-purple-500' : (darkMode ? 'bg-slate-700' : 'bg-slate-300')}`}></div>
 
-                                    <div className="p-5 pl-8 flex justify-between items-center">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className={`font-black text-xl tracking-widest font-mono transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{c.code}</span>
-                                                <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold transition-colors duration-300 ${darkMode ? 'bg-purple-900/30 text-purple-300 border-purple-500/30' : 'bg-purple-50 text-purple-600 border-purple-200'}`}>
-                                                    {c.type === 'fixed' ? 'DESCUENTO FIJO' : 'PORCENTAJE'}
-                                                </span>
+                                    <div className="p-5 pl-7 flex justify-between items-center gap-4">
+                                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0 border ${canApply ? (darkMode ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 'bg-purple-50 border-purple-200 text-purple-600') : (darkMode ? 'bg-slate-800 border-slate-700 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-400')}`}>
+                                                {c.type === 'fixed' ? '$' : '%'}
                                             </div>
-                                            <p className={`font-bold text-sm transition-colors duration-300 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                                                {c.type === 'fixed' ? `Ahorra $${c.value}` : `${c.value}% de Descuento`}
-                                                {c.maxDiscount > 0 && <span className={`transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'} text-xs ml-1 font-normal`}>(Tope ${c.maxDiscount})</span>}
-                                            </p>
-
-                                            {/* Validación visual de mínimo de compra */}
-                                            {c.minPurchase > 0 && (
-                                                <p className={`text-xs mt-3 font-bold flex items-center gap-1 transition-colors duration-300 ${canApply ? (darkMode ? 'text-slate-500' : 'text-slate-400') : 'text-red-400'}`}>
-                                                    {canApply ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                                                    Compra mínima: ${c.minPurchase}
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`font-black text-base tracking-widest font-mono truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>{c.code}</span>
+                                                </div>
+                                                <p className={`font-bold text-sm ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                                                    {c.type === 'fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}
+                                                    {c.maxDiscount > 0 && c.type === 'percentage' && <span className={`text-xs ml-1 font-normal ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>(tope ${c.maxDiscount})</span>}
                                                 </p>
-                                            )}
+                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+                                                    {c.minPurchase > 0 && (
+                                                        <span className={`text-[10px] font-bold flex items-center gap-1 ${canApply ? (darkMode ? 'text-green-400' : 'text-green-600') : 'text-red-400'}`}>
+                                                            {canApply ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                                                            Min: ${c.minPurchase}
+                                                        </span>
+                                                    )}
+                                                    {c.expirationDate && (
+                                                        <span className={`text-[10px] font-bold flex items-center gap-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                            <Clock className="w-3 h-3" /> {new Date(c.expirationDate).toLocaleDateString()}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        {/* Botón de acción */}
                                         {canApply && (
-                                            <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white shadow-lg transform group-hover:scale-110 transition ml-4">
-                                                <Plus className="w-6 h-6" />
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition flex-shrink-0 ${darkMode ? 'bg-purple-600 text-white' : 'bg-purple-600 text-white'}`}>
+                                                <Plus className="w-5 h-5" />
                                             </div>
                                         )}
                                     </div>
@@ -6609,13 +6619,13 @@ function App() {
                                             <span className="bg-orange-500 text-black px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-2 sm:mb-4 inline-block">
                                                 {settings?.heroBadge || ''}
                                             </span>
-                                            <h1 className={`text-lg sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 ${darkMode ? 'text-white drop-shadow-2xl' : 'text-slate-900'}`}>
+                                            <h1 className={`text-lg sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 ${darkMode ? 'text-white hero-title-neon' : 'text-slate-900 hero-title-neon-light'}`}>
                                                 {settings?.heroTitle1 || ''} <br />
-                                                <span className={`text-transparent bg-clip-text bg-gradient-to-r ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
+                                                <span className={`text-transparent bg-clip-text bg-gradient-to-r hero-title-neon-gradient ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || ''}
                                                 </span>
                                             </h1>
-                                            <p className={`text-xs sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-medium hidden sm:block ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                            <p className={`text-xs sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-semibold hidden sm:block ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                                                 {settings?.heroSubtitle || ''}
                                             </p>
                                             <div className="flex flex-row items-center gap-2 sm:gap-4">
@@ -8863,31 +8873,66 @@ function App() {
 
                                             {/* Lista de Cupones Activos */}
                                             <div className="grid gap-4">
-                                                {coupons.map((c, idx) => (
-                                                    <div key={c.id} style={{ animationDelay: `${idx * 0.05}s` }} className="bg-[#0a0a0a] border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center group hover:border-slate-700 transition animate-fade-up">
-                                                        <div className="flex items-center gap-6 mb-4 md:mb-0 w-full md:w-auto">
-                                                            <div className="w-16 h-16 bg-slate-900 rounded-xl flex items-center justify-center border border-slate-800 text-purple-400 font-black text-2xl">
-                                                                %
+                                                {coupons.length === 0 && (
+                                                    <div className="text-center py-16 border-2 border-dashed border-slate-800 rounded-[2rem]">
+                                                        <Ticket className="w-14 h-14 mx-auto mb-4 text-slate-700" />
+                                                        <p className="text-slate-500 font-bold text-lg">No hay cupones creados</p>
+                                                        <p className="text-slate-600 text-sm mt-1">Creá uno arriba para empezar.</p>
+                                                    </div>
+                                                )}
+                                                {coupons.map((c, idx) => {
+                                                    const isExpired = c.expirationDate && new Date(c.expirationDate) < new Date();
+                                                    const usedCount = Array.isArray(c.usedBy) ? c.usedBy.length : 0;
+                                                    const isExhausted = c.usageLimit && usedCount >= c.usageLimit;
+                                                    const isActive = !isExpired && !isExhausted;
+                                                    return (
+                                                    <div key={c.id} style={{ animationDelay: `${idx * 0.05}s` }} className={`relative overflow-hidden border p-6 rounded-[1.5rem] flex flex-col md:flex-row justify-between items-start md:items-center group transition animate-fade-up ${isActive ? 'bg-[#0a0a0a] border-slate-800 hover:border-purple-500/40' : 'bg-[#080808] border-slate-800/50 opacity-60'}`}>
+                                                        {/* Barra lateral de estado */}
+                                                        <div className={`absolute top-0 left-0 w-1.5 h-full ${isActive ? 'bg-purple-500' : 'bg-slate-700'}`}></div>
+
+                                                        <div className="flex items-center gap-5 mb-4 md:mb-0 w-full md:w-auto pl-3">
+                                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-black text-xl flex-shrink-0 ${isActive ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 'bg-slate-900 border-slate-800 text-slate-600'}`}>
+                                                                {c.type === 'fixed' ? '$' : '%'}
                                                             </div>
-                                                            <div>
-                                                                <h4 className="text-white font-black text-xl tracking-wider">{c.code}</h4>
-                                                                <p className="text-purple-400 font-bold text-sm">
+                                                            <div className="min-w-0">
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <h4 className="text-white font-black text-lg tracking-widest font-mono">{c.code}</h4>
+                                                                    {!isActive && (
+                                                                        <span className="text-[9px] px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-black uppercase">
+                                                                            {isExpired ? 'Vencido' : 'Agotado'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-purple-400 font-bold text-sm mt-0.5">
                                                                     {c.type === 'fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}
-                                                                    <span className="text-slate-500 font-normal ml-2">
-                                                                        (Min: ${c.minPurchase})
+                                                                    {c.maxDiscount > 0 && c.type === 'percentage' && <span className="text-slate-500 text-xs ml-1">(tope ${c.maxDiscount})</span>}
+                                                                    {c.minPurchase > 0 && <span className="text-slate-600 font-normal text-xs ml-2">Min: ${c.minPurchase}</span>}
+                                                                </p>
+                                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                                                                    <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
+                                                                        <Users className="w-3 h-3" /> {usedCount}{c.usageLimit ? `/${c.usageLimit}` : ''} usos
                                                                     </span>
-                                                                </p>
-                                                                <p className="text-xs text-slate-600 mt-1 flex gap-3">
-                                                                    <span>Usado: {c.usedBy ? c.usedBy.length : 0} veces</span>
-                                                                    {c.usageLimit && <span>Límite: {c.usageLimit}</span>}
-                                                                    {c.expirationDate && <span>Vence: {c.expirationDate}</span>}
-                                                                </p>
+                                                                    {c.expirationDate && (
+                                                                        <span className={`text-[10px] font-bold flex items-center gap-1 ${isExpired ? 'text-red-400' : 'text-slate-500'}`}>
+                                                                            <Clock className="w-3 h-3" /> {new Date(c.expirationDate).toLocaleDateString()}
+                                                                        </span>
+                                                                    )}
+                                                                    {c.targetType === 'specific_email' && c.targetUser && (
+                                                                        <span className="text-[10px] text-blue-400 font-bold flex items-center gap-1">
+                                                                            <Mail className="w-3 h-3" /> {c.targetUser}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex gap-2 mt-4 md:mt-0">
-                                                            {c.targetType === 'global' && (
-                                                                <div className="bg-purple-900/30 text-purple-400 px-3 py-1 rounded-lg border border-purple-500/30 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                                                                    <Globe className="w-3 h-3" /> Social
+                                                        <div className="flex items-center gap-2 mt-3 md:mt-0 pl-3 md:pl-0 flex-shrink-0">
+                                                            {c.targetType === 'global' || (!c.targetType && !c.targetUser) ? (
+                                                                <div className="bg-purple-900/20 text-purple-400 px-3 py-1.5 rounded-xl border border-purple-500/20 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+                                                                    <Globe className="w-3 h-3" /> Público
+                                                                </div>
+                                                            ) : (
+                                                                <div className="bg-blue-900/20 text-blue-400 px-3 py-1.5 rounded-xl border border-blue-500/20 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+                                                                    <User className="w-3 h-3" /> Personal
                                                                 </div>
                                                             )}
                                                             <button
@@ -8895,20 +8940,21 @@ function App() {
                                                                     navigator.clipboard.writeText(c.code);
                                                                     showToast("Código copiado al portapapeles", "success");
                                                                 }}
-                                                                className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white p-3 rounded-xl transition border border-slate-800"
+                                                                className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white p-2.5 rounded-xl transition border border-slate-800"
                                                                 title="Copiar Código"
                                                             >
-                                                                <Copy className="w-5 h-5" />
+                                                                <Copy className="w-4 h-4" />
                                                             </button>
                                                             <button
-                                                                onClick={() => openConfirm("Eliminar Cupón", "¿Eliminar este cupón?", async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
-                                                                className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-3 rounded-xl transition border border-slate-800"
+                                                                onClick={() => openConfirm("Eliminar Cupón", `¿Eliminar el cupón ${c.code}?`, async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
+                                                                className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-2.5 rounded-xl transition border border-slate-800"
                                                             >
-                                                                <Trash2 className="w-5 h-5" />
+                                                                <Trash2 className="w-4 h-4" />
                                                             </button>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                             </>
                                             )}
@@ -9006,7 +9052,7 @@ function App() {
                                                                                     <p className="text-xs text-slate-500 font-mono">{u.email}</p>
                                                                                     <div className="flex items-center gap-3 mt-2">
                                                                                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md">ID: {u.id.slice(-6)}</span>
-                                                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">INC. {new Date(u.joinDate).toLocaleDateString()}</span>
+                                                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">INC. {(u.createdAt || u.joinDate) ? new Date(u.createdAt || u.joinDate).toLocaleDateString() : 'Sin fecha'}</span>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>

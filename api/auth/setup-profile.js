@@ -32,11 +32,19 @@ export default async function handler(req, res) {
         const userRef = db.doc(`artifacts/${storeId}/public/data/users/${decoded.uid}`);
         const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
 
-        const [userSnap, usernameSnap] = await Promise.all([userRef.get(), usernameRef.get()]);
+        const emailRef = db.doc(`artifacts/${storeId}/public/data/emails/${emailLower.replace(/[.#$/\[\]]/g, '_')}`);
+
+        const [userSnap, usernameSnap, emailSnap] = await Promise.all([userRef.get(), usernameRef.get(), emailRef.get()]);
         if (usernameSnap.exists) {
             const existing = usernameSnap.data() || {};
             if ((existing.uid || '') !== decoded.uid) {
                 return res.status(409).json({ error: 'El nombre de usuario ya está en uso' });
+            }
+        }
+        if (emailSnap.exists) {
+            const existing = emailSnap.data() || {};
+            if ((existing.uid || '') !== decoded.uid) {
+                return res.status(409).json({ error: 'Este email ya está registrado en otra cuenta' });
             }
         }
 
@@ -57,6 +65,7 @@ export default async function handler(req, res) {
         const batch = db.batch();
         batch.set(userRef, profile, { merge: true });
         batch.set(usernameRef, { uid: decoded.uid, emailLower, updatedAt: nowIso, createdAt: usernameSnap.exists ? (usernameSnap.data()?.createdAt || nowIso) : nowIso }, { merge: true });
+        batch.set(emailRef, { uid: decoded.uid, emailLower, updatedAt: nowIso, createdAt: emailSnap.exists ? (emailSnap.data()?.createdAt || nowIso) : nowIso }, { merge: true });
         await batch.commit();
 
         return res.status(200).json({ success: true });

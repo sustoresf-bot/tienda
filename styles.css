@@ -167,6 +167,23 @@ body {
     text-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
 }
 
+.hero-title-neon {
+    text-shadow:
+        0 0 10px rgba(255, 255, 255, 0.15),
+        0 0 30px rgba(255, 255, 255, 0.08),
+        0 0 60px rgba(255, 255, 255, 0.04);
+}
+
+.hero-title-neon-gradient {
+    filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.35)) drop-shadow(0 0 40px rgba(59, 130, 246, 0.2));
+}
+
+.hero-title-neon-light {
+    text-shadow:
+        0 0 10px rgba(15, 23, 42, 0.1),
+        0 0 30px rgba(15, 23, 42, 0.05);
+}
+
 .neon-box {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid var(--glass-border);
