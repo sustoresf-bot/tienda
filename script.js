@@ -2284,18 +2284,11 @@ function App() {
         });
     }, []);
 
-    const stopOrderAlarm = useCallback(async () => {
+    const stopOrderAlarm = useCallback(() => {
         orderAlarmActiveRef.current = false;
         if (orderAlarmIntervalRef.current) {
             clearInterval(orderAlarmIntervalRef.current);
             orderAlarmIntervalRef.current = null;
-        }
-        const ctx = orderAlarmContextRef.current;
-        orderAlarmContextRef.current = null;
-        if (ctx) {
-            try {
-                await ctx.close();
-            } catch (e) { }
         }
     }, []);
 
@@ -2315,8 +2308,16 @@ function App() {
         if (adminOrderAlarmMuted) return;
         if (orderAlarmActiveRef.current) return;
 
-        const ctx = orderAlarmContextRef.current;
-        if (!ctx || ctx.state === 'closed') return;
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) return;
+
+        let ctx = orderAlarmContextRef.current;
+        if (!ctx || ctx.state === 'closed') {
+            try {
+                ctx = new AudioContextCtor();
+                orderAlarmContextRef.current = ctx;
+            } catch (e) { return; }
+        }
 
         try {
             if (ctx.state === 'suspended') await ctx.resume();
@@ -3064,7 +3065,7 @@ function App() {
         const fetchUsersViaApi = async () => {
             try {
                 const token = await auth.currentUser?.getIdToken();
-                if (!token) return;
+                if (!token) { console.warn('[Admin] list-users: no auth token available'); return; }
                 const res = await fetch('/api/admin?action=list-users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'x-store-id': appId || '' },
@@ -3073,6 +3074,8 @@ function App() {
                 if (res.ok) {
                     const data = await res.json();
                     if (Array.isArray(data.users)) setUsers(data.users);
+                } else {
+                    console.error('[Admin] list-users API responded', res.status, await res.text().catch(() => ''));
                 }
             } catch (e) {
                 console.error('[Admin] Fallback API list-users failed:', e);
@@ -3873,7 +3876,7 @@ function App() {
                 return showToast("Este cupón no está disponible para tu cuenta.", "error");
             }
         }
-        if (new Date(coupon.expirationDate) < new Date()) {
+        if (coupon.expirationDate && new Date(coupon.expirationDate) < new Date()) {
             return showToast("Este cupón ha vencido.", "error");
         }
         if (coupon.usageLimit && coupon.usedBy && coupon.usedBy.length >= coupon.usageLimit) {
@@ -3895,36 +3898,6 @@ function App() {
             msg += ` (Tope de reintegro: $${coupon.maxDiscount})`;
         }
         showToast(msg, "success");
-    };
-
-    // Enviar correo automático via Backend
-    const sendOrderConfirmationEmail = async (orderData, discountDetails) => {
-        try {
-            await fetch('/api/payment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-store-id': appId || '',
-                },
-                body: JSON.stringify({
-                    orderId: orderData.orderId,
-                    customer: orderData.customer,
-                    items: orderData.items,
-                    total: orderData.total,
-                    subtotal: orderData.subtotal,
-                    discountDetails: discountDetails,
-                    shipping: orderData.shippingAddress,
-                    shippingFee: orderData.shippingFee,
-                    shippingMethod: orderData.shippingMethod,
-                    paymentMethod: orderData.paymentMethod,
-                    date: orderData.date
-                }),
-            });
-            console.log("Correo de confirmación enviado enviada API.");
-        } catch (error) {
-            console.error("Error al enviar email automático:", error);
-            // No bloqueamos el flujo si falla el email, solo logueamos
-        }
     };
 
     const getAuthenticatedUser = async () => {
@@ -4870,14 +4843,10 @@ function App() {
                     date: timestamp
                 });
 
-                // 2. Actualizar Stock del Producto (Fixing NaN issues on the fly)
-                const product = products.find(p => p.id === item.productId);
-                const currentStock = isNaN(Number(product?.stock)) ? 0 : Number(product.stock);
-                const newStock = currentStock + item.quantity;
-
+                // 2. Actualizar Stock del Producto (atomic increment to avoid race conditions)
                 const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', item.productId);
                 batch.update(productRef, {
-                    stock: newStock
+                    stock: increment(item.quantity)
                 });
             }
 
@@ -5389,6 +5358,7 @@ function App() {
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
                         <img
                             src={selectedProduct.image}
+                            alt={selectedProduct.name || 'Producto'}
                             className={`w-full h-full object-contain z-10 transition-transform duration-700 hover:scale-110 ${darkMode ? 'drop-shadow-[0_0_50px_rgba(255,255,255,0.15)]' : 'drop-shadow-[0_0_50px_rgba(0,0,0,0.1)]'}`}
                         />
                         {/* Badges de Estado */}
@@ -5868,8 +5838,7 @@ function App() {
 
     const UserEditForm = ({ user, currentUser, initialData, onSubmit, onDelete, isSaving }) => {
         const [formData, setFormData] = useState(initialData);
-        const SUPER_ADMIN_EMAIL = 'lautarocorazza63@gmail.com';
-        const isSuperAdminProfile = user.email === SUPER_ADMIN_EMAIL;
+        const isSuperAdminProfile = !!(SUPER_ADMIN_EMAIL && user.email && user.email.trim().toLowerCase() === SUPER_ADMIN_EMAIL.trim().toLowerCase());
 
         // Update local state when initialData changes
         useEffect(() => {
@@ -6537,7 +6506,7 @@ function App() {
                         </div>
 
                         <div className={`mt-6 sm:mt-8 pt-6 sm:pt-8 border-t text-center ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                            <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>{settings?.menuCopyright || settings.storeName}</p>
+                            <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>{settings?.menuCopyright || settings?.storeName || ''}</p>
                         </div>
                     </div>
                 </div>
@@ -7637,7 +7606,7 @@ function App() {
                         </h2>
                         <div className={`border p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-[3rem] text-base sm:text-xl leading-relaxed whitespace-pre-wrap shadow-2xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
-                            <p className="relative z-10">{settings.aboutUsText}</p>
+                            <p className="relative z-10">{settings?.aboutUsText || ''}</p>
 
                             <div className={`mt-12 pt-12 border-t flex flex-col md:flex-row gap-8 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                 <div className="flex items-center gap-4">
@@ -8029,7 +7998,7 @@ function App() {
                                                     {dashboardMetrics.starProduct ? (
                                                         <div className="flex items-center gap-6 relative z-10">
                                                             <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg flex-shrink-0">
-                                                                <img src={dashboardMetrics.starProduct.image} className="w-full h-full object-contain" />
+                                                                <img src={dashboardMetrics.starProduct.image} alt={dashboardMetrics.starProduct.name || 'Producto estrella'} className="w-full h-full object-contain" />
                                                             </div>
                                                             <div>
                                                                 <h3 className="text-xl font-black text-white leading-tight mb-1">{dashboardMetrics.starProduct.name}</h3>
@@ -8053,7 +8022,7 @@ function App() {
                                                     {dashboardMetrics.leastSoldProduct ? (
                                                         <div className="flex items-center gap-6 relative z-10">
                                                             <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg grayscale flex-shrink-0">
-                                                                <img src={dashboardMetrics.leastSoldProduct.image} className="w-full h-full object-contain" />
+                                                                <img src={dashboardMetrics.leastSoldProduct.image} alt={dashboardMetrics.leastSoldProduct.name || 'Menos vendido'} className="w-full h-full object-contain" />
                                                             </div>
                                                             <div>
                                                                 <h3 className="text-xl font-black text-white leading-tight mb-1">{dashboardMetrics.leastSoldProduct.name}</h3>
@@ -8185,7 +8154,7 @@ function App() {
                                                                         if (!p) return null;
                                                                         return (
                                                                             <div key={pid} className="w-10 h-10 rounded-lg bg-white p-1 flex items-center justify-center border border-slate-600 tooltip-container" title={p.name}>
-                                                                                <img src={p.image} className="w-full h-full object-contain" />
+                                                                                <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                                             </div>
                                                                         );
                                                                     })
@@ -8295,12 +8264,9 @@ function App() {
                                                                     date: new Date().toISOString()
                                                                 });
 
-                                                                // ACTUALIZAR STOCK
-                                                                const currentStock = isNaN(Number(selectedProd?.stock)) ? 0 : Number(selectedProd.stock);
-                                                                const newStock = currentStock + newPurchase.quantity;
-
+                                                                // ACTUALIZAR STOCK (atomic increment to avoid race conditions)
                                                                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', newPurchase.productId), {
-                                                                    stock: newStock
+                                                                    stock: increment(newPurchase.quantity)
                                                                 });
 
                                                                 // Resetear Formulario
@@ -9003,7 +8969,7 @@ function App() {
                                                                                 <div className="relative group/avatar">
                                                                                     <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl blur-lg opacity-20 group-hover/avatar:opacity-40 transition" />
                                                                                     <div className="relative w-14 h-14 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center text-xl font-black text-white overflow-hidden shadow-xl">
-                                                                                        {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : (u.name || '?').charAt(0).toUpperCase()}
+                                                                                        {u.image ? <img src={u.image} alt={u.name || 'Usuario'} className="w-full h-full object-cover" /> : (u.name || '?').charAt(0).toUpperCase()}
                                                                                     </div>
                                                                                 </div>
                                                                                 <div>
@@ -9150,7 +9116,7 @@ function App() {
                                                                 />
                                                                 {newPromo.image && (
                                                                     <div className="mt-2 relative group w-32 aspect-video overflow-hidden rounded-xl border border-slate-700">
-                                                                        <img src={newPromo.image} className="w-full h-full object-cover" />
+                                                                        <img src={newPromo.image} alt={newPromo.name || 'Promo'} className="w-full h-full object-cover" />
                                                                         <button onClick={() => setNewPromo({ ...newPromo, image: '' })} className="absolute top-1 right-1 bg-black/50 p-1 rounded-full text-white hover:bg-red-500 transition opacity-0 group-hover:opacity-100">
                                                                             <X className="w-3 h-3" />
                                                                         </button>
@@ -9220,7 +9186,7 @@ function App() {
                                                                     return (
                                                                         <div key={idx} className="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700">
                                                                             <div className="flex items-center gap-3">
-                                                                                <img src={p.image} className="w-8 h-8 rounded bg-white object-contain p-0.5" />
+                                                                                <img src={p.image} alt={p.name || 'Producto'} className="w-8 h-8 rounded bg-white object-contain p-0.5" />
                                                                                 <div>
                                                                                     <p className="text-sm font-bold text-white truncate max-w-[200px] sm:max-w-none">{p.name}</p>
                                                                                     <p className="text-xs text-slate-500">{item.quantity} un. x ${p.basePrice}</p>
@@ -9326,7 +9292,7 @@ function App() {
                                                     return (
                                                         <div key={promo.id} className="bg-[#0a0a0a] border border-slate-800 rounded-2xl overflow-hidden hover:border-purple-500/30 transition group flex flex-col">
                                                             <div className="aspect-video relative overflow-hidden">
-                                                                <img src={promo.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                                                                <img src={promo.image || 'https://via.placeholder.com/400'} alt={promo.name || 'Promo'} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                                                                 <div className="absolute bottom-4 left-4 right-4 bg-black/55 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
                                                                     <h4 className="text-xl font-black text-white mb-1 leading-tight">{promo.name}</h4>
@@ -9351,7 +9317,7 @@ function App() {
                                                                             return (
                                                                                 <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-slate-900/50 border border-slate-800/50">
                                                                                     <div className="w-10 h-10 bg-white rounded-lg p-0.5 flex-shrink-0">
-                                                                                        <img src={p?.image} className="w-full h-full object-contain" />
+                                                                                        <img src={p?.image} alt={p?.name || 'Producto'} className="w-full h-full object-contain" />
                                                                                     </div>
                                                                                     <div className="flex-1 min-w-0">
                                                                                         <p className="text-sm font-bold text-white truncate">{p?.name || 'Producto Eliminado'}</p>
@@ -9470,7 +9436,7 @@ function App() {
                                                             <div className="flex -space-x-2">
                                                                 {o.items.slice(0, 4).map((i, idx) => (
                                                                     <div key={idx} className="w-10 h-10 rounded-full border-2 border-[#0a0a0a] bg-slate-800 flex items-center justify-center overflow-hidden" title={i.title}>
-                                                                        {i.image ? <img src={i.image} className="w-full h-full object-cover" /> : <Package className="w-4 h-4 text-slate-500" />}
+                                                                        {i.image ? <img src={i.image} alt={i.title || 'Producto'} className="w-full h-full object-cover" /> : <Package className="w-4 h-4 text-slate-500" />}
                                                                     </div>
                                                                 ))}
                                                                 {o.items.length > 4 && (
@@ -9757,7 +9723,7 @@ function App() {
                                                     >
                                                         <div className="flex items-center gap-6 w-full sm:w-auto">
                                                             <div className={`w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0 relative ${p.isActive === false ? 'grayscale' : ''}`}>
-                                                                <img src={p.image} className="w-full h-full object-contain" />
+                                                                <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                                 {p.isFeatured && (
                                                                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
                                                                         <Star className="w-3 h-3 text-black fill-current" />
@@ -12041,7 +12007,7 @@ function App() {
                                                                             className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer mb-1 transition ${newSupplier.associatedProducts?.includes(p.id) ? 'bg-orange-900/30 border border-orange-500/30' : 'hover:bg-slate-800 border border-transparent'}`}
                                                                         >
                                                                             <div className="w-8 h-8 bg-white rounded p-0.5 flex-shrink-0">
-                                                                                <img src={p.image} className="w-full h-full object-contain" />
+                                                                                <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                                             </div>
                                                                             <span className="text-xs text-white truncate flex-1 font-medium">{p.name}</span>
                                                                             {newSupplier.associatedProducts?.includes(p.id) && <CheckCircle className="w-4 h-4 text-orange-400" />}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Send, X, Trash2, CheckCircle, Plus, Info, Star } from 'lucide-react';
 
 const BotProductCard = ({ product, onAdd }) => {
@@ -75,7 +75,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     const [messages, setMessages] = useState([defaultBotMessage]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [lastContext, setLastContext] = useState(null); // Para manejar contexto (Sí/No)
+    const topicRef = useRef(null);
     const messagesEndRef = useRef(null);
     const messagesRef = useRef(messages);
     const inFlightRef = useRef(false);
@@ -84,7 +84,6 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
     const safeProducts = Array.isArray(products) ? products : [];
     const safeCoupons = Array.isArray(coupons) ? coupons : [];
-    const aiEnabled = !!settings?.aiAssistant?.enabled;
 
     useEffect(() => {
         const check = () => {
@@ -168,76 +167,6 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         return base * (1 - disc / 100);
     };
 
-    const aiContext = useMemo(() => {
-        const storeName = settings?.storeName ? String(settings.storeName) : '';
-        const aboutUsText = settings?.aboutUsText ? String(settings.aboutUsText) : '';
-
-        const deliveryEnabled = !!settings?.shippingDelivery?.enabled;
-        const pickupEnabled = !!settings?.shippingPickup?.enabled;
-        const deliveryFee = Number(settings?.shippingDelivery?.fee) || 0;
-        const freeAbove = Number(settings?.shippingDelivery?.freeAbove) || 0;
-        const pickupAddress = settings?.shippingPickup?.address || '';
-        const shippingParts = [];
-        if (pickupEnabled) shippingParts.push(`Retiro en local: ${pickupAddress ? pickupAddress : 'a coordinar'}.`);
-        if (deliveryEnabled) {
-            if (freeAbove > 0) shippingParts.push(`Envío a domicilio: $${deliveryFee.toLocaleString()} (gratis desde $${freeAbove.toLocaleString()}).`);
-            else shippingParts.push(`Envío a domicilio: $${deliveryFee.toLocaleString()}.`);
-        }
-
-        const hasCard = !!settings?.paymentMercadoPago?.enabled;
-        const hasTransfer = !!settings?.paymentTransfer?.enabled;
-        const hasCash = !!settings?.paymentCash && pickupEnabled;
-        const payParts = [];
-        if (hasCard) payParts.push('Tarjeta (Mercado Pago)');
-        if (hasTransfer) payParts.push('Transferencia');
-        if (hasCash) payParts.push('Efectivo (solo retiro en local)');
-
-        const categories = [...new Set([...(Array.isArray(settings?.categories) ? settings.categories : []), ...safeProducts.flatMap(p => getProductCategories(p))])]
-            .map(c => String(c).trim())
-            .filter(Boolean)
-            .slice(0, 20);
-
-        const productHints = safeProducts
-            .filter(p => p && (Number(p.stock) || 0) > 0 && p.isActive !== false)
-            .map(p => ({
-                name: String(p.name || '').trim(),
-                price: getProductFinalPrice(p),
-                discount: Number(p.discount) || 0,
-                featured: !!p.isFeatured,
-                cats: getProductCategories(p).slice(0, 2).join(', ')
-            }))
-            .filter(p => p.name)
-            .sort((a, b) => (b.discount - a.discount) || (Number(b.featured) - Number(a.featured)) || (a.price - b.price))
-            .slice(0, 25)
-            .map(p => `${p.name} — $${Math.round(p.price).toLocaleString()}${p.cats ? ` — ${p.cats}` : ''}`);
-
-        return {
-            storeName,
-            aboutUsText,
-            shipping: shippingParts.join(' '),
-            payments: payParts.join(', '),
-            categories,
-            productHints
-        };
-    }, [settings, safeProducts]);
-
-    const callExternalAI = async ({ userText, history, signal }) => {
-        const res = await fetch('/api/ai/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userText,
-                messages: Array.isArray(history) ? history : [],
-                context: aiContext
-            }),
-            signal
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || 'ai_error');
-        if (!data?.text || typeof data.text !== 'string') throw new Error('ai_invalid');
-        return { text: data.text };
-    };
-
     // Auto-scroll al último mensaje
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -275,84 +204,267 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         return (matches / patt.length) > 0.75;
     };
 
-    // --- CEREBRO LOCAL AVANZADO V5 (Universal & Contextual) ---
+    // --- CEREBRO LOCAL AVANZADO V6 (Contextual & Inteligente) ---
     const callLocalBrain = async (userText, currentMessages) => {
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simular pensamiento
+        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
         const text = normalizeText(userText);
+        const rawText = String(userText || '').trim();
         const qty = parseQuantity(text);
+        const topic = topicRef.current;
 
+        if (topic && Date.now() - (topic.ts || 0) > 300000) topicRef.current = null;
+        const setTopic = (t) => { topicRef.current = { ...t, ts: Date.now() }; };
+        const clearTopic = () => { topicRef.current = null; };
+
+        // --- Mensajes muy cortos ---
         if (text.length <= 1) {
+            if (topicRef.current) return { text: "No entendí bien, ¿podés escribir un poco más?" };
             return { text: "Te leí, pero me falta info 😊. ¿Qué estás buscando? (ej: 'auriculares', 'zapatillas', 'envío', 'pagos')" };
         }
 
-        // 0. Detectar Saludos
-        if (text.match(/\b(hola|holas|buen dia|buenos dias|buenas tardes|buenas noches|buenas|hello|hi|hey|que tal|como estas|como va|todo bien)\b/)) {
+        // --- Agradecimiento / Despedida ---
+        if (text.match(/\b(gracias|gracia|muchas gracias|thx|thanks)\b/) && text.length < 40) {
+            clearTopic();
+            return { text: "¡De nada! Si necesitás algo más, acá estoy 😊" };
+        }
+        if (text.match(/\b(chau|adios|bye|nos vemos|hasta luego)\b/) && text.length < 30) {
+            clearTopic();
+            return { text: "¡Hasta la próxima! 👋 Cuando quieras, estoy acá." };
+        }
+
+        // --- Saludos (limpian el tema) ---
+        if (text.match(/\b(hola|holas|buen dia|buenos dias|buenas tardes|buenas noches|buenas|hello|hi|hey|que tal|como estas|como va|todo bien)\b/) && text.length < 40) {
+            clearTopic();
             return { text: "¡Hola! 👋 ¿Qué querés hacer? Podés pedirme productos, ofertas, cupones, envío, pagos o que agregue algo al carrito." };
         }
 
+        // --- Identidad ---
         if (text.match(/\b(quien sos|que sos|que haces|sos real|sos un bot|asistente)\b/)) {
             const storeName = settings?.storeName ? ` de **${settings.storeName}**` : '';
             return { text: `Soy SustIA${storeName}. Puedo ayudarte a encontrar productos, ver ofertas/cupones y armar el carrito más rápido.` };
         }
 
-        if (text.match(/\b(categorias|categoria|rubros|rubro|secciones)\b/)) {
+        // --- Comandos de Sistema ---
+        if (controlPanel) {
+            if (text.match(/modo\s*(?:oscuro|noche|dark)/)) { controlPanel.setDarkMode(true); return { text: "He activado el modo oscuro 🌙" }; }
+            if (text.match(/modo\s*(?:claro|dia|light)/)) { controlPanel.setDarkMode(false); return { text: "He activado el modo claro ☀️" }; }
+            if (text.match(/(?:ver|abrir|ir al)\s*(?:carrito|bolsa|cesta)/)) { controlPanel.openCart(); return { text: "Abriendo tu carrito 🛒" }; }
+        }
+
+        // === DETECCIÓN DE INTENTS EXPLÍCITOS ===
+        const hasShippingKw = !!text.match(/\b(envio|envios|entrega|delivery|domicilio|retiro|retirar|pickup|como llega|cuando llega|hacen envios|mandan)\b/);
+        const hasPaymentKw = !!text.match(/\b(pago|pagos|tarjeta|mercado\s*pago|transferencia|cbu|alias|efectivo|como pago|formas? de pago|metodos? de pago)\b/);
+        const hasCouponKw = !!text.match(/\b(descuento|descuentos|promo|promos|cupon|cupones|oferta|ofertas|codigo|rebaja|rebajas)\b/);
+        const hasCategoryKw = !!text.match(/\b(categorias|categoria|rubros|rubro|secciones)\b/);
+        const hasHelpKw = !!text.match(/\b(ayuda|soporte|contacto|human|persona|asesor|whatsapp)\b/);
+        const hasAboutKw = !!text.match(/\b(quienes somos|about)\b/) || (!!text.match(/\b(sobre|informacion)\b/) && !text.match(/\bsobre\s+(un|el|la|este|esta|ese|esa|esto)\b/));
+        const hasExplicitIntent = hasShippingKw || hasPaymentKw || hasCouponKw || hasCategoryKw || hasHelpKw || hasAboutKw;
+
+        // === FOLLOW-UPS CONTEXTUALES ===
+        if (topicRef.current && !hasExplicitIntent) {
+            const t = topicRef.current;
+            const isYes = !!text.match(/\b(si|sip|sep|claro|dale|bueno|yes|por favor|obvio|ok|sale|va|vamos|manda|quiero|mostrame|show)\b/);
+            const isNo = !!text.match(/\b(no|nah|paso|cancelar|nada|asi esta bien|despues|luego|no gracias|esta bien asi)\b/);
+
+            // --- Envío: el bot pidió ciudad/zona ---
+            if (t.action === 'asked_location') {
+                clearTopic();
+                const loc = rawText;
+                const { deliveryEnabled, pickupEnabled, deliveryFee, freeAbove, pickupAddress } = t.data || {};
+                const pickupNorm = normalizeText(pickupAddress);
+                const locNorm = normalizeText(loc);
+                const sameZone = pickupNorm && (pickupNorm.includes(locNorm) || locNorm.includes((pickupNorm.split(',')[0] || '').trim()));
+                const lines = [`📍 Para **${loc}**:`];
+                if (pickupEnabled && sameZone) {
+                    lines.push(`✅ Podés retirar en nuestro local: **${pickupAddress}**.`);
+                } else if (pickupEnabled) {
+                    lines.push(`🏪 Tenemos retiro en local en **${pickupAddress || 'dirección a coordinar'}**, pero queda en otra zona.`);
+                }
+                if (deliveryEnabled) {
+                    const feeText = deliveryFee > 0 ? `$${deliveryFee.toLocaleString()}` : 'sin costo';
+                    lines.push(`🚚 Hacemos envíos a domicilio (${feeText}${freeAbove > 0 ? `, gratis superando $${freeAbove.toLocaleString()}` : ''}).`);
+                    lines.push(`Para confirmar costo exacto a ${loc}, avanzá al checkout o consultanos.`);
+                }
+                if (!pickupEnabled && !deliveryEnabled) {
+                    lines.push('Todavía no tenemos envío configurado. Consultanos para coordinar.');
+                }
+                if (settings?.whatsappLink) lines.push(`\n💬 Coordiná por WhatsApp: ${settings.whatsappLink}`);
+                lines.push('\n¿Necesitás algo más? Puedo mostrarte productos, ofertas o medios de pago.');
+                return { text: lines.join('\n') };
+            }
+
+            // --- Productos mostrados: referencia, compra, refinamiento ---
+            if (t.action === 'showed_products' && Array.isArray(t.shownProducts) && t.shownProducts.length > 0) {
+                const shown = t.shownProducts;
+
+                // Detectar referencia ordinal
+                const ordinals = [
+                    { p: /\b(primero|primer|1ro|1ero|1°)\b/, i: 0 },
+                    { p: /\b(segundo|2do|2°)\b/, i: 1 },
+                    { p: /\b(tercero|tercer|3ro|3ero|3°)\b/, i: 2 },
+                    { p: /\b(cuarto|4to|4°)\b/, i: 3 },
+                    { p: /\b(ultimo|quinto|5to|5°)\b/, i: shown.length - 1 },
+                ];
+                let refProd = null;
+                for (const o of ordinals) { if (text.match(o.p) && shown[o.i]) { refProd = shown[o.i]; break; } }
+                if (!refProd && text.match(/\b(ese|este|eso|esto)\b/)) refProd = shown[0];
+                if (!refProd) {
+                    const numRef = text.match(/\b(?:el|la|n[uú]mero)\s*(\d)\b/);
+                    if (numRef && shown[parseInt(numRef[1], 10) - 1]) refProd = shown[parseInt(numRef[1], 10) - 1];
+                }
+                if (!refProd && text.length > 3) {
+                    refProd = shown.find(p => {
+                        const pn = normalizeText(p.name);
+                        return pn.includes(text) || text.includes(pn.split(' ')[0]);
+                    });
+                }
+
+                // Intent de compra
+                const isBuyIntent = !!text.match(/\b(agrega|agregar|agregame|agregalo|sum[aá]|sumale|pone|poner|met[eé]|comprar|compralo|quiero|dame|llevo|lo quiero|al carrito|sumalo|mandalo)\b/);
+                if (isBuyIntent) {
+                    const target = refProd || shown[0];
+                    addToCart(target, qty);
+                    const others = shown.filter(p => p.id !== target.id).slice(0, 3);
+                    if (others.length > 0) {
+                        setTopic({ action: 'asked_yes_no', subAction: 'cross_sell', data: others, shownProducts: others });
+                        return { text: `¡Listo! Agregué **${qty}x ${target.name}** al carrito 🛒\n\n¿Querés ver algo más para complementar?`, products: [target] };
+                    }
+                    clearTopic();
+                    return { text: `¡Listo! Agregué **${qty}x ${target.name}** al carrito 🛒 ¿Algo más?`, products: [target] };
+                }
+
+                // Más info sobre un producto referenciado
+                if (refProd && text.match(/\b(info|detalle|detalles|especif|descrip|cuenta|contame|mas sobre)\b/)) {
+                    const p = refProd;
+                    const price = getProductFinalPrice(p);
+                    const cats = getProductCategories(p);
+                    const lines = [`📦 **${p.name}**`, `💰 $${Math.round(price).toLocaleString()}${(p.discount || 0) > 0 ? ` (${p.discount}% OFF)` : ''}`];
+                    if (p.description) lines.push(`📝 ${String(p.description).slice(0, 200)}`);
+                    if (cats.length > 0) lines.push(`🏷️ ${cats.join(', ')}`);
+                    lines.push(`📊 Stock: ${p.stock || 0} unidades`);
+                    lines.push(`\n¿Lo agregamos al carrito?`);
+                    setTopic({ action: 'asked_yes_no', subAction: 'add_product', data: p, shownProducts: shown });
+                    return { text: lines.join('\n'), products: [p] };
+                }
+
+                // Si referenció un producto sin intent claro, preguntar
+                if (refProd) {
+                    const p = refProd;
+                    const price = getProductFinalPrice(p);
+                    setTopic({ action: 'asked_yes_no', subAction: 'add_product', data: p, shownProducts: shown });
+                    return { text: `**${p.name}** — $${Math.round(price).toLocaleString()}${(p.discount || 0) > 0 ? ` (${p.discount}% OFF)` : ''}\n\n¿Lo agrego al carrito?`, products: [p] };
+                }
+
+                // "más barato" / "más caro"
+                if (text.match(/\b(barato|economico|baratos|economicos|menor precio)\b/)) {
+                    const cheaper = [...shown].sort((a, b) => getProductFinalPrice(a) - getProductFinalPrice(b));
+                    setTopic({ action: 'showed_products', shownProducts: cheaper, searchKeywords: t.searchKeywords });
+                    return { text: "Ordenados de más económico a más caro:", products: cheaper };
+                }
+                if (text.match(/\b(caro|caros|premium|mejor calidad|top|mejor)\b/)) {
+                    const pricier = [...shown].sort((a, b) => getProductFinalPrice(b) - getProductFinalPrice(a));
+                    setTopic({ action: 'showed_products', shownProducts: pricier, searchKeywords: t.searchKeywords });
+                    return { text: "Las opciones de mayor precio/calidad:", products: pricier };
+                }
+
+                // "otro", "más opciones"
+                if (text.match(/\b(otro|otros|otras|mas opciones|ver mas|siguiente|siguientes|que mas hay|hay mas)\b/)) {
+                    const shownIds = new Set(shown.map(p => p.id));
+                    let more = safeProducts.filter(p => !shownIds.has(p.id) && (Number(p.stock) || 0) > 0 && p.isActive !== false);
+                    if (Array.isArray(t.searchKeywords) && t.searchKeywords.length > 0) {
+                        const filtered = more.filter(p => {
+                            const pn = normalizeText(p.name);
+                            return t.searchKeywords.some(k => pn.includes(k) || fuzzySearch(pn, k));
+                        });
+                        if (filtered.length > 0) more = filtered;
+                    }
+                    const moreSlice = more.slice(0, 5);
+                    if (moreSlice.length > 0) {
+                        setTopic({ action: 'showed_products', shownProducts: moreSlice, searchKeywords: t.searchKeywords });
+                        return { text: "Más opciones:", products: moreSlice };
+                    }
+                    return { text: "No tengo más opciones con ese criterio. ¿Querés buscar otra cosa?" };
+                }
+            }
+
+            // --- Sí/No genérico ---
+            if (t.action === 'asked_yes_no') {
+                if (isYes) {
+                    clearTopic();
+                    if (t.subAction === 'cross_sell' && Array.isArray(t.data)) {
+                        return { text: "¡Mirá estas opciones! 🔥", products: t.data };
+                    }
+                    if (t.subAction === 'show_deals' && Array.isArray(t.data)) {
+                        return { text: "Las mejores ofertas ahora mismo:", products: t.data };
+                    }
+                    if (t.subAction === 'add_product' && t.data) {
+                        addToCart(t.data, qty);
+                        return { text: `¡Listo! Agregué **${qty}x ${t.data.name}** al carrito 🛒 ¿Algo más?`, products: [t.data] };
+                    }
+                }
+                if (isNo) {
+                    clearTopic();
+                    return { text: "Perfecto. ¿Necesitás algo más? 😊" };
+                }
+            }
+
+            // --- Categoría: el bot pidió que elija una ---
+            if (t.action === 'asked_category') {
+                const allCats = [...new Set([...(Array.isArray(settings?.categories) ? settings.categories : []), ...safeProducts.flatMap(p => getProductCategories(p))])];
+                const matchedCat = allCats.find(c => fuzzySearch(normalizeText(c), text) || fuzzySearch(text, normalizeText(c)));
+                if (matchedCat) {
+                    const catProds = safeProducts
+                        .filter(p => (Number(p.stock) || 0) > 0 && p.isActive !== false && getProductCategories(p).some(c => c.toLowerCase() === matchedCat.toLowerCase()))
+                        .slice(0, 5);
+                    if (catProds.length > 0) {
+                        setTopic({ action: 'showed_products', shownProducts: catProds, searchKeywords: [] });
+                        return { text: `Productos en **${matchedCat}**:`, products: catProds };
+                    }
+                    return { text: `No hay productos disponibles en "${matchedCat}" ahora. ¿Buscamos otra categoría?` };
+                }
+            }
+        }
+
+        // === HANDLERS DE INTENTS EXPLÍCITOS ===
+
+        // Categorías
+        if (hasCategoryKw) {
             const prodCats = [...new Set(safeProducts.flatMap(p => getProductCategories(p)))];
             const cats = [...new Set([...(Array.isArray(settings?.categories) ? settings.categories : []), ...prodCats])]
-                .map(c => String(c).trim())
-                .filter(Boolean);
+                .map(c => String(c).trim()).filter(Boolean);
             if (cats.length === 0) return { text: "Todavía no tengo categorías configuradas. Decime qué estás buscando y lo resuelvo igual." };
-            const top = cats.slice(0, 10);
-            return { text: `Tenemos estas categorías:\n\n${top.map(c => `- ${c}`).join('\n')}\n\nDecime cuál te interesa y te muestro opciones.` };
+            setTopic({ action: 'asked_category' });
+            return { text: `Tenemos estas categorías:\n\n${cats.slice(0, 10).map(c => `- ${c}`).join('\n')}\n\nDecime cuál te interesa y te muestro opciones.` };
         }
 
-        if (text.match(/\b(sobre|info|informacion|quienes somos|about)\b/)) {
+        // Sobre nosotros
+        if (hasAboutKw) {
             const about = settings?.aboutUsText || '';
             if (about.trim()) return { text: about.trim() };
-            return { text: "Esta tienda todavía no cargó su sección “Sobre nosotros”. ¿Querés que te ayude a encontrar un producto?" };
+            return { text: "Esta tienda todavía no cargó su sección \u201cSobre nosotros\u201d. ¿Querés que te ayude a encontrar un producto?" };
         }
 
-        // 0.1 Comandos de Sistema (Universal)
-        if (controlPanel) {
-            if (text.match(/modo\s*(?:oscuro|noche|dark)/)) {
-                controlPanel.setDarkMode(true);
-                return { text: "He activado el modo oscuro 🌙. ¿Mejor para tus ojos?" };
-            }
-            if (text.match(/modo\s*(?:claro|dia|light)/)) {
-                controlPanel.setDarkMode(false);
-                return { text: "He activado el modo claro ☀️." };
-            }
-            if (text.match(/(?:ver|abrir|ir al)\s*(?:carrito|bolsa|cesta)/)) {
-                controlPanel.openCart();
-                return { text: "Abriendo tu carrito de compras... 🛒" };
-            }
-        }
-
-        if (text.match(/\b(envio|envios|entrega|delivery|domicilio|retiro|retirar|local|pickup)\b/)) {
+        // Envío
+        if (hasShippingKw) {
             const deliveryEnabled = !!settings?.shippingDelivery?.enabled;
             const pickupEnabled = !!settings?.shippingPickup?.enabled;
             const deliveryFee = Number(settings?.shippingDelivery?.fee) || 0;
             const freeAbove = Number(settings?.shippingDelivery?.freeAbove) || 0;
             const pickupAddress = settings?.shippingPickup?.address || '';
-
             const lines = [];
-            if (pickupEnabled) {
-                lines.push(`📍 Retiro en local: ${pickupAddress ? `**${pickupAddress}**` : 'a coordinar'}.`);
-            }
+            if (pickupEnabled) lines.push(`📍 Retiro en local: ${pickupAddress ? `**${pickupAddress}**` : 'a coordinar'}.`);
             if (deliveryEnabled) {
-                if (freeAbove > 0) {
-                    lines.push(`🚚 Envío a domicilio: $${deliveryFee.toLocaleString()} (gratis desde $${freeAbove.toLocaleString()}).`);
-                } else {
-                    lines.push(`🚚 Envío a domicilio: $${deliveryFee.toLocaleString()}.`);
-                }
+                if (freeAbove > 0) lines.push(`🚚 Envío a domicilio: $${deliveryFee.toLocaleString()} (gratis desde $${freeAbove.toLocaleString()}).`);
+                else lines.push(`🚚 Envío a domicilio: $${deliveryFee.toLocaleString()}.`);
             }
-            if (!pickupEnabled && !deliveryEnabled) {
-                lines.push("Todavía no tengo configurado el método de entrega para esta tienda.");
-            }
+            if (!pickupEnabled && !deliveryEnabled) lines.push("Todavía no tengo configurado el método de entrega.");
             lines.push("Si me decís tu ciudad/zona, te digo lo mejor para vos.");
+            setTopic({ action: 'asked_location', data: { deliveryEnabled, pickupEnabled, deliveryFee, freeAbove, pickupAddress } });
             return { text: lines.join('\n') };
         }
 
-        if (text.match(/\b(pago|pagos|tarjeta|mercado\s*pago|transferencia|cbu|alias|efectivo)\b/)) {
+        // Pagos
+        if (hasPaymentKw) {
             const hasCard = !!settings?.paymentMercadoPago?.enabled;
             const hasTransfer = !!settings?.paymentTransfer?.enabled;
             const hasCash = !!settings?.paymentCash && !!settings?.shippingPickup?.enabled;
@@ -361,10 +473,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             if (hasCard) options.push("💳 Tarjeta (Mercado Pago)");
             if (hasTransfer) options.push("🏦 Transferencia");
             if (hasCash) options.push("💵 Efectivo (solo retiro en local)");
-
-            if (options.length === 0) {
-                return { text: "Todavía no tengo métodos de pago configurados para esta tienda. Si querés, te paso WhatsApp para coordinar." };
-            }
+            if (options.length === 0) return { text: "Todavía no tengo métodos de pago configurados." };
             if (wantsTransferData) {
                 const holderName = settings?.paymentTransfer?.holderName ? String(settings.paymentTransfer.holderName).trim() : '';
                 const alias = settings?.paymentTransfer?.alias ? String(settings.paymentTransfer.alias).trim() : '';
@@ -373,24 +482,20 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 if (holderName) lines.push(`- Titular: ${holderName}`);
                 if (alias) lines.push(`- Alias: ${alias}`);
                 if (cbu) lines.push(`- CBU: ${cbu}`);
-                if (!holderName && !alias && !cbu) {
-                    lines.push("- Aún no están cargados los datos de transferencia para esta tienda.");
-                }
+                if (!holderName && !alias && !cbu) lines.push("- Aún no están cargados los datos.");
                 return { text: lines.join('\n') };
             }
             return { text: `Podés pagar con:\n\n${options.map(o => `- ${o}`).join('\n')}\n\n¿Con cuál preferís?` };
         }
 
-        // 0.2 Detectar Ayuda/Contacto
-        if (text.match(/\b(ayuda|soporte|contacto|human|persona|asesor)\b/)) {
-            if (settings?.whatsappLink) {
-                return { text: `Claro. Si necesitas asistencia personalizada con un humano 🧑‍💻, escríbenos a nuestro WhatsApp: ${settings.whatsappLink} 📲` };
-            }
-            return { text: "Estoy diseñado para ayudarte a encontrar productos las 24hs. 🤖 ¿Buscas algo en específico?" };
+        // Ayuda/Contacto
+        if (hasHelpKw) {
+            if (settings?.whatsappLink) return { text: `Claro. Si necesitas asistencia personalizada 🧑‍💻, escribinos a WhatsApp: ${settings.whatsappLink} 📲` };
+            return { text: "Estoy diseñado para ayudarte las 24hs 🤖. ¿Buscás algo en específico?" };
         }
 
-        // 0.3 Detectar Promociones/Cupones
-        if (text.match(/\b(descuento|promo|cupon|oferta|codigo|rebaja)\b/)) {
+        // Cupones/Promociones
+        if (hasCouponKw) {
             const activeCoupons = safeCoupons.filter(c => {
                 if (!c?.code) return false;
                 const isNotExpired = !c.expirationDate || new Date(c.expirationDate) > new Date();
@@ -399,125 +504,76 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 return isNotExpired && notExhausted;
             });
             const deals = safeProducts.filter(p => (Number(p?.discount) || 0) > 0 && (Number(p?.stock) || 0) > 0);
-
             if (activeCoupons.length > 0) {
                 const couponText = activeCoupons
-                    .filter(c => c?.code)
                     .map(c => `🎫 **${c.code}** (${c.type === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`)
                     .join("\n");
-                return { text: `¡Sí! Tenemos estos cupones disponibles para ti:\n\n${couponText}\n\n¡Úsalos al finalizar tu compra! 🛒` };
+                return { text: `¡Sí! Tenemos estos cupones:\n\n${couponText}\n\n¡Usalos al finalizar tu compra! 🛒` };
             } else if (deals.length > 0) {
-                setLastContext({ type: 'show_deals', data: deals.sort(() => 0.5 - Math.random()).slice(0, 5) });
-                return { text: `No tengo códigos de cupón activos ahora, pero sí tenemos **${deals.length}** productos con descuento. ¿Querés que te muestre los mejores? 🏷️` };
-            } else {
-                return { text: "Por el momento no tengo códigos promocionales activos, pero nuestros precios son los mejores del mercado. 😉" };
+                setTopic({ action: 'asked_yes_no', subAction: 'show_deals', data: deals.sort(() => 0.5 - Math.random()).slice(0, 5) });
+                return { text: `No tengo cupones activos, pero hay **${deals.length}** productos con descuento. ¿Querés verlos? 🏷️` };
             }
+            return { text: "No tengo promociones activas ahora, pero nuestros precios son los mejores 😉" };
         }
 
-        // 1. Manejo de Contexto (Conversacional)
-        if (lastContext) {
-            if (text.match(/\b(si|claro|dale|bueno|yes|por favor|obvio)\b/)) {
-                const ctx = lastContext;
-                setLastContext(null);
-                if (ctx.type === 'suggest_cross_sell') {
-                    return {
-                        text: "¡Excelente! Mira estas oportunidades que seleccioné para ti: 🔥",
-                        products: ctx.data
-                    };
-                }
-                if (ctx.type === 'show_deals') {
-                    return {
-                        text: "Listo. Estas son algunas ofertas que valen la pena ahora mismo:",
-                        products: ctx.data
-                    };
-                }
-            } else if (text.match(/\b(no|gracias|paso|cancelar|asi esta bien)\b/)) {
-                setLastContext(null);
-                return { text: "Entendido. ¿Necesitas ayuda con algo más? 😊" };
-            }
-        }
-
-        // 2. Detectar Intenciones
-        const isCheaper = text.match(/(?:mas|muy|super)\s*(?:barato|economico|bajo)|oferta|menos|mas\s*economico/);
+        // === BÚSQUEDA DE PRODUCTOS ===
+        const isCheaper = text.match(/(?:mas|muy|super)\s*(?:barato|economico|bajo)|mas\s*economico/);
         const isExpensive = text.match(/(?:mas|muy|super)\s*(?:caro|mejor|calidad|top|premium)|costoso|lujo/);
         const isBuying = text.match(/(?:agrega|agregar|agregame|sum[aá]|pone|poner|met[eé]|comprar|quiero|dame|carrito|llevo|lo quiero)/);
 
-        // 2.1 Filtros de Precio Inteligentes (NUEVO)
         let minPrice = 0;
         let maxPrice = Infinity;
-
-        // Detectar "menos de X"
         const lessThanMatch = text.match(/(?:menos|menor|bajo)\s*(?:de|a|que)?\s*\$?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:k|mil))?/);
-        if (lessThanMatch) {
-            const parsed = parseHumanNumber(lessThanMatch[1], text);
-            if (parsed !== null) maxPrice = parsed;
-        }
-
-        // Detectar "entre X y Y"
+        if (lessThanMatch) { const p = parseHumanNumber(lessThanMatch[1], text); if (p !== null) maxPrice = p; }
         const betweenMatch = text.match(/entre\s*\$?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:k|mil))?\s*y\s*\$?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:k|mil))?/);
         if (betweenMatch) {
-            const parsedMin = parseHumanNumber(betweenMatch[1], text);
-            const parsedMax = parseHumanNumber(betweenMatch[2], text);
-            if (parsedMin !== null) minPrice = parsedMin;
-            if (parsedMax !== null) maxPrice = parsedMax;
+            const pMin = parseHumanNumber(betweenMatch[1], text); const pMax = parseHumanNumber(betweenMatch[2], text);
+            if (pMin !== null) minPrice = pMin; if (pMax !== null) maxPrice = pMax;
         }
 
-        // 3. Detectar Categoría (Fuzzy)
         const availableCategories = [...new Set(safeProducts.flatMap(p => getProductCategories(p)))];
         const detectedCategoryVal = availableCategories.find(c => fuzzySearch(c, text) || fuzzySearch(text, c));
         const targetCategory = detectedCategoryVal ? detectedCategoryVal.toLowerCase() : null;
 
-        // 4. Búsqueda y Scoring de Productos
         const synonyms = new Map([
-            ['celu', 'celular'],
-            ['cel', 'celular'],
-            ['tele', 'televisor'],
-            ['tv', 'televisor'],
-            ['compu', 'computadora'],
-            ['notebook', 'laptop'],
-            ['auris', 'auriculares'],
-            ['zapas', 'zapatillas'],
-            ['remera', 'camiseta'],
-            ['remeras', 'camisetas']
+            ['celu', 'celular'], ['cel', 'celular'], ['tele', 'televisor'],
+            ['tv', 'televisor'], ['compu', 'computadora'], ['notebook', 'laptop'],
+            ['auris', 'auriculares'], ['zapas', 'zapatillas'],
+            ['remera', 'camiseta'], ['remeras', 'camisetas'],
+            ['funda', 'funda'], ['cable', 'cable'], ['cargador', 'cargador'],
+            ['protector', 'protector'], ['vidrio', 'vidrio templado']
         ]);
-        const keywords = tokenize(text).flatMap(k => {
-            const alt = synonyms.get(k);
-            return alt ? [k, alt] : [k];
-        });
+        const keywords = tokenize(text).flatMap(k => { const alt = synonyms.get(k); return alt ? [k, alt] : [k]; });
 
         if (keywords.length === 0 && !targetCategory && !isCheaper && !isExpensive && !isBuying) {
-            return { text: "¿Me decís qué producto o categoría querés ver? Si querés, también podés preguntar por 'envío', 'pagos' o 'cupones'." };
+            const lastResort = safeProducts
+                .filter(p => (Number(p.stock) || 0) > 0 && p.isActive !== false)
+                .find(p => fuzzySearch(normalizeText(p.name), text));
+            if (lastResort) {
+                setTopic({ action: 'showed_products', shownProducts: [lastResort], searchKeywords: [text] });
+                return { text: `¿Buscás esto?`, products: [lastResort] };
+            }
+            return { text: "¿Me decís qué producto o categoría querés ver? También podés preguntar por envío, pagos o cupones." };
         }
 
         let candidates = safeProducts.filter(p => (Number(p?.stock) || 0) > 0 && p?.isActive !== false);
-
-        // Aplicar filtros de precio
-        candidates = candidates.filter(p => {
-            const fp = getProductFinalPrice(p);
-            return fp >= minPrice && fp <= maxPrice;
-        });
-
-        // Filtro por categoría detectada
-        if (targetCategory) {
-            candidates = candidates.filter(p => getProductCategories(p).some(c => c.toLowerCase() === targetCategory));
-        }
+        candidates = candidates.filter(p => { const fp = getProductFinalPrice(p); return fp >= minPrice && fp <= maxPrice; });
+        if (targetCategory) candidates = candidates.filter(p => getProductCategories(p).some(c => c.toLowerCase() === targetCategory));
 
         const scores = candidates.map(p => {
             let score = 0;
             const pName = normalizeText(p.name);
             const pDesc = normalizeText(p.description);
-
             keywords.forEach(k => {
                 if (pName.includes(k)) score += 10;
                 else if (fuzzySearch(pName, k)) score += 5;
                 if (pDesc.includes(k)) score += 2;
             });
-
+            if (targetCategory && !keywords.length) score += 5;
             if (p.isFeatured) score += 5;
             if (p.discount > 0) score += 3;
             if (isCheaper) score += (1 / (getProductFinalPrice(p) || 1)) * 10000;
             if (isExpensive) score += getProductFinalPrice(p) / 100;
-
             return { product: p, score };
         });
 
@@ -525,40 +581,35 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         const topMatches = sorted.slice(0, 5).map(s => s.product);
 
         if (topMatches.length === 0) {
-            return { text: "No encontré exactamente lo que buscás, pero probando con otra palabra o viendo nuestras categorías seguro lo hallamos. 🔎" };
+            const allDeals = safeProducts.filter(p => (Number(p.discount) || 0) > 0 && (Number(p.stock) || 0) > 0).slice(0, 3);
+            if (allDeals.length > 0) {
+                setTopic({ action: 'showed_products', shownProducts: allDeals, searchKeywords: keywords });
+                return { text: "No encontré eso exactamente, pero mirá estas opciones con descuento:", products: allDeals };
+            }
+            return { text: "No encontré lo que buscás. Probá con otra palabra o preguntame por categorías 🔎" };
         }
 
         if (isBuying && topMatches.length > 0) {
             const best = topMatches[0];
             addToCart(best, qty);
-
             const suggestions = safeProducts
                 .filter(p => p.id !== best.id && (Number(p.stock) || 0) > 0 && p.isActive !== false)
-                .sort(() => 0.5 - Math.random())
-                .slice(0, 3);
-
+                .sort(() => 0.5 - Math.random()).slice(0, 3);
             if (suggestions.length > 0) {
-                setLastContext({ type: 'suggest_cross_sell', data: suggestions });
-                return {
-                    text: `¡Listo! Agregué **${qty}x ${best.name}** a tu carrito. 🛒\n\n¿Te gustaría ver algunos productos destacados para complementar tu compra? 👀`,
-                    products: [best]
-                };
+                setTopic({ action: 'asked_yes_no', subAction: 'cross_sell', data: suggestions, shownProducts: suggestions });
+                return { text: `¡Listo! Agregué **${qty}x ${best.name}** al carrito 🛒\n\n¿Querés ver algo para complementar? 👀`, products: [best] };
             }
-
-            return {
-                text: `¡Listo! Agregué **${qty}x ${best.name}** a tu carrito. 🛒 ¿Algo más?`,
-                products: [best]
-            };
+            clearTopic();
+            return { text: `¡Listo! Agregué **${qty}x ${best.name}** al carrito 🛒 ¿Algo más?`, products: [best] };
         }
 
+        setTopic({ action: 'showed_products', shownProducts: topMatches, searchKeywords: keywords });
         let msg = "Encontré estas opciones. ¿Querés que te muestre más o me decís un presupuesto?";
-        if (targetCategory) msg = `Encontré esto en la categoría ${targetCategory}:`;
+        if (targetCategory) msg = `Encontré esto en **${detectedCategoryVal}**:`;
         if (isCheaper) msg = "Las opciones más económicas:";
+        if (topMatches.length === 1) msg = "Encontré esto para vos:";
 
-        return {
-            text: msg,
-            products: topMatches
-        };
+        return { text: msg, products: topMatches };
     };
 
     const withTimeout = async (promise, ms) => {
@@ -605,17 +656,6 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 : "Perdón, tuve un problema procesando eso. ¿Podés reformularlo?";
             const safeProducts = Array.isArray(localResponse?.products) ? localResponse.products : undefined;
 
-            const shouldAskExternal = aiEnabled && (!safeProducts || safeProducts.length === 0) && /no encontr[eé]|no tengo eso|no lo tengo|probando con otra palabra/i.test(finalText);
-            if (shouldAskExternal) {
-                const controller = new AbortController();
-                const id = setTimeout(() => controller.abort(), 8500);
-                try {
-                    const aiRes = await callExternalAI({ userText: text, history: updatedHistory, signal: controller.signal });
-                    if (aiRes?.text) finalText = aiRes.text;
-                } catch { }
-                clearTimeout(id);
-            }
-
             setMessages(prev => [...prev, {
                 role: 'model',
                 text: finalText,
@@ -652,7 +692,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         try {
             localStorage.removeItem(chatStorageKey);
         } catch { }
-        setLastContext(null);
+        topicRef.current = null;
         setMessages([defaultBotMessage]);
     };
 
