@@ -6551,7 +6551,7 @@ function App() {
             {view !== 'admin' && <div className="h-14 sm:h-16 md:h-20"></div>}
 
             {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
-            <main className={`flex-grow relative z-10 ${view === 'admin' ? 'min-h-screen min-full-viewport flex overflow-hidden' : 'px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8'}`}>
+            <main className={`flex-grow relative z-10 ${view === 'admin' ? 'min-h-screen min-full-viewport flex' : 'px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8'}`}>
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
@@ -7776,7 +7776,7 @@ function App() {
                             currentUser?.id &&
                             currentUser?.id.length >= 10 &&
                             !SecurityManager.detectManipulation()) ? (
-                            <div className="flex min-h-screen min-full-viewport bg-[#050505] overflow-hidden animate-fade-up relative w-full font-sans">
+                            <div className="flex min-h-screen min-full-viewport bg-[#050505] animate-fade-up relative w-full font-sans">
 
                                 {/* Overlay para cerrar el menú en móvil */}
                                 {isAdminMenuOpen && (
