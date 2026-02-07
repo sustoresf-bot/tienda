@@ -2717,7 +2717,23 @@ function App() {
                     if (userData.role === 'admin') userData._adminVerified = true;
                     setCurrentUser(userData);
                 } else {
-                    setCurrentUser(null);
+                    // Profile missing in Firestore — create a minimal one so the user appears in admin panel
+                    const email = systemUser.email || '';
+                    const emailLower = email.toLowerCase();
+                    const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+                    const minimal = {
+                        name: systemUser.displayName || email.split('@')[0] || 'Usuario',
+                        email,
+                        emailLower,
+                        role: superEmailLower && emailLower === superEmailLower ? 'admin' : 'user',
+                        createdAt: new Date().toISOString(),
+                    };
+                    try {
+                        await setDoc(userDocRef, minimal, { merge: true });
+                    } catch (e) {
+                        console.warn('[Auth] Could not auto-create profile in Firestore:', e?.code || e?.message || e);
+                    }
+                    if (!cancelled) setCurrentUser({ id: systemUser.uid, ...minimal });
                 }
             } catch {
                 if (!cancelled) setCurrentUser(null);
@@ -3078,25 +3094,29 @@ function App() {
                     console.error('[Admin] list-users API responded', res.status, await res.text().catch(() => ''));
                 }
             } catch (e) {
-                console.error('[Admin] Fallback API list-users failed:', e);
+                console.error('[Admin] API list-users failed:', e);
             }
         };
 
-        let usersReceivedFromSnapshot = false;
-        unsubscribeFunctions.push(
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
-                usersReceivedFromSnapshot = true;
-                const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                setUsers(docs);
-                if (docs.length === 0) fetchUsersViaApi();
-            }, (error) => {
-                console.error('[Admin] Error cargando users:', error?.code || error?.message || error);
-                fetchUsersViaApi();
-            })
-        );
-        const fallbackTimer = setTimeout(() => {
-            if (!usersReceivedFromSnapshot) fetchUsersViaApi();
-        }, 4000);
+        // Primary: always fetch users via API (bypasses Firestore rules)
+        fetchUsersViaApi();
+
+        // Poll every 30s to keep the list live
+        const usersPollingInterval = setInterval(fetchUsersViaApi, 30000);
+
+        // Bonus: try real-time snapshot (may fail due to Firestore rules on collection-level read)
+        try {
+            unsubscribeFunctions.push(
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), snapshot => {
+                    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (docs.length > 0) setUsers(docs);
+                }, (error) => {
+                    console.warn('[Admin] Users snapshot not available (using API polling):', error?.code || error?.message || '');
+                })
+            );
+        } catch (e) {
+            console.warn('[Admin] Could not set up users snapshot:', e);
+        }
 
         unsubscribeFunctions.push(
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'suppliers'), snapshot => {
@@ -3132,7 +3152,7 @@ function App() {
         );
 
         return () => {
-            clearTimeout(fallbackTimer);
+            clearInterval(usersPollingInterval);
             unsubscribeFunctions.forEach(unsub => unsub());
         };
     }, [currentUser?.role, appId, view]);
