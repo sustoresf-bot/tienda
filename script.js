@@ -1,5 +1,6 @@
 ﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createPortal } from 'react-dom';
 
 // Lazy loaded components for code splitting
 const SustIABot = lazy(() => import('./components/SustIABot.js'));
@@ -1485,7 +1486,7 @@ function AdminHowToUse({ guideKey }) {
                 Cómo usar
             </button>
 
-            {isOpen && (
+            {isOpen && createPortal(
                 <div
                     className="fixed inset-0 z-[20050] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-fade-in"
                     onClick={() => setIsOpen(false)}
@@ -1563,7 +1564,7 @@ function AdminHowToUse({ guideKey }) {
                         </div>
                     </div>
                 </div>
-            )}
+            , document.body)}
         </>
     );
 }

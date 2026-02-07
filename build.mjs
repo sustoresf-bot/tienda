@@ -24,6 +24,7 @@ await build({
   charset: 'utf8',
   external: [
     'react',
+    'react-dom',
     'react-dom/client',
     'lucide-react',
     'firebase/app',
