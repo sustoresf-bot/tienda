@@ -167,6 +167,85 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         return base * (1 - disc / 100);
     };
 
+    // --- LISTA DE PROVINCIAS Y CIUDADES ARGENTINAS ---
+    const ARGENTINA_PROVINCES = [
+        'buenos aires','caba','capital federal','ciudad autonoma','ciudad de buenos aires',
+        'catamarca','chaco','chubut','cordoba','corrientes','entre rios','formosa',
+        'jujuy','la pampa','la rioja','mendoza','misiones','neuquen','rio negro',
+        'salta','san juan','san luis','santa cruz','santa fe','santiago del estero',
+        'tierra del fuego','tucuman'
+    ];
+    const ARGENTINA_CITIES = [
+        'adrogue','avellaneda','bahia blanca','banfield','bariloche','bernal','berazategui',
+        'burzaco','caleta olivia','campana','caseros','cipolletti','comodoro rivadavia',
+        'concordia','devoto','el calafate','el palomar','escobar','ezeiza','florencio varela',
+        'general roca','gualeguaychu','hurlingham','iguazu','ituzaingo','jose c paz',
+        'junin','la plata','lanus','lomas de zamora','lujan','mar del plata',
+        'marcos paz','mercedes','merlo','monte grande','moron','necochea',
+        'olavarria','parana','pergamino','pilar','pinamar','posadas','presidencia roque saenz pena',
+        'quilmes','rafaela','rawson','reconquista','resistencia','rio cuarto','rio gallegos',
+        'rosario','san fernando','san isidro','san justo','san martin','san miguel',
+        'san miguel de tucuman','san nicolas','san rafael','san salvador de jujuy',
+        'santa rosa','tandil','temperley','tigre','trelew','ushuaia','venado tuerto',
+        'villa carlos paz','villa maria','villa mercedes','wilde','zarate',
+        'gonzalez catan','virrey del pino','laferrere','rafael castillo','isidro casanova',
+        'ciudad evita','aldo bonzi','tapiales','villa luzuriaga','ramos mejia','haedo',
+        'castelar','ciudadela','liniers','mataderos','lugano','flores','caballito',
+        'almagro','boedo','palermo','belgrano','nunez','recoleta','retiro','microcentro',
+        'san telmo','la boca','barracas','constitucion','once','congreso','tribunales',
+        'villa crespo','villa urquiza','villa devoto','villa del parque','versalles',
+        'monte castro','floresta','velez sarsfield','parque chacabuco','pompeya',
+        'soldati','villa lugano','villa riachuelo','liniers','mataderos','parque avellaneda',
+        'villa luro','agronomia','chacarita','paternal','villa ortuzar','coghlan',
+        'saavedra','villa pueyrredon','parque chas','villa real','puerto madero',
+        'san cristobal','balvanera','monserrat','san nicolas barrio',
+        'olivos','martinez','acassuso','beccar','boulogne','munro','florida','vicente lopez',
+        'don torcuato','el talar','garin','grand bourg','ingeniero maschwitz','los polvorines',
+        'pablo nogues','tortuguitas','william morris','general pacheco','benavidez',
+        'nordelta','rincon de milberg','dique lujan','general rodriguez',
+        'moreno','paso del rey','trujui','francisco alvarez','la reja','guernica',
+        'alejandro korn','domselaar','san vicente','canning','esteban echeverria',
+        'el jaguel','luis guillon','longchamps','glew','claypole','almirante brown',
+        'villa gesell','miramar','necochea','tres arroyos','azul','olavarria','bragado',
+        'chivilcoy','chacabuco','pehuajo','trenque lauquen','general villegas',
+        'nueve de julio','bolivar','saladillo','lobos','canuelas','san antonio de areco',
+        'carmen de areco','capitan sarmiento','san pedro','baradero','ramallo',
+        'villa constitucion','san lorenzo','casilda','firmat','chabas','rufino',
+        'general pico','rio tercero','villa allende','unquillo','jesus maria',
+        'alta gracia','cosquin','la falda','villa giardino','dean funes',
+        'cruz del eje','bell ville','marcos juarez','laboulaye','san francisco'
+    ];
+    const ALL_LOCATIONS = [...ARGENTINA_PROVINCES, ...ARGENTINA_CITIES];
+
+    const BLOCKED_WORDS = new Set([
+        'caca','culo','teta','tetas','pija','pito','mierda','puta','puto',
+        'concha','pelotudo','pelotuda','boludo','boluda','forro','forra',
+        'verga','poronga','ojete','orto','pete','garcha','cogida','cogido',
+        'coger','chupar','chuparla','chupame','chupala','mamada','mogolico',
+        'mogolica','tarado','tarada','imbecil','idiota','estupido','estupida',
+        'hdp','lcdtm','ctm','ptm','sorete','trola','trolo','gil','gila',
+        'pajero','pajera','nabo','naba','salame','bobo','boba','banana',
+        'zapallo','pichipe'
+    ]);
+
+    const isBlockedInput = (text) => {
+        const norm = normalizeText(text);
+        const words = norm.split(/\s+/).filter(Boolean);
+        // If every meaningful word is blocked, reject
+        const meaningful = words.filter(w => w.length > 1);
+        if (meaningful.length === 0) return true;
+        return meaningful.every(w => BLOCKED_WORDS.has(w));
+    };
+
+    const isValidLocation = (text) => {
+        const norm = normalizeText(text);
+        if (norm.length < 2 || norm.length > 60) return false;
+        return ALL_LOCATIONS.some(loc => {
+            if (loc.includes(norm) || norm.includes(loc)) return true;
+            return fuzzySearch(loc, norm) && norm.length >= 3;
+        });
+    };
+
     // Auto-scroll al último mensaje
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -222,6 +301,11 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             return { text: "Te leí, pero me falta info 😊. ¿Qué estás buscando? (ej: 'auriculares', 'zapatillas', 'envío', 'pagos')" };
         }
 
+        // --- Filtro de groserías/sinsentido ---
+        if (isBlockedInput(userText)) {
+            return { text: "No entendí eso 😅. ¿En qué puedo ayudarte? Podés preguntarme por productos, envío, pagos o cupones." };
+        }
+
         // --- Agradecimiento / Despedida ---
         if (text.match(/\b(gracias|gracia|muchas gracias|thx|thanks)\b/) && text.length < 40) {
             clearTopic();
@@ -268,8 +352,13 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
             // --- Envío: el bot pidió ciudad/zona ---
             if (t.action === 'asked_location') {
-                clearTopic();
                 const loc = rawText;
+                // Validate: must look like a real Argentine location
+                if (!isValidLocation(loc)) {
+                    // Don't clear topic — let them retry
+                    return { text: "No reconozco esa ubicación 🤔. Decime tu ciudad o provincia de Argentina (ej: *Córdoba*, *Rosario*, *CABA*, *Mar del Plata*)." };
+                }
+                clearTopic();
                 const { deliveryEnabled, pickupEnabled, deliveryFee, freeAbove, pickupAddress } = t.data || {};
                 const pickupNorm = normalizeText(pickupAddress);
                 const locNorm = normalizeText(loc);
@@ -288,7 +377,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 if (!pickupEnabled && !deliveryEnabled) {
                     lines.push('Todavía no tenemos envío configurado. Consultanos para coordinar.');
                 }
-                if (settings?.whatsappLink) lines.push(`\n💬 Coordiná por WhatsApp: ${settings.whatsappLink}`);
+                if (settings?.whatsappLink) lines.push(`\n[WSP_BUTTON]`);
                 lines.push('\n¿Necesitás algo más? Puedo mostrarte productos, ofertas o medios de pago.');
                 return { text: lines.join('\n') };
             }
@@ -490,7 +579,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
         // Ayuda/Contacto
         if (hasHelpKw) {
-            if (settings?.whatsappLink) return { text: `Claro. Si necesitas asistencia personalizada 🧑‍💻, escribinos a WhatsApp: ${settings.whatsappLink} 📲` };
+            if (settings?.whatsappLink) return { text: `Claro. Si necesitas asistencia personalizada 🧑‍💻, escribinos por WhatsApp 📲\n\n[WSP_BUTTON]` };
             return { text: "Estoy diseñado para ayudarte las 24hs 🤖. ¿Buscás algo en específico?" };
         }
 
@@ -664,7 +753,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         } catch (e) {
             if (!isMountedRef.current) return;
             const fallback = settings?.whatsappLink
-                ? `Uy, se me trabó por un momento. Si querés, hablá por WhatsApp: ${settings.whatsappLink}`
+                ? `Uy, se me trabó por un momento. Si querés, hablá por WhatsApp:\n\n[WSP_BUTTON]`
                 : "Uy, se me trabó por un momento. ¿Probamos de nuevo?";
             setMessages(prev => [...prev, { role: 'model', text: fallback }]);
         } finally {
@@ -761,7 +850,28 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                                     ? 'bg-gradient-to-br from-yellow-500 to-amber-600 text-white rounded-tr-none border border-white/10'
                                     : 'bg-[#1a1a1a] text-slate-200 rounded-tl-none border border-white/5'
                                     }`}>
-                                    <p className="whitespace-pre-wrap">{m.text}</p>
+                                    {m.text && m.text.includes('[WSP_BUTTON]') ? (
+                                        <>
+                                            {m.text.split('[WSP_BUTTON]').map((part, idx, arr) => (
+                                                <React.Fragment key={idx}>
+                                                    {part && <p className="whitespace-pre-wrap">{part}</p>}
+                                                    {idx < arr.length - 1 && settings?.whatsappLink && (
+                                                        <a
+                                                            href={settings.whatsappLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-2 mt-2 mb-1 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-full transition shadow-lg shadow-green-900/30"
+                                                        >
+                                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                                            Ir a WhatsApp
+                                                        </a>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                        </>
+                                    ) : (
+                                        <p className="whitespace-pre-wrap">{m.text}</p>
+                                    )}
                                 </div>
 
                                 {m.products && m.products.length > 0 && (
