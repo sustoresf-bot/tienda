@@ -522,7 +522,7 @@ const LazyImage = ({ src, alt, className, placeholder = 'data:image/svg+xml;base
     );
 };
 
-const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, autoplayMs, darkMode, onBannerClick }) => {
+const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, autoplayMs, darkMode, onBannerClick, onActiveIndexChange }) => {
     const slides = useMemo(() => {
         if (!Array.isArray(banners)) return [];
         return banners.filter(b => b && b.enabled !== false && typeof b.imageUrl === 'string' && b.imageUrl.trim().length > 0);
@@ -534,6 +534,10 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
     useEffect(() => {
         if (activeIndex >= slides.length) setActiveIndex(0);
     }, [activeIndex, slides.length]);
+
+    useEffect(() => {
+        onActiveIndexChange?.(activeIndex);
+    }, [activeIndex, onActiveIndexChange]);
 
     const effectiveAutoplayMs = Number(autoplayMs);
     const shouldAutoplay = settingsLoaded && !isPaused && slides.length > 1 && Number.isFinite(effectiveAutoplayMs) && effectiveAutoplayMs >= 1500;
@@ -1636,6 +1640,7 @@ function App() {
     const [products, setProducts] = useState([]);
     const [promos, setPromos] = useState([]); // Nuevo estado para Promos
     const [homeBanners, setHomeBanners] = useState([]);
+    const [homeBannerActiveIndex, setHomeBannerActiveIndex] = useState(0);
     const [cart, setCart] = useState(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('sustore_cart'));
@@ -6569,7 +6574,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full h-[280px] sm:h-[300px] md:h-[350px] 2xl:h-[450px] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                        <div className={`relative w-full aspect-video rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
@@ -6580,10 +6585,11 @@ function App() {
                                 autoplayMs={settings?.homeBannerAutoplayMs || 5000}
                                 darkMode={darkMode}
                                 onBannerClick={handleHomeBannerClick}
+                                onActiveIndexChange={setHomeBannerActiveIndex}
                             />
 
-                            {/* Overlay de Texto */}
-                            <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-3 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none ${darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/70 sm:from-[#050505] sm:via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/40 via-white/20 sm:from-white/25 sm:via-white/10 to-transparent'}`}>
+                            {/* Overlay de Texto - solo visible en el primer slide */}
+                            <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-3 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none transition-opacity duration-500 ${homeBannerActiveIndex === 0 ? (darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/70 sm:from-[#050505] sm:via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/40 via-white/20 sm:from-white/25 sm:via-white/10 to-transparent') : 'bg-transparent opacity-0'}`}>
                                 <div className="max-w-2xl animate-fade-up">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
