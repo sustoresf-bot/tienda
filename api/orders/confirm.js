@@ -295,6 +295,21 @@ export default async function handler(req, res) {
                 const coupon = couponDoc.data() || {};
                 if (!coupon.expirationDate || new Date(coupon.expirationDate) >= new Date()) {
                     const usedBy = Array.isArray(coupon.usedBy) ? coupon.usedBy : [];
+                    const usageLimit = Number(coupon.usageLimit) || 0;
+                    if (usageLimit > 0 && usedBy.length >= usageLimit) {
+                        return res.status(400).json({ error: 'Este cupón ha agotado sus usos' });
+                    }
+                    if (coupon.targetType === 'specific_email' && coupon.targetUser) {
+                        const targetLower = String(coupon.targetUser).trim().toLowerCase();
+                        const userLower = String(decoded.email || '').trim().toLowerCase();
+                        if (targetLower !== userLower) {
+                            return res.status(400).json({ error: 'Este cupón no está disponible para tu cuenta' });
+                        }
+                    }
+                    const minPurchase = Number(coupon.minPurchase) || 0;
+                    if (minPurchase > 0 && subtotal < minPurchase) {
+                        return res.status(400).json({ error: `El monto mínimo para este cupón es $${minPurchase}` });
+                    }
                     if (!usedBy.includes(decoded.uid)) {
                         if (userData?.dni) {
                             try {

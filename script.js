@@ -3828,7 +3828,9 @@ function App() {
             if (coupon.targetUser && coupon.targetUser.toLowerCase() !== currentUser.email.toLowerCase()) return false;
         }
         if (coupon.expirationDate && new Date(coupon.expirationDate) < new Date()) return false;
-        if (coupon.usageLimit && coupon.usedBy && coupon.usedBy.length >= coupon.usageLimit) return false;
+        const usedByArr = Array.isArray(coupon.usedBy) ? coupon.usedBy : [];
+        if (coupon.usageLimit && usedByArr.length >= coupon.usageLimit) return false;
+        if (currentUser?.id && usedByArr.includes(currentUser.id)) return false;
         if (cartSubtotal < (coupon.minPurchase || 0)) return false;
         if (!currentUser?.dni) return false;
         return true;
@@ -3897,7 +3899,7 @@ function App() {
     // Selección de Cupón
     const selectCoupon = async (coupon) => {
         // Validaciones previas
-        if (coupon.targetType === 'specific_email' && currentUser) {
+        if (coupon.targetType === 'specific_email' && currentUser?.email) {
             if (coupon.targetUser && coupon.targetUser.toLowerCase() !== currentUser.email.toLowerCase()) {
                 return showToast("Este cupón no está disponible para tu cuenta.", "error");
             }
@@ -3905,7 +3907,8 @@ function App() {
         if (coupon.expirationDate && new Date(coupon.expirationDate) < new Date()) {
             return showToast("Este cupón ha vencido.", "error");
         }
-        if (coupon.usageLimit && coupon.usedBy && coupon.usedBy.length >= coupon.usageLimit) {
+        const usedByArr = Array.isArray(coupon.usedBy) ? coupon.usedBy : [];
+        if (coupon.usageLimit && usedByArr.length >= coupon.usageLimit) {
             return showToast("Este cupón ha agotado sus usos totales.", "error");
         }
         if (cartSubtotal < (coupon.minPurchase || 0)) {
@@ -4547,7 +4550,7 @@ function App() {
 
     // 6.6. Venta Manual (Fuera de Página)
     const handleManualSale = (product) => {
-        if (product.stock <= 0) return showToast("No hay stock para vender.", "warning");
+        if (Number(product.stock) <= 0) return showToast("No hay stock para vender.", "warning");
 
         openConfirm("Venta Manual", `¿Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
             try {
@@ -5157,16 +5160,16 @@ function App() {
                                     <User className="w-4 h-4" /> Datos del Cliente
                                 </h4>
                                 <div className="space-y-3">
-                                    <p className={`font-bold text-lg transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.name}</p>
+                                    <p className={`font-bold text-lg transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer?.name || 'Cliente'}</p>
                                     <div className="space-y-1">
                                         <p className={`text-sm flex justify-between border-b border-dashed pb-1 transition-colors duration-300 ${darkMode ? 'text-slate-400 border-slate-800/50' : 'text-slate-600 border-slate-100'}`}>
-                                            <span>Email:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.email}</span>
+                                            <span>Email:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer?.email || '-'}</span>
                                         </p>
                                         <p className={`text-sm flex justify-between border-b border-dashed pb-1 transition-colors duration-300 ${darkMode ? 'text-slate-400 border-slate-800/50' : 'text-slate-600 border-slate-100'}`}>
-                                            <span>Teléfono:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.phone || '-'}</span>
+                                            <span>Teléfono:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer?.phone || '-'}</span>
                                         </p>
                                         <p className={`text-sm flex justify-between transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                            <span>DNI:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer.dni || '-'}</span>
+                                            <span>DNI:</span> <span className={`font-medium transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{order.customer?.dni || '-'}</span>
                                         </p>
                                     </div>
                                 </div>
@@ -5208,12 +5211,12 @@ function App() {
                                                 <p className={`font-bold text-sm transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</p>
                                                 <p className={`text-xs flex items-center gap-2 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                                                     <span className={`px-1.5 rounded text-[10px] font-bold transition-colors duration-300 ${darkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>x{item.quantity}</span>
-                                                    <span>${item.unit_price.toLocaleString()} c/u</span>
+                                                    <span>${(Number(item.unit_price) || 0).toLocaleString()} c/u</span>
                                                 </p>
                                             </div>
                                         </div>
                                         <span className={`font-mono font-bold text-lg tracking-tight transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                            ${(item.unit_price * item.quantity).toLocaleString()}
+                                            ${((Number(item.unit_price) || 0) * (Number(item.quantity) || 0)).toLocaleString()}
                                         </span>
                                     </div>
                                 ))}
@@ -5224,7 +5227,7 @@ function App() {
                         <div className={`p-6 rounded-2xl border space-y-3 shadow-lg transition-colors duration-300 ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                             <div className={`flex justify-between text-sm font-medium transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                 <span>Subtotal Productos</span>
-                                <span>${(order.subtotal || order.total).toLocaleString()}</span>
+                                <span>${(Number(order.subtotal || order.total) || 0).toLocaleString()}</span>
                             </div>
 
                             {order.discount > 0 && (
@@ -5232,14 +5235,14 @@ function App() {
                                     <span className="flex items-center gap-2">
                                         <Ticket className="w-3 h-3" /> Descuento ({order.discountCode || 'Cupón'})
                                     </span>
-                                    <span>-${order.discount.toLocaleString()}</span>
+                                    <span>-${(Number(order.discount) || 0).toLocaleString()}</span>
                                 </div>
                             )}
 
                             <div className={`flex justify-between items-center mt-4 pt-4 border-t border-dashed transition-colors duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-100'}`}>
                                 <span className={`font-bold text-lg transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Total Abonado</span>
                                 <span className={`text-3xl font-black tracking-tighter transition-colors duration-300 ${darkMode ? 'text-orange-500 neon-text' : 'text-orange-600'}`}>
-                                    ${order.total.toLocaleString()}
+                                    ${(Number(order.total) || 0).toLocaleString()}
                                 </span>
                             </div>
                         </div>
@@ -7395,7 +7398,7 @@ function App() {
                                     {(() => {
                                         const myCoupons = coupons.filter(c =>
                                             (c.targetType === 'global') ||
-                                            (c.targetType === 'specific_email' && c.targetUser === currentUser.email)
+                                            (c.targetType === 'specific_email' && currentUser?.email && (c.targetUser || '').toLowerCase() === currentUser.email.toLowerCase())
                                         );
 
                                         if (myCoupons.length === 0) return <p className={`${darkMode ? 'text-slate-500' : 'text-slate-400'} italic`}>No tienes cupones disponibles en este momento.</p>;

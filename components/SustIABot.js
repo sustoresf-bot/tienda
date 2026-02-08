@@ -21,7 +21,7 @@ const BotProductCard = ({ product, onAdd }) => {
                     <div className="flex items-center gap-2 mb-3">
                         <span className="text-yellow-500 font-black text-sm">${Math.round(finalPrice).toLocaleString()}</span>
                         {product.discount > 0 && (
-                            <span className="text-slate-500 text-[10px] line-through">${product.basePrice.toLocaleString()}</span>
+                            <span className="text-slate-500 text-[10px] line-through">${(Number(product.basePrice) || 0).toLocaleString()}</span>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -34,7 +34,7 @@ const BotProductCard = ({ product, onAdd }) => {
                             </button>
                             <span className="px-2 py-1 text-xs text-white font-bold min-w-[24px] text-center">{qty}</span>
                             <button
-                                onClick={() => setQty(Math.min(product.stock || 99, qty + 1))}
+                                onClick={() => setQty(Math.min(Number(product.stock) || 1, qty + 1))}
                                 className="px-2 py-1 text-slate-400 hover:text-white hover:bg-white/5 transition"
                             >
                                 +
