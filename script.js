@@ -2077,7 +2077,7 @@ function App() {
 
     // Estado para Modal de Planes (cuando hacen clic en el overlay de restricción)
     const [showPlansModal, setShowPlansModal] = useState(false);
-    const [selectedPlanOption, setSelectedPlanOption] = useState(null); // { plan: 'Emprendedor', cycle: 'Mensual', price: '$7.000' }
+    const [selectedPlanOption, setSelectedPlanOption] = useState(null); // { plan: 'Emprendedor', cycle: 'Mensual', price: 'US$5.99' }
 
     // Estado para Plan Downgrade - Productos/Cupones desactivados por límite
     const [planDowngradeInfo, setPlanDowngradeInfo] = useState({
@@ -10454,13 +10454,15 @@ function App() {
                                                                     {(settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan) && <div className="bg-orange-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
                                                                 </div>
                                                                 <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
-                                                                <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sólido pero económico.</p>
-                                                                <div className="text-2xl font-black text-orange-400 mb-6">$7.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                                                <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sólido y económico.</p>
+                                                                <div className="text-2xl font-black text-orange-400 mb-6">US$5.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
 
                                                                 <ul className="space-y-2 text-sm text-slate-300">
                                                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Hasta 30 productos</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Dominio Vercel</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Mercado Pago Directo</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Mercado Pago integrado</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> 1 promoción activa</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Panel de control completo</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Soporte técnico por Gmail</li>
                                                                 </ul>
                                                             </button>
 
@@ -10477,14 +10479,14 @@ function App() {
                                                                 </div>
                                                                 <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
                                                                 <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
-                                                                <div className="text-2xl font-black text-purple-400 mb-1">$13.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-                                                                <p className="text-xs text-green-400 font-bold mb-6">🔥 Oferta especial</p>
+                                                                <div className="text-2xl font-black text-purple-400 mb-6">US$9.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
 
                                                                 <ul className="space-y-2 text-sm text-slate-300">
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Incluye todo Emprendedor</li>
                                                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Personalización Visual</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Carrusel de Banners</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Promociones ilimitadas + cupones</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Analítica de clientes + carrusel</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp flotante</li>
                                                                 </ul>
                                                             </button>
 
@@ -10500,13 +10502,16 @@ function App() {
                                                                     {settings.subscriptionPlan === 'premium' && <div className="bg-yellow-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
                                                                 </div>
                                                                 <h4 className="text-xl font-black text-white mb-1">Premium</h4>
-                                                                <p className="text-sm text-slate-400 mb-4 h-10">Servicio Full con IA.</p>
-                                                                <div className="text-2xl font-black text-yellow-400 mb-6">$22.000 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+                                                                <p className="text-sm text-slate-400 mb-4 h-10">Servicio full con IA.</p>
+                                                                <div className="text-2xl font-black text-yellow-400 mb-6">US$17.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
 
                                                                 <ul className="space-y-2 text-sm text-slate-300">
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Ilimitado / Full IA</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga Inicial (10)</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento Mensual</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Incluye todo Negocio</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Productos y promos ilimitados</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Asistente IA 24/7 (SustIA)</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga VIP inicial (10 productos)</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento mensual full</li>
+                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Omnicanalidad total</li>
                                                                 </ul>
                                                             </button>
                                                         </div>
@@ -12745,7 +12750,7 @@ function App() {
 
                                             <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
                                                 <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
-                                                <div className="text-4xl font-black text-white">$7.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                                <div className="text-4xl font-black text-white">US$5.99 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
                                             </div>
 
                                             <div className="space-y-3 mb-6 flex-1">
@@ -12753,6 +12758,7 @@ function App() {
                                                     <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Carga de hasta <strong className="text-white">30 productos</strong></span></div>
                                                     <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span>Integración <strong className="text-white">Mercado Pago</strong></span></div>
                                                     <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">1 promoción</strong> activa</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Panel completo</strong> + soporte por Gmail</span></div>
                                                 </div>
                                             </div>
 
@@ -12763,9 +12769,9 @@ function App() {
                                                 </summary>
                                                 <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                                     {[
-                                                        { cycle: 'Semanal', price: '$2.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                        { cycle: 'Mensual', price: '$7.000', label: 'Pago Mensual', sub: 'Más equilibrado' },
-                                                        { cycle: 'Anual', price: '$70.000', label: 'Pago Anual', sub: 'Ahorrás $14.000 🎁' }
+                                                        { cycle: 'Semanal', price: 'US$1.99', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                        { cycle: 'Mensual', price: 'US$5.99', label: 'Pago Mensual', sub: 'Más equilibrado' },
+                                                        { cycle: 'Anual', price: 'US$59.90', label: 'Pago Anual', sub: '2 MESES GRATIS 🎁' }
                                                     ].map((opt) => (
                                                         <div
                                                             key={opt.cycle}
@@ -12814,15 +12820,15 @@ function App() {
 
                                             <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
                                                 <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
-                                                <div className="text-4xl font-black text-white">$13.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                                <div className="text-4xl font-black text-white">US$9.99 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
                                             </div>
 
                                             <div className="space-y-3 mb-6 flex-1">
                                                 <div className="space-y-2 text-sm text-slate-300">
                                                     <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span>Hasta <strong className="text-white">50 productos</strong></span></div>
-                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">5 promociones</strong> simultáneas</span></div>
-                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Cupones</strong> de descuento</span></div>
-                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Analítica</strong> de clientes</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Incluye todo Emprendedor</strong></span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Promociones ilimitadas</strong> + cupones</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Analítica</strong> de clientes + carrusel + WhatsApp flotante</span></div>
                                                 </div>
                                             </div>
 
@@ -12833,9 +12839,9 @@ function App() {
                                                 </summary>
                                                 <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                                     {[
-                                                        { cycle: 'Semanal', price: '$4.000', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                        { cycle: 'Mensual', price: '$13.000', label: 'Pago Mensual', sub: 'Ideal gestión mensual' },
-                                                        { cycle: 'Anual', price: '$117.000', label: 'Pago Anual', sub: '3 MESES GRATIS 🎉' }
+                                                        { cycle: 'Semanal', price: 'US$3.49', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                        { cycle: 'Mensual', price: 'US$9.99', label: 'Pago Mensual', sub: 'Ideal gestión mensual' },
+                                                        { cycle: 'Anual', price: 'US$89.90', label: 'Pago Anual', sub: '3 MESES GRATIS 🎉' }
                                                     ].map((opt) => (
                                                         <div
                                                             key={opt.cycle}
@@ -12884,15 +12890,15 @@ function App() {
 
                                             <div className="bg-black/30 rounded-2xl p-4 mb-5 border border-slate-800">
                                                 <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Desde</p>
-                                                <div className="text-4xl font-black text-white">$22.000 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
+                                                <div className="text-4xl font-black text-white">US$17.99 <span className="text-lg text-slate-500 font-normal">/mes</span></div>
                                             </div>
 
                                             <div className="space-y-3 mb-6 flex-1">
                                                 <div className="space-y-2 text-sm text-slate-300">
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Incluye todo Negocio</strong></span></div>
                                                     <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Ilimitados</strong> productos y promos</span></div>
-                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Asistente IA</strong> 24/7</span></div>
-                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Carga VIP</strong> 10 productos</span></div>
-                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Mantenimiento</strong> Full Mensual</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Asistente IA</strong> 24/7 + carga VIP (10)</span></div>
+                                                    <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" /> <span><strong className="text-white">Mantenimiento mensual full</strong> + omnicanalidad</span></div>
                                                 </div>
                                             </div>
 
@@ -12903,9 +12909,9 @@ function App() {
                                                 </summary>
                                                 <div className="px-3 pb-3 space-y-2 animate-fade-in">
                                                     {[
-                                                        { cycle: 'Semanal', price: '$6.500', label: 'Pago Semanal', sub: 'Flexibilidad total' },
-                                                        { cycle: 'Mensual', price: '$22.000', label: 'Pago Mensual', sub: 'Equilibrio perfecto' },
-                                                        { cycle: 'Anual', price: '$198.000', label: 'Pago Anual', sub: '3 MESES GRATIS 🎁' }
+                                                        { cycle: 'Semanal', price: 'US$5.99', label: 'Pago Semanal', sub: 'Flexibilidad total' },
+                                                        { cycle: 'Mensual', price: 'US$17.99', label: 'Pago Mensual', sub: 'Equilibrio perfecto' },
+                                                        { cycle: 'Anual', price: 'US$161.90', label: 'Pago Anual', sub: '3 MESES GRATIS 🎁' }
                                                     ].map((opt) => (
                                                         <div
                                                             key={opt.cycle}
@@ -13057,18 +13063,18 @@ const PlansModalContent = ({ settings, onClose }) => {
             name: 'Plan Emprendedor',
             emoji: '🏪',
             subtitle: 'El impulso que tu negocio necesita para despegar.',
-            price: '$7.000',
+            price: 'US$5.99',
             features: [
                 '📦 Carga de hasta 30 productos',
                 '💳 Integración con Mercado Pago',
-                '🔥 1 Promoción activa',
-                '📊 Panel de Control completo',
+                '🔥 1 promoción activa',
+                '📊 Panel de control completo',
                 '📧 Soporte técnico vía Gmail'
             ],
             cycles: [
-                { id: 'weekly', label: 'Semanal', price: '$2.000', sub: 'Flexibilidad total' },
-                { id: 'monthly', label: 'Mensual', price: '$7.000', sub: 'Opción equilibrada' },
-                { id: 'annual', label: 'Anual', price: '$70.000', sub: '🎁 2 MESES GRATIS' }
+                { id: 'weekly', label: 'Semanal', price: 'US$1.99', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: 'US$5.99', sub: 'Opción equilibrada' },
+                { id: 'annual', label: 'Anual', price: 'US$59.90', sub: '🎁 2 MESES GRATIS' }
             ],
             color: 'orange',
             icon: Store
@@ -13078,20 +13084,21 @@ const PlansModalContent = ({ settings, onClose }) => {
             name: 'Plan Negocio',
             emoji: '🚀',
             subtitle: 'Para marcas con identidad que buscan escalar.',
-            price: '$13.000',
+            price: 'US$9.99',
             popular: true,
             features: [
+                '✅ Incluye TODO lo del Plan Emprendedor',
                 '📦 Hasta 50 productos',
-                '🔥 5 Promociones simultáneas',
+                '🔥 Promociones ilimitadas',
                 '🎫 Sistema de cupones',
                 '📊 Analítica de clientes',
                 '📲 Botón WhatsApp flotante',
-                '🎠 Carrusel de Banners'
+                '🎠 Carrusel de banners'
             ],
             cycles: [
-                { id: 'weekly', label: 'Semanal', price: '$4.000', sub: 'Flexibilidad total' },
-                { id: 'monthly', label: 'Mensual', price: '$13.000', sub: 'Equilibrio perfecto' },
-                { id: 'annual', label: 'Anual', price: '$117.000', sub: '🎁 3 MESES GRATIS' }
+                { id: 'weekly', label: 'Semanal', price: 'US$3.49', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: 'US$9.99', sub: 'Equilibrio perfecto' },
+                { id: 'annual', label: 'Anual', price: 'US$89.90', sub: '🎁 3 MESES GRATIS' }
             ],
             color: 'purple',
             icon: Briefcase
@@ -13101,18 +13108,20 @@ const PlansModalContent = ({ settings, onClose }) => {
             name: 'Plan Premium',
             emoji: '💎',
             subtitle: 'Automatización total y cero preocupaciones.',
-            price: '$22.000',
+            price: 'US$17.99',
             features: [
+                '✅ Incluye TODO lo del Plan Negocio',
                 '🚀 Productos ilimitados',
+                '🔥 Promociones ilimitadas',
                 '🤖 Asistente IA 24/7',
                 '✨ Carga VIP (10 productos)',
                 '🛠️ Mantenimiento mensual',
                 '📲 Omnicanalidad total'
             ],
             cycles: [
-                { id: 'weekly', label: 'Semanal', price: '$6.500', sub: 'Flexibilidad total' },
-                { id: 'monthly', label: 'Mensual', price: '$22.000', sub: 'Equilibrio perfecto' },
-                { id: 'annual', label: 'Anual', price: '$198.000', sub: '🎁 3 MESES GRATIS' }
+                { id: 'weekly', label: 'Semanal', price: 'US$5.99', sub: 'Flexibilidad total' },
+                { id: 'monthly', label: 'Mensual', price: 'US$17.99', sub: 'Equilibrio perfecto' },
+                { id: 'annual', label: 'Anual', price: 'US$161.90', sub: '🎁 3 MESES GRATIS' }
             ],
             color: 'yellow',
             icon: Sparkles
