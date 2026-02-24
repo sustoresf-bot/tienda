@@ -1,4 +1,4 @@
-﻿﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 
@@ -780,7 +780,7 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 
             <button
                 onClick={handleAdd}
-                className={`w-full py-1.5 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 ${added
+                className={`w-full py-2 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-[11px] font-bold uppercase tracking-wide ${added
                     ? 'bg-green-500 text-white shadow-green-500/30'
                     : darkMode
                         ? 'bg-white text-black hover:bg-orange-400 hover:text-black shadow-white/10'
@@ -788,10 +788,14 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
                     }`}
             >
                 {added ? (
-                    <CheckCircle className="w-4 h-4" />
+                    <>
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Agregado</span>
+                    </>
                 ) : (
                     <>
                         <Plus className="w-5 h-5 md:w-4 md:h-4" />
+                        <span>Agregar</span>
                     </>
                 )}
             </button>
@@ -802,23 +806,23 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 // --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
 const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode }) => {
     // Clases dinámicas basadas en el tema
-    const cardBg = darkMode ? 'bg-[#0a0a0a]' : 'bg-white';
-    const cardBorder = darkMode ? 'border-slate-800/50' : 'border-slate-200';
-    const cardHoverBorder = darkMode ? 'hover:border-orange-500/50' : 'hover:border-orange-400';
-    const cardShadow = darkMode ? 'hover:shadow-[0_0_30px_rgba(249,115,22,0.1)]' : 'shadow-sm hover:shadow-xl hover:shadow-orange-200/50';
-    const imageBg = darkMode ? 'bg-gradient-to-b from-slate-900 to-[#0a0a0a]' : 'bg-gradient-to-b from-slate-100 to-white';
+    const cardBg = darkMode ? 'bg-[#090d12]' : 'bg-white';
+    const cardBorder = darkMode ? 'border-slate-800/80' : 'border-slate-200/90';
+    const cardHoverBorder = darkMode ? 'hover:border-slate-600' : 'hover:border-slate-300';
+    const cardShadow = darkMode
+        ? 'shadow-[0_12px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_16px_45px_rgba(0,0,0,0.45)]'
+        : 'shadow-[0_12px_28px_rgba(15,23,42,0.08)] hover:shadow-[0_16px_42px_rgba(15,23,42,0.12)]';
+    const imageBg = darkMode ? 'bg-gradient-to-b from-slate-900 to-[#090d12]' : 'bg-gradient-to-b from-slate-50 to-white';
     const textPrimary = darkMode ? 'text-white' : 'text-slate-900';
     const textSecondary = darkMode ? 'text-slate-400' : 'text-slate-600';
-    const infoBg = darkMode ? 'bg-[#0a0a0a]' : 'bg-white';
-    const borderColor = darkMode ? 'border-slate-800/50' : 'border-slate-200';
+    const infoBg = darkMode ? 'bg-[#090d12]' : 'bg-white';
+    const borderColor = darkMode ? 'border-slate-800/70' : 'border-slate-200';
 
     return (
-        <div className={`${cardBg} rounded-2xl sm:rounded-3xl border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col h-full animate-fade-in content-visibility-auto contain-content`}>
+        <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col h-full animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
-            <div className={`h-56 sm:h-80 ${imageBg} m-2 sm:m-3 p-2 sm:p-3 flex items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
-                {/* Efecto Glow Fondo */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+            <div className={`h-56 sm:h-72 ${imageBg} premium-product-image m-2 sm:m-3 p-2 sm:p-3 flex items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
 
                 {p.image ? (
                     <div className="w-full h-full flex items-center justify-center overflow-hidden">
@@ -854,10 +858,10 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
 
                 {/* OVERLAY AGOTADO (Mejorado) */}
                 {p.stock <= 0 && (
-                    <div className={`absolute inset-0 z-30 flex items-center justify-center ${darkMode ? 'bg-black/40' : 'bg-white/60'} backdrop-blur-[2px]`}>
-                        <div className="border-4 border-red-500 p-2 sm:p-4 -rotate-12 bg-black/80 shadow-[0_0_30px_rgba(239,68,68,0.5)] transform scale-90 sm:scale-110">
-                            <span className="text-red-500 font-black text-lg sm:text-2xl md:text-3xl tracking-[0.15em] sm:tracking-[0.2em] uppercase">AGOTADO</span>
-                        </div>
+                    <div className={`absolute inset-0 z-30 flex items-center justify-center ${darkMode ? 'bg-[#050505]/55' : 'bg-white/70'} backdrop-blur-[1px]`}>
+                        <span className={`px-4 py-2 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-[0.24em] border ${darkMode ? 'bg-slate-900/90 text-slate-100 border-slate-600' : 'bg-white/95 text-slate-700 border-slate-300'}`}>
+                            AGOTADO
+                        </span>
                     </div>
                 )}
 
@@ -2433,6 +2437,27 @@ function App() {
         setStoreResolution((prev) => ({ ...prev, status: 'resolved', storeId: normalizedStoreId, error: null }));
     }, [bootstrapStoreData, storeResolution.normalizedHostname, systemUser?.email]);
 
+    const normalizeCartAuditItem = useCallback((rawItem) => {
+        const rawProduct = rawItem?.product && typeof rawItem.product === 'object' ? rawItem.product : {};
+        const productId = String(rawItem?.productId || rawProduct?.id || '').trim();
+        const quantityRaw = Number(rawItem?.quantity);
+        const quantity = Number.isFinite(quantityRaw) && quantityRaw > 0 ? quantityRaw : 1;
+        const name = String(rawItem?.name || rawItem?.title || rawProduct?.name || '').trim();
+        const priceRaw = rawItem?.price ?? rawItem?.unit_price ?? rawProduct?.basePrice;
+        const priceNum = Number(priceRaw);
+        const price = Number.isFinite(priceNum) ? priceNum : 0;
+        const image = String(rawItem?.image || rawProduct?.image || '').trim();
+
+        return { productId, quantity, name, price, image };
+    }, []);
+
+    const serializeCartForAudit = useCallback((items) => {
+        if (!Array.isArray(items)) return [];
+        return items
+            .map(normalizeCartAuditItem)
+            .filter((item) => item.productId && item.quantity > 0);
+    }, [normalizeCartAuditItem]);
+
     // --- EFECTOS DE SINCRONIZACIÓN (FIREBASE) ---
 
     // 0. Sincronizar Dark Mode con el DOM y localStorage
@@ -2460,12 +2485,7 @@ function App() {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
                         userId: currentUser.id,
                         userName: currentUser.name || 'Usuario', // Guardamos nombre (con fallback) para evitar errores
-                        items: cart.map(item => ({
-                            productId: item.product.id,
-                            quantity: item.quantity,
-                            name: item.product.name,
-                            price: item.product.basePrice
-                        })),
+                        items: serializeCartForAudit(cart),
                         lastUpdated: new Date().toISOString()
                     }, { merge: true });
                 } catch (e) {
@@ -2498,14 +2518,13 @@ function App() {
                     return;
                 }
 
-                const normalizedRemote = remoteItems
-                    .filter(i => i && i.productId && Number(i.quantity) > 0)
+                const normalizedRemote = serializeCartForAudit(remoteItems)
                     .map(i => ({
                         product: {
                             id: i.productId,
                             name: typeof i.name === 'string' ? i.name : '',
                             basePrice: Number(i.price) || 0,
-                            image: '',
+                            image: typeof i.image === 'string' ? i.image : '',
                             category: ''
                         },
                         quantity: Number(i.quantity) || 1
@@ -2533,7 +2552,7 @@ function App() {
 
         hydrateCartFromRemote();
         return () => { cancelled = true; };
-    }, [appId, currentUser?.id]); // Eliminado 'cart' de las dependencias
+    }, [appId, currentUser?.id, serializeCartForAudit]); // Eliminado 'cart' de las dependencias
 
     useEffect(() => {
         if (!isAdminUser) {
@@ -2720,6 +2739,11 @@ function App() {
                 if (cancelled) return;
                 if (snap.exists()) {
                     const userData = { id: snap.id, ...snap.data() };
+                    const profileEmailLower = String(userData.emailLower || userData.email || systemUser.email || '').trim().toLowerCase();
+                    const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+                    if (superEmailLower && profileEmailLower === superEmailLower) {
+                        userData.role = 'admin';
+                    }
                     if (userData.role === 'admin') userData._adminVerified = true;
                     setCurrentUser(userData);
                 } else {
@@ -3066,9 +3090,9 @@ function App() {
     useEffect(() => {
         if (!appId) return;
 
-        const isAdminUser = currentUser?.role === 'admin';
+        const hasAdminAccess = isAdminUser;
         const isAdminViewActive = view === 'admin';
-        if (!(isAdminUser && isAdminViewActive)) {
+        if (!(hasAdminAccess && isAdminViewActive)) {
             setUsers([]);
             setSuppliers([]);
             setExpenses([]);
@@ -3161,7 +3185,7 @@ function App() {
             clearInterval(usersPollingInterval);
             unsubscribeFunctions.forEach(unsub => unsub());
         };
-    }, [currentUser?.role, appId, view]);
+    }, [isAdminUser, appId, view]);
 
     // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
     // Elimina automáticamente productos que ya no existen o no tienen stock
@@ -3231,13 +3255,13 @@ function App() {
 
         setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
             userId: currentUser.id,
-            items: validated
+            items: serializeCartForAudit(validated)
         }, { merge: true });
 
         if (removed.length > 0) {
             showToast(`Tu carrito se actualizó: ${removed.join(', ')}`, 'info');
         }
-    }, [productsById, currentUser?.id, cart, appId]);
+    }, [productsById, currentUser?.id, cart, appId, serializeCartForAudit]);
 
     // --- EFECTO VISUAL: SEO, FAVICON Y TÍTULO DINÁMICO ---
 
@@ -5436,7 +5460,7 @@ function App() {
                                                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black group-hover/item:text-white transition ${darkMode ? 'bg-purple-500/20 text-purple-400 group-hover/item:bg-purple-500' : 'bg-purple-100 text-purple-600 group-hover/item:bg-purple-600'}`}>
                                                     {item.quantity}x
                                                 </div>
-                                                <span className={`font-bold transition ${darkMode ? 'group-hover:text-white' : 'group-hover:text-slate-900'}`}>{p?.name || 'Producto del Packs'}</span>
+                                                <span className={`font-bold transition ${darkMode ? 'group-hover:text-white' : 'group-hover:text-slate-900'}`}>{p?.name || 'Producto del pack'}</span>
                                             </div>
                                         );
                                     })}
@@ -5825,6 +5849,8 @@ function App() {
     // --- SUB-COMPONENTS FOR ADMIN DRAWER ---
 
     const UserCartView = ({ cartItems, isLoading }) => {
+        const normalizedCartItems = useMemo(() => serializeCartForAudit(cartItems), [cartItems, serializeCartForAudit]);
+
         if (isLoading) {
             return (
                 <div className="py-20 flex flex-col items-center gap-4 opacity-50">
@@ -5833,7 +5859,7 @@ function App() {
                 </div>
             );
         }
-        if (cartItems.length === 0) {
+        if (normalizedCartItems.length === 0) {
             return (
                 <div className="py-20 text-center flex flex-col items-center gap-6">
                     <div className={`p-6 rounded-full border transition-colors duration-300 ${darkMode ? 'bg-white/5 border-white/5' : 'bg-slate-100 border-slate-200'}`}>
@@ -5847,16 +5873,22 @@ function App() {
             <>
                 <div className="flex justify-between items-center px-2">
                     <p className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Contenido del Carrito</p>
-                    <p className="text-xs font-bold text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full">{cartItems.length} ITEMS</p>
+                    <p className="text-xs font-bold text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full">{normalizedCartItems.length} ITEMS</p>
                 </div>
                 <div className="space-y-3">
-                    {cartItems.map((item, idx) => (
+                    {normalizedCartItems.map((item, idx) => (
                         <div key={idx} className={`border p-4 rounded-2xl flex gap-4 transition group animate-fade-up transition-colors duration-300 ${darkMode ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.05] hover:border-orange-500/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-orange-200'}`} style={{ animationDelay: `${idx * 0.05}s` }}>
                             <div className={`w-16 h-16 rounded-xl overflow-hidden shadow-inner border flex-shrink-0 transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-white/5' : 'bg-white border-slate-200'}`}>
-                                <img src={item.image || 'https://images.unsplash.com/photo-1581404917879-53e19259fdda?w=100'} alt={item.name || 'Producto'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                {item.image ? (
+                                    <img src={item.image} alt={item.name || 'Producto'} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <Package className={`w-7 h-7 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
+                                    </div>
+                                )}
                             </div>
                             <div className="flex-1 flex flex-col justify-center">
-                                <p className={`font-bold text-sm leading-tight mb-1 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.name}</p>
+                                <p className={`font-bold text-sm leading-tight mb-1 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.name || 'Producto'}</p>
                                 <div className="flex justify-between items-center">
                                     <p className={`text-xs transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Cant: <span className={`font-mono font-bold transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.quantity}</span></p>
                                     <p className="text-orange-400 font-black font-mono text-xs">${Number(item.price).toLocaleString()}</p>
@@ -5868,7 +5900,7 @@ function App() {
                 <div className={`pt-6 border-t transition-colors duration-300 ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
                     <div className={`flex justify-between items-center p-6 rounded-2xl border transition-colors duration-300 ${darkMode ? 'bg-orange-500/5 border-orange-500/20' : 'bg-orange-50 border-orange-100'}`}>
                         <p className={`font-bold transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Valor Total</p>
-                        <p className={`text-2xl font-black font-mono transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>${cartItems.reduce((acc, i) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}</p>
+                        <p className={`text-2xl font-black font-mono transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>${normalizedCartItems.reduce((acc, i) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}</p>
                     </div>
                 </div>
             </>
@@ -6018,7 +6050,8 @@ function App() {
                         setIsLoadingCart(true);
                         try {
                             const cartDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', user.id));
-                            setUserCartItems(cartDoc.exists() ? (cartDoc.data().items || []) : []);
+                            const rawItems = cartDoc.exists() ? (cartDoc.data().items || []) : [];
+                            setUserCartItems(serializeCartForAudit(rawItems));
                         } catch (e) { setUserCartItems([]); }
                         setIsLoadingCart(false);
                     };
@@ -6397,7 +6430,7 @@ function App() {
 
             {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
             {view !== 'admin' && (
-                <nav className={`fixed top-0 w-full h-14 sm:h-16 md:h-20 z-50 px-2 sm:px-4 md:px-8 lg:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 ${darkMode ? 'glass border-b border-slate-800/50' : 'bg-white/95 border-b border-slate-200 shadow-sm'}`}>
+                <nav className={`fixed top-0 w-full h-14 sm:h-16 md:h-20 z-50 px-2 sm:px-4 md:px-8 lg:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 premium-nav ${darkMode ? 'bg-[#05070b]/88 border-b border-slate-800/70' : 'bg-white/92 border-b border-slate-200/90 shadow-[0_8px_28px_rgba(15,23,42,0.08)]'}`}>
                     {/* Logo y Menú */}
                     <div className="flex items-center gap-2 sm:gap-6">
                         <button onClick={() => setIsMenuOpen(true)} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
@@ -6410,18 +6443,18 @@ function App() {
                                 </div>
                             )}
                             <div className="flex flex-col">
-                                <span className={`text-xl sm:text-2xl md:text-4xl font-black tracking-tighter italic group-hover:text-orange-500 transition-all duration-300 leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                <span className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tight group-hover:text-orange-500 transition-all duration-300 leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {!settingsLoaded ? (
                                         <span className={`inline-block h-6 sm:h-8 w-20 sm:w-32 rounded animate-pulse ${darkMode ? 'bg-slate-700/50' : 'bg-slate-200'}`}></span>
                                     ) : (settings?.storeName || '')}
                                 </span>
-                                <div className="h-0.5 sm:h-1 w-1/2 bg-orange-500 rounded-full group-hover:w-full transition-all duration-500 mt-0.5 sm:mt-1 shadow-sm"></div>
+                                <div className="h-0.5 sm:h-1 w-1/3 bg-orange-500 rounded-full group-hover:w-2/3 transition-all duration-500 mt-0.5 sm:mt-1 shadow-sm"></div>
                             </div>
                         </div>
                     </div>
 
                     {/* Barra de Búsqueda (Visible en Desktop) */}
-                    <div className={`hidden lg:flex items-center rounded-2xl px-6 py-3 w-1/3 transition shadow-inner group ${darkMode ? 'bg-slate-900/50 border border-slate-700/50 focus-within:border-orange-500/50 focus-within:bg-slate-900' : 'bg-slate-100 border border-slate-200 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-md'}`}>
+                    <div className={`hidden lg:flex items-center rounded-2xl px-6 py-3 w-1/3 transition group premium-nav-search ${darkMode ? 'bg-slate-900/60 border border-slate-700/60 focus-within:border-orange-500/40' : 'bg-slate-100/90 border border-slate-200 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-md'}`}>
                         <Search className={`w-5 h-5 mr-3 group-focus-within:text-orange-500 transition ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                         <input
                             className={`bg-transparent outline-none text-sm w-full font-medium ${darkMode ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
@@ -6432,16 +6465,16 @@ function App() {
                     </div>
 
                     {/* Acciones de Usuario */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                         {/* Botones de Contacto */}
                         <div className="hidden md:flex items-center gap-2">
                             {settings?.showWhatsapp !== false && settings?.whatsappLink && (
-                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm">
                                     <MessageCircle className="w-5 h-5" /> WhatsApp
                                 </button>
                             )}
                             {settings?.showInstagram !== false && settings?.instagramLink && (
-                                <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+                                <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm">
                                     <Instagram className="w-5 h-5" /> Instagram
                                 </button>
                             )}
@@ -6559,13 +6592,12 @@ function App() {
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
-                    <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block">
+                    <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block storefront-shell">
 
                         {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings están cargados */}
                         {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
-                            <div className="w-full bg-gradient-to-r from-orange-900/20 to-red-900/20 border border-orange-500/20 rounded-xl p-3 mb-8 text-center animate-pulse relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-white/5 skew-x-12 -translate-x-full group-hover:translate-x-full transition duration-1000"></div>
-                                <p className="text-orange-400 font-black text-xs md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3">
+                            <div className="w-full premium-announcement bg-gradient-to-r from-orange-900/20 to-red-900/20 border border-orange-500/20 rounded-2xl p-3 mb-8 text-center relative overflow-hidden">
+                                <p className="text-orange-400 font-black text-xs md:text-sm tracking-[0.18em] uppercase flex items-center justify-center gap-3">
                                     <Flame className="w-4 h-4 text-orange-500" /> {settings.announcementMessage} <Flame className="w-4 h-4 text-orange-500" />
                                 </p>
                             </div>
@@ -6573,12 +6605,12 @@ function App() {
 
                         {/* Brand Ticker (Futuristic) - Solo mostrar cuando settings están cargados */}
                         {settingsLoaded && settings?.showBrandTicker !== false && (
-                            <div className={`mb-8 w-full overflow-hidden border-y backdrop-blur-sm py-2 ${darkMode ? 'border-slate-800/50 bg-[#0a0a0a]/50' : 'border-slate-200 bg-slate-100/50'}`}>
+                            <div className={`mb-8 w-full overflow-hidden border-y backdrop-blur-sm py-2 premium-brand-ticker ${darkMode ? 'border-slate-800/50 bg-[#0a0a0a]/50' : 'border-slate-200 bg-slate-100/50'}`}>
                                 <div className="ticker-wrap">
-                                    <div className={`ticker-content font-mono text-xs md:text-sm tracking-[0.2em] md:tracking-[0.5em] uppercase flex items-center gap-6 md:gap-12 ${darkMode ? 'text-orange-500/50' : 'text-orange-600/70'}`}>
+                                    <div className={`ticker-content font-mono text-xs md:text-sm tracking-[0.16em] md:tracking-[0.38em] uppercase flex items-center gap-6 md:gap-12 ${darkMode ? 'text-orange-500/50' : 'text-orange-600/70'}`}>
                                         {[1, 2, 3, 4].map((i) => (
                                             <React.Fragment key={i}>
-                                                <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} Tech • Futuro • Calidad Premium • Innovación`}</span>
+                                                <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} • calidad profesional • atención real • compra segura`}</span>
                                                 <span>•</span>
                                             </React.Fragment>
                                         ))}
@@ -6588,7 +6620,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full max-w-4xl mx-auto aspect-video rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                        <div className={`relative w-full max-w-5xl mx-auto aspect-video rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
@@ -6603,8 +6635,8 @@ function App() {
                             />
 
                             {/* Overlay de Texto - solo visible en el primer slide */}
-                            <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-3 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none transition-opacity duration-500 ${homeBannerActiveIndex === 0 ? (darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/70 sm:from-[#050505] sm:via-[#050505]/80 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/40 via-white/20 sm:from-white/25 sm:via-white/10 to-transparent') : 'bg-transparent opacity-0'}`}>
-                                <div className="max-w-2xl animate-fade-up">
+                            <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-3 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none transition-opacity duration-500 ${homeBannerActiveIndex === 0 ? (darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/72 sm:from-[#050505] sm:via-[#050505]/82 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/45 via-white/20 sm:from-white/25 sm:via-white/10 to-transparent') : 'bg-transparent opacity-0'}`}>
+                                <div className="max-w-2xl animate-fade-up premium-hero-content">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
                                         <>
@@ -6620,25 +6652,30 @@ function App() {
                                         </>
                                     ) : (
                                         <>
-                                            <span className="bg-orange-500 text-black px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-2 sm:mb-4 inline-block">
-                                                {settings?.heroBadge || ''}
+                                            <span className="bg-orange-500 text-black px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2 sm:mb-4 inline-block">
+                                                {settings?.heroBadge || 'Tienda profesional lista para vender'}
                                             </span>
                                             <h1 className={`text-lg sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 ${darkMode ? 'text-white hero-title-neon' : 'text-slate-900 hero-title-neon-light'}`}>
-                                                {settings?.heroTitle1 || ''} <br />
+                                                {settings?.heroTitle1 || (settings?.storeName || 'Tu tienda online')} <br />
                                                 <span className={`text-transparent bg-clip-text bg-gradient-to-r hero-title-neon-gradient ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
-                                                    {settings?.heroTitle2 || ''}
+                                                    {settings?.heroTitle2 || 'que transmite confianza y vende más'}
                                                 </span>
                                             </h1>
                                             <p className={`text-xs sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-semibold hidden sm:block ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                {settings?.heroSubtitle || ''}
+                                                {settings?.heroSubtitle || 'Diseño premium, compra simple y una experiencia fluida en cualquier dispositivo.'}
                                             </p>
-                                            <div className="flex flex-row items-center gap-2 sm:gap-4">
-                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-4 py-2 sm:px-8 sm:py-4 bg-white text-black font-black text-xs sm:text-base rounded-xl hover:bg-orange-400 transition shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 group/btn pointer-events-auto">
-                                                    VER CATÁLOGO <ArrowRight className="w-3.5 h-3.5 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
+                                            <div className="flex flex-row items-center gap-2 sm:gap-4 premium-hero-ctas">
+                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-4 py-2 sm:px-8 sm:py-4 bg-white text-black font-black text-xs sm:text-base rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn pointer-events-auto">
+                                                    Ver catálogo <ArrowRight className="w-3.5 h-3.5 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
                                                 <button onClick={() => setView('guide')} className={`px-3 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition font-bold text-[11px] sm:text-xs group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
-                                                    <Info className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Ayuda
+                                                    <Info className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Cómo comprar
                                                 </button>
+                                            </div>
+                                            <div className="mt-3 sm:mt-6 flex flex-wrap gap-2 sm:gap-3 pointer-events-none premium-hero-proof">
+                                                <span className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${darkMode ? 'bg-white/10 text-slate-200 border-white/15' : 'bg-white/80 text-slate-700 border-slate-200'}`}>Checkout seguro</span>
+                                                <span className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${darkMode ? 'bg-white/10 text-slate-200 border-white/15' : 'bg-white/80 text-slate-700 border-slate-200'}`}>Carga rápida</span>
+                                                <span className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${darkMode ? 'bg-white/10 text-slate-200 border-white/15' : 'bg-white/80 text-slate-700 border-slate-200'}`}>Lista para producir ventas</span>
                                             </div>
                                         </>
                                     )}
@@ -6649,7 +6686,7 @@ function App() {
                         {/* Why Choose Us Section */}
                         {/* Why Choose Us Section (Editable) - Respeta toggles de configuración */}
                         {settingsLoaded && settings?.showFeaturesSection !== false && (
-                            <div className={`grid grid-cols-1 ${[settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 1 ? 'md:grid-cols-1 max-w-md mx-auto' :
+                            <div className={`grid grid-cols-1 premium-benefits ${[settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 1 ? 'md:grid-cols-1 max-w-md mx-auto' :
                                 [settings?.showFeature1 !== false, settings?.showFeature2 !== false, settings?.showFeature3 !== false].filter(Boolean).length === 2 ? 'md:grid-cols-2 max-w-2xl mx-auto' :
                                     'md:grid-cols-3'
                                 } gap-4 md:gap-8 mb-12 container-tv`}>
@@ -6669,7 +6706,7 @@ function App() {
                                     <>
                                         {/* Beneficio 1 */}
                                         {settings?.showFeature1 !== false && (
-                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center tech-glow transition duration-500 group ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-orange-900/20' : 'bg-orange-100'}`}>
                                                     <Zap className={`w-5 h-5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />
                                                 </div>
@@ -6679,7 +6716,7 @@ function App() {
                                         )}
                                         {/* Beneficio 2 */}
                                         {settings?.showFeature2 !== false && (
-                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center tech-glow transition duration-500 group ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-purple-900/20' : 'bg-purple-100'}`}>
                                                     <Shield className={`w-5 h-5 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
                                                 </div>
@@ -6689,7 +6726,7 @@ function App() {
                                         )}
                                         {/* Beneficio 3 */}
                                         {settings?.showFeature3 !== false && (
-                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center tech-glow transition duration-500 group ${darkMode ? 'bg-slate-900/30 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-green-900/20' : 'bg-green-100'}`}>
                                                     <Headphones className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
                                                 </div>
@@ -6702,15 +6739,25 @@ function App() {
                             </div>
                         )}
 
+                        <div className={`mb-3 sm:mb-4 flex items-center justify-between gap-4 premium-catalog-intro ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                            <div>
+                                <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Catálogo</p>
+                                <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Productos listos para comprar</h2>
+                            </div>
+                            <div className={`text-xs sm:text-sm font-bold whitespace-nowrap px-3 py-1.5 rounded-full border ${darkMode ? 'bg-slate-900/70 border-slate-700 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+                                {products.filter(p => p.isActive !== false).length} disponibles
+                            </div>
+                        </div>
+
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className={`sticky top-14 sm:top-16 md:top-20 z-40 backdrop-blur-xl py-2.5 sm:py-3 md:py-4 mb-4 sm:mb-6 md:mb-8 -mx-3 px-3 sm:-mx-4 sm:px-4 border-y transition-colors duration-300 ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/90 border-slate-200'}`}>
+                        <div id="catalog" className={`sticky top-14 sm:top-16 md:top-20 z-40 backdrop-blur-xl py-2.5 sm:py-3 md:py-4 mb-4 sm:mb-6 md:mb-8 -mx-3 px-3 sm:-mx-4 sm:px-4 border-y transition-colors duration-300 premium-category-bar ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/90 border-slate-200'}`}>
                             <div
                                 ref={categoriesScrollRef}
                                 onMouseDown={handleMouseDownCategories}
                                 onMouseLeave={handleMouseLeaveCategories}
                                 onMouseUp={handleMouseUpCategories}
                                 onMouseMove={handleMouseMoveCategories}
-                                className={`flex items-center gap-2 overflow-x-auto pb-1 ${isDraggingCategories ? 'cursor-grabbing scroll-auto' : 'cursor-grab scroll-smooth'}`}
+                                className={`flex items-center gap-2 overflow-x-auto pb-1 category-scroll ${isDraggingCategories ? 'cursor-grabbing scroll-auto' : 'cursor-grab scroll-smooth'}`}
                                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
                             >
                                 <Filter className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
@@ -6718,22 +6765,22 @@ function App() {
                                 {/* BOTÓN PROMOS (SPECIAL) */}
                                 <button
                                     onClick={() => setSelectedCategory('Promos')}
-                                    className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : darkMode ? 'bg-slate-900 border-slate-800 text-purple-400 hover:text-white hover:border-purple-500/50' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100 hover:border-purple-300'}`}
+                                    className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden flex-shrink-0 ${selectedCategory === 'Promos' ? 'text-white border-purple-500 shadow-[0_0_16px_rgba(168,85,247,0.34)]' : darkMode ? 'bg-slate-900 border-slate-800 text-purple-300 hover:text-white hover:border-purple-500/40' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100 hover:border-purple-300'}`}
                                 >
                                     {selectedCategory === 'Promos' && <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 animate-gradient-xy"></div>}
-                                    <span className="relative z-10 flex items-center gap-1.5 sm:gap-2"><Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> PROMOS</span>
+                                    <span className="relative z-10 flex items-center gap-1.5 sm:gap-2"><Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Packs</span>
                                 </button>
 
                                 {/* BOTÓN OFERTAS (SPECIAL) */}
                                 <button
                                     onClick={() => setSelectedCategory('Ofertas')}
-                                    className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-500 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-red-400 hover:text-white hover:border-red-500/50' : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'}`}
+                                    className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${selectedCategory === 'Ofertas' ? 'bg-red-600/20 text-red-500 border-red-500 shadow-[0_0_12px_rgba(220,38,38,0.26)]' : darkMode ? 'bg-slate-900 border-slate-800 text-red-300 hover:text-white hover:border-red-500/40' : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300'}`}
                                 >
-                                    <Percent className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> OFERTAS
+                                    <Percent className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Ofertas
                                 </button>
 
                                 <button onClick={() => setSelectedCategory('')} className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === '' ? darkMode ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-slate-900 text-white border-slate-900 shadow-md' : darkMode ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}>
-                                    Todos
+                                    Todo
                                 </button>
                                 {settings?.categories?.map(c => (
                                     <button key={c} onClick={() => setSelectedCategory(c)} className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[10px] sm:text-xs transition border whitespace-nowrap flex-shrink-0 ${selectedCategory === c ? 'bg-orange-500 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : darkMode ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600'}`}>
@@ -6747,11 +6794,11 @@ function App() {
                         {/* SECCIÓN PROMOS (NUEVO) */}
                         {/* SECCIÓN PROMOS (TAB VIEW) */}
                         {selectedCategory === 'Promos' && (
-                            <div className="mb-16 animate-fade-in">
+                            <div className="mb-16 animate-fade-in premium-promos-section">
                                 {promos.length > 0 ? (
                                     <>
                                         <h2 className={`text-3xl font-black mb-8 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                            <Tag className="w-8 h-8 text-purple-500 animate-pulse" /> PROMOCIONES ESPECIALES
+                                            <Tag className="w-8 h-8 text-purple-500" /> Packs y promociones
                                         </h2>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                             {promos.map(promo => {
@@ -6768,25 +6815,25 @@ function App() {
                                                 const hasStock = maxPurchasable > 0;
 
                                                 return (
-                                                    <div key={promo.id} className={`rounded-[2.5rem] border overflow-hidden group transition duration-500 relative flex flex-col ${darkMode ? 'bg-gradient-to-br from-purple-900/10 to-blue-900/10 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.1)] hover:shadow-[0_0_50px_rgba(168,85,247,0.2)]' : 'bg-white border-purple-200 shadow-sm hover:shadow-xl'}`}>
+                                                    <div key={promo.id} className={`rounded-[2.2rem] border overflow-hidden group transition duration-500 relative flex flex-col premium-promo-card ${darkMode ? 'bg-gradient-to-br from-purple-900/8 to-blue-900/8 border-slate-700/80 hover:border-purple-500/50 shadow-[0_10px_30px_rgba(2,6,23,0.35)]' : 'bg-white border-slate-200 shadow-sm hover:shadow-xl'}`}>
                                                         <div
                                                             className={`aspect-square flex items-center justify-center relative overflow-hidden cursor-zoom-in ${darkMode ? 'bg-slate-900/50' : 'bg-slate-50'}`}
                                                             onClick={() => setSelectedProduct({ ...promo, isPromo: true, stock: maxPurchasable })}
                                                         >
                                                             <img src={promo.image} alt={promo.name || 'Promo'} className="w-full h-full object-contain transition duration-700 group-hover:scale-110" />
                                                             <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent ${darkMode ? 'from-[#0a0a0a]' : 'from-white/50'}`}></div>
-                                                            <div className="absolute top-4 right-4 bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-                                                                Oferta Limitada
+                                                            <div className="absolute top-4 right-4 bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-[0.12em] shadow-lg">
+                                                                Combo
                                                             </div>
                                                         </div>
 
-                                                        <div className="p-8 flex-1 flex flex-col">
+                                                        <div className="p-7 flex-1 flex flex-col">
                                                             <h3 className={`text-2xl font-black mb-2 leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{promo.name}</h3>
-                                                            <p className={`text-sm mb-6 flex-1 ${darkMode ? 'text-purple-300' : 'text-purple-600'}`}>{promo.description}</p>
+                                                            <p className={`text-sm mb-6 flex-1 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{promo.description}</p>
 
                                                             {/* Lista de productos incluidos */}
                                                             <div className="mb-6 space-y-2">
-                                                                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Incluye:</p>
+                                                                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-[0.2em]">Incluye:</p>
                                                                 {promo.items.map((item, idx) => {
                                                                     const p = products.find(prod => prod.id === item.productId);
                                                                     return (
@@ -6806,7 +6853,7 @@ function App() {
                                                                             return acc + ((Number(p?.basePrice) || 0) * item.quantity);
                                                                         }, 0).toLocaleString()}
                                                                     </span>
-                                                                    <span className={`text-3xl font-black ${darkMode ? 'text-purple-400 neon-text' : 'text-purple-600'}`}>
+                                                                    <span className={`text-3xl font-black ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
                                                                         ${Number(promo.price).toLocaleString()}
                                                                     </span>
                                                                 </div>
@@ -6828,7 +6875,7 @@ function App() {
                                                                     className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition shadow-lg ${hasStock ? (darkMode ? 'bg-white text-black hover:bg-purple-400 hover:text-white hover:scale-105' : 'bg-slate-900 text-white hover:bg-purple-600 hover:scale-105') : (darkMode ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-200 text-slate-400 cursor-not-allowed')}`}
                                                                 >
                                                                     {hasStock ? <ShoppingCart className="w-5 h-5" /> : <X className="w-5 h-5" />}
-                                                                    {hasStock ? 'AGREGAR' : 'AGOTADO'}
+                                                                    {hasStock ? 'Agregar' : 'Agotado'}
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -6838,17 +6885,17 @@ function App() {
                                         </div>
                                     </>
                                 ) : (
-                                    <div className={`flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
+                                    <div className={`flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] premium-empty-state ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
                                         <div className={`p-8 rounded-full mb-6 shadow-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <Tag className={`w-16 h-16 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
                                         </div>
-                                        <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Sin Promociones Activas</h3>
+                                        <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Sin promociones activas</h3>
                                         <p className="text-slate-500 max-w-sm">No hay promociones disponibles en este momento. ¡Volvé pronto!</p>
                                         <button
                                             onClick={() => setSelectedCategory('')}
                                             className={`mt-6 px-6 py-3 rounded-xl font-bold transition border ${darkMode ? 'bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 border-orange-500/20' : 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200'}`}
                                         >
-                                            Ver Todo el Catálogo
+                                            Ver todo el catálogo
                                         </button>
                                     </div>
                                 )}
@@ -6857,22 +6904,22 @@ function App() {
 
                         {/* Grid de Productos - Filtrando productos inválidos (ej: tests) */}
                         {products.filter(p => p.isActive !== false).length === 0 ? (
-                            <div className={`flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
+                            <div className={`flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] premium-empty-state ${darkMode ? 'border-slate-800 bg-slate-950/30' : 'border-slate-200 bg-slate-50'}`}>
                                 {/* Empty State explícito (sin componente externo para "bulk") */}
                                 <div className={`p-8 rounded-full mb-6 shadow-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <Package className={`w-16 h-16 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
                                 </div>
                                 <h3 className={`text-2xl font-black mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Catálogo Vacío</h3>
-                                <p className="text-slate-500 max-w-sm">No hay productos disponibles en este momento. Por favor revisa más tarde o contacta soporte.</p>
+                                <p className="text-slate-500 max-w-sm">Todavía no hay productos disponibles. Actualizá el catálogo y esta sección se mostrará automáticamente.</p>
                             </div>
                         ) : (
                             <>
                                 {filteredProducts.length === 0 && selectedCategory !== 'Promos' && (
-                                    <div className="flex flex-col items-center justify-center p-20 text-center col-span-full animate-fade-in w-full">
+                                    <div className="flex flex-col items-center justify-center p-20 text-center col-span-full animate-fade-in w-full premium-empty-state">
                                         <div className={`p-6 rounded-full mb-4 inline-block border ${darkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
                                             <Search className={`w-12 h-12 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
                                         </div>
-                                        <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>No se encontraron resultados</h3>
+                                        <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>No encontramos productos con esos filtros</h3>
                                         <p className="text-slate-500 mb-6 max-w-md mx-auto">
                                             No hay productos que coincidan con <span className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold`}>"{searchQuery}"</span>
                                             {selectedCategory && <span> en la categoría <span className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold`}>{selectedCategory}</span></span>}.
@@ -6881,11 +6928,11 @@ function App() {
                                             onClick={() => { setSearchQuery(''); setSelectedCategory(''); }}
                                             className={`px-6 py-3 rounded-xl font-bold transition border ${darkMode ? 'bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 border-orange-500/20' : 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200'}`}
                                         >
-                                            Limpiar filtros
+                                            Quitar filtros
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-3 sm:gap-6 md:gap-8 pb-32">
+                                <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-3 sm:gap-6 md:gap-8 pb-32 product-grid-responsive">
                                     {filteredProducts.map(p => (
                                         <ProductCard
                                             key={p.id}

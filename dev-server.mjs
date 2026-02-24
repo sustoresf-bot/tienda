@@ -83,6 +83,20 @@ function createRes(res) {
 
 async function handleApi(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
+
+    // Mirror key Vercel rewrites in local dev to keep API behavior aligned.
+    const adminRewriteMap = {
+        '/api/admin/users': 'users',
+        '/api/admin/list-users': 'list-users',
+        '/api/admin/export-store': 'export',
+        '/api/admin/import-store': 'import',
+    };
+    const adminAction = adminRewriteMap[url.pathname];
+    if (adminAction) {
+        url.pathname = '/api/admin';
+        if (!url.searchParams.get('action')) url.searchParams.set('action', adminAction);
+    }
+
     if (url.pathname === '/api/public-config') {
         url.pathname = '/api/checkout';
         if (!url.searchParams.get('action')) url.searchParams.set('action', 'public_config');

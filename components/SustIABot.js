@@ -795,7 +795,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     ];
 
     return (
-        <div className="fixed bottom-4 right-4 z-[9999] flex flex-col items-end pointer-events-none">
+        <div data-testid="sustia-root" className="fixed bottom-4 right-4 z-[9999] flex flex-col items-end pointer-events-none">
             {isOpen && (
                 <div className="bg-[#0f0f0f]/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] w-[calc(100vw-2rem)] sm:w-80 md:w-96 h-[min(600px,80dvh)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col mb-4 animate-fade-up overflow-hidden font-sans pointer-events-auto ring-1 ring-white/10 relative mr-0 sm:mr-0">
                     <div className="bg-gradient-to-r from-yellow-500 to-amber-600 p-5 flex justify-between items-center relative z-10">
@@ -920,6 +920,8 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                data-testid="sustia-launcher"
+                aria-label={isOpen ? 'Cerrar chat de SustIA' : 'Abrir chat de SustIA'}
                 className="pointer-events-auto w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform group relative z-50"
             >
                 {isOpen ? <X className="w-6 h-6 text-white" /> : (

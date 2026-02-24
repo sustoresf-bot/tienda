@@ -22,8 +22,8 @@ test('SustIA abre, responde y no rompe UI', async ({ page }) => {
         return !spinner && root.textContent && root.textContent.trim().length > 0;
     });
 
-    const botRoot = page.locator('div.fixed.bottom-6.right-6, div.fixed.bottom-3.right-3').first();
-    const launcherButton = botRoot.locator('button').first();
+    const botRoot = page.getByTestId('sustia-root');
+    const launcherButton = page.getByTestId('sustia-launcher');
     await expect(launcherButton).toBeVisible();
     await launcherButton.click();
 
