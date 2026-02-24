@@ -6889,11 +6889,6 @@ function App() {
                                                     <Info className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Cómo comprar
                                                 </button>
                                             </div>
-                                            <div className="mt-3 sm:mt-6 flex flex-wrap gap-2 sm:gap-3 pointer-events-none premium-hero-proof">
-                                                <span className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${darkMode ? 'bg-white/10 text-slate-200 border-white/15' : 'bg-white/80 text-slate-700 border-slate-200'}`}>Checkout seguro</span>
-                                                <span className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${darkMode ? 'bg-white/10 text-slate-200 border-white/15' : 'bg-white/80 text-slate-700 border-slate-200'}`}>Carga rápida</span>
-                                                <span className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${darkMode ? 'bg-white/10 text-slate-200 border-white/15' : 'bg-white/80 text-slate-700 border-slate-200'}`}>Lista para producir ventas</span>
-                                            </div>
                                         </>
                                     )}
                                 </div>
@@ -6959,7 +6954,7 @@ function App() {
                         <div className={`mb-3 sm:mb-4 flex items-center justify-between gap-4 premium-catalog-intro ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                             <div>
                                 <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Catálogo</p>
-                                <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Productos listos para comprar</h2>
+                                <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Nuestros productos</h2>
                             </div>
                             <div className={`text-xs sm:text-sm font-bold whitespace-nowrap px-3 py-1.5 rounded-full border ${darkMode ? 'bg-slate-900/70 border-slate-700 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
                                 {products.filter(p => p.isActive !== false).length} disponibles
