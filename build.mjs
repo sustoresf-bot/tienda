@@ -35,6 +35,11 @@ function runTailwindBuild() {
 const storeId = String(process.env.SUSTORE_APP_ID || 'sustore-63266-prod').trim();
 const publicSiteUrl = normalizeSiteUrl(process.env.PUBLIC_SITE_URL || 'https://sustore.vercel.app');
 const today = new Date().toISOString().slice(0, 10);
+const packageJsonPath = path.join(__dirname, 'package.json');
+const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
+const packageVersion = String(packageJson.version || '0.0.0').trim();
+const buildStamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+const appAssetVersion = `${packageVersion}-${buildStamp}`;
 
 console.log('Cleaning assets directory...');
 await rm(outDir, { recursive: true, force: true });
@@ -91,7 +96,9 @@ for (const file of filesToCopy) {
 }
 
 const indexTemplate = await readFile(path.join(__dirname, 'index.html'), 'utf8');
-const indexRendered = indexTemplate.replaceAll('__PUBLIC_SITE_URL__', publicSiteUrl);
+const indexRendered = indexTemplate
+    .replaceAll('__PUBLIC_SITE_URL__', publicSiteUrl)
+    .replaceAll('__APP_ASSET_VERSION__', appAssetVersion);
 await writeFile(path.join(deployDir, 'index.html'), indexRendered, 'utf8');
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>

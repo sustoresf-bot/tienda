@@ -20,6 +20,8 @@
     "tailwindcss": "^4.1.18"
   },
   "scripts": {
+    "fix:text-encoding": "node scripts/fix-text-encoding.mjs",
+    "check:text-encoding": "node scripts/check-text-encoding.mjs",
     "build": "node build.mjs",
     "start": "node dev-server.mjs",
     "test": "npx playwright test"

@@ -1,7 +1,9 @@
 // Service Worker para Tienda Online
 // Permite funcionamiento offline y mejor rendimiento
 
-const CACHE_NAME = 'tienda-cache-v9';
+const swUrl = new URL(self.location.href);
+const SW_VERSION = swUrl.searchParams.get('v') || 'dev';
+const CACHE_NAME = `tienda-cache-${SW_VERSION}`;
 const STATIC_ASSETS = [
     '/',
     '/index.html',
