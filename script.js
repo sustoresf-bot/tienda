@@ -4251,7 +4251,7 @@ function App() {
                 console.warn('⚠️ Mercado Pago: La inicialización está tardando demasiado. Liberando bloqueo...');
                 isInitializingBrick.current = false;
             }
-        }, 10000);
+        }, 20000);
 
         // Limpiar brick anterior si existe
         if (mpBrickController) {
@@ -4288,6 +4288,16 @@ function App() {
         });
 
         const bricksBuilder = mp.bricks();
+        const getMpErrorMessage = (value) => {
+            if (!value) return '';
+            if (typeof value === 'string') return value;
+            if (typeof value.message === 'string' && value.message.trim()) return value.message;
+            if (Array.isArray(value.cause)) {
+                const nested = value.cause.find((entry) => entry && typeof entry.message === 'string' && entry.message.trim());
+                if (nested && nested.message) return String(nested.message);
+            }
+            return '';
+        };
 
         try {
             const controller = await bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', {
@@ -4326,7 +4336,7 @@ function App() {
                         setPaymentError(null);
 
                         // Validar datos críticos antes de enviar
-                        if (!cardFormData.token) {
+                        if (!cardFormData?.token) {
                             setIsPaymentProcessing(false);
                             setPaymentError('Error en los datos de la tarjeta. Por favor intentá nuevamente.');
                             showToast('Error al procesar los datos de la tarjeta.', 'error');
@@ -4343,14 +4353,14 @@ function App() {
                                         token: cardFormData.token,
                                         transaction_amount: safeAmount,
                                         description: `Compra en ${settings?.storeName || 'Tienda Online'}`,
-                                        installments: cardFormData.installments || 1,
-                                        payment_method_id: cardFormData.payment_method_id || '',
-                                        issuer_id: cardFormData.issuer_id || '',
+                                        installments: cardFormData?.installments || 1,
+                                        payment_method_id: cardFormData?.payment_method_id || '',
+                                        issuer_id: cardFormData?.issuer_id || '',
                                     },
                                     payer: {
                                         email: currentUser?.email || 'sin-email@tienda.com',
-                                        identificationType: cardFormData.payer?.identification?.type || 'DNI',
-                                        identificationNumber: cardFormData.payer?.identification?.number || '00000000',
+                                        identificationType: cardFormData?.payer?.identification?.type || 'DNI',
+                                        identificationNumber: cardFormData?.payer?.identification?.number || '00000000',
                                     },
                                 }),
                             });
@@ -4417,8 +4427,13 @@ function App() {
                         console.error('❌ Mercado Pago Error:', error);
                         isInitializingBrick.current = false;
                         clearTimeout(safetyTimeout);
+                        const errorMessage = getMpErrorMessage(error).toLowerCase();
                         // No mostrar error si es solo por AdBlock
-                        if (error && error.message && error.message.includes('melidata')) return;
+                        if (errorMessage.includes('melidata')) return;
+                        if (errorMessage.includes('content security policy') || errorMessage.includes('csp')) {
+                            setPaymentError('El navegador bloqueo recursos de Mercado Pago por CSP. Recarga y verifica la configuracion de seguridad del dominio.');
+                            return;
+                        }
                         setPaymentError('Error en el formulario. Verificá tus claves de producción.');
                     },
                 },
@@ -13303,3 +13318,4 @@ root.render(
         <App />
     </ErrorBoundary>
 );
+
