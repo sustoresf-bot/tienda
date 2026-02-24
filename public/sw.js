@@ -41,7 +41,6 @@ const EXTERNAL_DOMAINS = [
     'mercadopago.com',
     'esm.sh',
     'unpkg.com',
-    'tailwindcss.com',
     'mlstatic.com',
     'fonts.googleapis.com',
     'fonts.gstatic.com'
