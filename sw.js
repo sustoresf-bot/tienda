@@ -1,7 +1,7 @@
 // Service Worker para Tienda Online
 // Permite funcionamiento offline y mejor rendimiento
 
-const CACHE_NAME = 'tienda-cache-v8';
+const CACHE_NAME = 'tienda-cache-v9';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
