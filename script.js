@@ -3255,12 +3255,13 @@ function App() {
 
             if (itemIsPromo) {
                 const promoInStore = promosById.get(itemId);
-                if (!promoInStore) {
+                const promoSource = promoInStore || (item.product?.isPromo === true ? item.product : null);
+                if (!promoSource) {
                     changed = true;
                     removed.push(`${itemName} (Promo eliminada)`);
                     continue;
                 }
-                if (promoInStore.isActive === false) {
+                if (promoInStore && promoInStore.isActive === false) {
                     changed = true;
                     removed.push(`${itemName} (Promo no disponible)`);
                     continue;
@@ -3269,7 +3270,7 @@ function App() {
                 const promoItems = normalizePromoItems(
                     (Array.isArray(item.product?.items) && item.product.items.length > 0)
                         ? item.product.items
-                        : promoInStore.items
+                        : promoSource.items
                 );
                 if (promoItems.length === 0) {
                     changed = true;
@@ -3301,19 +3302,26 @@ function App() {
                     continue;
                 }
 
+                const promoName = promoInStore?.name || promoSource?.name || itemName;
                 const nextQuantity = clampQuantity(item.quantity, maxPurchasable);
                 if (nextQuantity !== Number(item.quantity || 0)) {
                     changed = true;
-                    adjusted.push(`${promoInStore.name || itemName} (x${nextQuantity})`);
+                    adjusted.push(`${promoName} (x${nextQuantity})`);
                 }
 
                 const normalizedPromo = {
-                    ...promoInStore,
+                    ...promoSource,
+                    ...(promoInStore || {}),
                     id: itemId,
                     isPromo: true,
                     items: promoItems,
                     stock: maxPurchasable,
-                    basePrice: Number(promoInStore.price ?? promoInStore.basePrice) || 0
+                    basePrice: Number(
+                        promoInStore?.price ??
+                        promoInStore?.basePrice ??
+                        promoSource?.price ??
+                        promoSource?.basePrice
+                    ) || 0
                 };
 
                 const promoChanged =

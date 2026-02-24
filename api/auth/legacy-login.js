@@ -123,6 +123,9 @@ export default async function handler(req, res) {
     }
 
     const isEmail = identifier.includes('@');
+    if (!isEmail) {
+        return res.status(400).json({ error: 'Usa tu email para iniciar sesión', code: 'email_required' });
+    }
     const normalized = identifier.toLowerCase();
 
     try {
@@ -130,9 +133,7 @@ export default async function handler(req, res) {
         const db = adminSdk.firestore();
         const usersCol = db.collection(`artifacts/${storeId}/public/data/users`);
 
-        const querySnap = isEmail
-            ? await usersCol.where('emailLower', '==', normalized).limit(5).get()
-            : await usersCol.where('usernameLower', '==', normalized).limit(5).get();
+        const querySnap = await usersCol.where('emailLower', '==', normalized).limit(5).get();
 
         const legacyDoc = querySnap.docs.find((d) => d.data()?.password);
         if (!legacyDoc) {
