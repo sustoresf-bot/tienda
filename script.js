@@ -37,8 +37,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-// ID interno de la app (no es el appId de Firebase). Puedes cambiarlo si quieres diferenciar entornos.
-const DEFAULT_APP_ID = "sustore-63266-prod";
+// App store ID for single-store deployments (injected at build time when available).
+const DEFAULT_APP_ID =
+    (typeof __SUSTORE_APP_ID__ !== 'undefined' && __SUSTORE_APP_ID__)
+        ? String(__SUSTORE_APP_ID__)
+        : "sustore-63266-prod";
+const PUBLIC_SITE_URL =
+    (typeof __PUBLIC_SITE_URL__ !== 'undefined' && __PUBLIC_SITE_URL__)
+        ? String(__PUBLIC_SITE_URL__)
+        : '';
 const APP_VERSION = "3.0.0";
 
 let mpPublicKeyPromise = null;
@@ -1653,6 +1660,7 @@ function App() {
         } catch (e) { return []; }
     });
     const cartHydratedFromRemoteRef = useRef(false);
+    const lastSyncedCartRef = useRef(null);
     const [liveCarts, setLiveCarts] = useState([]); // Monitor de carritos en tiempo real
     const [orders, setOrders] = useState([]);
     const [users, setUsers] = useState([]);
@@ -2363,51 +2371,28 @@ function App() {
             ? String(window.location.hostname).trim().toLowerCase()
             : '';
         const normalizedHostname = rawHostname.startsWith('www.') ? rawHostname.slice(4) : rawHostname;
+        const fixedStoreId = String(DEFAULT_APP_ID || '').trim();
 
-        if (!normalizedHostname) {
-            setStoreResolution({ status: 'unconfigured', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: 'hostname-empty' });
+        if (!fixedStoreId) {
+            setStoreResolution({
+                status: 'unconfigured',
+                hostname: rawHostname,
+                normalizedHostname,
+                storeId: null,
+                error: 'missing-store-id',
+            });
             setAppId(null);
             return;
         }
 
-        if (normalizedHostname === 'localhost' || normalizedHostname === '127.0.0.1') {
-            setStoreResolution({ status: 'resolved', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: DEFAULT_APP_ID, error: null });
-            setAppId(DEFAULT_APP_ID);
-            return;
-        }
-
-        if (normalizedHostname.endsWith('.vercel.app')) {
-            setStoreResolution({ status: 'resolved', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: DEFAULT_APP_ID, error: null });
-            setAppId(DEFAULT_APP_ID);
-            return;
-        }
-
-        setStoreResolution({ status: 'resolving', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: null });
-
-        let cancelled = false;
-        const resolve = async () => {
-            try {
-                const snap = await getDoc(doc(db, 'storesIndex', normalizedHostname));
-                if (cancelled) return;
-                if (snap.exists()) {
-                    const data = snap.data() || {};
-                    const storeId = typeof data.storeId === 'string' ? data.storeId.trim() : '';
-                    if (storeId) {
-                        setStoreResolution({ status: 'resolved', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId, error: null });
-                        setAppId(storeId);
-                        return;
-                    }
-                }
-                setStoreResolution({ status: 'unconfigured', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: null });
-                setAppId(null);
-            } catch (e) {
-                if (cancelled) return;
-                setStoreResolution({ status: 'unconfigured', hostname: rawHostname, normalizedHostname: normalizedHostname, storeId: null, error: e?.message || 'resolve-error' });
-                setAppId(null);
-            }
-        };
-        resolve();
-        return () => { cancelled = true; };
+        setStoreResolution({
+            status: 'resolved',
+            hostname: rawHostname,
+            normalizedHostname,
+            storeId: fixedStoreId,
+            error: null,
+        });
+        setAppId(fixedStoreId);
     }, []);
 
     const createStoreId = useCallback(() => {
@@ -2447,8 +2432,29 @@ function App() {
         const priceNum = Number(priceRaw);
         const price = Number.isFinite(priceNum) ? priceNum : 0;
         const image = String(rawItem?.image || rawProduct?.image || '').trim();
+        const isPromo = rawItem?.isPromo === true || rawProduct?.isPromo === true;
+        const promoItems = Array.isArray(rawItem?.promoItems)
+            ? rawItem.promoItems
+            : (Array.isArray(rawItem?.items)
+                ? rawItem.items
+                : (Array.isArray(rawProduct?.items) ? rawProduct.items : []));
+        const normalizedPromoItems = promoItems
+            .map((entry) => ({
+                productId: String(entry?.productId || '').trim(),
+                quantity: Number(entry?.quantity) || 0,
+            }))
+            .filter((entry) => entry.productId && entry.quantity > 0);
 
-        return { productId, quantity, name, price, image };
+        return {
+            productId,
+            quantity,
+            name,
+            price,
+            image,
+            isPromo,
+            promoItems: isPromo ? normalizedPromoItems : [],
+            items: isPromo ? normalizedPromoItems : [],
+        };
     }, []);
 
     const serializeCartForAudit = useCallback((items) => {
@@ -2480,6 +2486,8 @@ function App() {
 
         // Si hay usuario, subir carrito a DB para monitor de admin
         if (appId && currentUser && currentUser.id) {
+            // Evita sobrescribir remoto con estado local antes de hidratar el carrito del usuario.
+            if (!cartHydratedFromRemoteRef.current) return;
             const syncCartToDB = async () => {
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
@@ -2497,6 +2505,12 @@ function App() {
             return () => clearTimeout(debounceTimer);
         }
     }, [cart, currentUser, appId]);
+
+    useEffect(() => {
+        // Nueva sesion/tienda: forzar nueva hidratacion remota del carrito.
+        cartHydratedFromRemoteRef.current = false;
+        lastSyncedCartRef.current = null;
+    }, [appId, currentUser?.id]);
 
     useEffect(() => {
         if (!currentUser?.id) return;
@@ -2525,7 +2539,11 @@ function App() {
                             name: typeof i.name === 'string' ? i.name : '',
                             basePrice: Number(i.price) || 0,
                             image: typeof i.image === 'string' ? i.image : '',
-                            category: ''
+                            category: '',
+                            isPromo: i.isPromo === true,
+                            items: Array.isArray(i.promoItems)
+                                ? i.promoItems
+                                : (Array.isArray(i.items) ? i.items : []),
                         },
                         quantity: Number(i.quantity) || 1
                     }));
@@ -3187,15 +3205,18 @@ function App() {
         };
     }, [isAdminUser, appId, view]);
 
-    // --- VALIDACIÓN INTELIGENTE DEL CARRITO ---
-    // Elimina automáticamente productos que ya no existen o no tienen stock
+    // --- VALIDACION INTELIGENTE DEL CARRITO ---
+    // Valida productos y promos por separado para evitar borrar combos validos.
     const productsById = useMemo(() => {
         const map = new Map();
         for (const p of products) map.set(String(p.id).trim(), p);
         return map;
     }, [products]);
-
-    const lastSyncedCartRef = useRef(null);
+    const promosById = useMemo(() => {
+        const map = new Map();
+        for (const p of promos) map.set(String(p.id).trim(), p);
+        return map;
+    }, [promos]);
 
     useEffect(() => {
         if (!appId) return;
@@ -3203,53 +3224,155 @@ function App() {
         if (!currentUser) return;
         if (cart.length === 0) return;
 
+        const normalizePromoItems = (items) => {
+            if (!Array.isArray(items)) return [];
+            return items
+                .map((entry) => ({
+                    productId: String(entry?.productId || '').trim(),
+                    quantity: Number(entry?.quantity) || 0
+                }))
+                .filter((entry) => entry.productId && entry.quantity > 0);
+        };
+        const promoItemsSignature = (items) => normalizePromoItems(items)
+            .map((entry) => `${entry.productId}:${entry.quantity}`)
+            .join('|');
+        const clampQuantity = (value, max) => {
+            const parsed = Number(value);
+            const safe = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
+            if (!Number.isFinite(max) || max <= 0) return safe;
+            return Math.max(1, Math.min(safe, Math.floor(max)));
+        };
+
         let changed = false;
         const removed = [];
+        const adjusted = [];
+        const validated = [];
 
-        const validated = cart.filter(item => {
+        for (const item of cart) {
             const itemId = String(item.product?.id || '').trim();
+            const itemName = item.product?.name || 'Producto';
+            const itemIsPromo = item.product?.isPromo === true || item.isPromo === true;
+
+            if (itemIsPromo) {
+                const promoInStore = promosById.get(itemId);
+                if (!promoInStore) {
+                    changed = true;
+                    removed.push(`${itemName} (Promo eliminada)`);
+                    continue;
+                }
+                if (promoInStore.isActive === false) {
+                    changed = true;
+                    removed.push(`${itemName} (Promo no disponible)`);
+                    continue;
+                }
+
+                const promoItems = normalizePromoItems(
+                    (Array.isArray(item.product?.items) && item.product.items.length > 0)
+                        ? item.product.items
+                        : promoInStore.items
+                );
+                if (promoItems.length === 0) {
+                    changed = true;
+                    removed.push(`${itemName} (Promo invalida)`);
+                    continue;
+                }
+
+                let maxPurchasable = Infinity;
+                let invalidComponent = false;
+                for (const component of promoItems) {
+                    const product = productsById.get(component.productId);
+                    if (!product || product.isActive === false) {
+                        invalidComponent = true;
+                        break;
+                    }
+                    const stock = Number(product.stock) || 0;
+                    const maxForComponent = Math.floor(stock / component.quantity);
+                    if (maxForComponent < maxPurchasable) maxPurchasable = maxForComponent;
+                }
+
+                if (invalidComponent) {
+                    changed = true;
+                    removed.push(`${itemName} (Componentes no validos)`);
+                    continue;
+                }
+                if (!(maxPurchasable > 0)) {
+                    changed = true;
+                    removed.push(`${itemName} (Sin stock)`);
+                    continue;
+                }
+
+                const nextQuantity = clampQuantity(item.quantity, maxPurchasable);
+                if (nextQuantity !== Number(item.quantity || 0)) {
+                    changed = true;
+                    adjusted.push(`${promoInStore.name || itemName} (x${nextQuantity})`);
+                }
+
+                const normalizedPromo = {
+                    ...promoInStore,
+                    id: itemId,
+                    isPromo: true,
+                    items: promoItems,
+                    stock: maxPurchasable,
+                    basePrice: Number(promoInStore.price ?? promoInStore.basePrice) || 0
+                };
+
+                const promoChanged =
+                    (item.product?.name || '') !== (normalizedPromo.name || '') ||
+                    Number(item.product?.basePrice || 0) !== Number(normalizedPromo.basePrice || 0) ||
+                    (item.product?.image || '') !== (normalizedPromo.image || '') ||
+                    promoItemsSignature(item.product?.items) !== promoItemsSignature(normalizedPromo.items);
+                if (promoChanged) changed = true;
+
+                validated.push({ ...item, product: normalizedPromo, quantity: nextQuantity });
+                continue;
+            }
+
             const productInStore = productsById.get(itemId);
             if (!productInStore) {
                 changed = true;
-                removed.push(`${item.product?.name || 'Producto'} (Producto eliminado)`);
-                return false;
+                removed.push(`${itemName} (Producto eliminado)`);
+                continue;
             }
             if (productInStore.isActive === false) {
                 changed = true;
-                removed.push(`${item.product?.name || 'Producto'} (No disponible actualmente)`);
-                return false;
-            }
-            if (productInStore.isPromo && Array.isArray(productInStore.items)) {
-                const ok = productInStore.items.every(comp => {
-                    const cid = String(comp?.productId || '').trim();
-                    const cp = productsById.get(cid);
-                    return !!cp && cp.isActive !== false;
-                });
-                if (!ok) {
-                    changed = true;
-                    removed.push(`${item.product?.name || 'Promo'} (Componente inválido)`);
-                    return false;
-                }
+                removed.push(`${itemName} (No disponible actualmente)`);
+                continue;
             }
             if (!(Number(productInStore.stock) > 0)) {
                 changed = true;
-                removed.push(`${item.product?.name || 'Producto'} (Sin Stock)`);
-                return false;
+                removed.push(`${itemName} (Sin stock)`);
+                continue;
             }
-            return true;
-        }).map(item => {
-            const fresh = productsById.get(String(item.product?.id || '').trim());
-            if (fresh && ((item.product?.basePrice ?? 0) !== fresh.basePrice || (item.product?.discount ?? 0) !== fresh.discount)) {
+
+            const nextQuantity = clampQuantity(item.quantity, Number(productInStore.stock) || 0);
+            if (nextQuantity !== Number(item.quantity || 0)) {
                 changed = true;
+                adjusted.push(`${productInStore.name || itemName} (x${nextQuantity})`);
             }
-            return { ...item, product: fresh || item.product };
-        });
+
+            const productChanged =
+                (item.product?.basePrice ?? 0) !== productInStore.basePrice ||
+                (item.product?.discount ?? 0) !== productInStore.discount ||
+                (item.product?.name || '') !== (productInStore.name || '') ||
+                (item.product?.image || '') !== (productInStore.image || '');
+            if (productChanged) changed = true;
+
+            validated.push({ ...item, product: productInStore, quantity: nextQuantity });
+        }
 
         if (!changed) return;
 
         setCart(validated);
+        if (!cartHydratedFromRemoteRef.current) return;
 
-        const payload = JSON.stringify(validated.map(i => ({ id: String(i.product?.id || ''), q: i.quantity, p: i.product?.basePrice, d: i.product?.discount })));
+        const payload = JSON.stringify(validated.map(i => ({
+            id: String(i.product?.id || ''),
+            q: Number(i.quantity) || 0,
+            p: Number(i.product?.basePrice) || 0,
+            d: Number(i.product?.discount) || 0,
+            promo: i.product?.isPromo === true,
+            pi: promoItemsSignature(i.product?.items)
+        })));
         if (lastSyncedCartRef.current === payload) return;
         lastSyncedCartRef.current = payload;
 
@@ -3259,9 +3382,12 @@ function App() {
         }, { merge: true });
 
         if (removed.length > 0) {
-            showToast(`Tu carrito se actualizó: ${removed.join(', ')}`, 'info');
+            showToast(`Tu carrito se actualizo: ${removed.join(', ')}`, 'info');
         }
-    }, [productsById, currentUser?.id, cart, appId, serializeCartForAudit]);
+        if (adjusted.length > 0) {
+            showToast(`Ajustamos cantidades por stock: ${adjusted.join(', ')}`, 'warning');
+        }
+    }, [productsById, promosById, products.length, currentUser?.id, cart, appId, serializeCartForAudit]);
 
     // --- EFECTO VISUAL: SEO, FAVICON Y TÍTULO DINÁMICO ---
 
@@ -3352,8 +3478,15 @@ function App() {
         }
 
         // 7. Canonical URL
-        if (settings.seoUrl) {
-            updateLinkTag('link-canonical', settings.seoUrl);
+        const configuredSiteUrl = String(
+            settings.seoUrl ||
+            PUBLIC_SITE_URL ||
+            (typeof window !== 'undefined' ? window.location.origin : '')
+        ).trim().replace(/\/+$/, '');
+        if (configuredSiteUrl) {
+            updateLinkTag('link-canonical', configuredSiteUrl);
+            updateMetaTagById('og-url', configuredSiteUrl);
+            updateMetaTagById('twitter-url', configuredSiteUrl);
         }
 
         // 8. Open Graph Tags
@@ -3361,9 +3494,6 @@ function App() {
         updateMetaTagById('og-title', pageTitle);
         updateMetaTagById('og-description', description);
         updateMetaTagById('og-site-name', settings.storeName || 'Tienda Online');
-        if (settings.seoUrl) {
-            updateMetaTagById('og-url', settings.seoUrl);
-        }
         if (ogImage) {
             updateMetaTagById('og-image', ogImage);
         }
@@ -3518,22 +3648,12 @@ function App() {
                 return;
             } else {
                 const input = authData.email.trim();
-                if (!input) throw new Error("Ingresa tu email o usuario.");
-                if (!authData.password) throw new Error("Ingresa tu contraseña.");
+                if (!input) throw new Error("Ingresa tu email.");
+                if (!authData.password) throw new Error("Ingresa tu contrasena.");
+                if (!input.includes('@')) throw new Error("Usa tu email para iniciar sesion.");
 
-                let emailToUse = input.toLowerCase();
+                const emailToUse = input.toLowerCase();
                 let authUser = null;
-
-                if (!input.includes('@')) {
-                    const res = await fetch('/api/auth/username-lookup', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '' },
-                        body: JSON.stringify({ username: input })
-                    });
-                    const data = await res.json().catch(() => ({}));
-                    if (!res.ok) throw new Error("Usuario no encontrado.");
-                    emailToUse = String(data.email || '').toLowerCase();
-                }
 
                 try {
                     const userCredential = await signInWithEmailAndPassword(auth, emailToUse, authData.password);
@@ -3545,7 +3665,7 @@ function App() {
                         const res = await fetch('/api/auth/legacy-login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '' },
-                            body: JSON.stringify({ identifier: input, password: authData.password })
+                            body: JSON.stringify({ identifier: emailToUse, password: authData.password })
                         });
                         const raw = await res.text().catch(() => '');
                         let data = {};
@@ -4042,7 +4162,17 @@ function App() {
                         fee: shippingFee,
                     },
                     couponCode: appliedCoupon?.code || null,
-                    cart: cart.map(i => ({ productId: i.product?.id, quantity: i.quantity })),
+                    cart: cart.map(i => ({
+                        productId: i.product?.id,
+                        quantity: i.quantity,
+                        isPromo: i.product?.isPromo === true,
+                        promoItems: Array.isArray(i.product?.items)
+                            ? i.product.items.map((entry) => ({
+                                productId: String(entry?.productId || '').trim(),
+                                quantity: Number(entry?.quantity) || 0
+                            })).filter((entry) => entry.productId && entry.quantity > 0)
+                            : []
+                    })),
                 }),
             });
             const data = await res.json().catch(() => ({}));
@@ -4323,7 +4453,17 @@ function App() {
                         fee: shippingFee,
                     },
                     couponCode: appliedCoupon?.code || null,
-                    cart: cart.map(i => ({ productId: i.product?.id, quantity: i.quantity })),
+                    cart: cart.map(i => ({
+                        productId: i.product?.id,
+                        quantity: i.quantity,
+                        isPromo: i.product?.isPromo === true,
+                        promoItems: Array.isArray(i.product?.items)
+                            ? i.product.items.map((entry) => ({
+                                productId: String(entry?.productId || '').trim(),
+                                quantity: Number(entry?.quantity) || 0
+                            })).filter((entry) => entry.productId && entry.quantity > 0)
+                            : []
+                    })),
                 }),
             });
             const data = await res.json().catch(() => ({}));
@@ -7662,7 +7802,7 @@ function App() {
                                 )}
 
                                 <div className="space-y-4">
-                                    <input className="input-cyber w-full p-4" placeholder={loginMode ? "Email o Usuario" : "Email *"} value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} required />
+                                    <input className="input-cyber w-full p-4" placeholder={loginMode ? "Email" : "Email *"} value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} required />
                                     <input className="input-cyber w-full p-4" type="password" placeholder={loginMode ? "Contraseña" : "Contraseña *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
                                 </div>
 

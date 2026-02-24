@@ -30,7 +30,7 @@ function verifyLegacyPassword({ passwordInput, storedPassword, legacyData, legac
     if (!storedPassword) return false;
 
     if (!isHexSha256(storedPassword)) {
-        return String(storedPassword) === String(passwordInput);
+        return false;
     }
 
     const base = 'tienda_secure_2024';
@@ -141,6 +141,12 @@ export default async function handler(req, res) {
 
         const legacyData = legacyDoc.data() || {};
         const storedPassword = legacyData.password;
+        if (!isHexSha256(storedPassword)) {
+            return res.status(403).json({
+                error: 'Tu cuenta requiere migración de seguridad. Restablecé tu contraseña para continuar.',
+                code: 'legacy_password_reset_required',
+            });
+        }
 
         const ok = verifyLegacyPassword({
             passwordInput: password,

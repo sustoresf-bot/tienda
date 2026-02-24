@@ -1,14 +1,6 @@
-# Robots.txt para Tienda Online
-# Controla qué pueden indexar los buscadores
-# NOTA: Actualizar la URL del Sitemap con tu dominio
-
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin
 
-# Sitemap - ACTUALIZAR CON TU DOMINIO
-# Sitemap: https://tu-dominio.com/sitemap.xml
-
-# Crawl-delay para no sobrecargar (opcional)
-Crawl-delay: 1
+Sitemap: __PUBLIC_SITE_URL__/sitemap.xml

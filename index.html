@@ -19,11 +19,11 @@
     <meta id="meta-apple-title" name="apple-mobile-web-app-title" content="Tienda">
 
     <!-- Canonical URL - Se actualiza dinámicamente -->
-    <link id="link-canonical" rel="canonical" href="">
+    <link id="link-canonical" rel="canonical" href="__PUBLIC_SITE_URL__">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta id="og-url" property="og:url" content="">
+    <meta id="og-url" property="og:url" content="__PUBLIC_SITE_URL__">
     <meta id="og-title" property="og:title" content="Tienda Online">
     <meta id="og-description" property="og:description"
         content="Tu tienda online de confianza. Calidad y vanguardia en cada producto.">
@@ -33,6 +33,7 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta id="twitter-url" name="twitter:url" content="__PUBLIC_SITE_URL__">
     <meta id="twitter-title" name="twitter:title" content="Tienda Online">
     <meta id="twitter-description" name="twitter:description"
         content="Tu tienda online de confianza. Calidad y vanguardia en cada producto.">
@@ -44,33 +45,13 @@
     <!-- Icono PNG Circular -->
     <link id="dynamic-favicon" rel="icon" type="image/png" href="/icon-192.png">
 
-    <!-- Suppress technical warnings -->
-    <script>
-        if (typeof console !== 'undefined') {
-            const originalWarn = console.warn;
-            console.warn = function (...args) {
-                if (args[0] && typeof args[0] === 'string' && (args[0].includes('cdn.tailwindcss.com') || args[0].includes('babel') || args[0].includes('[BABEL] Note: The code generator has deoptimised'))) return;
-                originalWarn.apply(console, args);
-            };
-
-            const originalError = console.error;
-            console.error = function (...args) {
-                if (args[0] && typeof args[0] === 'string' && args[0].includes('[BABEL] Note: The code generator has deoptimised')) return;
-                originalError.apply(console, args);
-            };
-        }
-    </script>
-
     <!-- Preconnect to external domains for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
-    <link rel="preconnect" href="https://esm.sh">
     <link rel="preconnect" href="https://www.gstatic.com">
 
     <!-- DNS Prefetch for CDNs -->
     <link rel="dns-prefetch" href="https://sdk.mercadopago.com">
-    <link rel="dns-prefetch" href="https://unpkg.com">
 
 
     <!-- Critical CSS inline for faster first paint -->
@@ -114,26 +95,7 @@
         }
     </style>
 
-    <!-- TailwindCSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Import Map for ES Modules -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.3.1",
-            "react-dom": "https://esm.sh/react-dom@18.3.1",
-            "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-            "lucide-react": "https://esm.sh/lucide-react@0.460.0?deps=react@18.3.1",
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
-        }
-    }
-    </script>
-
-    <!-- Babel - defer loading to not block render -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js" defer></script>
+    <link rel="stylesheet" href="/assets/tailwind.css">
 
     <!-- Main Stylesheet (non-blocking) -->
     <link rel="stylesheet" href="styles.css">

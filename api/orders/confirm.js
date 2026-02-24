@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
@@ -51,6 +52,43 @@ function normalizeWhatsappLink(value) {
     return null;
 }
 
+function cents(amount) {
+    return Math.round((Number(amount) || 0) * 100);
+}
+
+function createApiError(code, message, status = 400) {
+    const error = new Error(message);
+    error.code = code;
+    error.status = status;
+    return error;
+}
+
+function normalizePromoItems(items) {
+    if (!Array.isArray(items)) return [];
+    return items
+        .map((entry) => ({
+            productId: String(entry?.productId || '').trim(),
+            quantity: Number(entry?.quantity) || 0,
+        }))
+        .filter((entry) => entry.productId && entry.quantity > 0);
+}
+
+function normalizeCartEntry(entry) {
+    return {
+        productId: String(entry?.productId || '').trim(),
+        quantity: Number(entry?.quantity) || 0,
+        isPromo: entry?.isPromo === true,
+        promoItems: normalizePromoItems(entry?.promoItems || entry?.items),
+    };
+}
+
+function buildPaymentLockId(paymentId) {
+    const raw = String(paymentId || '').trim();
+    const safe = raw.replace(/[^a-zA-Z0-9_-]/g, '');
+    if (safe) return safe.slice(0, 120);
+    return crypto.createHash('sha256').update(raw).digest('hex');
+}
+
 async function getMercadoPagoPayment({ paymentId, accessToken }) {
     const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -58,7 +96,7 @@ async function getMercadoPagoPayment({ paymentId, accessToken }) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
         const message = data?.message || data?.error || 'Error consultando Mercado Pago';
-        throw new Error(message);
+        throw createApiError('payment_provider_error', message, 502);
     }
     return data;
 }
@@ -75,7 +113,7 @@ function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId,
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Confirmación de Pedido</title>
+            <title>Confirmacion de Pedido</title>
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap');
                 body { margin: 0; padding: 0; background-color: #000000; font-family: 'Outfit', Helvetica, Arial, sans-serif; color: #e2e8f0; }
@@ -94,14 +132,14 @@ function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId,
                             <tr>
                                 <td style="padding: 40px 40px 20px; text-align: center;">
                                     <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">${safeBrandName}</h1>
-                                    <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; letter-spacing: 2px;">CONFIRMACIÓN DE COMPRA</p>
+                                    <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; letter-spacing: 2px;">CONFIRMACION DE COMPRA</p>
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding: 0 40px 40px; text-align: center;">
                                     <div class="status-badge">PAGO EXITOSO</div>
                                     <p style="margin-top: 24px; color: #cbd5e1; font-size: 16px; line-height: 1.6;">
-                                        ¡Hola <span style="font-weight: 700; color: #ffffff;">${escapeHtml(customerName)}</span>! Gracias por tu compra.
+                                        Hola <span style="font-weight: 700; color: #ffffff;">${escapeHtml(customerName)}</span>. Gracias por tu compra.
                                         <br>Ya estamos preparando tu pedido con el ID: <strong style="color: #22d3ee;">#${orderId}</strong>
                                     </p>
                                 </td>
@@ -111,9 +149,9 @@ function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId,
                                     <table width="100%" cellspacing="0" cellpadding="0" border="0">
                                         <tr>
                                             <td width="48%" valign="top" class="card">
-                                                <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Método de Entrega</div>
+                                                <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Metodo de Entrega</div>
                                                 <div style="font-size: 14px; color: #e2e8f0; line-height: 1.4; font-weight: 500; margin-bottom: 4px;">
-                                                    ${escapeHtml(shippingMethod || 'Envío')}
+                                                    ${escapeHtml(shippingMethod || 'Envio')}
                                                 </div>
                                                 <div style="font-size: 12px; color: #94a3b8; line-height: 1.4;">
                                                     ${escapeHtml(shippingAddress || 'No especificada')}
@@ -161,7 +199,7 @@ function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId,
                                             </tr>
                                         ` : ''}
                                         <tr>
-                                            <td style="padding-bottom: 8px; text-align: right; color: #94a3b8; font-size: 14px;">Costo de Envío</td>
+                                            <td style="padding-bottom: 8px; text-align: right; color: #94a3b8; font-size: 14px;">Costo de Envio</td>
                                             <td style="padding-bottom: 8px; text-align: right; color: #cbd5e1; font-size: 14px; font-weight: 500;">
                                                 ${Number(shippingFee) > 0 ? `+ ${formatMoney(shippingFee)}` : 'Gratis'}
                                             </td>
@@ -176,7 +214,7 @@ function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId,
                             <tr>
                                 <td style="padding: 0 40px 40px; text-align: center;">
                                     <div style="margin-bottom: 40px; padding: 20px; background: rgba(139, 92, 246, 0.05); border-radius: 16px; border: 1px solid rgba(139, 92, 246, 0.2);">
-                                        <p style="margin: 0 0 5px; font-size: 11px; text-transform: uppercase; color: #a78bfa; font-weight: 700;">Método de Pago</p>
+                                        <p style="margin: 0 0 5px; font-size: 11px; text-transform: uppercase; color: #a78bfa; font-weight: 700;">Metodo de Pago</p>
                                         <p style="margin: 0; font-size: 15px; color: #ffffff; font-weight: 600;">${escapeHtml(paymentMethod)}</p>
                                     </div>
                                     <a href="${escapeHtml(storeUrl)}" class="btn">VER DETALLES EN LA TIENDA</a>
@@ -204,8 +242,8 @@ export default async function handler(req, res) {
     if (!decoded?.uid || !decoded?.email) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
-    const storeId = getStoreIdFromRequest(req);
 
+    const storeId = getStoreIdFromRequest(req);
     const paymentMethod = String(req.body?.paymentMethod || '').trim();
     const shippingMethod = String(req.body?.shippingMethod || '').trim();
     const shipping = req.body?.shipping || {};
@@ -213,12 +251,15 @@ export default async function handler(req, res) {
     const mpPaymentId = req.body?.mpPaymentId ? String(req.body.mpPaymentId).trim() : null;
     const cart = Array.isArray(req.body?.cart) ? req.body.cart : [];
 
-    if (!paymentMethod) return res.status(400).json({ error: 'Falta método de pago' });
-    if (!shippingMethod) return res.status(400).json({ error: 'Falta método de entrega' });
-    if (!Array.isArray(cart) || cart.length === 0) return res.status(400).json({ error: 'Carrito vacío' });
+    if (!paymentMethod) return res.status(400).json({ error: 'Falta metodo de pago' });
+    if (!shippingMethod) return res.status(400).json({ error: 'Falta metodo de entrega' });
+    if (!Array.isArray(cart) || cart.length === 0) return res.status(400).json({ error: 'Carrito vacio' });
+
     if (shippingMethod === 'Delivery') {
-        if (!String(shipping?.address || '').trim() || !String(shipping?.city || '').trim() || !String(shipping?.province || '').trim() || !String(shipping?.zipCode || '').trim()) {
-            return res.status(400).json({ error: 'Faltan datos de envío' });
+        const requiredShipping = [shipping?.address, shipping?.city, shipping?.province, shipping?.zipCode]
+            .every((field) => String(field || '').trim().length > 0);
+        if (!requiredShipping) {
+            return res.status(400).json({ error: 'Faltan datos de envio' });
         }
     }
 
@@ -229,41 +270,130 @@ export default async function handler(req, res) {
 
         const userRef = db.doc(`artifacts/${storeId}/public/data/users/${decoded.uid}`);
         const userSnap = await userRef.get();
-        const userData = userSnap.exists ? userSnap.data() : null;
+        const userData = userSnap.exists ? (userSnap.data() || {}) : null;
         if (!userData?.name || !userData?.dni || !userData?.phone) {
             return res.status(400).json({ error: 'Datos de usuario incompletos' });
         }
 
-        const productIds = cart.map((i) => String(i?.productId || '').trim()).filter(Boolean);
-        if (productIds.length !== cart.length) return res.status(400).json({ error: 'Carrito inválido' });
+        const normalizedCart = cart.map(normalizeCartEntry);
+        if (normalizedCart.some((entry) => !entry.productId || entry.quantity <= 0)) {
+            return res.status(400).json({ error: 'Carrito invalido' });
+        }
 
-        const productSnaps = await Promise.all(productIds.map((id) => db.doc(`artifacts/${storeId}/public/data/products/${id}`).get()));
+        const uniqueIds = Array.from(new Set(normalizedCart.map((entry) => entry.productId)));
+        const [productSnaps, promoSnaps] = await Promise.all([
+            Promise.all(uniqueIds.map((id) => db.doc(`artifacts/${storeId}/public/data/products/${id}`).get())),
+            Promise.all(uniqueIds.map((id) => db.doc(`artifacts/${storeId}/public/data/promos/${id}`).get())),
+        ]);
+
         const productsById = new Map();
         productSnaps.forEach((snap) => {
-            if (snap.exists) productsById.set(snap.id, snap.data());
+            if (snap.exists) productsById.set(snap.id, snap.data() || {});
         });
 
+        const promosById = new Map();
+        promoSnaps.forEach((snap) => {
+            if (snap.exists) promosById.set(snap.id, snap.data() || {});
+        });
+
+        const classifiedCart = normalizedCart.map((entry) => {
+            const productDoc = productsById.get(entry.productId) || null;
+            const promoDoc = promosById.get(entry.productId) || null;
+            const isPromo = entry.isPromo === true || (!productDoc && !!promoDoc);
+            return { ...entry, isPromo, productDoc, promoDoc };
+        });
+
+        const componentIds = new Set();
+        for (const entry of classifiedCart) {
+            if (!entry.isPromo) continue;
+            const promoDoc = entry.promoDoc;
+            if (!promoDoc) continue;
+            const promoItems = normalizePromoItems(promoDoc.items);
+            for (const component of promoItems) {
+                if (!productsById.has(component.productId)) {
+                    componentIds.add(component.productId);
+                }
+            }
+        }
+
+        if (componentIds.size > 0) {
+            const componentSnaps = await Promise.all(
+                Array.from(componentIds).map((id) => db.doc(`artifacts/${storeId}/public/data/products/${id}`).get())
+            );
+            componentSnaps.forEach((snap) => {
+                if (snap.exists) productsById.set(snap.id, snap.data() || {});
+            });
+        }
+
         const items = [];
+        const stockDeltas = new Map();
         let subtotal = 0;
 
-        for (const entry of cart) {
-            const productId = String(entry.productId);
-            const quantity = Number(entry.quantity) || 0;
-            if (quantity <= 0) return res.status(400).json({ error: 'Carrito inválido' });
+        for (const entry of classifiedCart) {
+            const quantity = entry.quantity;
 
-            const product = productsById.get(productId);
-            if (!product) return res.status(400).json({ error: 'Producto no encontrado' });
+            if (entry.isPromo) {
+                const promo = entry.promoDoc;
+                if (!promo) {
+                    throw createApiError('invalid_cart_item', 'Promo no encontrada', 400);
+                }
+                if (promo.isActive === false) {
+                    throw createApiError('invalid_cart_item', 'Promo no disponible', 400);
+                }
+
+                const promoItems = normalizePromoItems(promo.items);
+                if (promoItems.length === 0) {
+                    throw createApiError('invalid_promo_components', 'La promo no tiene componentes validos', 400);
+                }
+
+                const unitPriceRaw = Number(promo.price ?? promo.basePrice);
+                if (!Number.isFinite(unitPriceRaw) || unitPriceRaw < 0) {
+                    throw createApiError('invalid_cart_item', 'Precio de promo invalido', 400);
+                }
+                const unitPrice = Math.ceil(unitPriceRaw);
+
+                items.push({
+                    productId: entry.productId,
+                    title: promo.name || 'Promo',
+                    quantity,
+                    unit_price: unitPrice,
+                    image: promo.image || '',
+                    isPromo: true,
+                    promoItems,
+                });
+                subtotal += unitPrice * quantity;
+
+                for (const component of promoItems) {
+                    const componentProduct = productsById.get(component.productId);
+                    if (!componentProduct || componentProduct.isActive === false) {
+                        throw createApiError('invalid_promo_components', 'Componente de promo no disponible', 400);
+                    }
+                    const totalDecrement = component.quantity * quantity;
+                    stockDeltas.set(component.productId, (stockDeltas.get(component.productId) || 0) + totalDecrement);
+                }
+
+                continue;
+            }
+
+            const product = entry.productDoc;
+            if (!product) {
+                throw createApiError('invalid_cart_item', 'Producto no encontrado', 400);
+            }
+            if (product.isActive === false) {
+                throw createApiError('invalid_cart_item', 'Producto no disponible', 400);
+            }
 
             const unitPrice = calculateItemPrice(product.basePrice, product.discount);
             items.push({
-                productId,
+                productId: entry.productId,
                 title: product.name || 'Producto',
                 quantity,
                 unit_price: unitPrice,
                 image: product.image || '',
+                isPromo: false,
             });
-
             subtotal += unitPrice * quantity;
+            stockDeltas.set(entry.productId, (stockDeltas.get(entry.productId) || 0) + quantity);
         }
 
         const settingsSnap = await db.doc(`artifacts/${storeId}/public/data/settings/config`).get();
@@ -272,7 +402,7 @@ export default async function handler(req, res) {
         const ticketSettings = settingsData?.ticket || {};
         const ticketBrandName = String(ticketSettings?.brandName || settingsData?.storeName || 'Sustore').trim();
         const ticketWhatsappLink = String(ticketSettings?.whatsappLink || settingsData?.whatsappLink || '').trim();
-        const ticketSiteUrl = String(ticketSettings?.siteUrl || settingsData?.seoUrl || 'https://sustore.vercel.app/').trim();
+        const ticketSiteUrl = String(ticketSettings?.siteUrl || settingsData?.seoUrl || process.env.PUBLIC_SITE_URL || 'https://sustore.vercel.app/').trim();
 
         let deliveryFee = 0;
         if (shippingMethod === 'Delivery' && deliverySettings?.enabled) {
@@ -289,41 +419,45 @@ export default async function handler(req, res) {
 
         if (couponCode) {
             const couponsCol = db.collection(`artifacts/${storeId}/public/data/coupons`);
-            const snap = await couponsCol.where('code', '==', couponCode).limit(1).get();
-            const couponDoc = snap.docs[0];
+            const couponSnap = await couponsCol.where('code', '==', couponCode).limit(1).get();
+            const couponDoc = couponSnap.docs[0];
+
             if (couponDoc) {
                 const coupon = couponDoc.data() || {};
                 if (!coupon.expirationDate || new Date(coupon.expirationDate) >= new Date()) {
                     const usedBy = Array.isArray(coupon.usedBy) ? coupon.usedBy : [];
                     const usageLimit = Number(coupon.usageLimit) || 0;
+
                     if (usageLimit > 0 && usedBy.length >= usageLimit) {
-                        return res.status(400).json({ error: 'Este cupón ha agotado sus usos' });
+                        throw createApiError('coupon_usage_limit', 'Este cupon ha agotado sus usos', 400);
                     }
+
                     if (coupon.targetType === 'specific_email' && coupon.targetUser) {
                         const targetLower = String(coupon.targetUser).trim().toLowerCase();
                         const userLower = String(decoded.email || '').trim().toLowerCase();
                         if (targetLower !== userLower) {
-                            return res.status(400).json({ error: 'Este cupón no está disponible para tu cuenta' });
+                            throw createApiError('coupon_not_available_for_user', 'Este cupon no esta disponible para tu cuenta', 400);
                         }
                     }
+
                     const minPurchase = Number(coupon.minPurchase) || 0;
                     if (minPurchase > 0 && subtotal < minPurchase) {
-                        return res.status(400).json({ error: `El monto mínimo para este cupón es $${minPurchase}` });
+                        throw createApiError('coupon_min_purchase', `El monto minimo para este cupon es $${minPurchase}`, 400);
                     }
+
                     if (!usedBy.includes(decoded.uid)) {
                         if (userData?.dni) {
-                            try {
-                                const ordersCol = db.collection(`artifacts/${storeId}/public/data/orders`);
-                                const dniSnap = await ordersCol
-                                    .where('customer.dni', '==', String(userData.dni))
-                                    .where('discountCode', '==', couponCode)
-                                    .limit(1)
-                                    .get();
-                                if (!dniSnap.empty) {
-                                    return res.status(400).json({ error: 'Ya utilizaste este cupón anteriormente' });
-                                }
-                            } catch { }
+                            const ordersCol = db.collection(`artifacts/${storeId}/public/data/orders`);
+                            const dniOrders = await ordersCol
+                                .where('customer.dni', '==', String(userData.dni))
+                                .where('discountCode', '==', couponCode)
+                                .limit(1)
+                                .get();
+                            if (!dniOrders.empty) {
+                                throw createApiError('coupon_already_used_by_dni', 'Ya utilizaste este cupon anteriormente', 400);
+                            }
                         }
+
                         if (coupon.type === 'fixed') {
                             discountAmount = Math.min(Number(coupon.value) || 0, subtotal);
                         } else if (coupon.type === 'percentage') {
@@ -332,9 +466,13 @@ export default async function handler(req, res) {
                                 discountAmount = Math.min(discountAmount, Number(coupon.maxDiscount));
                             }
                         }
+
                         discountAmount = Math.ceil(discountAmount);
                         if (discountAmount > 0) {
-                            discountDetails = { percentage: Number(coupon.value) || 0, amount: discountAmount };
+                            discountDetails = {
+                                percentage: Number(coupon.value) || 0,
+                                amount: discountAmount,
+                            };
                             couponDocRef = couponDoc.ref;
                         }
                     }
@@ -345,26 +483,36 @@ export default async function handler(req, res) {
         const total = Math.max(0, Math.ceil(subtotal - discountAmount + deliveryFee));
 
         if (paymentMethod === 'Tarjeta') {
-            if (!mpPaymentId) return res.status(400).json({ error: 'Falta mpPaymentId' });
-            if (!process.env.MP_ACCESS_TOKEN) return res.status(500).json({ error: 'Pago no configurado' });
-
-            const mp = await getMercadoPagoPayment({ paymentId: mpPaymentId, accessToken: process.env.MP_ACCESS_TOKEN });
-            const mpStatus = String(mp?.status || '');
-            if (!['approved', 'in_process', 'pending'].includes(mpStatus)) {
-                return res.status(400).json({ error: 'Pago no aprobado' });
+            if (!mpPaymentId) {
+                throw createApiError('missing_mp_payment_id', 'Falta mpPaymentId', 400);
             }
-            const mpAmount = Number(mp?.transaction_amount);
-            if (!Number.isFinite(mpAmount) || Math.abs(mpAmount - total) > 1) {
-                return res.status(400).json({ error: 'Monto de pago inválido' });
+            if (!process.env.MP_ACCESS_TOKEN) {
+                throw createApiError('payment_not_configured', 'Pago no configurado', 500);
+            }
+
+            const mpPayment = await getMercadoPagoPayment({
+                paymentId: mpPaymentId,
+                accessToken: process.env.MP_ACCESS_TOKEN,
+            });
+
+            const paymentStatus = String(mpPayment?.status || '').trim().toLowerCase();
+            if (paymentStatus !== 'approved') {
+                throw createApiError('payment_not_approved', 'Pago no aprobado', 400);
+            }
+
+            const expectedCents = cents(total);
+            const paidCents = cents(mpPayment?.transaction_amount);
+            if (expectedCents !== paidCents) {
+                throw createApiError('payment_amount_mismatch', 'Monto de pago invalido', 400);
             }
         }
 
-        const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+        const orderId = `ORD-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
         const shippingAddress = shippingMethod === 'Delivery'
             ? `${String(shipping.address || '').trim()}, ${String(shipping.city || '').trim()}, ${String(shipping.province || '').trim()} (CP: ${String(shipping.zipCode || '').trim()})`
             : 'Retiro en Local';
-
         const nowIso = new Date().toISOString();
+
         const orderData = {
             orderId,
             customerId: decoded.uid,
@@ -390,47 +538,96 @@ export default async function handler(req, res) {
             lastUpdate: nowIso,
         };
 
-        const batch = db.batch();
         const orderRef = db.collection(`artifacts/${storeId}/public/data/orders`).doc();
-        batch.set(orderRef, orderData);
-
         const cartRef = db.doc(`artifacts/${storeId}/public/data/carts/${decoded.uid}`);
-        batch.set(cartRef, { userId: decoded.uid, items: [] }, { merge: true });
+        const paymentLockRef = paymentMethod === 'Tarjeta'
+            ? db.doc(`artifacts/${storeId}/public/data/paymentLocks/${buildPaymentLockId(mpPaymentId)}`)
+            : null;
 
-        batch.set(userRef, {
-            address: String(shipping.address || ''),
-            city: String(shipping.city || ''),
-            province: String(shipping.province || ''),
-            zipCode: String(shipping.zipCode || ''),
-            ordersCount: FieldValue.increment(1),
-            lastOrderDate: nowIso,
-        }, { merge: true });
-
-        for (const entry of cart) {
-            const productId = String(entry.productId);
-            const quantity = Number(entry.quantity) || 0;
-            const product = productsById.get(productId) || {};
-
-            if (product.isPromo && Array.isArray(product.items)) {
-                for (const promoItem of product.items) {
-                    const componentId = String(promoItem?.productId || '');
-                    const componentQty = Number(promoItem?.quantity) || 0;
-                    if (!componentId || componentQty <= 0) continue;
-                    const totalDecrement = componentQty * quantity;
-                    const ref = db.doc(`artifacts/${storeId}/public/data/products/${componentId}`);
-                    batch.update(ref, { stock: FieldValue.increment(-totalDecrement), salesCount: FieldValue.increment(totalDecrement) });
+        await db.runTransaction(async (tx) => {
+            if (paymentLockRef) {
+                const lockSnap = await tx.get(paymentLockRef);
+                if (lockSnap.exists) {
+                    throw createApiError('payment_already_used', 'Este pago ya fue registrado anteriormente', 409);
                 }
-            } else {
-                const ref = db.doc(`artifacts/${storeId}/public/data/products/${productId}`);
-                batch.update(ref, { stock: FieldValue.increment(-quantity), salesCount: FieldValue.increment(quantity) });
             }
-        }
 
-        if (couponDocRef) {
-            batch.update(couponDocRef, { usedBy: FieldValue.arrayUnion(decoded.uid) });
-        }
+            for (const [productId, requiredQty] of stockDeltas.entries()) {
+                const productRef = db.doc(`artifacts/${storeId}/public/data/products/${productId}`);
+                const productSnap = await tx.get(productRef);
+                if (!productSnap.exists) {
+                    throw createApiError('stock_insufficient', 'Stock insuficiente para completar el pedido', 409);
+                }
+                const product = productSnap.data() || {};
+                if (product.isActive === false) {
+                    throw createApiError('stock_insufficient', 'Producto no disponible para completar el pedido', 409);
+                }
 
-        await batch.commit();
+                const currentStock = Number(product.stock) || 0;
+                if (currentStock < requiredQty) {
+                    throw createApiError('stock_insufficient', `Stock insuficiente para ${product.name || 'producto'}`, 409);
+                }
+
+                tx.update(productRef, {
+                    stock: currentStock - requiredQty,
+                    salesCount: (Number(product.salesCount) || 0) + requiredQty,
+                });
+            }
+
+            if (couponDocRef) {
+                const couponSnap = await tx.get(couponDocRef);
+                if (!couponSnap.exists) {
+                    throw createApiError('coupon_invalid', 'El cupon ya no esta disponible', 400);
+                }
+
+                const couponData = couponSnap.data() || {};
+                if (couponData.expirationDate && new Date(couponData.expirationDate) < new Date()) {
+                    throw createApiError('coupon_expired', 'El cupon expiro', 400);
+                }
+
+                const usedBy = Array.isArray(couponData.usedBy) ? couponData.usedBy : [];
+                const usageLimit = Number(couponData.usageLimit) || 0;
+
+                if (usedBy.includes(decoded.uid)) {
+                    throw createApiError('coupon_already_used', 'Este cupon ya fue utilizado por tu cuenta', 400);
+                }
+                if (usageLimit > 0 && usedBy.length >= usageLimit) {
+                    throw createApiError('coupon_usage_limit', 'Este cupon ha agotado sus usos', 400);
+                }
+
+                if (couponData.targetType === 'specific_email' && couponData.targetUser) {
+                    const targetLower = String(couponData.targetUser).trim().toLowerCase();
+                    const userLower = String(decoded.email || '').trim().toLowerCase();
+                    if (targetLower !== userLower) {
+                        throw createApiError('coupon_not_available_for_user', 'Este cupon no esta disponible para tu cuenta', 400);
+                    }
+                }
+
+                tx.update(couponDocRef, { usedBy: FieldValue.arrayUnion(decoded.uid) });
+            }
+
+            tx.set(orderRef, orderData);
+            tx.set(cartRef, { userId: decoded.uid, items: [] }, { merge: true });
+            tx.set(userRef, {
+                address: String(shipping.address || ''),
+                city: String(shipping.city || ''),
+                province: String(shipping.province || ''),
+                zipCode: String(shipping.zipCode || ''),
+                ordersCount: FieldValue.increment(1),
+                lastOrderDate: nowIso,
+            }, { merge: true });
+
+            if (paymentLockRef) {
+                tx.set(paymentLockRef, {
+                    mpPaymentId,
+                    orderDocId: orderRef.id,
+                    orderId,
+                    customerId: decoded.uid,
+                    total,
+                    createdAt: nowIso,
+                });
+            }
+        });
 
         let emailSent = false;
         const emailUser = String(process.env.EMAIL_USER || '').trim();
@@ -473,8 +670,8 @@ export default async function handler(req, res) {
                 });
 
                 emailSent = true;
-            } catch (e) {
-                console.error('[orders/confirm] Email send failed:', e);
+            } catch (error) {
+                console.error('[orders/confirm] Email send failed:', error);
             }
         } else {
             console.warn('[orders/confirm] Email not configured (missing EMAIL_USER/EMAIL_PASS).');
@@ -482,6 +679,9 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ success: true, orderId, emailSent });
     } catch (error) {
+        if (error?.status && error?.code) {
+            return res.status(error.status).json({ error: error.message, code: error.code });
+        }
         return res.status(500).json({ error: error.message || 'Error interno' });
     }
 }

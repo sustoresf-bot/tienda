@@ -25,9 +25,10 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Bootstrap solo disponible en localhost' });
     }
 
-    const SUPER_ADMIN_EMAIL = String(process.env.SUPER_ADMIN_EMAIL || 'lautarocorazza63@gmail.com')
-        .trim()
-        .toLowerCase();
+    const SUPER_ADMIN_EMAIL = String(process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+    if (!SUPER_ADMIN_EMAIL || !SUPER_ADMIN_EMAIL.includes('@')) {
+        return res.status(500).json({ error: 'SUPER_ADMIN_EMAIL no configurado en el entorno' });
+    }
     const email = String(req.body?.email || '').trim().toLowerCase();
     const password = String(req.body?.password || '');
 

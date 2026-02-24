@@ -3,14 +3,23 @@
 
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
-export default async function handler(req, res) {
-    // Configurar CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+function isSameOriginRequest(req) {
+    const origin = String(req?.headers?.origin || '').trim();
+    if (!origin) return true;
+    const host = String(req?.headers?.host || '').trim().toLowerCase();
+    if (!host) return false;
+    try {
+        const parsedOrigin = new URL(origin);
+        return String(parsedOrigin.host || '').trim().toLowerCase() === host;
+    } catch {
+        return false;
+    }
+}
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+export default async function handler(req, res) {
+    // Same-origin endpoint. CORS is intentionally not enabled.
+    if (!isSameOriginRequest(req)) {
+        return res.status(403).json({ error: 'Forbidden origin' });
     }
 
     if (req.method === 'GET') {
@@ -25,10 +34,12 @@ export default async function handler(req, res) {
 
             const mpPublicKey = String(process.env.MP_PUBLIC_KEY || '').trim();
             const firebaseApiKey = String(process.env.FIREBASE_WEB_API_KEY || '').trim();
+            const storeId = String(process.env.SUSTORE_APP_ID || 'sustore-63266-prod').trim();
             res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400');
             return res.status(200).json({
                 mpPublicKey: mpPublicKey || null,
                 firebaseApiKey: firebaseApiKey || null,
+                storeId: storeId || null,
             });
         } catch (error) {
             return res.status(500).json({ error: 'Internal error' });

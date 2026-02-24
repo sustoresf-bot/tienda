@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+﻿import nodemailer from 'nodemailer';
 import { getAdmin } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
 
@@ -21,7 +21,7 @@ function buildResetEmailHtml({ brandName, resetLink, userEmail }) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restablecer Contraseña</title>
+    <title>Restablecer Contrasena</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap');
         body { margin: 0; padding: 0; background-color: #000000; font-family: 'Outfit', Helvetica, Arial, sans-serif; color: #e2e8f0; }
@@ -38,7 +38,7 @@ function buildResetEmailHtml({ brandName, resetLink, userEmail }) {
                     <tr>
                         <td style="padding: 40px 40px 20px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">${safeBrand}</h1>
-                            <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; letter-spacing: 2px;">RESTABLECER CONTRASEÑA</p>
+                            <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; letter-spacing: 2px;">RESTABLECER CONTRASENA</p>
                         </td>
                     </tr>
                     <tr>
@@ -46,7 +46,7 @@ function buildResetEmailHtml({ brandName, resetLink, userEmail }) {
                             <div style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 16px; padding: 24px;">
                                 <p style="margin: 0 0 8px; color: #f97316; font-size: 28px;">🔒</p>
                                 <p style="margin: 0; color: #cbd5e1; font-size: 16px; line-height: 1.6;">
-                                    Recibimos una solicitud para restablecer la contraseña de la cuenta asociada a:
+                                    Recibimos una solicitud para restablecer la contrasena de la cuenta asociada a:
                                 </p>
                                 <p style="margin: 12px 0 0; color: #f97316; font-size: 16px; font-weight: 700;">${safeEmail}</p>
                             </div>
@@ -55,11 +55,11 @@ function buildResetEmailHtml({ brandName, resetLink, userEmail }) {
                     <tr>
                         <td style="padding: 30px 40px; text-align: center;">
                             <p style="margin: 0 0 24px; color: #94a3b8; font-size: 15px; line-height: 1.6;">
-                                Hacé clic en el botón de abajo para crear una nueva contraseña. Este enlace expira en 1 hora.
+                                Hace clic en el boton de abajo para crear una nueva contrasena. Este enlace expira en 1 hora.
                             </p>
-                            <a href="${escapeHtml(resetLink)}" class="btn" style="color: #ffffff !important; text-decoration: none;">CAMBIAR MI CONTRASEÑA</a>
+                            <a href="${escapeHtml(resetLink)}" class="btn" style="color: #ffffff !important; text-decoration: none;">CAMBIAR MI CONTRASENA</a>
                             <p style="margin: 24px 0 0; color: #64748b; font-size: 13px; line-height: 1.5;">
-                                Si no solicitaste este cambio, ignorá este email. Tu contraseña no será modificada.
+                                Si no solicitaste este cambio, ignora este email. Tu contrasena no sera modificada.
                             </p>
                         </td>
                     </tr>
@@ -67,7 +67,7 @@ function buildResetEmailHtml({ brandName, resetLink, userEmail }) {
                         <td style="padding: 0 40px 40px; text-align: center;">
                             <div style="border-top: 1px solid #1e293b; padding-top: 24px;">
                                 <p style="margin: 0; font-size: 12px; color: #475569; line-height: 1.5;">
-                                    Si el botón no funciona, copiá y pegá este enlace en tu navegador:
+                                    Si el boton no funciona, copia y pega este enlace en tu navegador:
                                 </p>
                                 <p style="margin: 8px 0 0; font-size: 11px; color: #64748b; word-break: break-all;">${escapeHtml(resetLink)}</p>
                             </div>
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
 
     const email = String(req.body?.email || '').trim().toLowerCase();
     if (!email || !email.includes('@')) {
-        return res.status(400).json({ error: 'Email inválido' });
+        return res.status(400).json({ error: 'Email invalido' });
     }
 
     const emailUser = String(process.env.EMAIL_USER || '').trim();
@@ -104,64 +104,61 @@ export default async function handler(req, res) {
 
     try {
         const adminSdk = getAdmin();
-
-        // Verify user exists in Firebase Auth
-        let userRecord;
+        let userExists = true;
         try {
-            userRecord = await adminSdk.auth().getUserByEmail(email);
+            await adminSdk.auth().getUserByEmail(email);
         } catch (e) {
             if (e?.code === 'auth/user-not-found') {
-                return res.status(404).json({ error: 'No existe una cuenta con ese email.' });
+                userExists = false;
+            } else {
+                throw e;
             }
-            throw e;
         }
 
-        // Generate the reset link using Firebase Admin
-        const firebaseLink = await adminSdk.auth().generatePasswordResetLink(email);
+        if (userExists) {
+            const firebaseLink = await adminSdk.auth().generatePasswordResetLink(email);
+            const firebaseUrl = new URL(firebaseLink);
+            const oobCode = firebaseUrl.searchParams.get('oobCode');
+            const host = req.headers?.host || 'sustore.vercel.app';
+            const protocol = host.includes('localhost') ? 'http' : 'https';
+            const resetLink = `${protocol}://${host}/reset-password.html?mode=resetPassword&oobCode=${encodeURIComponent(oobCode)}`;
 
-        // Extract oobCode from Firebase link and build custom URL
-        const firebaseUrl = new URL(firebaseLink);
-        const oobCode = firebaseUrl.searchParams.get('oobCode');
-        const host = req.headers?.host || 'sustore.vercel.app';
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        const resetLink = `${protocol}://${host}/reset-password.html?mode=resetPassword&oobCode=${encodeURIComponent(oobCode)}`;
+            let brandName = 'Sustore';
+            if (storeId) {
+                try {
+                    const settingsSnap = await adminSdk.firestore().doc(`artifacts/${storeId}/public/data/settings/config`).get();
+                    if (settingsSnap.exists) {
+                        const s = settingsSnap.data() || {};
+                        brandName = String(s?.ticket?.brandName || s?.storeName || 'Sustore').trim();
+                    }
+                } catch { }
+            }
 
-        // Get store brand name for the email
-        let brandName = 'Sustore';
-        if (storeId) {
-            try {
-                const settingsSnap = await adminSdk.firestore().doc(`artifacts/${storeId}/public/data/settings/config`).get();
-                if (settingsSnap.exists) {
-                    const s = settingsSnap.data() || {};
-                    brandName = String(s?.ticket?.brandName || s?.storeName || 'Sustore').trim();
-                }
-            } catch { }
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: emailUser,
+                    pass: emailPass,
+                },
+            });
+
+            const html = buildResetEmailHtml({
+                brandName,
+                resetLink,
+                userEmail: email,
+            });
+
+            const fromName = String(brandName).replace(/[\r\n"]/g, '').trim().slice(0, 80) || 'Sustore';
+            await transporter.sendMail({
+                from: `"${fromName}" <${emailUser}>`,
+                to: email,
+                replyTo: emailUser,
+                subject: `🔒 Restablecer Contrasena — ${fromName}`,
+                html,
+            });
         }
 
-        // Send email via Nodemailer (same Gmail as tickets)
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: emailUser,
-                pass: emailPass,
-            },
-        });
-
-        const html = buildResetEmailHtml({
-            brandName,
-            resetLink,
-            userEmail: email,
-        });
-
-        const fromName = String(brandName).replace(/[\r\n"]/g, '').trim().slice(0, 80) || 'Sustore';
-        await transporter.sendMail({
-            from: `"${fromName}" <${emailUser}>`,
-            to: email,
-            replyTo: emailUser,
-            subject: `🔒 Restablecer Contraseña — ${fromName}`,
-            html,
-        });
-
+        // Generic success response to avoid account enumeration.
         return res.status(200).json({ success: true });
     } catch (error) {
         console.error('[reset-password] Error:', error);
