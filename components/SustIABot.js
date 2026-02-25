@@ -7,8 +7,8 @@ const BotProductCard = ({ product, onAdd }) => {
 
     return (
         <div className="min-w-[200px] max-w-[200px] bg-[#1a1a1a] rounded-2xl border border-white/5 overflow-hidden flex flex-col group snap-center">
-            <div className="relative h-28 bg-white p-2">
-                <img src={product.image} className="w-full h-full object-contain group-hover:scale-110 transition duration-500" alt={product.name} />
+            <div className="relative aspect-square bg-white/95 p-2 overflow-hidden rounded-t-2xl">
+                <img src={product.image} className="w-full h-full object-cover rounded-xl group-hover:scale-110 transition duration-500" alt={product.name} loading="lazy" />
                 {product.discount > 0 && (
                     <div className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg">
                         -{product.discount}%
@@ -169,63 +169,63 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
     // --- LISTA DE PROVINCIAS Y CIUDADES ARGENTINAS ---
     const ARGENTINA_PROVINCES = [
-        'buenos aires','caba','capital federal','ciudad autonoma','ciudad de buenos aires',
-        'catamarca','chaco','chubut','cordoba','corrientes','entre rios','formosa',
-        'jujuy','la pampa','la rioja','mendoza','misiones','neuquen','rio negro',
-        'salta','san juan','san luis','santa cruz','santa fe','santiago del estero',
-        'tierra del fuego','tucuman'
+        'buenos aires', 'caba', 'capital federal', 'ciudad autonoma', 'ciudad de buenos aires',
+        'catamarca', 'chaco', 'chubut', 'cordoba', 'corrientes', 'entre rios', 'formosa',
+        'jujuy', 'la pampa', 'la rioja', 'mendoza', 'misiones', 'neuquen', 'rio negro',
+        'salta', 'san juan', 'san luis', 'santa cruz', 'santa fe', 'santiago del estero',
+        'tierra del fuego', 'tucuman'
     ];
     const ARGENTINA_CITIES = [
-        'adrogue','avellaneda','bahia blanca','banfield','bariloche','bernal','berazategui',
-        'burzaco','caleta olivia','campana','caseros','cipolletti','comodoro rivadavia',
-        'concordia','devoto','el calafate','el palomar','escobar','ezeiza','florencio varela',
-        'general roca','gualeguaychu','hurlingham','iguazu','ituzaingo','jose c paz',
-        'junin','la plata','lanus','lomas de zamora','lujan','mar del plata',
-        'marcos paz','mercedes','merlo','monte grande','moron','necochea',
-        'olavarria','parana','pergamino','pilar','pinamar','posadas','presidencia roque saenz pena',
-        'quilmes','rafaela','rawson','reconquista','resistencia','rio cuarto','rio gallegos',
-        'rosario','san fernando','san isidro','san justo','san martin','san miguel',
-        'san miguel de tucuman','san nicolas','san rafael','san salvador de jujuy',
-        'santa rosa','tandil','temperley','tigre','trelew','ushuaia','venado tuerto',
-        'villa carlos paz','villa maria','villa mercedes','wilde','zarate',
-        'gonzalez catan','virrey del pino','laferrere','rafael castillo','isidro casanova',
-        'ciudad evita','aldo bonzi','tapiales','villa luzuriaga','ramos mejia','haedo',
-        'castelar','ciudadela','liniers','mataderos','lugano','flores','caballito',
-        'almagro','boedo','palermo','belgrano','nunez','recoleta','retiro','microcentro',
-        'san telmo','la boca','barracas','constitucion','once','congreso','tribunales',
-        'villa crespo','villa urquiza','villa devoto','villa del parque','versalles',
-        'monte castro','floresta','velez sarsfield','parque chacabuco','pompeya',
-        'soldati','villa lugano','villa riachuelo','liniers','mataderos','parque avellaneda',
-        'villa luro','agronomia','chacarita','paternal','villa ortuzar','coghlan',
-        'saavedra','villa pueyrredon','parque chas','villa real','puerto madero',
-        'san cristobal','balvanera','monserrat','san nicolas barrio',
-        'olivos','martinez','acassuso','beccar','boulogne','munro','florida','vicente lopez',
-        'don torcuato','el talar','garin','grand bourg','ingeniero maschwitz','los polvorines',
-        'pablo nogues','tortuguitas','william morris','general pacheco','benavidez',
-        'nordelta','rincon de milberg','dique lujan','general rodriguez',
-        'moreno','paso del rey','trujui','francisco alvarez','la reja','guernica',
-        'alejandro korn','domselaar','san vicente','canning','esteban echeverria',
-        'el jaguel','luis guillon','longchamps','glew','claypole','almirante brown',
-        'villa gesell','miramar','necochea','tres arroyos','azul','olavarria','bragado',
-        'chivilcoy','chacabuco','pehuajo','trenque lauquen','general villegas',
-        'nueve de julio','bolivar','saladillo','lobos','canuelas','san antonio de areco',
-        'carmen de areco','capitan sarmiento','san pedro','baradero','ramallo',
-        'villa constitucion','san lorenzo','casilda','firmat','chabas','rufino',
-        'general pico','rio tercero','villa allende','unquillo','jesus maria',
-        'alta gracia','cosquin','la falda','villa giardino','dean funes',
-        'cruz del eje','bell ville','marcos juarez','laboulaye','san francisco'
+        'adrogue', 'avellaneda', 'bahia blanca', 'banfield', 'bariloche', 'bernal', 'berazategui',
+        'burzaco', 'caleta olivia', 'campana', 'caseros', 'cipolletti', 'comodoro rivadavia',
+        'concordia', 'devoto', 'el calafate', 'el palomar', 'escobar', 'ezeiza', 'florencio varela',
+        'general roca', 'gualeguaychu', 'hurlingham', 'iguazu', 'ituzaingo', 'jose c paz',
+        'junin', 'la plata', 'lanus', 'lomas de zamora', 'lujan', 'mar del plata',
+        'marcos paz', 'mercedes', 'merlo', 'monte grande', 'moron', 'necochea',
+        'olavarria', 'parana', 'pergamino', 'pilar', 'pinamar', 'posadas', 'presidencia roque saenz pena',
+        'quilmes', 'rafaela', 'rawson', 'reconquista', 'resistencia', 'rio cuarto', 'rio gallegos',
+        'rosario', 'san fernando', 'san isidro', 'san justo', 'san martin', 'san miguel',
+        'san miguel de tucuman', 'san nicolas', 'san rafael', 'san salvador de jujuy',
+        'santa rosa', 'tandil', 'temperley', 'tigre', 'trelew', 'ushuaia', 'venado tuerto',
+        'villa carlos paz', 'villa maria', 'villa mercedes', 'wilde', 'zarate',
+        'gonzalez catan', 'virrey del pino', 'laferrere', 'rafael castillo', 'isidro casanova',
+        'ciudad evita', 'aldo bonzi', 'tapiales', 'villa luzuriaga', 'ramos mejia', 'haedo',
+        'castelar', 'ciudadela', 'liniers', 'mataderos', 'lugano', 'flores', 'caballito',
+        'almagro', 'boedo', 'palermo', 'belgrano', 'nunez', 'recoleta', 'retiro', 'microcentro',
+        'san telmo', 'la boca', 'barracas', 'constitucion', 'once', 'congreso', 'tribunales',
+        'villa crespo', 'villa urquiza', 'villa devoto', 'villa del parque', 'versalles',
+        'monte castro', 'floresta', 'velez sarsfield', 'parque chacabuco', 'pompeya',
+        'soldati', 'villa lugano', 'villa riachuelo', 'liniers', 'mataderos', 'parque avellaneda',
+        'villa luro', 'agronomia', 'chacarita', 'paternal', 'villa ortuzar', 'coghlan',
+        'saavedra', 'villa pueyrredon', 'parque chas', 'villa real', 'puerto madero',
+        'san cristobal', 'balvanera', 'monserrat', 'san nicolas barrio',
+        'olivos', 'martinez', 'acassuso', 'beccar', 'boulogne', 'munro', 'florida', 'vicente lopez',
+        'don torcuato', 'el talar', 'garin', 'grand bourg', 'ingeniero maschwitz', 'los polvorines',
+        'pablo nogues', 'tortuguitas', 'william morris', 'general pacheco', 'benavidez',
+        'nordelta', 'rincon de milberg', 'dique lujan', 'general rodriguez',
+        'moreno', 'paso del rey', 'trujui', 'francisco alvarez', 'la reja', 'guernica',
+        'alejandro korn', 'domselaar', 'san vicente', 'canning', 'esteban echeverria',
+        'el jaguel', 'luis guillon', 'longchamps', 'glew', 'claypole', 'almirante brown',
+        'villa gesell', 'miramar', 'necochea', 'tres arroyos', 'azul', 'olavarria', 'bragado',
+        'chivilcoy', 'chacabuco', 'pehuajo', 'trenque lauquen', 'general villegas',
+        'nueve de julio', 'bolivar', 'saladillo', 'lobos', 'canuelas', 'san antonio de areco',
+        'carmen de areco', 'capitan sarmiento', 'san pedro', 'baradero', 'ramallo',
+        'villa constitucion', 'san lorenzo', 'casilda', 'firmat', 'chabas', 'rufino',
+        'general pico', 'rio tercero', 'villa allende', 'unquillo', 'jesus maria',
+        'alta gracia', 'cosquin', 'la falda', 'villa giardino', 'dean funes',
+        'cruz del eje', 'bell ville', 'marcos juarez', 'laboulaye', 'san francisco'
     ];
     const ALL_LOCATIONS = [...ARGENTINA_PROVINCES, ...ARGENTINA_CITIES];
 
     const BLOCKED_WORDS = new Set([
-        'caca','culo','teta','tetas','pija','pito','mierda','puta','puto',
-        'concha','pelotudo','pelotuda','boludo','boluda','forro','forra',
-        'verga','poronga','ojete','orto','pete','garcha','cogida','cogido',
-        'coger','chupar','chuparla','chupame','chupala','mamada','mogolico',
-        'mogolica','tarado','tarada','imbecil','idiota','estupido','estupida',
-        'hdp','lcdtm','ctm','ptm','sorete','trola','trolo','gil','gila',
-        'pajero','pajera','nabo','naba','salame','bobo','boba','banana',
-        'zapallo','pichipe'
+        'caca', 'culo', 'teta', 'tetas', 'pija', 'pito', 'mierda', 'puta', 'puto',
+        'concha', 'pelotudo', 'pelotuda', 'boludo', 'boluda', 'forro', 'forra',
+        'verga', 'poronga', 'ojete', 'orto', 'pete', 'garcha', 'cogida', 'cogido',
+        'coger', 'chupar', 'chuparla', 'chupame', 'chupala', 'mamada', 'mogolico',
+        'mogolica', 'tarado', 'tarada', 'imbecil', 'idiota', 'estupido', 'estupida',
+        'hdp', 'lcdtm', 'ctm', 'ptm', 'sorete', 'trola', 'trolo', 'gil', 'gila',
+        'pajero', 'pajera', 'nabo', 'naba', 'salame', 'bobo', 'boba', 'banana',
+        'zapallo', 'pichipe'
     ]);
 
     const isBlockedInput = (text) => {
@@ -338,11 +338,12 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
         // === DETECCIÓN DE INTENTS EXPLÍCITOS ===
         const hasShippingKw = !!text.match(/\b(envio|envios|entrega|delivery|domicilio|retiro|retirar|pickup|como llega|cuando llega|hacen envios|mandan)\b/);
         const hasPaymentKw = !!text.match(/\b(pago|pagos|tarjeta|mercado\s*pago|transferencia|cbu|alias|efectivo|como pago|formas? de pago|metodos? de pago)\b/);
-        const hasCouponKw = !!text.match(/\b(descuento|descuentos|promo|promos|cupon|cupones|oferta|ofertas|codigo|rebaja|rebajas)\b/);
+        const hasCouponKw = !!text.match(/\b(cupon|cupones|codigo)\b/);
+        const hasOffersKw = !!text.match(/\b(descuento|descuentos|promo|promos|oferta|ofertas|rebaja|rebajas)\b/);
         const hasCategoryKw = !!text.match(/\b(categorias|categoria|rubros|rubro|secciones)\b/);
         const hasHelpKw = !!text.match(/\b(ayuda|soporte|contacto|human|persona|asesor|whatsapp)\b/);
         const hasAboutKw = !!text.match(/\b(quienes somos|about)\b/) || (!!text.match(/\b(sobre|informacion)\b/) && !text.match(/\bsobre\s+(un|el|la|este|esta|ese|esa|esto)\b/));
-        const hasExplicitIntent = hasShippingKw || hasPaymentKw || hasCouponKw || hasCategoryKw || hasHelpKw || hasAboutKw;
+        const hasExplicitIntent = hasShippingKw || hasPaymentKw || hasCouponKw || hasOffersKw || hasCategoryKw || hasHelpKw || hasAboutKw;
 
         // === FOLLOW-UPS CONTEXTUALES ===
         if (topicRef.current && !hasExplicitIntent) {
@@ -583,7 +584,18 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             return { text: "Estoy diseñado para ayudarte las 24hs 🤖. ¿Buscás algo en específico?" };
         }
 
-        // Cupones/Promociones
+        // Ofertas / Productos con descuento
+        if (hasOffersKw) {
+            const deals = safeProducts.filter(p => (Number(p?.discount) || 0) > 0 && (Number(p?.stock) || 0) > 0 && p?.isActive !== false);
+            if (deals.length > 0) {
+                const topDeals = deals.sort(() => 0.5 - Math.random()).slice(0, 5);
+                setTopic({ action: 'showed_products', shownProducts: topDeals, searchKeywords: [] });
+                return { text: `Las mejores ofertas ahora mismo:`, products: topDeals };
+            }
+            return { text: "No tengo productos en oferta por ahora, pero nuestros precios son los mejores 😉 ¿Querés ver alguna categoría?" };
+        }
+
+        // Cupones (códigos de descuento)
         if (hasCouponKw) {
             const activeCoupons = safeCoupons.filter(c => {
                 if (!c?.code) return false;
@@ -592,17 +604,13 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                 const notExhausted = !c.usageLimit || usedCount < c.usageLimit;
                 return isNotExpired && notExhausted;
             });
-            const deals = safeProducts.filter(p => (Number(p?.discount) || 0) > 0 && (Number(p?.stock) || 0) > 0);
             if (activeCoupons.length > 0) {
                 const couponText = activeCoupons
                     .map(c => `🎫 **${c.code}** (${c.type === 'percentage' ? c.value + '%' : '$' + c.value} OFF)`)
                     .join("\n");
                 return { text: `¡Sí! Tenemos estos cupones:\n\n${couponText}\n\n¡Usalos al finalizar tu compra! 🛒` };
-            } else if (deals.length > 0) {
-                setTopic({ action: 'asked_yes_no', subAction: 'show_deals', data: deals.sort(() => 0.5 - Math.random()).slice(0, 5) });
-                return { text: `No tengo cupones activos, pero hay **${deals.length}** productos con descuento. ¿Querés verlos? 🏷️` };
             }
-            return { text: "No tengo promociones activas ahora, pero nuestros precios son los mejores 😉" };
+            return { text: "No hay cupones activos por ahora. ¿Querés ver nuestras ofertas o productos? 😊" };
         }
 
         // === BÚSQUEDA DE PRODUCTOS ===
@@ -862,7 +870,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                                                             rel="noopener noreferrer"
                                                             className="inline-flex items-center gap-2 mt-2 mb-1 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-full transition shadow-lg shadow-green-900/30"
                                                         >
-                                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
                                                             Ir a WhatsApp
                                                         </a>
                                                     )}

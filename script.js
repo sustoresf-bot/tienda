@@ -14,7 +14,7 @@ import {
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, EyeOff, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
     Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload, ChevronLeft,
-    HelpCircle, Lightbulb
+    HelpCircle, Lightbulb, MessageCircle
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -1563,7 +1563,7 @@ function AdminHowToUse({ guideKey }) {
                         </div>
                     </div>
                 </div>
-            , document.body)}
+                , document.body)}
         </>
     );
 }
@@ -2584,7 +2584,7 @@ function App() {
                     });
                     cartHydratedFromRemoteRef.current = true;
                 }
-            } catch (e) { 
+            } catch (e) {
                 cartHydratedFromRemoteRef.current = true;
             }
         };
@@ -3070,7 +3070,7 @@ function App() {
         }
 
         const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-        
+
         let q;
         if (isAdminUser) {
             const constraints = [orderBy('date', 'desc'), limit(ordersLimit)];
@@ -3082,7 +3082,7 @@ function App() {
 
         return onSnapshot(q, (snapshot) => {
             const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            
+
             if (isAdminUser) {
                 setHasMoreOrders(snapshot.docs.length === ordersLimit);
                 // No actualizamos el cursor aquí para evitar bucles infinitos si onSnapshot dispara
@@ -5428,7 +5428,7 @@ function App() {
 
         return (
             <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up" onClick={onClose}>
-                <div 
+                <div
                     className={`rounded-[2rem] w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border relative transition-colors duration-300 ${darkMode ? 'glass border-slate-800' : 'bg-white border-slate-200'}`}
                     onClick={e => e.stopPropagation()}
                 >
@@ -5618,11 +5618,10 @@ function App() {
                         ) : availableCoupons.map(c => {
                             const canApply = cartSubtotal >= (c.minPurchase || 0);
                             return (
-                                <div key={c.id} onClick={() => canApply && selectCoupon(c)} className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group ${
-                                    canApply 
-                                        ? (darkMode ? 'bg-[#0a0a0a] border-slate-700 hover:border-purple-500 cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:scale-[1.01]' : 'bg-white border-slate-200 hover:border-purple-500 cursor-pointer hover:shadow-xl hover:scale-[1.01]') 
-                                        : (darkMode ? 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed' : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed')
-                                }`}>
+                                <div key={c.id} onClick={() => canApply && selectCoupon(c)} className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group ${canApply
+                                    ? (darkMode ? 'bg-[#0a0a0a] border-slate-700 hover:border-purple-500 cursor-pointer hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:scale-[1.01]' : 'bg-white border-slate-200 hover:border-purple-500 cursor-pointer hover:shadow-xl hover:scale-[1.01]')
+                                    : (darkMode ? 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed' : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed')
+                                    }`}>
                                     <div className={`absolute top-0 left-0 w-1.5 h-full transition-colors duration-300 ${canApply ? 'bg-purple-500' : (darkMode ? 'bg-slate-700' : 'bg-slate-300')}`}></div>
 
                                     <div className="p-5 pl-7 flex justify-between items-center gap-4">
@@ -6047,7 +6046,7 @@ function App() {
 
         return (
             <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-up" onClick={() => setMetricsDetail(null)}>
-                <div 
+                <div
                     className={`rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col border shadow-2xl relative overflow-hidden transition-colors duration-300 ${darkMode ? 'bg-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}
                     onClick={e => e.stopPropagation()}
                 >
@@ -6059,8 +6058,8 @@ function App() {
                             </h3>
                             <p className="text-slate-500 text-sm mt-1">Desglose detallado de tu rendimiento.</p>
                         </div>
-                        <button 
-                            onClick={() => setMetricsDetail(null)} 
+                        <button
+                            onClick={() => setMetricsDetail(null)}
                             className={`p-3 rounded-full transition border ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white border-slate-700' : 'bg-slate-100 text-slate-500 hover:text-slate-900 border-slate-200'}`}
                         >
                             <X className="w-5 h-5" />
@@ -6073,11 +6072,10 @@ function App() {
                             <button
                                 key={t}
                                 onClick={() => setTimeframe(t)}
-                                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition ${
-                                    timeframe === t 
-                                        ? (darkMode ? 'bg-slate-100 text-black' : 'bg-slate-900 text-white') 
-                                        : (darkMode ? 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800' : 'bg-white text-slate-400 hover:text-slate-600 border border-slate-200')
-                                }`}
+                                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition ${timeframe === t
+                                    ? (darkMode ? 'bg-slate-100 text-black' : 'bg-slate-900 text-white')
+                                    : (darkMode ? 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800' : 'bg-white text-slate-400 hover:text-slate-600 border border-slate-200')
+                                    }`}
                             >
                                 {t === 'daily' ? 'Diario' : t === 'monthly' ? 'Mensual' : 'Anual'}
                             </button>
@@ -6121,7 +6119,7 @@ function App() {
                                 const maxVal = Math.max(...data.map(d => d.revenue), 1); // Avoid div/0
                                 return data.slice().map((item, idx) => {
                                     const heightPct = (item.revenue / maxVal) * 100;
-                                    
+
                                     return (
                                         <div key={idx} className={`flex flex-col items-center justify-end h-full gap-2 group min-w-[60px] cursor-pointer rounded-xl p-1 transition-all ${darkMode ? 'hover:bg-slate-900/30' : 'hover:bg-slate-100'}`}>
                                             {/* Tooltip on Hover */}
@@ -6133,11 +6131,10 @@ function App() {
 
                                             {/* Bar */}
                                             <div
-                                                className={`w-4 bg-gradient-to-t rounded-t-full relative transition-all duration-500 group-hover:w-6 group-hover:brightness-125 ${
-                                                    metricsDetail.type === 'revenue' 
-                                                        ? (darkMode ? 'from-green-900/50 to-green-500' : 'from-green-200 to-green-600') 
-                                                        : (darkMode ? 'from-orange-900/50 to-orange-500' : 'from-orange-200 to-orange-600')
-                                                }`}
+                                                className={`w-4 bg-gradient-to-t rounded-t-full relative transition-all duration-500 group-hover:w-6 group-hover:brightness-125 ${metricsDetail.type === 'revenue'
+                                                    ? (darkMode ? 'from-green-900/50 to-green-500' : 'from-green-200 to-green-600')
+                                                    : (darkMode ? 'from-orange-900/50 to-orange-500' : 'from-orange-200 to-orange-600')
+                                                    }`}
                                                 style={{ height: `${Math.max(heightPct, 5)}%` }} // Min height 5%
                                             >
                                                 {/* Glow alignment */}
@@ -7838,7 +7835,7 @@ function App() {
                                         <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
                                             {purchasedItems.sort((a, b) => new Date(b.date) - new Date(a.date)).map((item, idx) => (
                                                 <div key={idx} className={`p-4 rounded-2xl flex items-center gap-4 group transition duration-300 border ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-500/50' : 'bg-white border-slate-200 hover:border-orange-400 hover:shadow-md'}`}>
-                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
+                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 overflow-hidden ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
                                                         <img src={item.image} className="w-full h-full object-contain" alt={item.title} />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
@@ -7883,7 +7880,7 @@ function App() {
                                             if (!p) return null;
                                             return (
                                                 <div key={fid} className={`p-4 rounded-2xl flex items-center gap-4 relative group transition border ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-slate-600' : 'bg-white border-slate-200 hover:border-orange-400 hover:shadow-md'}`}>
-                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
+                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 overflow-hidden ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
                                                         <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                     </div>
 
@@ -8389,7 +8386,7 @@ function App() {
                                                     </p>
                                                     {dashboardMetrics.starProduct ? (
                                                         <div className="flex items-center gap-6 relative z-10">
-                                                            <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg flex-shrink-0">
+                                                            <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg flex-shrink-0 overflow-hidden">
                                                                 <img src={dashboardMetrics.starProduct.image} alt={dashboardMetrics.starProduct.name || 'Producto estrella'} className="w-full h-full object-contain" />
                                                             </div>
                                                             <div>
@@ -8413,7 +8410,7 @@ function App() {
                                                     </p>
                                                     {dashboardMetrics.leastSoldProduct ? (
                                                         <div className="flex items-center gap-6 relative z-10">
-                                                            <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg grayscale flex-shrink-0">
+                                                            <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg grayscale flex-shrink-0 overflow-hidden">
                                                                 <img src={dashboardMetrics.leastSoldProduct.image} alt={dashboardMetrics.leastSoldProduct.name || 'Menos vendido'} className="w-full h-full object-contain" />
                                                             </div>
                                                             <div>
@@ -8594,7 +8591,7 @@ function App() {
                                                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto Existente</label>
                                                                         <div className="flex gap-4 items-center">
                                                                             {selectedProduct && (
-                                                                                <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700">
+                                                                                <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700 overflow-hidden">
                                                                                     <img src={selectedProduct.image} className="w-full h-full object-contain" alt="Preview" />
                                                                                 </div>
                                                                             )}
@@ -9132,187 +9129,187 @@ function App() {
                                                     </button>
                                                 </div>
                                             ) : (
-                                            <>
-                                            <div className="relative z-30 flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-                                                <h1 className="text-3xl font-black text-white">Gestión de Cupones</h1>
-                                                <AdminHowToUse guideKey="coupons" />
-                                            </div>
-
-                                            {/* Formulario de Creación */}
-                                            <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
-                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                    <Plus className="w-5 h-5 text-purple-400" /> Crear Nuevo Cupón
-                                                </h3>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                                    {/* Columna 1 */}
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Código del Cupón</label>
-                                                            <input className="input-cyber w-full p-4 font-mono text-lg uppercase tracking-widest" placeholder="Ej: VERANO2024" value={newCoupon.code} onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })} />
-                                                        </div>
-                                                        <div className="flex gap-4">
-                                                            <div className="flex-1">
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo</label>
-                                                                <select className="input-cyber w-full p-4" value={newCoupon.type} onChange={e => setNewCoupon({ ...newCoupon, type: e.target.value })}>
-                                                                    <option value="percentage">Porcentaje (%)</option>
-                                                                    <option value="fixed">Fijo ($)</option>
-                                                                </select>
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Valor</label>
-                                                                <input className="input-cyber w-full p-4" type="number" placeholder="0" value={newCoupon.value} onChange={e => setNewCoupon({ ...newCoupon, value: e.target.value })} />
-                                                            </div>
-                                                        </div>
+                                                <>
+                                                    <div className="relative z-30 flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                        <h1 className="text-3xl font-black text-white">Gestión de Cupones</h1>
+                                                        <AdminHowToUse guideKey="coupons" />
                                                     </div>
 
-                                                    {/* Columna 2 */}
-                                                    <div className="space-y-4">
-                                                        <div className="flex gap-4">
-                                                            <div className="flex-1">
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mínimo de Compra</label>
-                                                                <input className="input-cyber w-full p-4" type="number" placeholder="$0" value={newCoupon.minPurchase} onChange={e => setNewCoupon({ ...newCoupon, minPurchase: e.target.value })} />
-                                                            </div>
-                                                            {newCoupon.type === 'percentage' && (
-                                                                <div className="flex-1">
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tope Reintegro</label>
-                                                                    <input className="input-cyber w-full p-4" type="number" placeholder="$0 (Opcional)" value={newCoupon.maxDiscount} onChange={e => setNewCoupon({ ...newCoupon, maxDiscount: e.target.value })} />
+                                                    {/* Formulario de Creación */}
+                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2.5rem] mb-10 shadow-xl">
+                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                            <Plus className="w-5 h-5 text-purple-400" /> Crear Nuevo Cupón
+                                                        </h3>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                                            {/* Columna 1 */}
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Código del Cupón</label>
+                                                                    <input className="input-cyber w-full p-4 font-mono text-lg uppercase tracking-widest" placeholder="Ej: VERANO2024" value={newCoupon.code} onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })} />
                                                                 </div>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="flex gap-4">
-                                                            <div className="flex-1">
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Límite Usos (Total)</label>
-                                                                <input className="input-cyber w-full p-4" type="number" placeholder="Ej: 100" value={newCoupon.usageLimit} onChange={e => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })} />
+                                                                <div className="flex gap-4">
+                                                                    <div className="flex-1">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo</label>
+                                                                        <select className="input-cyber w-full p-4" value={newCoupon.type} onChange={e => setNewCoupon({ ...newCoupon, type: e.target.value })}>
+                                                                            <option value="percentage">Porcentaje (%)</option>
+                                                                            <option value="fixed">Fijo ($)</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Valor</label>
+                                                                        <input className="input-cyber w-full p-4" type="number" placeholder="0" value={newCoupon.value} onChange={e => setNewCoupon({ ...newCoupon, value: e.target.value })} />
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex-1">
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Vencimiento</label>
-                                                                <input className="input-cyber w-full p-4" type="date" value={newCoupon.expirationDate} onChange={e => setNewCoupon({ ...newCoupon, expirationDate: e.target.value })} />
+
+                                                            {/* Columna 2 */}
+                                                            <div className="space-y-4">
+                                                                <div className="flex gap-4">
+                                                                    <div className="flex-1">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mínimo de Compra</label>
+                                                                        <input className="input-cyber w-full p-4" type="number" placeholder="$0" value={newCoupon.minPurchase} onChange={e => setNewCoupon({ ...newCoupon, minPurchase: e.target.value })} />
+                                                                    </div>
+                                                                    {newCoupon.type === 'percentage' && (
+                                                                        <div className="flex-1">
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tope Reintegro</label>
+                                                                            <input className="input-cyber w-full p-4" type="number" placeholder="$0 (Opcional)" value={newCoupon.maxDiscount} onChange={e => setNewCoupon({ ...newCoupon, maxDiscount: e.target.value })} />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="flex gap-4">
+                                                                    <div className="flex-1">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Límite Usos (Total)</label>
+                                                                        <input className="input-cyber w-full p-4" type="number" placeholder="Ej: 100" value={newCoupon.usageLimit} onChange={e => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })} />
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Vencimiento</label>
+                                                                        <input className="input-cyber w-full p-4" type="date" value={newCoupon.expirationDate} onChange={e => setNewCoupon({ ...newCoupon, expirationDate: e.target.value })} />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="md:col-span-2">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                        Tipo de Cupón
+                                                                    </label>
+                                                                    <select
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={newCoupon.targetType}
+                                                                        onChange={e => setNewCoupon({ ...newCoupon, targetType: e.target.value })}
+                                                                    >
+                                                                        <option value="global">🌍 Público / Canjeable (Redes Sociales)</option>
+                                                                        <option value="specific_email">👤 Usuario Específico (Email)</option>
+                                                                    </select>
+                                                                </div>
+
+                                                                {newCoupon.targetType === 'specific_email' && (
+                                                                    <div className="md:col-span-2">
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                            Email del Usuario
+                                                                        </label>
+                                                                        <input
+                                                                            type="email"
+                                                                            className="input-cyber w-full p-4"
+                                                                            placeholder="usuario@ejemplo.com"
+                                                                            value={newCoupon.targetUser || ''}
+                                                                            onChange={e => setNewCoupon({ ...newCoupon, targetUser: e.target.value })}
+                                                                        />
+                                                                        <p className="text-xs text-slate-400 mt-1">Solo este usuario podrá usar el cupón</p>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
+                                                        <button onClick={saveCouponFn} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                                                            <Save className="w-5 h-5" /> Guardar Cupón
+                                                        </button>
+                                                    </div>
 
-                                                        <div className="md:col-span-2">
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                Tipo de Cupón
-                                                            </label>
-                                                            <select
-                                                                className="input-cyber w-full p-4"
-                                                                value={newCoupon.targetType}
-                                                                onChange={e => setNewCoupon({ ...newCoupon, targetType: e.target.value })}
-                                                            >
-                                                                <option value="global">🌍 Público / Canjeable (Redes Sociales)</option>
-                                                                <option value="specific_email">👤 Usuario Específico (Email)</option>
-                                                            </select>
-                                                        </div>
-
-                                                        {newCoupon.targetType === 'specific_email' && (
-                                                            <div className="md:col-span-2">
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                    Email del Usuario
-                                                                </label>
-                                                                <input
-                                                                    type="email"
-                                                                    className="input-cyber w-full p-4"
-                                                                    placeholder="usuario@ejemplo.com"
-                                                                    value={newCoupon.targetUser || ''}
-                                                                    onChange={e => setNewCoupon({ ...newCoupon, targetUser: e.target.value })}
-                                                                />
-                                                                <p className="text-xs text-slate-400 mt-1">Solo este usuario podrá usar el cupón</p>
+                                                    {/* Lista de Cupones Activos */}
+                                                    <div className="grid gap-4">
+                                                        {coupons.length === 0 && (
+                                                            <div className="text-center py-16 border-2 border-dashed border-slate-800 rounded-[2rem]">
+                                                                <Ticket className="w-14 h-14 mx-auto mb-4 text-slate-700" />
+                                                                <p className="text-slate-500 font-bold text-lg">No hay cupones creados</p>
+                                                                <p className="text-slate-600 text-sm mt-1">Creá uno arriba para empezar.</p>
                                                             </div>
                                                         )}
-                                                    </div>
-                                                </div>
-                                                <button onClick={saveCouponFn} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                                                    <Save className="w-5 h-5" /> Guardar Cupón
-                                                </button>
-                                            </div>
+                                                        {coupons.map((c, idx) => {
+                                                            const isExpired = c.expirationDate && new Date(c.expirationDate) < new Date();
+                                                            const usedCount = Array.isArray(c.usedBy) ? c.usedBy.length : 0;
+                                                            const isExhausted = c.usageLimit && usedCount >= c.usageLimit;
+                                                            const isActive = !isExpired && !isExhausted;
+                                                            return (
+                                                                <div key={c.id} style={{ animationDelay: `${idx * 0.05}s` }} className={`relative overflow-hidden border p-6 rounded-[1.5rem] flex flex-col md:flex-row justify-between items-start md:items-center group transition animate-fade-up ${isActive ? 'bg-[#0a0a0a] border-slate-800 hover:border-purple-500/40' : 'bg-[#080808] border-slate-800/50 opacity-60'}`}>
+                                                                    {/* Barra lateral de estado */}
+                                                                    <div className={`absolute top-0 left-0 w-1.5 h-full ${isActive ? 'bg-purple-500' : 'bg-slate-700'}`}></div>
 
-                                            {/* Lista de Cupones Activos */}
-                                            <div className="grid gap-4">
-                                                {coupons.length === 0 && (
-                                                    <div className="text-center py-16 border-2 border-dashed border-slate-800 rounded-[2rem]">
-                                                        <Ticket className="w-14 h-14 mx-auto mb-4 text-slate-700" />
-                                                        <p className="text-slate-500 font-bold text-lg">No hay cupones creados</p>
-                                                        <p className="text-slate-600 text-sm mt-1">Creá uno arriba para empezar.</p>
+                                                                    <div className="flex items-center gap-5 mb-4 md:mb-0 w-full md:w-auto pl-3">
+                                                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-black text-xl flex-shrink-0 ${isActive ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 'bg-slate-900 border-slate-800 text-slate-600'}`}>
+                                                                            {c.type === 'fixed' ? '$' : '%'}
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                                <h4 className="text-white font-black text-lg tracking-widest font-mono">{c.code}</h4>
+                                                                                {!isActive && (
+                                                                                    <span className="text-[9px] px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-black uppercase">
+                                                                                        {isExpired ? 'Vencido' : 'Agotado'}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <p className="text-purple-400 font-bold text-sm mt-0.5">
+                                                                                {c.type === 'fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}
+                                                                                {c.maxDiscount > 0 && c.type === 'percentage' && <span className="text-slate-500 text-xs ml-1">(tope ${c.maxDiscount})</span>}
+                                                                                {c.minPurchase > 0 && <span className="text-slate-600 font-normal text-xs ml-2">Min: ${c.minPurchase}</span>}
+                                                                            </p>
+                                                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                                                                                <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
+                                                                                    <Users className="w-3 h-3" /> {usedCount}{c.usageLimit ? `/${c.usageLimit}` : ''} usos
+                                                                                </span>
+                                                                                {c.expirationDate && (
+                                                                                    <span className={`text-[10px] font-bold flex items-center gap-1 ${isExpired ? 'text-red-400' : 'text-slate-500'}`}>
+                                                                                        <Clock className="w-3 h-3" /> {new Date(c.expirationDate).toLocaleDateString()}
+                                                                                    </span>
+                                                                                )}
+                                                                                {c.targetType === 'specific_email' && c.targetUser && (
+                                                                                    <span className="text-[10px] text-blue-400 font-bold flex items-center gap-1">
+                                                                                        <Mail className="w-3 h-3" /> {c.targetUser}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 mt-3 md:mt-0 pl-3 md:pl-0 flex-shrink-0">
+                                                                        {c.targetType === 'global' || (!c.targetType && !c.targetUser) ? (
+                                                                            <div className="bg-purple-900/20 text-purple-400 px-3 py-1.5 rounded-xl border border-purple-500/20 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+                                                                                <Globe className="w-3 h-3" /> Público
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="bg-blue-900/20 text-blue-400 px-3 py-1.5 rounded-xl border border-blue-500/20 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+                                                                                <User className="w-3 h-3" /> Personal
+                                                                            </div>
+                                                                        )}
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                navigator.clipboard.writeText(c.code);
+                                                                                showToast("Código copiado al portapapeles", "success");
+                                                                            }}
+                                                                            className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white p-2.5 rounded-xl transition border border-slate-800"
+                                                                            title="Copiar Código"
+                                                                        >
+                                                                            <Copy className="w-4 h-4" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => openConfirm("Eliminar Cupón", `¿Eliminar el cupón ${c.code}?`, async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
+                                                                            className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-2.5 rounded-xl transition border border-slate-800"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
-                                                )}
-                                                {coupons.map((c, idx) => {
-                                                    const isExpired = c.expirationDate && new Date(c.expirationDate) < new Date();
-                                                    const usedCount = Array.isArray(c.usedBy) ? c.usedBy.length : 0;
-                                                    const isExhausted = c.usageLimit && usedCount >= c.usageLimit;
-                                                    const isActive = !isExpired && !isExhausted;
-                                                    return (
-                                                    <div key={c.id} style={{ animationDelay: `${idx * 0.05}s` }} className={`relative overflow-hidden border p-6 rounded-[1.5rem] flex flex-col md:flex-row justify-between items-start md:items-center group transition animate-fade-up ${isActive ? 'bg-[#0a0a0a] border-slate-800 hover:border-purple-500/40' : 'bg-[#080808] border-slate-800/50 opacity-60'}`}>
-                                                        {/* Barra lateral de estado */}
-                                                        <div className={`absolute top-0 left-0 w-1.5 h-full ${isActive ? 'bg-purple-500' : 'bg-slate-700'}`}></div>
-
-                                                        <div className="flex items-center gap-5 mb-4 md:mb-0 w-full md:w-auto pl-3">
-                                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-black text-xl flex-shrink-0 ${isActive ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 'bg-slate-900 border-slate-800 text-slate-600'}`}>
-                                                                {c.type === 'fixed' ? '$' : '%'}
-                                                            </div>
-                                                            <div className="min-w-0">
-                                                                <div className="flex items-center gap-2 flex-wrap">
-                                                                    <h4 className="text-white font-black text-lg tracking-widest font-mono">{c.code}</h4>
-                                                                    {!isActive && (
-                                                                        <span className="text-[9px] px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-black uppercase">
-                                                                            {isExpired ? 'Vencido' : 'Agotado'}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <p className="text-purple-400 font-bold text-sm mt-0.5">
-                                                                    {c.type === 'fixed' ? `$${c.value} OFF` : `${c.value}% OFF`}
-                                                                    {c.maxDiscount > 0 && c.type === 'percentage' && <span className="text-slate-500 text-xs ml-1">(tope ${c.maxDiscount})</span>}
-                                                                    {c.minPurchase > 0 && <span className="text-slate-600 font-normal text-xs ml-2">Min: ${c.minPurchase}</span>}
-                                                                </p>
-                                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
-                                                                    <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
-                                                                        <Users className="w-3 h-3" /> {usedCount}{c.usageLimit ? `/${c.usageLimit}` : ''} usos
-                                                                    </span>
-                                                                    {c.expirationDate && (
-                                                                        <span className={`text-[10px] font-bold flex items-center gap-1 ${isExpired ? 'text-red-400' : 'text-slate-500'}`}>
-                                                                            <Clock className="w-3 h-3" /> {new Date(c.expirationDate).toLocaleDateString()}
-                                                                        </span>
-                                                                    )}
-                                                                    {c.targetType === 'specific_email' && c.targetUser && (
-                                                                        <span className="text-[10px] text-blue-400 font-bold flex items-center gap-1">
-                                                                            <Mail className="w-3 h-3" /> {c.targetUser}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 mt-3 md:mt-0 pl-3 md:pl-0 flex-shrink-0">
-                                                            {c.targetType === 'global' || (!c.targetType && !c.targetUser) ? (
-                                                                <div className="bg-purple-900/20 text-purple-400 px-3 py-1.5 rounded-xl border border-purple-500/20 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
-                                                                    <Globe className="w-3 h-3" /> Público
-                                                                </div>
-                                                            ) : (
-                                                                <div className="bg-blue-900/20 text-blue-400 px-3 py-1.5 rounded-xl border border-blue-500/20 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
-                                                                    <User className="w-3 h-3" /> Personal
-                                                                </div>
-                                                            )}
-                                                            <button
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(c.code);
-                                                                    showToast("Código copiado al portapapeles", "success");
-                                                                }}
-                                                                className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white p-2.5 rounded-xl transition border border-slate-800"
-                                                                title="Copiar Código"
-                                                            >
-                                                                <Copy className="w-4 h-4" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => openConfirm("Eliminar Cupón", `¿Eliminar el cupón ${c.code}?`, async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'coupons', c.id)))}
-                                                                className="bg-slate-900 hover:bg-red-900/20 text-slate-500 hover:text-red-400 p-2.5 rounded-xl transition border border-slate-800"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    );
-                                                })}
-                                            </div>
-                                            </>
+                                                </>
                                             )}
                                         </div>
                                     )}
@@ -10507,26 +10504,26 @@ function App() {
 
                                                         {/* Save Button for carousel settings - only for super admin */}
                                                         {currentUser?.email === SUPER_ADMIN_EMAIL && (
-                                                        <div className="fixed bottom-8 right-8 z-50">
-                                                            <button
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        setIsLoading(true);
-                                                                        const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
-                                                                        await setDoc(settingsRef, settings, { merge: true });
-                                                                        showToast("Configuración del carrusel guardada", "success");
-                                                                    } catch (e) {
-                                                                        console.error(e);
-                                                                        showToast("Error al guardar", "error");
-                                                                    } finally {
-                                                                        setIsLoading(false);
-                                                                    }
-                                                                }}
-                                                                className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
-                                                            >
-                                                                <Save className="w-5 h-5" /> Guardar Cambios
-                                                            </button>
-                                                        </div>
+                                                            <div className="fixed bottom-8 right-8 z-50">
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            setIsLoading(true);
+                                                                            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                                                                            await setDoc(settingsRef, settings, { merge: true });
+                                                                            showToast("Configuración del carrusel guardada", "success");
+                                                                        } catch (e) {
+                                                                            console.error(e);
+                                                                            showToast("Error al guardar", "error");
+                                                                        } finally {
+                                                                            setIsLoading(false);
+                                                                        }
+                                                                    }}
+                                                                    className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
+                                                                >
+                                                                    <Save className="w-5 h-5" /> Guardar Cambios
+                                                                </button>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </>
@@ -12431,26 +12428,26 @@ function App() {
 
                                             {/* Save Button - only for super admin */}
                                             {currentUser?.email === SUPER_ADMIN_EMAIL && (
-                                            <div className="fixed bottom-8 right-8 z-50">
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            setIsLoading(true);
-                                                            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
-                                                            await setDoc(settingsRef, settings, { merge: true });
-                                                            showToast("Configuración guardada exitosamente", "success");
-                                                        } catch (e) {
-                                                            console.error(e);
-                                                            showToast("Error al guardar", "error");
-                                                        } finally {
-                                                            setIsLoading(false);
-                                                        }
-                                                    }}
-                                                    className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
-                                                >
-                                                    <Save className="w-5 h-5" /> Guardar Cambios
-                                                </button>
-                                            </div>
+                                                <div className="fixed bottom-8 right-8 z-50">
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                setIsLoading(true);
+                                                                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                                                                await setDoc(settingsRef, settings, { merge: true });
+                                                                showToast("Configuración guardada exitosamente", "success");
+                                                            } catch (e) {
+                                                                console.error(e);
+                                                                showToast("Error al guardar", "error");
+                                                            } finally {
+                                                                setIsLoading(false);
+                                                            }
+                                                        }}
+                                                        className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
+                                                    >
+                                                        <Save className="w-5 h-5" /> Guardar Cambios
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     )
