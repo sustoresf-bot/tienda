@@ -7,7 +7,7 @@ const SustIABot = lazy(() => import('./components/SustIABot.js'));
 const AdminPanel = lazy(() => import('./components/AdminPanel.js'));
 // const CheckoutPanel = lazy(() => import('./components/CheckoutPanel.js')); // Not rendered — checkout UI is inline in App
 import {
-    ShoppingBag, X, User, Search, Zap, CheckCircle, MessageCircle, Instagram, Minus, Heart, Tag,
+    ShoppingBag, X, User, Search, Zap, CheckCircle, Instagram, Minus, Heart, Tag,
     Plus, Trash2, Edit, AlertTriangle, RefreshCw, Bot, Send, LogIn, LogOut, Mail, CreditCard, Menu, Home,
     Info, FileQuestion, Users, Package, LayoutDashboard, Settings, Ticket, Truck, PieChart, Wallet,
     FileText, ArrowRight, ArrowLeft, DollarSign, BarChart3, ChevronRight, TrendingUp, TrendingDown,
@@ -37,6 +37,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+const WhatsAppIcon = ({ className = '' }) => (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true" focusable="false">
+        <path d="M16.75 13.96C17 14.09 18.24 14.7 18.5 14.83C18.76 14.97 18.95 15.03 19.03 15.16C19.11 15.3 19.11 15.95 18.88 16.59C18.66 17.22 17.58 17.82 17.09 17.87C16.6 17.92 16.05 18.1 13.94 17.28C11.39 16.29 9.74 13.84 9.61 13.67C9.5 13.5 8.63 12.33 8.63 11.12C8.63 9.91 9.25 9.32 9.47 9.08C9.69 8.85 9.94 8.79 10.1 8.79C10.26 8.79 10.42 8.79 10.56 8.8C10.7 8.81 10.89 8.75 11.07 9.19C11.25 9.63 11.68 10.84 11.74 10.96C11.8 11.09 11.84 11.24 11.74 11.4C11.64 11.57 11.59 11.66 11.47 11.81C11.35 11.95 11.22 12.13 11.12 12.24C11 12.37 10.87 12.5 11.01 12.75C11.15 13 11.64 13.84 12.41 14.53C13.41 15.43 14.25 15.71 14.5 15.81C14.75 15.91 14.89 15.89 15 15.76C15.14 15.6 15.56 15.11 15.71 14.86C15.85 14.61 16 14.65 16.25 14.74M12 2A10 10 0 0 0 2 12A10 10 0 0 0 3.67 17.43L2.5 21.5L6.7 20.39A10 10 0 0 0 12 22A10 10 0 0 0 22 12A10 10 0 0 0 12 2Z" />
+    </svg>
+);
 // App store ID for single-store deployments (injected at build time when available).
 const DEFAULT_APP_ID =
     (typeof __SUSTORE_APP_ID__ !== 'undefined' && __SUSTORE_APP_ID__)
@@ -579,7 +585,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
         img.src = next.imageUrl;
     }, [slides, activeIndex]);
 
-    const imageOpacity = 0.85;
+    const imageOpacity = darkMode ? 0.96 : 0.93;
     const imageClass = `w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`;
 
     const goPrev = () => {
@@ -782,25 +788,25 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 
     return (
         <div className="flex flex-col items-end gap-2" onClick={(e) => e.stopPropagation()}>
-            <div className={`flex items-center rounded-lg ${darkMode ? 'bg-zinc-800' : 'bg-slate-100'} p-0.5 border ${darkMode ? 'border-zinc-700' : 'border-slate-200'}`}>
+            <div className={`flex items-center rounded-lg ${darkMode ? 'bg-zinc-800' : 'bg-slate-100'} p-1 border ${darkMode ? 'border-zinc-700' : 'border-slate-200'}`}>
                 <button
                     onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
                     disabled={isMin}
-                    className={`w-7 h-7 flex items-center justify-center rounded-md transition ${isMin ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                    className={`w-8 h-8 flex items-center justify-center rounded-md transition ${isMin ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
                 ><Minus className="w-3 h-3" /></button>
 
-                <span className={`w-8 text-center text-xs font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
+                <span className={`w-9 text-center text-xs font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
 
                 <button
                     onClick={(e) => { e.stopPropagation(); setQty(Math.min(product.stock, qty + 1)); }}
                     disabled={isMax}
-                    className={`w-7 h-7 flex items-center justify-center rounded-md transition ${isMax ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                    className={`w-8 h-8 flex items-center justify-center rounded-md transition ${isMax ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
                 ><Plus className="w-3 h-3" /></button>
             </div>
 
             <button
                 onClick={handleAdd}
-                className={`w-full py-2 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-[11px] font-bold uppercase tracking-wide ${added
+                className={`w-full py-2.5 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-xs font-bold uppercase tracking-wide ${added
                     ? 'bg-green-500 text-white shadow-green-500/30'
                     : darkMode
                         ? 'bg-white text-black hover:bg-orange-400 hover:text-black shadow-white/10'
@@ -814,7 +820,7 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
                     </>
                 ) : (
                     <>
-                        <Plus className="w-5 h-5 md:w-4 md:h-4" />
+                        <Plus className="w-4 h-4" />
                         <span>Agregar</span>
                     </>
                 )}
@@ -837,6 +843,11 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const textSecondary = darkMode ? 'text-slate-400' : 'text-slate-600';
     const infoBg = darkMode ? 'bg-[#090d12]' : 'bg-white';
     const borderColor = darkMode ? 'border-slate-800/70' : 'border-slate-200';
+    const basePrice = Number(p.basePrice) || 0;
+    const safeDiscount = Math.min(100, Math.max(0, Number(p.discount) || 0));
+    const hasDiscount = safeDiscount > 0 && basePrice > 0;
+    const finalPrice = calculateItemPrice(basePrice, safeDiscount);
+    const savingsAmount = Math.max(0, basePrice - finalPrice);
 
     return (
         <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col h-full animate-fade-in content-visibility-auto contain-content`}>
@@ -851,7 +862,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                             loading="lazy"
                             decoding="async"
                             onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.nextSibling.style.display = 'flex'; }}
-                            className={`max-w-full max-h-full rounded-xl sm:rounded-2xl border-2 ${darkMode ? 'border-orange-500/20' : 'border-slate-100'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-105 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                            className={`w-full h-full max-w-full max-h-full object-contain object-center block rounded-xl sm:rounded-2xl border-2 ${darkMode ? 'border-orange-500/20' : 'border-slate-100'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-105 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                         />
                     </div>
                 ) : null}
@@ -892,18 +903,17 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     </div>
                 )}
 
-                {/* Descuento Badge */}
-                {p.discount > 0 && p.stock > 0 && !p.isFeatured && (
-                    <span className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-red-600 text-white text-[9px] sm:text-[10px] font-black px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-lg z-20 shadow-red-600/20">
-                        -{p.discount}% OFF
-                    </span>
-                )}
-
-                {/* Combined Badge (Featured + Discount) */}
-                {p.discount > 0 && p.stock > 0 && p.isFeatured && (
-                    <span className="absolute top-8 sm:top-10 left-0 bg-red-600 text-white text-[9px] sm:text-[10px] font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-r-lg shadow-lg z-20">
-                        -{p.discount}% OFF
-                    </span>
+                {/* Badge de Oferta Mejorado */}
+                {hasDiscount && p.stock > 0 && (
+                    <div className={`absolute z-20 ${p.isFeatured ? 'top-8 sm:top-10 left-2 sm:left-4' : 'top-2 sm:top-4 left-2 sm:left-4'}`}>
+                        <div className="rounded-xl border border-red-300/30 bg-gradient-to-r from-rose-600 via-red-500 to-orange-500 px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-[0_10px_24px_rgba(239,68,68,0.3)]">
+                            <div className="text-[8px] sm:text-[9px] leading-none font-black tracking-[0.22em] text-rose-100">OFERTA</div>
+                            <div className="mt-1 flex items-center gap-1 text-[10px] sm:text-[11px] font-black leading-none text-white">
+                                <Percent className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                -{safeDiscount}% OFF
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* Botón Favorito (Funcional) */}
@@ -918,9 +928,9 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
             </div>
 
             {/* Información */}
-            <div className={`p-3 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
+            <div className={`p-4 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
                 <div className="flex justify-between items-start mb-2 sm:mb-3">
-                    <p className={`text-[9px] sm:text-[10px] text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
+                    <p className={`text-[10px] sm:text-xs text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
                         {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categoría') : (p.category || 'Sin categoría')}
                     </p>
                     {/* Estado de Stock */}
@@ -931,20 +941,25 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     ) : null}
                 </div>
 
-                <h3 className={`${textPrimary} font-bold text-sm sm:text-base leading-tight mb-2 sm:mb-4 group-hover:text-orange-600 transition line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem]`}>
+                <h3 className={`${textPrimary} font-bold text-base sm:text-base leading-tight mb-2 sm:mb-4 group-hover:text-orange-600 transition line-clamp-2 min-h-[2.3rem] sm:min-h-[2.5rem]`}>
                     {p.name}
                 </h3>
 
                 <div className={`mt-auto pt-2 sm:pt-4 border-t ${borderColor} flex items-end justify-between`}>
                     <div className="flex flex-col">
-                        {p.discount > 0 && (
+                        {hasDiscount && (
                             <span className={`text-[10px] sm:text-xs ${textSecondary} line-through font-medium mb-0.5 sm:mb-1`}>
-                                ${p.basePrice.toLocaleString()}
+                                Antes: ${basePrice.toLocaleString()}
                             </span>
                         )}
                         <span className={`text-lg sm:text-2xl font-black ${textPrimary} tracking-tight flex items-center gap-1`}>
-                            ${calculateItemPrice(p.basePrice, p.discount).toLocaleString()}
+                            ${finalPrice.toLocaleString()}
                         </span>
+                        {hasDiscount && savingsAmount > 0 && (
+                            <span className="mt-1 inline-flex items-center rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                                Ahorrás ${savingsAmount.toLocaleString()}
+                            </span>
+                        )}
                     </div>
 
                     {/* Add to Cart with Quantity */}
@@ -969,6 +984,8 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
         prev.p.id === next.p.id &&
         prev.p.stock === next.p.stock &&
         prev.p.basePrice === next.p.basePrice &&
+        prev.p.discount === next.p.discount &&
+        prev.p.isFeatured === next.p.isFeatured &&
         prev.p.name === next.p.name &&
         prev.p.image === next.p.image &&
         prev.currentUser?.favorites?.includes(prev.p.id) === next.currentUser?.favorites?.includes(next.p.id)
@@ -1088,35 +1105,31 @@ const ADMIN_PANEL_GUIDES = {
     dashboard: {
         title: 'Inicio (Panel de Control)',
         color: 'orange',
-        description: 'Tu centro de comando. Acá ves el resumen completo de tu tienda en tiempo real: ventas, ingresos, rentabilidad, tendencias y métricas clave para tomar decisiones inteligentes.',
+        description: 'Vista rapida del estado de tu tienda: ventas, rentabilidad y alertas clave.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Ingresos Brutos: el total de dinero que entró por ventas, con gráfico de barras de los últimos 6 meses.',
-                    'Beneficio Neto Estimado: ingresos menos gastos y compras, con comparativa visual Ingresos vs Gastos por mes.',
-                    'KPIs rápidos: Usuarios Totales, Pedidos Totales, Ticket Promedio y cantidad de productos con Stock Bajo.',
-                    'Producto Estrella: el más vendido con unidades vendidas y stock actual.',
-                    'Menos Vendido (En Stock): producto con menor rotación para que puedas hacer promos o descuentos.',
-                    'Registro de Movimientos: tabla tipo libro mayor con fecha, tipo, concepto, estado y monto de cada transacción.'
+                    'Ingresos y beneficio del periodo.',
+                    'KPIs: usuarios, pedidos, ticket promedio y stock bajo.',
+                    'Movimientos recientes con fecha y monto.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Registrar Venta Manual: para pedidos fuera del checkout (mostrador, WhatsApp, en persona). Seleccionás productos, cantidades y método de pago.',
-                    'Ver detalle de métricas: hacé clic en las tarjetas para expandir información.',
-                    'Comparar meses: usá las barras de rendimiento mensual para detectar tendencias de crecimiento o baja.',
-                    'Identificar productos de baja rotación para armar promos o ajustar precios.'
+                    'Registrar venta manual para pedidos fuera de la web.',
+                    'Abrir detalle de metricas tocando las tarjetas.',
+                    'Comparar meses para ver subidas o caidas.'
                 ]
             },
             {
                 title: 'Consejo',
                 icon: 'tip',
                 bullets: [
-                    'Revisá este panel al menos una vez al día para estar al tanto de nuevos pedidos, stock bajo y la salud financiera de tu tienda.'
+                    'Revisalo al abrir y al cerrar el dia.'
                 ]
             }
         ]
@@ -1124,34 +1137,31 @@ const ADMIN_PANEL_GUIDES = {
     orders: {
         title: 'Pedidos',
         color: 'green',
-        description: 'Acá gestionás todos los pedidos que entran a tu tienda. Podés ver el detalle completo, cambiar estados, finalizar entregas y mantener todo organizado.',
+        description: 'Gestiona los pedidos del dia, su estado y su historial.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Lista de pedidos con número de orden (#ID), estado (Pendiente / Realizado), nombre del cliente, fecha/hora y monto total.',
-                    'Vista previa de los productos del pedido (imágenes circulares apiladas).',
-                    'Detalle completo: productos con cantidades, datos del cliente (nombre, dirección, teléfono), método de pago y totales.',
-                    'Paginación para navegar entre páginas de pedidos anteriores.'
+                    'Lista con ID, cliente, estado, fecha y total.',
+                    'Vista previa de productos por pedido.',
+                    'Detalle completo con datos del cliente y pago.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Ver Detalle (ícono de ojo): abre el pedido completo con toda la info del cliente y los productos.',
-                    'Finalizar Pedido (ícono de tilde verde): marca como "Realizado" cuando ya fue entregado y pagado.',
-                    'Eliminar Pedido (ícono de papelera rojo): borra pedidos inválidos, duplicados o de prueba.',
-                    'Notificación de pedidos: activa/mutea el sonido de alerta cuando entra un nuevo pedido. Dice "Activa" o "Muteada".',
-                    'Navegar páginas: usá "Anterior" y "Siguiente" para recorrer el historial completo.'
+                    'Abrir detalle del pedido.',
+                    'Marcar pedido como realizado.',
+                    'Eliminar pedidos de prueba o duplicados.'
                 ]
             },
             {
                 title: 'Consejo',
                 icon: 'tip',
                 bullets: [
-                    'Dejá las notificaciones activas durante el horario de atención para no perderte ningún pedido nuevo.'
+                    'Deja las notificaciones activas en horario de atencion.'
                 ]
             }
         ]
@@ -1159,36 +1169,32 @@ const ADMIN_PANEL_GUIDES = {
     products: {
         title: 'Productos',
         color: 'blue',
-        description: 'El inventario completo de tu tienda. Desde acá creás, editás, organizás por categorías y controlás el stock y la visibilidad de cada producto.',
+        description: 'Administra el catalogo, stock y visibilidad de tus productos.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Contador de productos: cuántos tenés vs. el límite de tu plan (ej: 12/30). Si estás cerca del límite, aparece advertencia amarilla.',
-                    'Lista de productos con imagen, nombre, precio de venta, stock actual y estado (activo/inactivo).',
-                    'Banner de advertencia si hay productos desactivados (por límite de plan o manualmente).',
-                    'Formulario expandido con todos los campos al crear o editar.'
+                    'Cantidad de productos usada vs limite del plan.',
+                    'Lista con imagen, precio, stock y estado.',
+                    'Alertas cuando hay productos desactivados.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Agregar Producto: cargá nombre, precio de venta, precio de compra (costo), stock, categorías (múltiples), imagen, descuento (%) y descripción.',
-                    'Categorías: creá, editá, reordená y eliminá categorías. Un producto puede pertenecer a varias.',
-                    'Editar producto: modificá cualquier campo de un producto existente.',
-                    'Activar/Desactivar: un producto desactivado no aparece en la tienda. Usá el ícono de ojo para cambiar visibilidad.',
-                    'Eliminar producto: borralo definitivamente del catálogo.',
-                    'Subir imagen: seleccioná desde tu dispositivo, se comprime automáticamente.'
+                    'Crear, editar o eliminar productos.',
+                    'Activar o desactivar visibilidad en tienda.',
+                    'Gestionar categorias e imagenes del producto.'
                 ]
             },
             {
-                title: 'Límites de plan',
+                title: 'Limites',
                 icon: 'lock',
                 bullets: [
-                    'Emprendedor: hasta 30 productos. Negocio: hasta 50. Premium: ilimitados.',
-                    'Si superás el límite al bajar de plan, los productos excedentes se desactivan automáticamente.'
+                    'Emprendedor: hasta 30. Negocio: hasta 50. Premium: sin limite.',
+                    'Si superas el limite, los excedentes se desactivan.'
                 ]
             }
         ]
@@ -1196,33 +1202,31 @@ const ADMIN_PANEL_GUIDES = {
     promos: {
         title: 'Promos',
         color: 'purple',
-        description: 'Creá combos y promociones atractivas armando paquetes de productos con un precio especial. Ideal para aumentar el ticket promedio y mover stock.',
+        description: 'Crea combos con precio especial para aumentar ventas.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Lista de promos activas con nombre, imagen, precio del combo y productos incluidos.',
-                    'Costo real del combo (suma de precios base) vs. precio de venta para calcular si conviene.',
-                    'Formulario de creación/edición con vista previa de los productos incluidos.'
+                    'Promos activas con precio final y productos.',
+                    'Costo real del combo vs precio de venta.',
+                    'Formulario para crear o editar promos.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Crear Nueva Promo: poné nombre, precio final, imagen y descripción.',
-                    'Armar el combo: agregá productos del catálogo con la cantidad deseada. Podés mezclar varios productos.',
-                    'Ver costo real: el sistema calcula automáticamente cuánto cuestan los productos incluidos.',
-                    'Editar promo: modificá nombre, precio, productos o imagen de una promo existente.',
-                    'Eliminar promo: borrá combos viejos o que ya no quieras ofrecer.'
+                    'Crear promo con nombre, precio e imagen.',
+                    'Agregar productos y cantidades al combo.',
+                    'Editar o eliminar promos existentes.'
                 ]
             },
             {
-                title: 'Límites de plan',
+                title: 'Limites',
                 icon: 'lock',
                 bullets: [
-                    'Emprendedor: hasta 1 promo activa. Negocio y Premium: promos ilimitadas.'
+                    'Emprendedor: 1 promo activa. Negocio y Premium: ilimitadas.'
                 ]
             }
         ]
@@ -1230,36 +1234,31 @@ const ADMIN_PANEL_GUIDES = {
     carousel: {
         title: 'Carrusel de Banners',
         color: 'cyan',
-        description: 'Personalizá los banners rotativos del home de tu tienda. Mostrá ofertas, productos destacados o promos con imágenes atractivas que rotan automáticamente.',
+        description: 'Controla los banners rotativos del home y su destino al hacer clic.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Toggle de activación: encendé o apagá el carrusel. Si está apagado, se muestra la imagen Hero tradicional.',
-                    'Velocidad de rotación: tiempo en segundos entre cada slide.',
-                    'Lista de slides existentes con imagen, orden, estado (habilitado/deshabilitado) y destino al hacer clic.',
-                    'Vista previa del producto o promo vinculada a cada slide.'
+                    'Estado del carrusel (activo o apagado).',
+                    'Velocidad de rotacion en segundos.',
+                    'Slides con orden, estado y destino.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Activar/Desactivar el carrusel completo con el toggle "Mostrar carrusel".',
-                    'Configurar velocidad: cambiá el tiempo de rotación automática en segundos.',
-                    'Agregar slide: subí una imagen, elegí la acción al hacer clic (solo mostrar, abrir producto o abrir promo), definí el orden y si está habilitado.',
-                    'Vincular a producto o promo: al hacer clic en el banner, se abre directamente el producto o promo que elegiste.',
-                    'Ordenar slides: usá el campo de orden (0 = primero, 1 = segundo, etc.).',
-                    'Habilitar/Deshabilitar slides individuales sin eliminarlos.',
-                    'Eliminar slides que ya no necesites.'
+                    'Crear y ordenar slides.',
+                    'Vincular cada slide a un producto o promo.',
+                    'Activar, desactivar o eliminar slides.'
                 ]
             },
             {
                 title: 'Requisitos',
                 icon: 'lock',
                 bullets: [
-                    'Disponible desde el Plan Negocio. Con Plan Emprendedor el carrusel aparece bloqueado con opción para mejorar tu plan.'
+                    'Disponible desde Plan Negocio.'
                 ]
             }
         ]
@@ -1267,35 +1266,31 @@ const ADMIN_PANEL_GUIDES = {
     coupons: {
         title: 'Cupones de Descuento',
         color: 'pink',
-        description: 'Creá cupones de descuento por porcentaje o monto fijo para tus clientes. Configuralos con límites de uso, vencimiento y restricciones.',
+        description: 'Crea cupones por porcentaje o monto fijo con reglas simples.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Lista de cupones creados con código, tipo de descuento, valor, estado y cantidad de usos.',
-                    'Formulario completo de creación con todos los campos configurables.',
-                    'Indicador de cupón vencido o agotado.'
+                    'Lista con codigo, descuento, estado y usos.',
+                    'Formulario de creacion con campos clave.',
+                    'Estado de cupon vencido o agotado.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Crear cupón: definí código en mayúsculas (ej: VERANO2024), elegí tipo Porcentaje (%) o Fijo ($) y el valor.',
-                    'Mínimo de compra: opcionalmente, exigí un monto mínimo para poder usar el cupón.',
-                    'Límite de usos: definí cuántas veces se puede usar en total.',
-                    'Fecha de vencimiento: poné una fecha límite de validez.',
-                    'Público o privado: elegí si cualquiera puede usarlo o solo un email específico.',
-                    'Copiar código: usá el botón de copiar para compartir rápido por WhatsApp o Instagram.',
-                    'Eliminar cupones vencidos o que ya no quieras ofrecer.'
+                    'Crear cupon con codigo, tipo y valor.',
+                    'Definir minimo, limite de usos y vencimiento.',
+                    'Copiar o eliminar cupones.'
                 ]
             },
             {
                 title: 'Requisitos',
                 icon: 'lock',
                 bullets: [
-                    'Disponible desde el Plan Negocio. Con Plan Emprendedor el panel aparece bloqueado con acceso a ver planes.'
+                    'Disponible desde Plan Negocio.'
                 ]
             }
         ]
@@ -1303,32 +1298,31 @@ const ADMIN_PANEL_GUIDES = {
     suppliers: {
         title: 'Proveedores',
         color: 'emerald',
-        description: 'Organizá tu red de proveedores con toda su información de contacto y vinculalos a los productos que te abastecen. Todo centralizado en un solo lugar.',
+        description: 'Guarda y ordena tus proveedores con sus datos clave.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Lista de proveedores con nombre, contacto, teléfono, Instagram, dirección y CUIT.',
-                    'Productos asociados a cada proveedor para saber qué comprás a quién.',
-                    'Modal de creación/edición con todos los campos.'
+                    'Lista con contacto, telefono, direccion y CUIT.',
+                    'Productos asociados a cada proveedor.',
+                    'Formulario para alta y edicion.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Nuevo Proveedor: cargá nombre, persona de contacto, teléfono, Instagram, dirección y CUIT/datos fiscales.',
-                    'Asociar productos: vinculá productos del catálogo al proveedor para referencia rápida.',
-                    'Editar proveedor: actualizá cualquier dato cuando cambie contacto, dirección o datos fiscales.',
-                    'Eliminar proveedor: borrá proveedores con los que ya no trabajás.'
+                    'Crear y editar proveedores.',
+                    'Asociar productos para reposicion rapida.',
+                    'Eliminar proveedores inactivos.'
                 ]
             },
             {
                 title: 'Consejo',
                 icon: 'tip',
                 bullets: [
-                    'Mantené actualizados los datos de contacto y asociá siempre los productos. Así cuando necesites reponer stock, sabés exactamente a quién llamar.'
+                    'Manten los contactos actualizados para comprar mas rapido.'
                 ]
             }
         ]
@@ -1336,34 +1330,31 @@ const ADMIN_PANEL_GUIDES = {
     purchases: {
         title: 'Compras / Stock',
         color: 'amber',
-        description: 'Registrá las reposiciones de stock y llevá un historial completo de compras a proveedores. El sistema ajusta el stock automáticamente al guardar.',
+        description: 'Registra reposiciones y deja el stock actualizado automaticamente.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Formulario de nueva compra con selector de producto, cantidad, proveedor y costo.',
-                    'Historial completo de compras pasadas con fecha, producto, cantidad, proveedor y costo total.',
-                    'Stock actual del producto seleccionado antes de registrar la reposición.'
+                    'Formulario con producto, proveedor, cantidad y costo.',
+                    'Historial de compras por fecha.',
+                    'Stock actual antes de guardar.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Registrar reposición: elegí el producto, poné la cantidad comprada y seleccioná el proveedor.',
-                    'Costo estimado: el sistema calcula automáticamente basándose en el precio de compra del producto.',
-                    'Ajuste automático de stock: al guardar, el stock se incrementa con la cantidad comprada.',
-                    'Ver historial: revisá todas las compras pasadas ordenadas por fecha.',
-                    'Editar compra: modificá una compra registrada (puede ajustar el stock automáticamente).',
-                    'Eliminar compra: borrá registros erróneos.'
+                    'Registrar una reposicion de stock.',
+                    'Editar o eliminar compras cargadas.',
+                    'Consultar historial para control interno.'
                 ]
             },
             {
                 title: 'Consejo',
                 icon: 'tip',
                 bullets: [
-                    'Registrá cada reposición apenas la recibas para que el stock siempre esté actualizado y no vendas sin disponibilidad.'
+                    'Carga la compra cuando llega para evitar vender sin stock.'
                 ]
             }
         ]
@@ -1371,35 +1362,31 @@ const ADMIN_PANEL_GUIDES = {
     finance: {
         title: 'Finanzas y Capital',
         color: 'green',
-        description: 'El centro financiero de tu negocio. Registrá inversiones, gastos y visualizá la distribución automática de ganancias entre socios según el capital aportado.',
+        description: 'Controla inversiones, gastos y reparto estimado de ganancias.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Formulario de inversión/aporte con selector de socio, monto, fecha y notas.',
-                    'Formulario de gasto/egreso con descripción, monto y categoría (General, Servicios, Impuestos, Mantenimiento, Marketing, Sueldos, Otros).',
-                    'Historial de Inversiones: lista cronológica de aportes con inversor, fecha, notas y monto.',
-                    'Historial de Gastos: lista cronológica con descripción, categoría, fecha y monto.',
-                    'Distribución de Ganancias: tabla automática con cada socio, capital aportado, % de participación y ganancia estimada.',
-                    'Barra visual de distribución proporcional entre socios con colores distintos.'
+                    'Formularios para inversiones y gastos.',
+                    'Historial con fecha, categoria y monto.',
+                    'Reparto estimado por socio.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Registrar Inversión/Aporte: elegí el socio (o "Otro/Externo"), poné monto, fecha y notas opcionales.',
-                    'Registrar Gasto/Egreso: cargá descripción, monto y categoría. La fecha se registra automáticamente.',
-                    'Eliminar inversiones o gastos erróneos desde el historial (ícono de papelera).',
-                    'Ver distribución de ganancias: se calcula automáticamente según el % de inversión de cada socio sobre el beneficio neto.'
+                    'Registrar aportes y egresos.',
+                    'Corregir registros mal cargados.',
+                    'Consultar reparto segun capital aportado.'
                 ]
             },
             {
                 title: 'Consejo',
                 icon: 'tip',
                 bullets: [
-                    'Cargá todos los gastos recurrentes (internet, alquiler, servicios) para que el beneficio neto sea realista. La distribución es tan precisa como los datos que cargues.'
+                    'Carga todos los gastos fijos para ver un beneficio real.'
                 ]
             }
         ]
@@ -1407,36 +1394,31 @@ const ADMIN_PANEL_GUIDES = {
     users: {
         title: 'Gestión de Usuarios',
         color: 'pink',
-        description: 'Control total sobre las cuentas de tu tienda. Buscá, filtrá por rol, gestioná perfiles, editá permisos y auditá la actividad de cada usuario incluyendo su carrito en vivo.',
+        description: 'Gestiona cuentas, roles y actividad de los usuarios.',
         sections: [
             {
-                title: 'Lo que podés ver',
+                title: 'Que ves',
                 icon: 'eye',
                 bullets: [
-                    'Tabla de usuarios con avatar, nombre, email, ID corto y fecha de registro.',
-                    'Actividad y estadísticas: cantidad de favoritos y pedidos realizados por cada usuario.',
-                    'Rol actual (Admin o Usuario) con badge visual.',
-                    'Carrito en vivo: qué tiene cada usuario en su carrito en ese momento.',
-                    'Filtros rápidos por rol: Todos, Admin, Usuario.'
+                    'Tabla con nombre, email, rol y fecha de alta.',
+                    'Actividad del usuario y carrito en vivo.',
+                    'Filtros rapidos por tipo de rol.'
                 ]
             },
             {
-                title: 'Lo que podés hacer',
+                title: 'Que haces',
                 icon: 'zap',
                 bullets: [
-                    'Buscar usuarios: usá la barra para encontrar por nombre o email.',
-                    'Filtrar por rol: seleccioná "Admin" o "Usuario" para ver solo un tipo.',
-                    'Ver Carrito en Vivo: auditá qué tiene un usuario en su carrito actual (útil para soporte y reclamos).',
-                    'Editar Perfil (ícono de lápiz): modificá datos del usuario como nombre, imagen o permisos.',
-                    'Seguridad y Acceso (ícono de candado): gestioná contraseña y acceso del usuario.',
-                    'Los usuarios verificados tienen un check naranja junto a su nombre.'
+                    'Buscar usuarios por nombre o email.',
+                    'Editar perfil y permisos.',
+                    'Gestionar seguridad y acceso.'
                 ]
             },
             {
                 title: 'Requisitos',
                 icon: 'lock',
                 bullets: [
-                    'Las estadísticas de actividad (favoritos, pedidos, carrito en vivo) requieren Plan Negocio o superior. Con Plan Emprendedor esa sección aparece borrosa.'
+                    'Actividad avanzada disponible desde Plan Negocio.'
                 ]
             }
         ]
@@ -1444,30 +1426,23 @@ const ADMIN_PANEL_GUIDES = {
     settings: {
         title: 'Configuración',
         color: 'slate',
-        description: 'La configuración avanzada de tu tienda. Desde acá se ajustan todos los parámetros técnicos, de apariencia, pagos, envíos y más. Administrada por el desarrollador.',
+        description: 'Panel tecnico para ajustes globales de la tienda.',
         sections: [
             {
-                title: 'Sub-secciones disponibles',
+                title: 'Que podes ajustar',
                 icon: 'eye',
                 bullets: [
-                    'Tienda: nombre, logo, descripción y datos generales de tu negocio.',
-                    'Apariencia: colores, tema visual y personalización del diseño.',
-                    'Redes Sociales: links a Instagram, Facebook, TikTok y otras redes.',
-                    'Pagos: configuración de Mercado Pago, transferencia bancaria y pago en efectivo.',
-                    'Ticket: personalización del comprobante/ticket de compra.',
-                    'Envíos: métodos de envío, costos y zonas de cobertura.',
-                    'SEO: meta tags, título, descripción para buscadores y redes sociales.',
-                    'Avanzado: configuraciones técnicas del sistema.',
-                    'Equipo: gestión de miembros del equipo (socios, editores).'
+                    'Datos de tienda, apariencia y redes.',
+                    'Pagos, envios y ticket.',
+                    'SEO, avanzado y equipo.'
                 ]
             },
             {
                 title: 'Importante',
                 icon: 'lock',
                 bullets: [
-                    'Esta sección está reservada para el desarrollador de la plataforma.',
-                    'Si necesitás cambios en la configuración, contactá al desarrollador con los detalles.',
-                    'No modifiques valores sin entender el impacto, ya que puede afectar el funcionamiento de la tienda.'
+                    'Seccion recomendada para administrador tecnico.',
+                    'Si tenes dudas, consulta antes de guardar cambios.'
                 ]
             }
         ]
@@ -1503,7 +1478,7 @@ function AdminHowToUse({ guideKey }) {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className={`px-4 py-2.5 rounded-xl ${c.bg} hover:brightness-125 ${c.text} border ${c.border} transition-all duration-200 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest hover:shadow-lg ${c.glow} group`}
+                className={`px-4 py-2.5 rounded-xl ${c.bg} hover:brightness-125 ${c.text} border ${c.border} transition-all duration-200 flex items-center gap-2 font-bold text-xs md:text-sm tracking-wide hover:shadow-lg ${c.glow} group`}
                 type="button"
             >
                 <HelpCircle className="w-4 h-4 group-hover:rotate-12 transition-transform" />
@@ -1518,7 +1493,7 @@ function AdminHowToUse({ guideKey }) {
                     aria-modal="true"
                 >
                     <div
-                        className={`w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#0a0a0a] border ${c.border} rounded-[2rem] shadow-2xl overflow-hidden animate-fade-up my-auto flex-shrink-0`}
+                        className={`w-full max-w-3xl max-h-[90vh] flex flex-col bg-[#0a0a0a] border ${c.border} rounded-[2rem] shadow-2xl overflow-hidden animate-fade-up my-auto flex-shrink-0`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className={`relative p-6 md:p-8 border-b border-slate-800/50 overflow-hidden flex-shrink-0`}>
@@ -1528,10 +1503,10 @@ function AdminHowToUse({ guideKey }) {
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className={`w-2 h-2 rounded-full ${c.dot} animate-pulse`}></span>
-                                        <p className={`text-[10px] font-black uppercase tracking-widest ${c.text}`}>Guía Rápida</p>
+                                        <p className={`text-xs font-black uppercase tracking-wide ${c.text}`}>Guía rápida</p>
                                     </div>
-                                    <h2 className="text-xl md:text-2xl font-black text-white mt-1 leading-tight">{guide.title}</h2>
-                                    <p className="text-slate-400 text-sm mt-3 leading-relaxed">{guide.description}</p>
+                                    <h2 className="text-2xl md:text-3xl font-black text-white mt-1 leading-tight">{guide.title}</h2>
+                                    <p className="text-slate-300 text-base mt-3 leading-relaxed">{guide.description}</p>
                                 </div>
                                 <button
                                     onClick={() => setIsOpen(false)}
@@ -1553,14 +1528,14 @@ function AdminHowToUse({ guideKey }) {
                                             <div className={`w-8 h-8 rounded-lg ${si.bg} flex items-center justify-center flex-shrink-0`}>
                                                 <si.Icon className={`w-4 h-4 ${si.color}`} />
                                             </div>
-                                            <h3 className="text-white font-black text-sm">{section.title}</h3>
+                                            <h3 className="text-white font-black text-base">{section.title}</h3>
                                         </div>
                                         <ul className="space-y-2.5 ml-1">
                                             {(section.bullets || []).map((b, i) => {
                                                 const parts = b.split(':');
                                                 const hasLabel = parts.length > 1 && parts[0].length < 40;
                                                 return (
-                                                    <li key={i} className="flex gap-3 text-[13px] leading-relaxed">
+                                                    <li key={i} className="flex gap-3 text-sm md:text-[15px] leading-relaxed">
                                                         <span className={`w-1.5 h-1.5 rounded-full ${c.dot} mt-[7px] flex-shrink-0 opacity-60`}></span>
                                                         <span className="text-slate-300">
                                                             {hasLabel ? (
@@ -1577,7 +1552,7 @@ function AdminHowToUse({ guideKey }) {
                         </div>
 
                         <div className="p-5 md:p-6 border-t border-slate-800/50 flex items-center justify-between gap-4 flex-shrink-0">
-                            <p className="text-[10px] text-slate-600 font-mono uppercase tracking-wider hidden sm:block">Panel Admin v3.0</p>
+                            <p className="text-xs text-slate-600 font-mono uppercase tracking-wider hidden sm:block">Panel Admin v3.0</p>
                             <button
                                 onClick={() => setIsOpen(false)}
                                 className={`px-6 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black transition-all shadow-lg shadow-orange-600/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98]`}
@@ -3970,10 +3945,24 @@ function App() {
     };
 
     // 4. Cálculos de Precios y Descuentos
+    const sanitizeDiscount = (discount) => {
+        const numericDiscount = Number(discount);
+        if (!Number.isFinite(numericDiscount)) return 0;
+        return Math.min(100, Math.max(0, numericDiscount));
+    };
+
     const calculateItemPrice = (basePrice, discount) => {
-        if (!discount || discount <= 0) return Number(basePrice);
-        const discounted = Number(basePrice) * (1 - discount / 100);
+        const safeBasePrice = Number(basePrice) || 0;
+        const safeDiscount = sanitizeDiscount(discount);
+        if (safeDiscount <= 0) return safeBasePrice;
+        const discounted = safeBasePrice * (1 - safeDiscount / 100);
         return Math.ceil(discounted);
+    };
+
+    const calculateDiscountSavings = (basePrice, discount) => {
+        const safeBasePrice = Number(basePrice) || 0;
+        if (safeBasePrice <= 0) return 0;
+        return Math.max(0, safeBasePrice - calculateItemPrice(safeBasePrice, discount));
     };
 
     const cartSubtotal = useMemo(() => {
@@ -4096,6 +4085,10 @@ function App() {
     }, [checkoutData.shippingMethod, cartSubtotal, settings?.shippingDelivery]);
 
     const finalTotal = Math.max(0, cartSubtotal - discountAmount + shippingFee);
+    const productFormBasePrice = Number(newProduct.basePrice) || 0;
+    const productFormDiscount = sanitizeDiscount(newProduct.discount);
+    const productFormFinalPrice = calculateItemPrice(productFormBasePrice, productFormDiscount);
+    const productFormSavings = calculateDiscountSavings(productFormBasePrice, productFormDiscount);
 
     // Selección de Cupón
     const selectCoupon = async (coupon) => {
@@ -4664,7 +4657,7 @@ function App() {
             basePrice: Number(newProduct.basePrice) || 0,
             purchasePrice: Number(newProduct.purchasePrice || 0),
             stock: Number(newProduct.stock) || 0,
-            discount: Number(newProduct.discount || 0),
+            discount: sanitizeDiscount(newProduct.discount),
             image: newProduct.image || 'https://via.placeholder.com/150',
             lastUpdated: new Date().toISOString()
         };
@@ -4697,7 +4690,44 @@ function App() {
 
     // 6.4. Image Upload Handler (Base64 for Vercel)
     // 6.4. Image Upload Handler (Optimized with Canvas Resize)
-    const handleImageUpload = (e, setTargetState, imageField = 'image', maxWidth = 800) => {
+    const IMAGE_UPLOAD_PRESETS = {
+        image: { maxWidth: 800, maxHeight: 800, quality: 0.8, minQuality: 0.7, qualityStep: 0.04, outputType: 'image/jpeg', maxBytes: 450 * 1024 },
+        imageUrl: { maxWidth: 2400, maxHeight: 2400, quality: 0.9, minQuality: 0.78, qualityStep: 0.03, outputType: 'image/jpeg', maxBytes: 900 * 1024 },
+        heroUrl: { maxWidth: 2400, maxHeight: 2400, quality: 0.9, minQuality: 0.78, qualityStep: 0.03, outputType: 'image/jpeg', maxBytes: 900 * 1024 },
+        seoImage: { maxWidth: 1200, maxHeight: 1200, quality: 0.86, minQuality: 0.72, qualityStep: 0.04, outputType: 'image/jpeg', maxBytes: 500 * 1024 },
+        logoUrl: { maxWidth: 900, maxHeight: 900, quality: 0.92, minQuality: 0.84, qualityStep: 0.04, outputType: 'image/png', maxBytes: 500 * 1024 },
+        botImage: { maxWidth: 300, maxHeight: 300, quality: 0.85, minQuality: 0.75, qualityStep: 0.05, outputType: 'image/jpeg', maxBytes: 180 * 1024 }
+    };
+
+    const getDataUrlSizeBytes = (dataUrl = '') => {
+        const base64 = String(dataUrl).split(',')[1] || '';
+        return Math.ceil((base64.length * 3) / 4);
+    };
+
+    const resolveImageUploadConfig = (imageField, maxWidthOrOptions) => {
+        const preset = IMAGE_UPLOAD_PRESETS[imageField] || IMAGE_UPLOAD_PRESETS.image;
+        const isNumericWidth = typeof maxWidthOrOptions === 'number' && Number.isFinite(maxWidthOrOptions) && maxWidthOrOptions > 0;
+        const options = (!isNumericWidth && maxWidthOrOptions && typeof maxWidthOrOptions === 'object') ? maxWidthOrOptions : {};
+        const maxWidth = isNumericWidth ? maxWidthOrOptions : Number(options.maxWidth ?? preset.maxWidth ?? 800);
+        const maxHeight = Number(options.maxHeight ?? preset.maxHeight ?? maxWidth);
+        const quality = Number(options.quality ?? preset.quality ?? 0.8);
+        const minQuality = Number(options.minQuality ?? preset.minQuality ?? 0.7);
+        const qualityStep = Number(options.qualityStep ?? preset.qualityStep ?? 0.04);
+        const outputType = String(options.outputType ?? preset.outputType ?? 'image/jpeg');
+        const maxBytes = Number(options.maxBytes ?? preset.maxBytes ?? (850 * 1024));
+
+        return {
+            maxWidth: Number.isFinite(maxWidth) && maxWidth > 0 ? maxWidth : 800,
+            maxHeight: Number.isFinite(maxHeight) && maxHeight > 0 ? maxHeight : 800,
+            quality: Number.isFinite(quality) ? Math.min(1, Math.max(0.1, quality)) : 0.8,
+            minQuality: Number.isFinite(minQuality) ? Math.min(1, Math.max(0.1, minQuality)) : 0.7,
+            qualityStep: Number.isFinite(qualityStep) ? Math.min(0.3, Math.max(0.01, qualityStep)) : 0.04,
+            outputType,
+            maxBytes: Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : 850 * 1024
+        };
+    };
+
+    const handleImageUpload = (e, setTargetState, imageField = 'image', maxWidthOrOptions) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -4705,34 +4735,48 @@ function App() {
             return showToast("Por favor selecciona una imagen válida.", "warning");
         }
 
+        const config = resolveImageUploadConfig(imageField, maxWidthOrOptions);
+
         const reader = new FileReader();
         reader.onload = (event) => {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = maxWidth;
-                const MAX_HEIGHT = maxWidth;
                 let width = img.width;
                 let height = img.height;
 
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
+                const scaleRatio = Math.min(
+                    config.maxWidth / width,
+                    config.maxHeight / height,
+                    1
+                );
+                width = Math.max(1, Math.round(width * scaleRatio));
+                height = Math.max(1, Math.round(height * scaleRatio));
 
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    showToast("No se pudo procesar la imagen.", "error");
+                    return;
+                }
+
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
                 ctx.drawImage(img, 0, 0, width, height);
 
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                let quality = config.quality;
+                const minQuality = Math.min(config.quality, config.minQuality);
+                const shouldIterateQuality = config.outputType !== 'image/png' && Number.isFinite(config.maxBytes);
+                let dataUrl = canvas.toDataURL(config.outputType, quality);
+                let sizeBytes = getDataUrlSizeBytes(dataUrl);
+
+                while (shouldIterateQuality && sizeBytes > config.maxBytes && quality > minQuality) {
+                    quality = Math.max(minQuality, quality - config.qualityStep);
+                    dataUrl = canvas.toDataURL(config.outputType, quality);
+                    sizeBytes = getDataUrlSizeBytes(dataUrl);
+                }
+
                 setTargetState(prev => ({ ...prev, [imageField]: dataUrl }));
                 showToast("Imagen optimizada y cargada.", "success");
             };
@@ -5641,7 +5685,12 @@ function App() {
 
         const hasStock = stockLimit > 0;
         const isMaxInCart = availableToAdd === 0 && hasStock;
-        const displayPrice = isPromo ? Number(selectedProduct.price || selectedProduct.basePrice) : calculateItemPrice(selectedProduct.basePrice, selectedProduct.discount);
+        const selectedBasePrice = Number(selectedProduct.basePrice) || 0;
+        const selectedDiscount = Math.min(100, Math.max(0, Number(selectedProduct.discount) || 0));
+        const hasProductDiscount = !isPromo && selectedDiscount > 0 && selectedBasePrice > 0;
+        const displayPrice = isPromo ? Number(selectedProduct.price || selectedProduct.basePrice) : calculateItemPrice(selectedBasePrice, selectedDiscount);
+        const unitSavings = hasProductDiscount ? Math.max(0, selectedBasePrice - displayPrice) : 0;
+        const totalSavings = unitSavings * qty;
 
         const handleAdd = (e) => {
             e.stopPropagation();
@@ -5691,6 +5740,13 @@ function App() {
                                 {isPromo ? 'COMBOS & PROMOCIONES' : (Array.isArray(selectedProduct.categories) && selectedProduct.categories.length > 0 ? selectedProduct.categories[0] : (selectedProduct.category || 'Sin categoría'))}
                             </span>
                             <h2 className={`text-2xl sm:text-3xl md:text-4xl font-black leading-[1.1] mb-3 sm:mb-6 ${darkMode ? 'text-white neon-text-small' : 'text-slate-900'}`}>{selectedProduct.name}</h2>
+                            {hasProductDiscount && (
+                                <div className="mb-3 inline-flex flex-wrap items-center gap-2 rounded-xl border border-rose-400/30 bg-gradient-to-r from-rose-500/25 to-orange-500/20 px-3 py-2">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-200">Oferta activa</span>
+                                    <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-black text-white">-{selectedDiscount}% OFF</span>
+                                    <span className="text-[11px] font-bold text-emerald-300">Ahorrás ${unitSavings.toLocaleString()} por unidad</span>
+                                </div>
+                            )}
                             <p className={`text-xs sm:text-sm md:text-base leading-relaxed line-clamp-3 sm:line-clamp-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                 {selectedProduct.description || ''}
                             </p>
@@ -5720,21 +5776,29 @@ function App() {
 
                         {/* Footer con Precio y Carrito */}
                         <div className={`mt-auto pt-4 sm:pt-8 border-t flex flex-col gap-4 sm:gap-6 ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
-                            <div className="flex items-end justify-between">
+                            <div className="flex items-end justify-between gap-3">
                                 <div className="flex flex-col">
                                     <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Inversión Total</span>
-                                    <div className="flex items-center gap-2 sm:gap-3">
-                                        {selectedProduct.discount > 0 && !isPromo && (
-                                            <span className={`text-xs sm:text-sm line-through font-bold ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>${(selectedProduct.basePrice * qty).toLocaleString()}</span>
+                                    <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+                                        {hasProductDiscount && (
+                                            <span className={`text-xs sm:text-sm line-through font-bold ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                                                Antes: ${(selectedBasePrice * qty).toLocaleString()}
+                                            </span>
                                         )}
                                         <span className={`text-2xl sm:text-4xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                             ${(displayPrice * qty).toLocaleString()}
                                         </span>
                                     </div>
+                                    {hasProductDiscount && totalSavings > 0 && (
+                                        <span className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
+                                            Ahorrás ${totalSavings.toLocaleString()} en total
+                                        </span>
+                                    )}
                                 </div>
-                                {selectedProduct.discount > 0 && !isPromo && (
-                                    <div className="px-3 py-1 bg-red-500 text-white rounded-lg text-[10px] font-black animate-pulse">
-                                        -{selectedProduct.discount}% OFF
+                                {hasProductDiscount && (
+                                    <div className="shrink-0 rounded-xl border border-red-300/40 bg-gradient-to-r from-rose-600 to-orange-500 px-3 py-2 text-right shadow-[0_10px_24px_rgba(239,68,68,0.25)]">
+                                        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-rose-100">Descuento</p>
+                                        <p className="text-xs font-black text-white">-{selectedDiscount}% OFF</p>
                                     </div>
                                 )}
                             </div>
@@ -6677,14 +6741,14 @@ function App() {
                         <button onClick={() => setIsMenuOpen(true)} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
                             <Menu className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                         </button>
-                        <div className="cursor-pointer group flex items-center gap-2 sm:gap-3" onClick={() => setView('store')}>
+                        <div className="cursor-pointer group flex items-center gap-2 sm:gap-3 min-w-0" onClick={() => setView('store')}>
                             {settings?.logoUrl && (
                                 <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 transition-colors duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                     <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
                                 </div>
                             )}
-                            <div className="flex flex-col">
-                                <span className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tight group-hover:text-orange-500 transition-all duration-300 leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                            <div className="flex flex-col min-w-0">
+                                <span className={`store-brand-title text-xl sm:text-2xl md:text-3xl font-black tracking-tight group-hover:text-orange-500 transition-all duration-300 leading-none block truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {!settingsLoaded ? (
                                         <span className={`inline-block h-6 sm:h-8 w-20 sm:w-32 rounded animate-pulse ${darkMode ? 'bg-slate-700/50' : 'bg-slate-200'}`}></span>
                                     ) : (settings?.storeName || '')}
@@ -6833,7 +6897,7 @@ function App() {
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
-                    <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block storefront-shell">
+                    <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block storefront-shell store-view">
 
                         {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings están cargados */}
                         {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
@@ -6896,7 +6960,7 @@ function App() {
                                             <span className="bg-orange-500 text-black px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2 sm:mb-4 inline-block">
                                                 {settings?.heroBadge || 'Tienda profesional lista para vender'}
                                             </span>
-                                            <h1 className={`text-lg sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 ${darkMode ? 'text-white hero-title-neon' : 'text-slate-900 hero-title-neon-light'}`}>
+                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 ${darkMode ? 'text-white hero-title-neon' : 'text-slate-900 hero-title-neon-light'}`}>
                                                 {settings?.heroTitle1 || (settings?.storeName || 'Tu tienda online')} <br />
                                                 <span className={`text-transparent bg-clip-text bg-gradient-to-r hero-title-neon-gradient ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || 'que transmite confianza y vende más'}
@@ -6906,10 +6970,10 @@ function App() {
                                                 {settings?.heroSubtitle || 'Diseño premium, compra simple y una experiencia fluida en cualquier dispositivo.'}
                                             </p>
                                             <div className="flex flex-row items-center gap-2 sm:gap-4 premium-hero-ctas">
-                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-4 py-2 sm:px-8 sm:py-4 bg-white text-black font-black text-xs sm:text-base rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn pointer-events-auto">
+                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-4 py-2.5 sm:px-8 sm:py-4 bg-white text-black font-black text-sm sm:text-base rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn pointer-events-auto">
                                                     Ver catálogo <ArrowRight className="w-3.5 h-3.5 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
-                                                <button onClick={() => setView('guide')} className={`px-3 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition font-bold text-[11px] sm:text-xs group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
+                                                <button onClick={() => setView('guide')} className={`px-3 py-2.5 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition font-bold text-sm sm:text-sm group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
                                                     <Info className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Cómo comprar
                                                 </button>
                                             </div>
@@ -7191,7 +7255,7 @@ function App() {
 
                 {/* 2. VISTA DEL CARRITO DE COMPRAS */}
                 {view === 'cart' && (
-                    <div className="max-w-6xl mx-auto animate-fade-up px-2 sm:px-4 md:px-8 pb-20">
+                    <div className="max-w-6xl mx-auto animate-fade-up px-2 sm:px-4 md:px-8 pb-20 cart-view">
                         <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8 pt-4 sm:pt-8 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-3 sm:gap-4">
                                 <button onClick={() => setView('store')} className={`p-2.5 sm:p-3 rounded-full transition group ${darkMode ? 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}>
@@ -7237,28 +7301,28 @@ function App() {
                                 {/* Lista de Items */}
                                 <div className="lg:col-span-2 space-y-4">
                                     {cart.map((item) => (
-                                        <div key={item.product.id} className={`p-3 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl border flex flex-row gap-3 sm:gap-4 md:gap-6 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm hover:shadow-md'}`}>
+                                        <div key={item.product.id} className={`cart-item-row p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border flex flex-row gap-3 sm:gap-4 md:gap-6 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm hover:shadow-md'}`}>
                                             {/* Imagen */}
-                                            <div className="w-20 sm:w-24 md:w-32 h-20 sm:h-24 md:h-32 bg-white rounded-xl sm:rounded-2xl flex items-center justify-center p-1.5 sm:p-2 flex-shrink-0 shadow-lg border border-slate-100">
+                                            <div className="cart-item-image w-20 sm:w-24 md:w-32 h-20 sm:h-24 md:h-32 bg-white rounded-xl sm:rounded-2xl flex items-center justify-center p-1.5 sm:p-2 flex-shrink-0 shadow-lg border border-slate-100">
                                                 <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain" />
                                             </div>
 
                                             {/* Info */}
                                             <div className="flex-1 min-w-0 text-left z-10">
                                                 <div className="flex justify-between items-start w-full">
-                                                    <h3 className={`font-bold text-sm sm:text-base md:text-lg truncate mb-1 pr-2 sm:pr-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.product.name}</h3>
+                                                    <h3 className={`cart-item-title font-bold text-base sm:text-lg md:text-lg truncate mb-1 pr-2 sm:pr-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.product.name}</h3>
                                                     <button onClick={() => manageCart(item.product, -item.quantity)} className={`p-2 rounded-lg transition ${darkMode ? 'text-slate-600 hover:text-red-500 bg-slate-900 hover:bg-red-900/20' : 'text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50'}`}>
                                                         <Trash2 className="w-5 h-5" />
                                                     </button>
                                                 </div>
 
-                                                <p className="text-orange-500 font-bold text-sm mb-4">
+                                                <p className="cart-item-unit-price text-orange-500 font-bold text-base mb-4">
                                                     ${calculateItemPrice(item.product?.basePrice ?? 0, item.product?.discount ?? 0).toLocaleString()} <span className="text-slate-500 font-normal">unitario</span>
                                                 </p>
 
                                                 {/* Controles de Cantidad */}
                                                 <div className="flex items-center justify-start gap-2 sm:gap-4">
-                                                    <div className={`flex items-center gap-3 rounded-xl p-1 border ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                                    <div className={`cart-qty-wrap flex items-center gap-3 rounded-xl p-1 border ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                                                         <button onClick={() => manageCart(item.product, -1)} className={`w-10 h-10 flex items-center justify-center rounded-lg transition ${darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-white text-slate-500 hover:text-slate-900'}`}>
                                                             <Minus className="w-4 h-4" />
                                                         </button>
@@ -7278,7 +7342,7 @@ function App() {
                                 </div>
 
                                 {/* Resumen y Checkout */}
-                                <div className={`border p-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] h-fit sticky top-20 sm:top-28 shadow-2xl transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <div className={`cart-summary-card border p-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] h-fit sticky top-20 sm:top-28 shadow-2xl transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <h3 className={`text-2xl font-black mb-8 border-b pb-4 transition-colors duration-300 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-200'}`}>Resumen de Compra</h3>
 
                                     {/* Sección de Cupones */}
@@ -7347,7 +7411,7 @@ function App() {
 
                 {/* 3. VISTA DE CHECKOUT (FINALIZAR COMPRA) */}
                 {view === 'checkout' && (
-                    <div className="max-w-5xl mx-auto pb-20 animate-fade-up px-2 sm:px-4 md:px-8">
+                    <div className="max-w-5xl mx-auto pb-20 animate-fade-up px-2 sm:px-4 md:px-8 checkout-view">
                         <button onClick={() => setView('cart')} className="mb-4 sm:mb-8 mt-4 sm:mt-8 text-slate-400 hover:text-white flex items-center gap-2 font-bold transition text-sm sm:text-base">
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" /> Volver al Carrito
                         </button>
@@ -7357,12 +7421,12 @@ function App() {
                             <div className="md:col-span-3 space-y-8">
 
                                 {/* Opciones de Entrega */}
-                                <div className={`border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <div className={`checkout-card checkout-shipping-card border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-bl-[100px] pointer-events-none"></div>
                                     <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                         <Truck className="text-orange-500 w-5 h-5 sm:w-6 sm:h-6" /> Método de Entrega
                                     </h2>
-                                    <div className="grid grid-cols-2 gap-3 sm:gap-4 relative z-10 mb-4 sm:mb-6">
+                                    <div className="checkout-options-grid grid grid-cols-2 gap-3 sm:gap-4 relative z-10 mb-4 sm:mb-6">
                                         {settings?.shippingPickup?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, shippingMethod: 'Pickup' })}
@@ -7370,7 +7434,7 @@ function App() {
                                             >
                                                 {checkoutData.shippingMethod === 'Pickup' && <CheckCircle className="absolute top-2 right-2 w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />}
                                                 <MapPin className="w-6 h-6 sm:w-8 sm:h-8 group-hover:scale-110 transition" />
-                                                <span className="text-[10px] sm:text-xs font-black uppercase">Retiro en Local</span>
+                                                <span className="text-xs sm:text-sm font-black uppercase">Retiro en Local</span>
                                             </button>
                                         )}
                                         {settings?.shippingDelivery?.enabled && (
@@ -7380,7 +7444,7 @@ function App() {
                                             >
                                                 {checkoutData.shippingMethod === 'Delivery' && <CheckCircle className="absolute top-2 right-2 w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />}
                                                 <Truck className="w-6 h-6 sm:w-8 sm:h-8 group-hover:scale-110 transition" />
-                                                <span className="text-[10px] sm:text-xs font-black uppercase">Envío a Domicilio</span>
+                                                <span className="text-xs sm:text-sm font-black uppercase">Envío a Domicilio</span>
                                             </button>
                                         )}
                                     </div>
@@ -7438,12 +7502,12 @@ function App() {
                                 </div>
 
                                 {/* Método de Pago */}
-                                <div className={`border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <div className={`checkout-card checkout-payment-card border p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2.5rem] shadow-xl relative overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-bl-[100px] pointer-events-none"></div>
                                     <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                         <CreditCard className="text-orange-500 w-5 h-5 sm:w-6 sm:h-6" /> Método de Pago
                                     </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+                                    <div className="checkout-payment-grid payment-grid-mobile grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                                         {settings?.paymentMercadoPago?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Tarjeta' })}
@@ -7571,7 +7635,7 @@ function App() {
 
                             {/* Columna Derecha: Confirmación */}
                             <div className="md:col-span-2">
-                                <div className={`border p-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] sticky top-20 sm:top-28 shadow-2xl ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <div className={`checkout-summary-card border p-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] sticky top-20 sm:top-28 shadow-2xl ${darkMode ? 'bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-[#050505] border-slate-800' : 'bg-white border-slate-200'}`}>
                                     <h3 className={`font-black mb-6 sm:mb-8 text-lg sm:text-xl border-b pb-4 ${darkMode ? 'text-white border-slate-800' : 'text-slate-900 border-slate-100'}`}>Resumen Final</h3>
 
                                     <div className="space-y-4 mb-8">
@@ -8068,7 +8132,7 @@ function App() {
                             currentUser?.id &&
                             currentUser?.id.length >= 10 &&
                             !SecurityManager.detectManipulation()) ? (
-                            <div className="flex min-h-screen min-full-viewport bg-[#050505] animate-fade-up relative w-full font-sans">
+                            <div className="admin-shell flex min-h-screen min-full-viewport bg-[#050505] animate-fade-up relative w-full font-sans">
 
                                 {/* Overlay para cerrar el menú en móvil */}
                                 {isAdminMenuOpen && (
@@ -8079,34 +8143,34 @@ function App() {
                                 )}
 
                                 {/* 7.1 Sidebar Admin */}
-                                <div className={`fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ease-out ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static md:w-72 shadow-2xl`}>
-                                    <div className="p-6 md:p-8 border-b border-slate-900 flex items-center justify-between">
+                                <div className={`admin-sidebar fixed inset-y-0 left-0 z-40 w-[280px] bg-[#0a0a0a] border-r border-slate-800 flex flex-col transition-transform duration-300 ease-out ${isAdminMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:static md:w-72 shadow-2xl`}>
+                                    <div className="admin-sidebar-header p-6 md:p-8 border-b border-slate-900 flex items-center justify-between">
                                         <div>
-                                            <h2 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                                            <h2 className="admin-sidebar-title text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-3">
                                                 <div className="w-9 h-9 md:w-10 md:h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-900/20">
                                                     <Shield className="w-5 h-5 md:w-6 md:h-6" />
                                                 </div>
-                                                ADMIN
+                                                Panel Admin
                                             </h2>
-                                            <p className="text-[10px] md:text-xs text-slate-500 mt-1.5 font-mono ml-1">v3.0.0 PRO</p>
+                                            <p className="admin-sidebar-version text-[10px] md:text-xs text-slate-500 mt-1.5 font-mono ml-1">Sustore Suite v3.0.0</p>
                                         </div>
                                         {/* Botón cerrar en móvil */}
                                         <button
                                             onClick={() => setIsAdminMenuOpen(false)}
-                                            className="md:hidden p-2 bg-slate-900 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition border border-slate-800"
+                                            className="admin-sidebar-close-btn md:hidden p-2 bg-slate-900 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition border border-slate-800"
                                         >
                                             <X className="w-5 h-5" />
                                         </button>
                                     </div>
 
-                                    <nav className="flex-1 p-3 md:p-4 space-y-1.5 md:space-y-2 overflow-y-auto custom-scrollbar">
-                                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-1">Principal</p>
+                                    <nav className="admin-nav flex-1 p-3 md:p-4 space-y-1.5 md:space-y-2 overflow-y-auto custom-scrollbar">
+                                        <p className="admin-nav-section text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-1">Principal</p>
 
-                                        <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'dashboard' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                        <button onClick={() => { setAdminTab('dashboard'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'dashboard' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                             <LayoutDashboard className="w-5 h-5" /> Inicio
                                         </button>
 
-                                        <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'orders' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                        <button onClick={() => { setAdminTab('orders'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'orders' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                             <ShoppingBag className="w-5 h-5" /> Pedidos
                                             {isAdminUser && hasUnseenOrders && (
                                                 <span className="ml-auto text-[10px] px-2 py-1 rounded-full bg-red-900/30 text-red-300 border border-red-500/30 font-black uppercase tracking-widest">
@@ -8115,20 +8179,20 @@ function App() {
                                             )}
                                         </button>
 
-                                        <button onClick={() => { setAdminTab('products'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'products' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                        <button onClick={() => { setAdminTab('products'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'products' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                             <Package className="w-5 h-5" /> Productos
                                         </button>
 
                                         {/* Promos - Available for editors and admins */}
                                         {(isAdmin(currentUser?.email) || isEditor(currentUser?.email)) && (
-                                            <button onClick={() => { setAdminTab('promos'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'promos' ? 'bg-purple-900/20 text-purple-400 border border-purple-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <button onClick={() => { setAdminTab('promos'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'promos' ? 'bg-purple-500/15 text-purple-200 border border-purple-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                 <Tag className="w-5 h-5" /> Promos
                                             </button>
                                         )}
 
                                         {/* Carrusel - Available for business/premium plans */}
                                         {isAdmin(currentUser?.email) && (
-                                            <button onClick={() => { setAdminTab('carousel'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'carousel' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                            <button onClick={() => { setAdminTab('carousel'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'carousel' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                 <Play className="w-5 h-5" /> Carrusel
                                                 {!['business', 'premium'].includes(settings?.subscriptionPlan) && (
                                                     <Lock className="w-3 h-3 text-yellow-500 ml-auto" />
@@ -8138,48 +8202,48 @@ function App() {
 
                                         {isAdmin(currentUser?.email) && (
                                             <>
-                                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-4 md:mt-6">Gestión</p>
+                                                <p className="admin-nav-section text-[10px] font-black text-slate-600 uppercase tracking-widest px-3 md:px-4 py-2 mt-4 md:mt-6">Gestión</p>
 
-                                                <button onClick={() => { setAdminTab('coupons'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'coupons' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <button onClick={() => { setAdminTab('coupons'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'coupons' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                     <Ticket className="w-5 h-5" /> Cupones
                                                     {!['business', 'premium'].includes(settings?.subscriptionPlan) && (
                                                         <Lock className="w-3 h-3 text-yellow-500 ml-auto" />
                                                     )}
                                                 </button>
 
-                                                <button onClick={() => { setAdminTab('suppliers'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'suppliers' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <button onClick={() => { setAdminTab('suppliers'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'suppliers' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                     <Truck className="w-5 h-5" /> Proveedores
                                                 </button>
 
-                                                <button onClick={() => { setAdminTab('purchases'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'purchases' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <button onClick={() => { setAdminTab('purchases'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'purchases' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                     <ShoppingCart className="w-5 h-5" /> Compras
                                                 </button>
 
-                                                <button onClick={() => { setAdminTab('finance'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'finance' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <button onClick={() => { setAdminTab('finance'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'finance' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                     <Wallet className="w-5 h-5" /> Finanzas
                                                 </button>
 
-                                                <button onClick={() => { setAdminTab('settings'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'settings' ? 'bg-orange-900/20 text-orange-400 border border-orange-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <button onClick={() => { setAdminTab('settings'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'settings' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                     <Settings className="w-5 h-5" /> Configuración
                                                 </button>
 
-                                                <button onClick={() => { setAdminTab('users'); setIsAdminMenuOpen(false); }} className={`w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-bold text-sm transition ${adminTab === 'users' ? 'bg-pink-900/20 text-pink-400 border border-pink-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`}>
+                                                <button onClick={() => { setAdminTab('users'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'users' ? 'bg-pink-500/15 text-pink-200 border border-pink-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                     <Users className="w-5 h-5" /> Usuarios
                                                 </button>
                                             </>
                                         )}
                                     </nav>
 
-                                    <div className="p-4 md:p-6 border-t border-slate-900">
-                                        <button onClick={() => { setView('store'); setIsAdminMenuOpen(false); }} className="w-full py-3.5 md:py-4 bg-slate-900 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition font-bold text-sm flex items-center justify-center gap-2 group border border-slate-800">
+                                    <div className="admin-sidebar-footer p-4 md:p-6 border-t border-slate-900">
+                                        <button onClick={() => { setView('store'); setIsAdminMenuOpen(false); }} className="admin-exit-btn w-full py-3.5 md:py-4 bg-slate-900 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition font-semibold text-sm flex items-center justify-center gap-2 group border border-slate-800">
                                             <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition" /> Volver a Tienda
                                         </button>
                                     </div>
                                 </div>
 
                                 {/* 7.2 Contenido Principal Admin */}
-                                <div className="flex-1 bg-[#050505] overflow-y-auto relative w-full p-4 md:p-10 custom-scrollbar">
-                                    <button onClick={() => setIsAdminMenuOpen(true)} className="md:hidden mb-4 p-3 bg-slate-900 hover:bg-slate-800 rounded-xl text-white border border-slate-800 flex items-center gap-2 font-bold text-sm transition">
+                                <div className="admin-main admin-content flex-1 bg-[#050505] overflow-y-auto relative w-full p-4 md:p-10 custom-scrollbar">
+                                    <button onClick={() => setIsAdminMenuOpen(true)} className="admin-mobile-menu md:hidden mb-4 p-3 bg-slate-900 hover:bg-slate-800 rounded-xl text-white border border-slate-800 flex items-center gap-2 font-semibold text-sm transition">
                                         <Menu className="w-5 h-5" /> Menú
                                     </button>
 
@@ -8191,14 +8255,14 @@ function App() {
                                             {/* Modales Admin Users */}
 
 
-                                            <div className="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
                                                 <div>
-                                                    <h1 className="text-4xl font-black text-white neon-text">Panel de Control</h1>
-                                                    <p className="text-slate-500 mt-2">Resumen administrativo y financiero.</p>
+                                                    <h1 className="admin-page-title text-3xl md:text-4xl font-black text-white tracking-tight">Panel de Control</h1>
+                                                    <p className="admin-page-subtitle text-slate-400 text-sm mt-2">Resumen administrativo y financiero.</p>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <AdminHowToUse guideKey="dashboard" />
-                                                    <div className="hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-400 font-mono border border-slate-800">
+                                                    <div className="admin-date-chip hidden md:block bg-slate-900 px-4 py-2 rounded-lg text-xs text-slate-300 font-mono border border-slate-800">
                                                         {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                                     </div>
                                                 </div>
@@ -8481,7 +8545,7 @@ function App() {
                                                                         const p = products.find(prod => prod.id === pid);
                                                                         if (!p) return null;
                                                                         return (
-                                                                            <div key={pid} className="w-10 h-10 rounded-lg bg-white p-1 flex items-center justify-center border border-slate-600 tooltip-container" title={p.name}>
+                                                                            <div key={pid} className="w-10 h-10 rounded-lg bg-white p-1 flex items-center justify-center border border-slate-600 tooltip-container overflow-hidden product-preview-frame" title={p.name}>
                                                                                 <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                                             </div>
                                                                         );
@@ -8679,7 +8743,7 @@ function App() {
                                                             <div key={p.id} style={{ animationDelay: `${idx * 0.05}s` }} className="flex justify-between items-center bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-slate-600 transition group animate-fade-up">
                                                                 <div className="flex items-center gap-4 flex-1">
                                                                     {/* Image Preview */}
-                                                                    <div className="w-12 h-12 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700">
+                                                                    <div className="w-12 h-12 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700 overflow-hidden product-preview-frame">
                                                                         {prod?.image ? (
                                                                             <img src={prod.image} className="w-full h-full object-contain" alt={prod.name} />
                                                                         ) : (
@@ -9550,7 +9614,9 @@ function App() {
                                                                     return (
                                                                         <div key={idx} className="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700">
                                                                             <div className="flex items-center gap-3">
-                                                                                <img src={p.image} alt={p.name || 'Producto'} className="w-8 h-8 rounded bg-white object-contain p-0.5" />
+                                                                                <div className="w-8 h-8 rounded bg-white p-0.5 overflow-hidden flex-shrink-0 product-preview-frame">
+                                                                                    <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
+                                                                                </div>
                                                                                 <div>
                                                                                     <p className="text-sm font-bold text-white truncate max-w-[200px] sm:max-w-none">{p.name}</p>
                                                                                     <p className="text-xs text-slate-500">{item.quantity} un. x ${p.basePrice}</p>
@@ -10045,7 +10111,7 @@ function App() {
                                                                         className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
                                                                     />
                                                                     {newProduct.image && (
-                                                                        <div className="bg-white rounded-xl p-3 w-32 h-32">
+                                                                        <div className="bg-white rounded-xl p-3 w-32 h-32 overflow-hidden product-preview-frame">
                                                                             <img src={newProduct.image} className="w-full h-full object-contain" alt="Preview" />
                                                                         </div>
                                                                     )}
@@ -10063,8 +10129,30 @@ function App() {
                                                                     className="input-cyber w-full p-4"
                                                                     placeholder="0"
                                                                     value={newProduct.discount || 0}
-                                                                    onChange={e => setNewProduct({ ...newProduct, discount: parseFloat(e.target.value) || 0 })}
+                                                                    onChange={e => setNewProduct({ ...newProduct, discount: sanitizeDiscount(e.target.value) })}
                                                                 />
+                                                                {productFormBasePrice > 0 ? (
+                                                                    <div className={`mt-3 rounded-xl border p-3 ${productFormDiscount > 0 ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-slate-700 bg-slate-900/40'}`}>
+                                                                        <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                                                                            Precio original: <span className="text-slate-300">${productFormBasePrice.toLocaleString()}</span>
+                                                                        </p>
+                                                                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                                            <span className={`text-sm font-black ${productFormDiscount > 0 ? 'text-emerald-300' : 'text-slate-200'}`}>
+                                                                                Total final: ${productFormFinalPrice.toLocaleString()}
+                                                                            </span>
+                                                                            {productFormDiscount > 0 && (
+                                                                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-2 py-1 text-[11px] font-bold text-orange-300 border border-orange-500/30">
+                                                                                    <Percent className="w-3 h-3" />
+                                                                                    Ahorro ${productFormSavings.toLocaleString()}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="text-[11px] text-slate-500 mt-2">
+                                                                        Cargá el precio de venta para ver el total con descuento.
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -10087,7 +10175,7 @@ function App() {
                                                         className={`bg-[#0a0a0a] border p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 group hover:border-orange-900/50 transition animate-fade-up ${p.isActive === false ? 'border-yellow-500/30 opacity-60' : 'border-slate-800'}`}
                                                     >
                                                         <div className="flex items-start sm:items-center gap-3 sm:gap-6 w-full min-w-0">
-                                                            <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-lg p-2 flex-shrink-0 relative ${p.isActive === false ? 'grayscale' : ''}`}>
+                                                            <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-lg p-2 flex-shrink-0 relative overflow-hidden product-preview-frame ${p.isActive === false ? 'grayscale' : ''}`}>
                                                                 <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                                 {p.isFeatured && (
                                                                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
@@ -10241,7 +10329,7 @@ function App() {
                                                                         <input
                                                                             type="file"
                                                                             accept="image/*"
-                                                                            onChange={(e) => handleImageUpload(e, setNewHomeBanner, 'imageUrl', 1400)}
+                                                                            onChange={(e) => handleImageUpload(e, setNewHomeBanner, 'imageUrl')}
                                                                             className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
                                                                         />
                                                                         {newHomeBanner?.imageUrl && (
@@ -10249,6 +10337,7 @@ function App() {
                                                                                 <img src={newHomeBanner.imageUrl} className="w-full h-full object-cover" alt="Banner preview" />
                                                                             </div>
                                                                         )}
+                                                                        <p className="text-xs text-slate-500 mt-2">Recomendado: 2400x1350 px mínimo para que no pierda nitidez en pantallas grandes</p>
                                                                     </div>
 
                                                                     <div className="lg:col-span-2 space-y-4">
@@ -11163,7 +11252,7 @@ function App() {
                                                                 <input
                                                                     type="file"
                                                                     accept="image/*"
-                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl', 1920)}
+                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl')}
                                                                     className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
                                                                 />
                                                                 {settings?.heroUrl && (
@@ -11171,7 +11260,7 @@ function App() {
                                                                         <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
                                                                     </div>
                                                                 )}
-                                                                <p className="text-xs text-slate-500 mt-2">Recomendado: 1920x800 px mínimo</p>
+                                                                <p className="text-xs text-slate-500 mt-2">Recomendado: 2400x1000 px mínimo para máxima nitidez</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -12407,7 +12496,7 @@ function App() {
                                                                             }}
                                                                             className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer mb-1 transition ${newSupplier.associatedProducts?.includes(p.id) ? 'bg-orange-900/30 border border-orange-500/30' : 'hover:bg-slate-800 border border-transparent'}`}
                                                                         >
-                                                                            <div className="w-8 h-8 bg-white rounded p-0.5 flex-shrink-0">
+                                                                            <div className="w-8 h-8 bg-white rounded p-0.5 flex-shrink-0 overflow-hidden product-preview-frame">
                                                                                 <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                                             </div>
                                                                             <span className="text-xs text-white truncate flex-1 font-medium">{p.name}</span>
