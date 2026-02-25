@@ -48,12 +48,26 @@ const PUBLIC_SITE_URL =
         : '';
 const APP_VERSION = "3.0.0";
 
-let mpPublicKeyPromise = null;
-async function getMercadoPagoPublicKey() {
-    if (mpPublicKeyPromise) return mpPublicKeyPromise;
-    mpPublicKeyPromise = (async () => {
+const mpPublicKeyPromiseByStore = new Map();
+function getPublicKeyCacheKey(storeId) {
+    const key = String(storeId || '').trim();
+    return key || '__default__';
+}
+function invalidateMercadoPagoPublicKey(storeId = '') {
+    const key = getPublicKeyCacheKey(storeId);
+    mpPublicKeyPromiseByStore.delete(key);
+}
+async function getMercadoPagoPublicKey(storeId = '') {
+    const cacheKey = getPublicKeyCacheKey(storeId);
+    const existing = mpPublicKeyPromiseByStore.get(cacheKey);
+    if (existing) return existing;
+
+    const request = (async () => {
         try {
-            const res = await fetch('/api/checkout?action=public_config', { method: 'GET' });
+            const headers = {};
+            const safeStoreId = String(storeId || '').trim();
+            if (safeStoreId) headers['x-store-id'] = safeStoreId;
+            const res = await fetch('/api/checkout?action=public_config', { method: 'GET', headers });
             if (!res.ok) return null;
             const data = await res.json().catch(() => ({}));
             const key = String(data?.mpPublicKey || '').trim();
@@ -62,7 +76,9 @@ async function getMercadoPagoPublicKey() {
             return null;
         }
     })();
-    return mpPublicKeyPromise;
+
+    mpPublicKeyPromiseByStore.set(cacheKey, request);
+    return request;
 }
 
 const setupSmoothWheelScroll = () => {
@@ -1670,6 +1686,18 @@ function App() {
 
     const [settings, setSettings] = useState(defaultSettings);
     const [settingsLoaded, setSettingsLoaded] = useState(false); // Indica si los settings ya se cargaron de Firebase
+    const [mpOAuthStatus, setMpOAuthStatus] = useState({
+        loading: false,
+        connected: false,
+        mpUserId: null,
+        liveMode: null,
+        scope: null,
+        expiresAt: null,
+        publicKey: null,
+        error: null,
+    });
+    const [isMpOAuthConnecting, setIsMpOAuthConnecting] = useState(false);
+    const [isMpOAuthDisconnecting, setIsMpOAuthDisconnecting] = useState(false);
 
     // Estados de Interfaz de Usuario
     const [searchQuery, setSearchQuery] = useState('');
@@ -4114,7 +4142,7 @@ function App() {
         showToast(msg, "success");
     };
 
-    const getAuthenticatedUser = async () => {
+    const getAuthenticatedUser = useCallback(async () => {
         const existing = auth.currentUser;
         if (existing && !existing.isAnonymous) return existing;
 
@@ -4133,7 +4161,176 @@ function App() {
 
         if (hydrated && !hydrated.isAnonymous) return hydrated;
         return null;
+    }, []);
+
+    const loadMercadoPagoOAuthStatus = useCallback(async () => {
+        if (!appId || !isAdminUser) return;
+
+        setMpOAuthStatus((prev) => ({ ...prev, loading: true, error: null }));
+        try {
+            const authUser = await getAuthenticatedUser();
+            if (!authUser) {
+                throw new Error('Sesión inválida. Iniciá sesión de nuevo.');
+            }
+            const token = await authUser.getIdToken(true);
+            const res = await fetch('/api/mercadopago/oauth/status', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-store-id': appId || '',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data?.error || 'No se pudo consultar la conexión de Mercado Pago.');
+            }
+
+            setMpOAuthStatus({
+                loading: false,
+                connected: data?.connected === true,
+                mpUserId: data?.mpUserId ?? null,
+                liveMode: typeof data?.liveMode === 'boolean' ? data.liveMode : null,
+                scope: data?.scope || null,
+                expiresAt: data?.expiresAt || null,
+                publicKey: data?.publicKey || null,
+                error: null,
+            });
+        } catch (error) {
+            setMpOAuthStatus((prev) => ({
+                ...prev,
+                loading: false,
+                error: error?.message || 'No se pudo consultar Mercado Pago OAuth.',
+            }));
+        }
+    }, [appId, isAdminUser, getAuthenticatedUser]);
+
+    const connectMercadoPagoOAuth = async () => {
+        if (isMpOAuthConnecting) return;
+        if (!appId) {
+            showToast('No se pudo detectar la tienda actual.', 'error');
+            return;
+        }
+
+        setIsMpOAuthConnecting(true);
+        try {
+            const authUser = await getAuthenticatedUser();
+            if (!authUser) {
+                setView('login');
+                throw new Error('Tu sesión venció. Iniciá sesión nuevamente.');
+            }
+            const token = await authUser.getIdToken(true);
+            const res = await fetch('/api/mercadopago/oauth/connect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-store-id': appId || '',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({}),
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data?.error || 'No se pudo iniciar la conexión con Mercado Pago.');
+            }
+
+            const authorizationUrl = String(data?.authorizationUrl || '').trim();
+            if (!authorizationUrl) {
+                throw new Error('No se recibió la URL de autorización de Mercado Pago.');
+            }
+
+            window.location.assign(authorizationUrl);
+            return;
+        } catch (error) {
+            showToast(error?.message || 'No se pudo iniciar la conexión con Mercado Pago.', 'error');
+        } finally {
+            setIsMpOAuthConnecting(false);
+        }
     };
+
+    const disconnectMercadoPagoOAuth = async () => {
+        if (isMpOAuthDisconnecting) return;
+        if (!appId) {
+            showToast('No se pudo detectar la tienda actual.', 'error');
+            return;
+        }
+
+        setIsMpOAuthDisconnecting(true);
+        try {
+            const authUser = await getAuthenticatedUser();
+            if (!authUser) {
+                setView('login');
+                throw new Error('Tu sesión venció. Iniciá sesión nuevamente.');
+            }
+            const token = await authUser.getIdToken(true);
+            const res = await fetch('/api/mercadopago/oauth/disconnect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-store-id': appId || '',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({}),
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data?.error || 'No se pudo desconectar Mercado Pago.');
+            }
+
+            setMpOAuthStatus({
+                loading: false,
+                connected: false,
+                mpUserId: null,
+                liveMode: null,
+                scope: null,
+                expiresAt: null,
+                publicKey: null,
+                error: null,
+            });
+            invalidateMercadoPagoPublicKey(appId || '');
+            showToast('Mercado Pago desconectado correctamente.', 'success');
+        } catch (error) {
+            showToast(error?.message || 'No se pudo desconectar Mercado Pago.', 'error');
+        } finally {
+            setIsMpOAuthDisconnecting(false);
+        }
+    };
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const current = new URL(window.location.href);
+        const result = String(current.searchParams.get('mp_oauth') || '').trim();
+        if (!result) return;
+
+        const rawError = String(current.searchParams.get('mp_oauth_error') || '').trim();
+        const safeError = rawError ? rawError.replace(/_/g, ' ') : '';
+
+        setView('admin');
+        setAdminTab('settings');
+        setSettingsTab('payments');
+        invalidateMercadoPagoPublicKey(appId || '');
+
+        if (result === 'connected') {
+            showToast('Cuenta de Mercado Pago conectada correctamente.', 'success');
+        } else if (result === 'denied') {
+            showToast('Conexión cancelada en Mercado Pago.', 'warning');
+        } else {
+            showToast(`No se pudo completar la conexión.${safeError ? ` (${safeError})` : ''}`, 'error');
+        }
+
+        current.searchParams.delete('mp_oauth');
+        current.searchParams.delete('mp_oauth_error');
+        window.history.replaceState({}, '', `${current.pathname}${current.search}${current.hash}`);
+    }, [appId]);
+
+    useEffect(() => {
+        if (!appId || !isAdminUser) return;
+        if (view !== 'admin' || adminTab !== 'settings' || settingsTab !== 'payments') return;
+        loadMercadoPagoOAuthStatus();
+    }, [appId, isAdminUser, view, adminTab, settingsTab, loadMercadoPagoOAuthStatus]);
 
     // 5. Confirmación de Pedido (Checkout)
     const confirmOrder = async () => {
@@ -4331,7 +4528,7 @@ function App() {
         // Limpiar errores previos
         setPaymentError(null);
 
-        const publicKey = await getMercadoPagoPublicKey();
+        const publicKey = await getMercadoPagoPublicKey(appId || '');
         if (!publicKey) {
             isInitializingBrick.current = false;
             clearTimeout(safetyTimeout);
@@ -4401,7 +4598,10 @@ function App() {
                         try {
                             const response = await fetch('/api/checkout', {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'x-store-id': appId || '',
+                                },
                                 body: JSON.stringify({
                                     action: 'process_payment',
                                     paymentData: {
@@ -9442,7 +9642,7 @@ function App() {
                                                                 <div className="p-4 bg-slate-900 rounded-xl border border-slate-700 text-slate-400 font-mono text-sm flex items-center">
                                                                     Costo: ${newPromo.items.reduce((acc, item) => {
                                                                         const p = products.find(prod => prod.id === item.productId);
-                                                                        return acc + ((Number(p?.basePrice) || 0) * item.quantity);
+                                                                        return acc + (Number(p?.purchasePrice ?? p?.basePrice ?? 0) * item.quantity);
                                                                     }, 0).toLocaleString()}
                                                                 </div>
                                                             </div>
@@ -9631,15 +9831,15 @@ function App() {
 
                                                     return (
                                                         <div key={promo.id} className="bg-[#0a0a0a] border border-slate-800 rounded-2xl overflow-hidden hover:border-purple-500/30 transition group flex flex-col">
-                                                            <div className="aspect-video relative overflow-hidden">
+                                                            <div className="aspect-[16/10] sm:aspect-video relative overflow-hidden">
                                                                 <img src={promo.image || 'https://via.placeholder.com/400'} alt={promo.name || 'Promo'} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                                                                <div className="absolute bottom-4 left-4 right-4 bg-black/55 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-                                                                    <h4 className="text-xl font-black text-white mb-1 leading-tight">{promo.name}</h4>
-                                                                    <div className="flex items-center gap-3">
-                                                                        <p className="text-3xl text-purple-400 font-black">${price.toLocaleString()}</p>
+                                                                <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 bg-black/55 backdrop-blur-sm rounded-2xl p-3 sm:p-4 border border-white/10">
+                                                                    <h4 className="text-lg sm:text-xl font-black text-white mb-1 leading-tight line-clamp-2">{promo.name}</h4>
+                                                                    <div className="flex flex-wrap items-center gap-2.5">
+                                                                        <p className="text-2xl sm:text-3xl leading-none text-purple-400 font-black">${price.toLocaleString()}</p>
                                                                         {totalCost > 0 && (
-                                                                            <div className={`px-2 py-1 rounded text-xs font-bold border ${isProfitable ? 'bg-green-900/30 border-green-500/30 text-green-400' : 'bg-red-900/30 border-red-500/30 text-red-400'}`}>
+                                                                            <div className={`px-2 py-1 rounded text-xs font-bold border whitespace-nowrap ${isProfitable ? 'bg-green-900/30 border-green-500/30 text-green-400' : 'bg-red-900/30 border-red-500/30 text-red-400'}`}>
                                                                                 {margin}% MG
                                                                             </div>
                                                                         )}
@@ -9647,21 +9847,22 @@ function App() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="p-6 flex-1 flex flex-col">
+                                                            <div className="p-4 sm:p-6 flex-1 flex flex-col">
                                                                 {/* Productos Incluidos con Miniaturas */}
                                                                 <div className="mb-6 flex-1">
                                                                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Incluye:</p>
                                                                     <div className="flex flex-col gap-2">
                                                                         {(promo.items || []).map((item, i) => {
                                                                             const p = products.find(prod => prod.id === item.productId);
+                                                                            const itemCost = Number(p?.purchasePrice ?? p?.basePrice ?? 0);
                                                                             return (
-                                                                                <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-slate-900/50 border border-slate-800/50">
-                                                                                    <div className="w-10 h-10 bg-white rounded-lg p-0.5 flex-shrink-0">
+                                                                                <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-900/50 border border-slate-800/50">
+                                                                                    <div className="w-11 h-11 bg-white rounded-lg p-0.5 flex-shrink-0 overflow-hidden">
                                                                                         <img src={p?.image} alt={p?.name || 'Producto'} className="w-full h-full object-contain" />
                                                                                     </div>
                                                                                     <div className="flex-1 min-w-0">
-                                                                                        <p className="text-sm font-bold text-white truncate">{p?.name || 'Producto Eliminado'}</p>
-                                                                                        <p className="text-xs text-slate-500">{item.quantity} x ${Number(p?.basePrice || 0).toLocaleString()} (Costo)</p>
+                                                                                        <p className="text-sm sm:text-[15px] font-bold text-white truncate">{p?.name || 'Producto Eliminado'}</p>
+                                                                                        <p className="text-xs text-slate-500 truncate">{item.quantity} x ${itemCost.toLocaleString()} (Costo)</p>
                                                                                     </div>
                                                                                 </div>
                                                                             )
@@ -10059,10 +10260,10 @@ function App() {
                                                     <div
                                                         key={p.id}
                                                         style={{ animationDelay: `${idx * 0.05}s` }}
-                                                        className={`bg-[#0a0a0a] border p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center group hover:border-orange-900/50 transition animate-fade-up ${p.isActive === false ? 'border-yellow-500/30 opacity-60' : 'border-slate-800'}`}
+                                                        className={`bg-[#0a0a0a] border p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 group hover:border-orange-900/50 transition animate-fade-up ${p.isActive === false ? 'border-yellow-500/30 opacity-60' : 'border-slate-800'}`}
                                                     >
-                                                        <div className="flex items-center gap-6 w-full sm:w-auto">
-                                                            <div className={`w-16 h-16 bg-white rounded-lg p-2 flex-shrink-0 relative ${p.isActive === false ? 'grayscale' : ''}`}>
+                                                        <div className="flex items-start sm:items-center gap-3 sm:gap-6 w-full min-w-0">
+                                                            <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-lg p-2 flex-shrink-0 relative ${p.isActive === false ? 'grayscale' : ''}`}>
                                                                 <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                                 {p.isFeatured && (
                                                                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
@@ -10070,26 +10271,39 @@ function App() {
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            <div>
-                                                                <p className="font-bold text-white text-lg flex items-center gap-2">
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-bold text-white text-base sm:text-lg leading-tight break-words">
                                                                     {p.name}
+                                                                </p>
+                                                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                                                     {p.isFeatured && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">DESTACADO</span>}
                                                                     {p.isActive === false && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">OCULTO{p.deactivatedByPlan ? ' (LÍMITE)' : ''}</span>}
-                                                                </p>
-                                                                <p className="text-xs text-slate-500 font-mono">
-                                                                    Stock: <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400'}>{p.stock || 0}</span> |
-                                                                    <span className="text-orange-400 font-bold ml-2" title="Precio Venta">${Number(p.basePrice).toLocaleString()}</span> |
-                                                                    <span className="text-slate-500 ml-2 font-mono" title="Costo Adquisición">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
-                                                                    {Number(p.basePrice) > 0 && (
-                                                                        <span className={`ml-2 text-[10px] font-black px-1.5 py-0.5 rounded border ${((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) < 0.3 ? 'bg-red-900/20 text-red-400 border-red-500/20' : 'bg-green-900/20 text-green-400 border-green-500/20'}`}>
-                                                                            {(((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) * 100).toFixed(0)}%
+                                                                </div>
+                                                                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] sm:text-xs font-mono">
+                                                                    <span className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-900/70 px-2 py-0.5 text-slate-400">
+                                                                        Stock:
+                                                                        <span className={(p.stock || 0) < (settings?.lowStockThreshold || 5) ? 'text-red-400 font-bold animate-pulse' : 'text-slate-300'}>
+                                                                            {p.stock || 0}
                                                                         </span>
-                                                                    )} |
-                                                                    <span className="text-green-400 ml-2">Ventas: {(dashboardMetrics?.salesCount?.[p.id] || 0)}</span>
-                                                                </p>
+                                                                    </span>
+                                                                    <span className="inline-flex items-center rounded-md border border-orange-500/20 bg-orange-900/10 px-2 py-0.5 font-bold text-orange-400" title="Precio Venta">
+                                                                        ${Number(p.basePrice).toLocaleString()}
+                                                                    </span>
+                                                                    <span className="inline-flex items-center rounded-md border border-slate-700 bg-slate-900/70 px-2 py-0.5 text-slate-500" title="Costo Adquisición">
+                                                                        Costo: ${Number(p.purchasePrice || 0).toLocaleString()}
+                                                                    </span>
+                                                                    {Number(p.basePrice) > 0 && (
+                                                                        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-black ${((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) < 0.3 ? 'bg-red-900/20 text-red-400 border-red-500/20' : 'bg-green-900/20 text-green-400 border-green-500/20'}`}>
+                                                                            {(((Number(p.basePrice) - Number(p.purchasePrice || 0)) / Number(p.basePrice)) * 100).toFixed(0)}% MG
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="inline-flex items-center rounded-md border border-green-500/20 bg-green-900/10 px-2 py-0.5 text-green-400">
+                                                                        Ventas: {(dashboardMetrics?.salesCount?.[p.id] || 0)}
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex gap-2 mt-4 sm:mt-0 w-full sm:w-auto justify-end items-center">
+                                                        <div className="flex flex-wrap sm:flex-nowrap gap-2 mt-1 sm:mt-0 w-full sm:w-auto justify-end items-center">
                                                             {/* Toggle Featured */}
                                                             <button
                                                                 onClick={async () => {
@@ -11737,6 +11951,87 @@ function App() {
                                                                     >
                                                                         <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentMercadoPago?.enabled ? 'left-7' : 'left-1'}`}></div>
                                                                     </button>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                <div className="flex flex-col gap-4">
+                                                                    <div className="flex items-start justify-between gap-4">
+                                                                        <div className="space-y-1">
+                                                                            <p className="font-bold text-white">Cuenta Mercado Pago (OAuth)</p>
+                                                                            <p className={`text-xs ${mpOAuthStatus.connected ? 'text-green-400' : 'text-slate-500'}`}>
+                                                                                {mpOAuthStatus.loading
+                                                                                    ? 'Consultando estado...'
+                                                                                    : mpOAuthStatus.connected
+                                                                                        ? 'Conectada correctamente'
+                                                                                        : 'No conectada'}
+                                                                            </p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={loadMercadoPagoOAuthStatus}
+                                                                            disabled={mpOAuthStatus.loading || !isAdminUser}
+                                                                            className={`px-3 py-2 rounded-lg border text-xs font-bold transition flex items-center gap-2 ${mpOAuthStatus.loading || !isAdminUser
+                                                                                ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+                                                                                : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700 hover:text-white'
+                                                                                }`}
+                                                                        >
+                                                                            <RefreshCw className={`w-3.5 h-3.5 ${mpOAuthStatus.loading ? 'animate-spin' : ''}`} />
+                                                                            Actualizar
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {mpOAuthStatus.connected && (
+                                                                        <div className="text-xs text-slate-400 space-y-1">
+                                                                            {mpOAuthStatus.mpUserId != null && (
+                                                                                <p>ID MP: <span className="text-slate-200 font-mono">{String(mpOAuthStatus.mpUserId)}</span></p>
+                                                                            )}
+                                                                            {mpOAuthStatus.scope && (
+                                                                                <p>Permisos: <span className="text-slate-200">{mpOAuthStatus.scope}</span></p>
+                                                                            )}
+                                                                            {mpOAuthStatus.expiresAt && (
+                                                                                <p>
+                                                                                    Vence:{' '}
+                                                                                    <span className="text-slate-200">
+                                                                                        {new Date(mpOAuthStatus.expiresAt).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}
+                                                                                    </span>
+                                                                                </p>
+                                                                            )}
+                                                                            {typeof mpOAuthStatus.liveMode === 'boolean' && (
+                                                                                <p>Modo: <span className={mpOAuthStatus.liveMode ? 'text-green-400' : 'text-amber-400'}>{mpOAuthStatus.liveMode ? 'Producción' : 'Sandbox/Test'}</span></p>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {mpOAuthStatus.error && (
+                                                                        <p className="text-xs text-red-400">{mpOAuthStatus.error}</p>
+                                                                    )}
+
+                                                                    <div className="flex flex-wrap gap-3">
+                                                                        <button
+                                                                            onClick={connectMercadoPagoOAuth}
+                                                                            disabled={isMpOAuthConnecting || isMpOAuthDisconnecting || !isAdminUser}
+                                                                            className={`px-4 py-2 rounded-xl text-sm font-bold transition ${isMpOAuthConnecting || isMpOAuthDisconnecting || !isAdminUser
+                                                                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                                                                : 'bg-orange-600 text-white hover:bg-orange-500'
+                                                                                }`}
+                                                                        >
+                                                                            {isMpOAuthConnecting
+                                                                                ? 'Conectando...'
+                                                                                : (mpOAuthStatus.connected ? 'Reconectar Mercado Pago' : 'Conectar Mercado Pago')}
+                                                                        </button>
+                                                                        {mpOAuthStatus.connected && (
+                                                                            <button
+                                                                                onClick={disconnectMercadoPagoOAuth}
+                                                                                disabled={isMpOAuthDisconnecting || isMpOAuthConnecting || !isAdminUser}
+                                                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition border ${isMpOAuthDisconnecting || isMpOAuthConnecting || !isAdminUser
+                                                                                    ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+                                                                                    : 'bg-slate-900 text-red-400 border-red-500/40 hover:bg-red-500 hover:text-white'
+                                                                                    }`}
+                                                                            >
+                                                                                {isMpOAuthDisconnecting ? 'Desconectando...' : 'Desconectar'}
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
 

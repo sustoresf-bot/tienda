@@ -1,7 +1,9 @@
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
+import { getStoreAccessTokenForOperations } from '../../lib/mercadopago/store-credentials.js';
 
 function formatMoney(amount) {
     return `$${Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 0 })}`;
@@ -90,15 +92,16 @@ function buildPaymentLockId(paymentId) {
 }
 
 async function getMercadoPagoPayment({ paymentId, accessToken }) {
-    const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-        const message = data?.message || data?.error || 'Error consultando Mercado Pago';
+    const client = new MercadoPagoConfig({ accessToken });
+    const payment = new Payment(client);
+    try {
+        return await payment.get({ id: paymentId });
+    } catch (error) {
+        const causes = Array.isArray(error?.cause) ? error.cause : [];
+        const fromCause = causes.find((entry) => entry?.description || entry?.message);
+        const message = fromCause?.description || fromCause?.message || error?.message || 'Error consultando Mercado Pago';
         throw createApiError('payment_provider_error', message, 502);
     }
-    return data;
 }
 
 function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId, customerName, items, subtotal, discountDetails, shippingMethod, shippingAddress, shippingFee, total, paymentMethod, date }) {
@@ -486,13 +489,16 @@ export default async function handler(req, res) {
             if (!mpPaymentId) {
                 throw createApiError('missing_mp_payment_id', 'Falta mpPaymentId', 400);
             }
-            if (!process.env.MP_ACCESS_TOKEN) {
+
+            const tokenResolution = await getStoreAccessTokenForOperations({ db, storeId });
+            const paymentAccessToken = String(tokenResolution?.accessToken || '').trim();
+            if (!paymentAccessToken) {
                 throw createApiError('payment_not_configured', 'Pago no configurado', 500);
             }
 
             const mpPayment = await getMercadoPagoPayment({
                 paymentId: mpPaymentId,
-                accessToken: process.env.MP_ACCESS_TOKEN,
+                accessToken: paymentAccessToken,
             });
 
             const paymentStatus = String(mpPayment?.status || '').trim().toLowerCase();
