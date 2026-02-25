@@ -90,9 +90,6 @@ async function handleApi(req, res) {
         '/api/admin/list-users': 'list-users',
         '/api/admin/export-store': 'export',
         '/api/admin/import-store': 'import',
-        '/api/mercadopago/oauth/connect': 'mp-oauth-connect',
-        '/api/mercadopago/oauth/status': 'mp-oauth-status',
-        '/api/mercadopago/oauth/disconnect': 'mp-oauth-disconnect',
     };
     const adminAction = adminRewriteMap[url.pathname];
     if (adminAction) {
@@ -103,10 +100,6 @@ async function handleApi(req, res) {
     if (url.pathname === '/api/public-config') {
         url.pathname = '/api/checkout';
         if (!url.searchParams.get('action')) url.searchParams.set('action', 'public_config');
-    }
-    if (url.pathname === '/api/mercadopago/oauth/callback') {
-        url.pathname = '/api/checkout';
-        if (!url.searchParams.get('action')) url.searchParams.set('action', 'mp_oauth_callback');
     }
     const apiPath = url.pathname.replace(/^\/api\//, '');
 
