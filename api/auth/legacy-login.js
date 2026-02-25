@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import fs from 'fs';
-import { getAdmin } from '../../lib/firebaseAdmin.js';
+import { getAdmin, parseServiceAccountFromEnvValue } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
 import { emailToDocKey, normalizeUsernameForKey } from '../../lib/userIdentity.js';
 
@@ -62,14 +62,7 @@ function verifyLegacyPassword({ passwordInput, storedPassword, legacyData, legac
 }
 
 function parseServiceAccountFromEnv() {
-    const raw = String(process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === 'object' ? parsed : null;
-    } catch {
-        return null;
-    }
+    return parseServiceAccountFromEnvValue(process.env.FIREBASE_SERVICE_ACCOUNT);
 }
 
 function getFirebaseAdminConfigStatus() {

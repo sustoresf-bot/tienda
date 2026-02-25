@@ -2,6 +2,21 @@
 import { getAdmin } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
 
+const FIREBASE_ADMIN_MISCONFIG_HINTS = [
+    'could not load the default credentials',
+    'default credentials',
+    'failed to determine project id',
+    'unable to detect a project id',
+    'missing or insufficient permissions',
+    'permission-denied',
+];
+let warnedFirebaseAdminMisconfigured = false;
+
+function isFirebaseAdminMisconfigured(error) {
+    const message = String(error?.message || '').toLowerCase();
+    return FIREBASE_ADMIN_MISCONFIG_HINTS.some((hint) => message.includes(hint));
+}
+
 function escapeHtml(value) {
     return String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -161,6 +176,13 @@ export default async function handler(req, res) {
         // Generic success response to avoid account enumeration.
         return res.status(200).json({ success: true });
     } catch (error) {
+        if (isFirebaseAdminMisconfigured(error)) {
+            if (!warnedFirebaseAdminMisconfigured) {
+                warnedFirebaseAdminMisconfigured = true;
+                console.warn('[reset-password] Firebase Admin no configurado. Se devuelve éxito genérico sin enviar email.');
+            }
+            return res.status(200).json({ success: true });
+        }
         console.error('[reset-password] Error:', error);
         return res.status(500).json({ error: error.message || 'Error interno' });
     }
