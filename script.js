@@ -84,135 +84,41 @@ async function getMercadoPagoPublicKey(storeId = '') {
     return request;
 }
 
-const setupSmoothWheelScroll = () => {
+// --- Smooth scroll powered by Lenis (works on all browsers incl. Brave) ---
+import Lenis from 'lenis';
+
+const setupSmoothScroll = () => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
-    if (window.__smoothWheelScrollEnabled) return;
-    window.__smoothWheelScrollEnabled = true;
+    if (window.__smoothScrollLenis) return;
 
     // Respect user preference for reduced motion
     const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
 
-    // Skip on touch-only devices (smooth scroll is mainly for mouse wheel)
+    // Skip on touch-only devices
     let isTouchDevice = false;
     try { isTouchDevice = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && !window.matchMedia('(pointer: fine)').matches; } catch (e) { }
     if (isTouchDevice) return;
 
-    const getDocEl = () => document.scrollingElement || document.documentElement;
+    const lenis = new Lenis({
+        lerp: 0.09,           // Smoothness (lower = more glide, 0.05-0.15 range)
+        duration: 1.4,        // Duration of the scroll animation in seconds
+        smoothWheel: true,    // Enable smooth wheel scrolling
+        wheelMultiplier: 0.8, // Reduce wheel sensitivity slightly
+        touchMultiplier: 1,   // Keep native touch behavior
+        infinite: false,
+    });
 
-    // --- Lerp-based smooth scroll (antigravity.google style) ---
-    // Instead of velocity+friction, we keep a "target" scroll position and
-    // lerp the real scroll position toward it each frame. This produces
-    // the signature fluid, gliding deceleration.
+    window.__smoothScrollLenis = lenis;
 
-    const LERP = 0.1;             // Lower = more glide / longer deceleration (0.05-0.12 sweet spot)
-    const WHEEL_MULTIPLIER = 0.55; // Keep close to native speed, just smooth it out
-    const STOP_THRESHOLD = 0.5;   // px – stop animating when close enough to target
-
-    const elStates = new WeakMap();
-
-    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-    const maxTop = (el) => Math.max(0, el.scrollHeight - el.clientHeight);
-
-    const isScrollable = (el) => {
-        if (!el || !(el instanceof Element)) return false;
-        const s = window.getComputedStyle(el);
-        if (s.overflowY === 'hidden' || s.overflowY === 'visible') return false;
-        return el.scrollHeight > el.clientHeight + 1;
-    };
-
-    const findScrollParent = (start) => {
-        let el = start;
-        while (el && el instanceof Element && el !== document.body && el !== document.documentElement) {
-            if (isScrollable(el)) return el;
-            el = el.parentElement;
-        }
-        return null;
-    };
-
-    const getState = (el) => {
-        let st = elStates.get(el);
-        if (st) return st;
-        st = { target: el.scrollTop, current: el.scrollTop, rafId: null };
-        elStates.set(el, st);
-        return st;
-    };
-
-    // Core animation loop – lerp toward target each frame
-    const tick = (el) => {
-        const st = getState(el);
-        const max = maxTop(el);
-
-        // Clamp target within bounds
-        st.target = clamp(st.target, 0, max);
-
-        // Lerp
-        st.current += (st.target - st.current) * LERP;
-
-        // Snap if close enough
-        if (Math.abs(st.target - st.current) < STOP_THRESHOLD) {
-            st.current = st.target;
-            el.scrollTop = st.current;
-            st.rafId = null;
-            return;
-        }
-
-        el.scrollTop = st.current;
-        st.rafId = requestAnimationFrame(() => tick(el));
-    };
-
-    const startAnimation = (el) => {
-        const st = getState(el);
-        if (st.rafId === null) {
-            st.rafId = requestAnimationFrame(() => tick(el));
-        }
-    };
-
-    const onWheel = (e) => {
-        if (e.defaultPrevented) return;
-        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-
-        const target = e.target instanceof Element ? e.target : null;
-        const scrollEl = (target && findScrollParent(target)) || getDocEl();
-
-        let deltaY = e.deltaY;
-        const deltaX = e.deltaX;
-        if (Math.abs(deltaX) > Math.abs(deltaY)) return;
-        if (!Number.isFinite(deltaY) || Math.abs(deltaY) < 0.01) return;
-
-        e.preventDefault();
-
-        // Normalize delta modes
-        if (e.deltaMode === 1) deltaY *= 40;        // lines
-        else if (e.deltaMode === 2) deltaY *= window.innerHeight; // pages
-
-        const st = getState(scrollEl);
-
-        // Sync current if user scrolled by other means (keyboard, scrollbar drag)
-        if (st.rafId === null) {
-            st.current = scrollEl.scrollTop;
-            st.target = scrollEl.scrollTop;
-        }
-
-        st.target += deltaY * WHEEL_MULTIPLIER;
-        st.target = clamp(st.target, 0, maxTop(scrollEl));
-
-        startAnimation(scrollEl);
-    };
-
-    // Reset state on resize (page height may change)
-    const onResize = () => {
-        const el = getDocEl();
-        const st = getState(el);
-        st.current = el.scrollTop;
-        st.target = clamp(st.target, 0, maxTop(el));
-    };
-
-    document.addEventListener('wheel', onWheel, { passive: false, capture: true });
-    window.addEventListener('resize', onResize, { passive: true });
+    function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
 };
 
-try { setupSmoothWheelScroll(); } catch (e) { }
+try { setupSmoothScroll(); } catch (e) { }
 
 // === SEGURIDAD: Email de Super Admin ofuscado (múltiples capas) ===
 const _sa = ['bGF1dGFyb2NvcmF6emE2M0BnbWFpbC5jb20=']; // Base64
