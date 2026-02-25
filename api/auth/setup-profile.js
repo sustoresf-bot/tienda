@@ -1,5 +1,13 @@
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
+import { emailToDocKey, normalizeStrictUsername, normalizeUsernameForKey } from '../../lib/userIdentity.js';
+
+function createApiError(status, message, code) {
+    const error = new Error(message);
+    error.status = status;
+    error.code = code;
+    return error;
+}
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -12,18 +20,20 @@ export default async function handler(req, res) {
     }
 
     const name = String(req.body?.name || '').trim();
-    const username = String(req.body?.username || '').trim();
+    const requestedUsername = String(req.body?.username || '').trim();
+    const username = normalizeStrictUsername(requestedUsername);
     const dni = String(req.body?.dni || '').trim();
     const phone = String(req.body?.phone || '').trim();
 
     if (name.length < 3) return res.status(400).json({ error: 'Nombre inválido' });
-    if (username.length < 3) return res.status(400).json({ error: 'Usuario inválido' });
+    if (!username) return res.status(400).json({ error: 'Usuario inválido. Usá 3-32 caracteres: letras, números, punto, guion o guion bajo.' });
     if (dni.length < 6) return res.status(400).json({ error: 'DNI inválido' });
     if (phone.length < 8) return res.status(400).json({ error: 'Teléfono inválido' });
 
     const storeId = getStoreIdFromRequest(req);
-    const usernameLower = username.toLowerCase();
+    const usernameLower = normalizeUsernameForKey(username);
     const emailLower = decoded.email.toLowerCase();
+    const emailKey = emailToDocKey(emailLower);
 
     try {
         const adminSdk = getAdmin();
@@ -31,45 +41,83 @@ export default async function handler(req, res) {
 
         const userRef = db.doc(`artifacts/${storeId}/public/data/users/${decoded.uid}`);
         const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
-
-        const emailRef = db.doc(`artifacts/${storeId}/public/data/emails/${emailLower.replace(/[.#$/\[\]]/g, '_')}`);
-
-        const [userSnap, usernameSnap, emailSnap] = await Promise.all([userRef.get(), usernameRef.get(), emailRef.get()]);
-        if (usernameSnap.exists) {
-            const existing = usernameSnap.data() || {};
-            if ((existing.uid || '') !== decoded.uid) {
-                return res.status(409).json({ error: 'El nombre de usuario ya está en uso' });
-            }
-        }
-        if (emailSnap.exists) {
-            const existing = emailSnap.data() || {};
-            if ((existing.uid || '') !== decoded.uid) {
-                return res.status(409).json({ error: 'Este email ya está registrado en otra cuenta' });
-            }
-        }
-
         const nowIso = new Date().toISOString();
-        const profile = {
-            name,
-            email: decoded.email,
-            emailLower,
-            username,
-            usernameLower,
-            dni,
-            phone,
-            role: (userSnap.exists ? userSnap.data()?.role : null) || 'user',
-            updatedAt: nowIso,
-            createdAt: userSnap.exists ? (userSnap.data()?.createdAt || nowIso) : nowIso,
-        };
 
-        const batch = db.batch();
-        batch.set(userRef, profile, { merge: true });
-        batch.set(usernameRef, { uid: decoded.uid, emailLower, updatedAt: nowIso, createdAt: usernameSnap.exists ? (usernameSnap.data()?.createdAt || nowIso) : nowIso }, { merge: true });
-        batch.set(emailRef, { uid: decoded.uid, emailLower, updatedAt: nowIso, createdAt: emailSnap.exists ? (emailSnap.data()?.createdAt || nowIso) : nowIso }, { merge: true });
-        await batch.commit();
+        await db.runTransaction(async (tx) => {
+            const emailRef = db.doc(`artifacts/${storeId}/public/data/emails/${emailKey}`);
+            const [userSnap, usernameSnap, emailSnap] = await Promise.all([
+                tx.get(userRef),
+                tx.get(usernameRef),
+                tx.get(emailRef),
+            ]);
+
+            if (usernameSnap.exists) {
+                const existing = usernameSnap.data() || {};
+                if ((existing.uid || '') !== decoded.uid) {
+                    throw createApiError(409, 'El nombre de usuario ya está en uso', 'username_taken');
+                }
+            }
+            if (emailSnap.exists) {
+                const existing = emailSnap.data() || {};
+                if ((existing.uid || '') !== decoded.uid) {
+                    throw createApiError(409, 'Este email ya está registrado en otra cuenta', 'email_taken');
+                }
+            }
+
+            const previousData = userSnap.exists ? (userSnap.data() || {}) : {};
+            const previousUsernameLower = normalizeUsernameForKey(previousData.usernameLower || previousData.username || '');
+            const previousEmailLower = String(previousData.emailLower || previousData.email || '').trim().toLowerCase();
+            const previousEmailKey = emailToDocKey(previousEmailLower);
+
+            const profile = {
+                name,
+                email: decoded.email,
+                emailLower,
+                username,
+                usernameLower,
+                dni,
+                phone,
+                role: previousData.role || 'user',
+                updatedAt: nowIso,
+                createdAt: previousData.createdAt || nowIso,
+            };
+
+            tx.set(userRef, profile, { merge: true });
+            tx.set(usernameRef, {
+                uid: decoded.uid,
+                emailLower,
+                updatedAt: nowIso,
+                createdAt: usernameSnap.exists ? (usernameSnap.data()?.createdAt || nowIso) : nowIso,
+            }, { merge: true });
+            tx.set(emailRef, {
+                uid: decoded.uid,
+                emailLower,
+                updatedAt: nowIso,
+                createdAt: emailSnap.exists ? (emailSnap.data()?.createdAt || nowIso) : nowIso,
+            }, { merge: true });
+
+            if (previousUsernameLower && previousUsernameLower !== usernameLower) {
+                const previousUsernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${previousUsernameLower}`);
+                const previousUsernameSnap = await tx.get(previousUsernameRef);
+                if (previousUsernameSnap.exists && String(previousUsernameSnap.data()?.uid || '') === decoded.uid) {
+                    tx.delete(previousUsernameRef);
+                }
+            }
+
+            if (previousEmailKey && previousEmailKey !== emailKey) {
+                const previousEmailRef = db.doc(`artifacts/${storeId}/public/data/emails/${previousEmailKey}`);
+                const previousEmailSnap = await tx.get(previousEmailRef);
+                if (previousEmailSnap.exists && String(previousEmailSnap.data()?.uid || '') === decoded.uid) {
+                    tx.delete(previousEmailRef);
+                }
+            }
+        });
 
         return res.status(200).json({ success: true });
     } catch (error) {
+        if (Number(error?.status) >= 400 && Number(error?.status) < 500) {
+            return res.status(error.status).json({ error: error.message, code: error.code || null });
+        }
         return res.status(500).json({ error: 'Internal error' });
     }
 }

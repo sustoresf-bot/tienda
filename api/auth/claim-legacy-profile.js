@@ -1,5 +1,6 @@
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
+import { emailToDocKey, normalizeUsernameForKey } from '../../lib/userIdentity.js';
 
 function stripLegacySensitiveFields(data) {
     const cleaned = { ...(data || {}) };
@@ -44,12 +45,21 @@ export default async function handler(req, res) {
         batch.set(uidRef, { ...legacyData, email: decoded.email, emailLower, updatedAt: nowIso, migratedFrom: legacyDoc.id }, { merge: true });
         batch.delete(legacyDoc.ref);
 
-        const usernameLower = String(legacyData.usernameLower || '').trim().toLowerCase();
+        const usernameLower = normalizeUsernameForKey(legacyData.usernameLower || legacyData.username || '');
         if (usernameLower) {
             const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
             const usernameSnap = await usernameRef.get();
             if (!usernameSnap.exists) {
                 batch.set(usernameRef, { uid: decoded.uid, emailLower, createdAt: nowIso, updatedAt: nowIso }, { merge: true });
+            }
+        }
+
+        const emailKey = emailToDocKey(emailLower);
+        if (emailKey) {
+            const emailRef = db.doc(`artifacts/${storeId}/public/data/emails/${emailKey}`);
+            const emailSnap = await emailRef.get();
+            if (!emailSnap.exists) {
+                batch.set(emailRef, { uid: decoded.uid, emailLower, createdAt: nowIso, updatedAt: nowIso }, { merge: true });
             }
         }
 

@@ -1,5 +1,6 @@
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest, isAdminEmail } from '../../lib/authz.js';
+import { emailToDocKey, isStrictUsername, normalizeStrictUsername, normalizeUsernameForKey } from '../../lib/userIdentity.js';
 
 const SANITIZE_COLLECTIONS = [
     'products', 'orders', 'users', 'usernames', 'promos', 'coupons',
@@ -94,6 +95,177 @@ function mapPublicAdminError(error) {
     return String(error?.message || 'Internal error');
 }
 
+function createApiError(status, message, code = null) {
+    const error = new Error(message);
+    error.status = status;
+    error.code = code;
+    return error;
+}
+
+function hasOwn(body, key) {
+    return Object.prototype.hasOwnProperty.call(body || {}, key);
+}
+
+function readOptionalBodyField(body, key) {
+    return hasOwn(body, key) ? body[key] : undefined;
+}
+
+function getRoleValue(value, fallback = 'user') {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized || fallback;
+}
+
+async function syncUserProfileAndIndexes({ db, storeId, uid, body, actorEmail }) {
+    const userRef = db.doc(`artifacts/${storeId}/public/data/users/${uid}`);
+    const nowIso = new Date().toISOString();
+
+    return await db.runTransaction(async (tx) => {
+        const userSnap = await tx.get(userRef);
+        const existing = userSnap.exists ? (userSnap.data() || {}) : {};
+
+        const requestedEmail = readOptionalBodyField(body, 'email');
+        const requestedName = readOptionalBodyField(body, 'name');
+        const requestedUsername = readOptionalBodyField(body, 'username');
+        const requestedDni = readOptionalBodyField(body, 'dni');
+        const requestedPhone = readOptionalBodyField(body, 'phone');
+        const requestedRole = readOptionalBodyField(body, 'role');
+
+        const emailLower = (requestedEmail != null
+            ? String(requestedEmail).trim().toLowerCase()
+            : String(existing.emailLower || existing.email || '').trim().toLowerCase());
+        if (!emailLower || !emailLower.includes('@')) {
+            throw createApiError(400, 'Email invalido', 'invalid_email');
+        }
+
+        let usernameLower = '';
+        if (requestedUsername != null) {
+            const strictUsername = normalizeStrictUsername(requestedUsername);
+            if (!strictUsername || !isStrictUsername(strictUsername)) {
+                throw createApiError(400, 'Usuario invalido. Usa 3-32 caracteres: letras, numeros, punto, guion o guion bajo.', 'invalid_username');
+            }
+            usernameLower = strictUsername;
+        } else {
+            const strictFromExisting = normalizeStrictUsername(existing.usernameLower || existing.username || '');
+            if (strictFromExisting) {
+                usernameLower = strictFromExisting;
+            } else {
+                usernameLower = normalizeUsernameForKey(existing.usernameLower || existing.username || '');
+            }
+            if (!usernameLower) usernameLower = `user_${String(uid).slice(0, 8).toLowerCase()}`;
+        }
+
+        const emailKey = emailToDocKey(emailLower);
+        const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
+        const emailRef = db.doc(`artifacts/${storeId}/public/data/emails/${emailKey}`);
+        const [usernameSnap, emailSnap] = await Promise.all([
+            tx.get(usernameRef),
+            tx.get(emailRef),
+        ]);
+
+        if (usernameSnap.exists && String(usernameSnap.data()?.uid || '') !== uid) {
+            throw createApiError(409, 'El nombre de usuario ya esta en uso', 'username_taken');
+        }
+        if (emailSnap.exists && String(emailSnap.data()?.uid || '') !== uid) {
+            throw createApiError(409, 'Este email ya esta registrado en otra cuenta', 'email_taken');
+        }
+
+        const previousUsernameLower = normalizeUsernameForKey(existing.usernameLower || existing.username || '');
+        const previousEmailKey = emailToDocKey(existing.emailLower || existing.email || '');
+
+        const nextName = requestedName != null ? String(requestedName).trim() : String(existing.name || '').trim();
+        const nextDni = requestedDni != null ? String(requestedDni).trim() : String(existing.dni || '').trim();
+        const nextPhone = requestedPhone != null ? String(requestedPhone).trim() : String(existing.phone || '').trim();
+        const nextRole = requestedRole != null ? getRoleValue(requestedRole, 'user') : getRoleValue(existing.role, 'user');
+
+        if (requestedName != null && nextName.length < 3) {
+            throw createApiError(400, 'Nombre invalido', 'invalid_name');
+        }
+        if (requestedDni != null && nextDni.length < 6) {
+            throw createApiError(400, 'DNI invalido', 'invalid_dni');
+        }
+        if (requestedPhone != null && nextPhone.length < 8) {
+            throw createApiError(400, 'Telefono invalido', 'invalid_phone');
+        }
+        if (!nextRole) {
+            throw createApiError(400, 'Rol invalido', 'invalid_role');
+        }
+
+        const profile = {
+            updatedAt: nowIso,
+            createdAt: existing.createdAt || nowIso,
+            email: emailLower,
+            emailLower,
+            username: usernameLower,
+            usernameLower,
+            role: nextRole,
+            lastModifiedBy: String(actorEmail || '').trim().toLowerCase() || null,
+        };
+        if (nextName) profile.name = nextName;
+        if (nextDni) profile.dni = nextDni;
+        if (nextPhone) profile.phone = nextPhone;
+
+        tx.set(userRef, profile, { merge: true });
+        tx.set(usernameRef, {
+            uid,
+            emailLower,
+            createdAt: usernameSnap.exists ? (usernameSnap.data()?.createdAt || nowIso) : nowIso,
+            updatedAt: nowIso,
+        }, { merge: true });
+        tx.set(emailRef, {
+            uid,
+            emailLower,
+            createdAt: emailSnap.exists ? (emailSnap.data()?.createdAt || nowIso) : nowIso,
+            updatedAt: nowIso,
+        }, { merge: true });
+
+        if (previousUsernameLower && previousUsernameLower !== usernameLower) {
+            const oldUsernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${previousUsernameLower}`);
+            const oldUsernameSnap = await tx.get(oldUsernameRef);
+            if (oldUsernameSnap.exists && String(oldUsernameSnap.data()?.uid || '') === uid) {
+                tx.delete(oldUsernameRef);
+            }
+        }
+
+        if (previousEmailKey && previousEmailKey !== emailKey) {
+            const oldEmailRef = db.doc(`artifacts/${storeId}/public/data/emails/${previousEmailKey}`);
+            const oldEmailSnap = await tx.get(oldEmailRef);
+            if (oldEmailSnap.exists && String(oldEmailSnap.data()?.uid || '') === uid) {
+                tx.delete(oldEmailRef);
+            }
+        }
+
+        return { id: uid, ...existing, ...profile };
+    });
+}
+
+async function deleteUserProfileAndIndexes({ db, storeId, uid }) {
+    const userRef = db.doc(`artifacts/${storeId}/public/data/users/${uid}`);
+    await db.runTransaction(async (tx) => {
+        const userSnap = await tx.get(userRef);
+        const userData = userSnap.exists ? (userSnap.data() || {}) : {};
+        const usernameLower = normalizeUsernameForKey(userData.usernameLower || userData.username || '');
+        const emailKey = emailToDocKey(userData.emailLower || userData.email || '');
+
+        if (usernameLower) {
+            const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
+            const usernameSnap = await tx.get(usernameRef);
+            if (usernameSnap.exists && String(usernameSnap.data()?.uid || '') === uid) {
+                tx.delete(usernameRef);
+            }
+        }
+
+        if (emailKey) {
+            const emailRef = db.doc(`artifacts/${storeId}/public/data/emails/${emailKey}`);
+            const emailSnap = await tx.get(emailRef);
+            if (emailSnap.exists && String(emailSnap.data()?.uid || '') === uid) {
+                tx.delete(emailRef);
+            }
+        }
+
+        tx.delete(userRef);
+    });
+}
+
 async function handleUsers(req, res, admin, decoded, storeId) {
     const uid = String(req.body?.uid || '').trim();
     if (!uid) {
@@ -106,47 +278,78 @@ async function handleUsers(req, res, admin, decoded, storeId) {
     }
 
     if (action === 'delete') {
+        const db = admin.firestore();
         try {
             await admin.auth().deleteUser(uid);
         } catch (authError) {
             if (authError?.code !== 'auth/user-not-found') throw authError;
         }
-        return res.status(200).json({ message: 'Usuario eliminado exitosamente.' });
+        await deleteUserProfileAndIndexes({ db, storeId, uid });
+        return res.status(200).json({ success: true, message: 'Usuario eliminado exitosamente.' });
     }
 
     if (action === 'update') {
+        const body = req.body && typeof req.body === 'object' ? req.body : {};
+        const db = admin.firestore();
         const email = req.body?.email ? String(req.body.email).trim() : '';
         const password = req.body?.password ? String(req.body.password) : '';
 
         const updateData = {};
         if (email) updateData.email = email;
         if (password) updateData.password = password;
+        if (password && password.length < 6) {
+            return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres', code: 'invalid_password' });
+        }
 
-        if (Object.keys(updateData).length === 0) {
+        const hasProfileUpdates =
+            hasOwn(body, 'name') ||
+            hasOwn(body, 'username') ||
+            hasOwn(body, 'email') ||
+            hasOwn(body, 'phone') ||
+            hasOwn(body, 'dni') ||
+            hasOwn(body, 'role');
+
+        if (Object.keys(updateData).length === 0 && !hasProfileUpdates) {
             return res.status(400).json({ error: 'No hay cambios para aplicar' });
         }
 
+        let authUpdated = null;
+        let warning = null;
         try {
-            await admin.auth().updateUser(uid, updateData);
+            if (Object.keys(updateData).length > 0) {
+                await admin.auth().updateUser(uid, updateData);
+                authUpdated = true;
+            }
         } catch (authError) {
             if (authError?.code === 'auth/user-not-found') {
-                return res.status(200).json({
-                    success: true,
-                    warning: 'Usuario no encontrado en Auth. Solo se actualizarán datos en Firestore.',
-                    authUpdated: false,
-                });
+                authUpdated = false;
+                warning = 'Usuario no encontrado en Auth. Solo se actualizaran datos en Firestore.';
+            } else {
+                throw authError;
             }
-            throw authError;
+        }
+
+        let profile = null;
+        if (hasProfileUpdates) {
+            profile = await syncUserProfileAndIndexes({
+                db,
+                storeId,
+                uid,
+                body,
+                actorEmail: decoded.email,
+            });
         }
 
         return res.status(200).json({
             success: true,
-            message: 'Usuario actualizado correctamente en Auth',
-            authUpdated: true,
+            message: 'Usuario actualizado correctamente',
+            authUpdated,
+            ...(warning ? { warning } : {}),
+            ...(profile ? { profile } : {}),
         });
     }
 
-    return res.status(400).json({ error: 'Acción inválida' });
+    return res.status(400).json({ error: 'Accion invalida' });
 }
 
 async function handleListUsers(req, res, admin, decoded, storeId) {

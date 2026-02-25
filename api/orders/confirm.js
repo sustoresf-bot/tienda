@@ -101,6 +101,23 @@ async function getMercadoPagoPayment({ paymentId, accessToken }) {
     return data;
 }
 
+async function refundMercadoPagoPayment({ paymentId, accessToken }) {
+    const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}/refunds`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const message = data?.message || data?.error || 'Error generando reintegro en Mercado Pago';
+        throw createApiError('payment_refund_failed', message, 502);
+    }
+    return data;
+}
+
 function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId, customerName, items, subtotal, discountDetails, shippingMethod, shippingAddress, shippingFee, total, paymentMethod, date }) {
     const safeItems = Array.isArray(items) ? items : [];
     const safeBrandName = escapeHtml(brandName || 'Sustore');
@@ -262,6 +279,9 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Faltan datos de envio' });
         }
     }
+
+    let paymentVerifiedForOrder = false;
+    let orderCommitted = false;
 
     try {
         const adminSdk = getAdmin();
@@ -505,6 +525,8 @@ export default async function handler(req, res) {
             if (expectedCents !== paidCents) {
                 throw createApiError('payment_amount_mismatch', 'Monto de pago invalido', 400);
             }
+
+            paymentVerifiedForOrder = true;
         }
 
         const orderId = `ORD-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
@@ -628,6 +650,7 @@ export default async function handler(req, res) {
                 });
             }
         });
+        orderCommitted = true;
 
         let emailSent = false;
         const emailUser = String(process.env.EMAIL_USER || '').trim();
@@ -679,9 +702,38 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ success: true, orderId, emailSent });
     } catch (error) {
-        if (error?.status && error?.code) {
-            return res.status(error.status).json({ error: error.message, code: error.code });
+        let refundStatus = null;
+        const shouldAttemptCompensationRefund =
+            paymentMethod === 'Tarjeta' &&
+            paymentVerifiedForOrder &&
+            !orderCommitted &&
+            !!mpPaymentId &&
+            !!process.env.MP_ACCESS_TOKEN &&
+            error?.code !== 'payment_already_used';
+
+        if (shouldAttemptCompensationRefund) {
+            try {
+                await refundMercadoPagoPayment({
+                    paymentId: mpPaymentId,
+                    accessToken: process.env.MP_ACCESS_TOKEN,
+                });
+                refundStatus = 'refund_initiated';
+            } catch (refundError) {
+                refundStatus = 'refund_failed';
+                console.error('[orders/confirm] Compensation refund failed:', refundError);
+            }
         }
-        return res.status(500).json({ error: error.message || 'Error interno' });
+
+        if (error?.status && error?.code) {
+            return res.status(error.status).json({
+                error: error.message,
+                code: error.code,
+                ...(refundStatus ? { compensation: refundStatus } : {}),
+            });
+        }
+        return res.status(500).json({
+            error: error.message || 'Error interno',
+            ...(refundStatus ? { compensation: refundStatus } : {}),
+        });
     }
 }

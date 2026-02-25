@@ -47,6 +47,7 @@ const PUBLIC_SITE_URL =
         ? String(__PUBLIC_SITE_URL__)
         : '';
 const APP_VERSION = "3.0.0";
+const STRICT_USERNAME_REGEX = /^[a-z0-9._-]{3,32}$/;
 
 const mpPublicKeyPromiseByStore = new Map();
 function getPublicKeyCacheKey(storeId) {
@@ -3630,7 +3631,7 @@ function App() {
                     },
                     body: JSON.stringify({
                         name: authData.name,
-                        username: authData.username,
+                        username: authData.username.trim().toLowerCase(),
                         dni: authData.dni,
                         phone: authData.phone
                     })
@@ -3655,8 +3656,11 @@ function App() {
 
             if (isRegister) {
                 const normalizedEmail = authData.email.trim().toLowerCase();
+                const normalizedUsername = authData.username.trim().toLowerCase();
                 if (!authData.name || authData.name.trim().length < 3) throw new Error("El nombre es muy corto.");
-                if (!authData.username || authData.username.trim().length < 3) throw new Error("Debes elegir un nombre de usuario.");
+                if (!STRICT_USERNAME_REGEX.test(normalizedUsername)) {
+                    throw new Error("El usuario debe tener 3-32 caracteres y solo puede incluir letras, numeros, punto, guion o guion bajo.");
+                }
                 if (!normalizedEmail || !normalizedEmail.includes('@')) throw new Error("Email inválido.");
                 if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
                 if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dígitos).");
@@ -4448,7 +4452,7 @@ function App() {
                                 return;
                             }
 
-                            if (result.status === 'approved' || result.status === 'in_process' || result.status === 'pending') {
+                            if (result.status === 'approved') {
                                 await confirmOrderAfterPayment(result.id);
                                 showToast('¡Compra realizada!', 'success');
                                 setIsPaymentProcessing(false);
@@ -4460,6 +4464,14 @@ function App() {
                                     } catch (e) { console.log(e); }
                                     setMpBrickController(null);
                                 }
+                            } else if (result.status === 'in_process' || result.status === 'pending') {
+                                setIsPaymentProcessing(false);
+                                isInitializingBrick.current = false;
+                                setPaymentError({
+                                    message: 'El pago quedó pendiente. Aún no se confirmó el pedido. Si no se acredita en unos minutos, contactá soporte.',
+                                    code: String(result.status || '').trim(),
+                                });
+                                showToast('Pago pendiente: todavía no se confirmó el pedido.', 'warning');
                             } else {
                                 // ERROR DE NEGOCIO (Pago rechazado, tarjeta inválida, etc)
                                 const details = getPaymentRejectionDetails(result.status_detail, result.error || result.status || 'Pago rechazado');
@@ -4519,60 +4531,66 @@ function App() {
 
     // Confirmar orden después de pago exitoso con MP
     const confirmOrderAfterPayment = async (mpPaymentId) => {
-        try {
-            const authUser = await getAuthenticatedUser();
-            if (!authUser) {
-                throw new Error('Sesión inválida. Reiniciá e intentá de nuevo.');
-            }
-
-            const token = await authUser.getIdToken(true);
-            const res = await fetch('/api/orders/confirm', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-store-id': appId || '',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    paymentMethod: 'Tarjeta',
-                    mpPaymentId,
-                    shippingMethod: checkoutData.shippingMethod,
-                    shipping: {
-                        address: checkoutData.address,
-                        city: checkoutData.city,
-                        province: checkoutData.province,
-                        zipCode: checkoutData.zipCode,
-                        fee: shippingFee,
-                    },
-                    couponCode: appliedCoupon?.code || null,
-                    cart: cart.map(i => ({
-                        productId: i.product?.id,
-                        quantity: i.quantity,
-                        isPromo: i.product?.isPromo === true,
-                        promoItems: Array.isArray(i.product?.items)
-                            ? i.product.items.map((entry) => ({
-                                productId: String(entry?.productId || '').trim(),
-                                quantity: Number(entry?.quantity) || 0
-                            })).filter((entry) => entry.productId && entry.quantity > 0)
-                            : []
-                    })),
-                }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (res.status === 401) throw new Error('Tu sesión venció. Iniciá sesión nuevamente e intentá otra vez.');
-            if (!res.ok) throw new Error(data.error || 'Error guardando el pedido');
-
-            setCart([]);
-            setAppliedCoupon(null);
-            if (mpBrickController) {
-                try { mpBrickController.unmount(); } catch (e) { }
-            }
-            setMpBrickController(null);
-            setView('profile');
-        } catch (error) {
-            console.error('Error creating order after payment:', error);
-            showToast('El pago fue exitoso pero hubo un error guardando el pedido. Contacta soporte.', 'warning');
+        const authUser = await getAuthenticatedUser();
+        if (!authUser) {
+            throw new Error('Sesión inválida. Reiniciá e intentá de nuevo.');
         }
+
+        const token = await authUser.getIdToken(true);
+        const res = await fetch('/api/orders/confirm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-store-id': appId || '',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                paymentMethod: 'Tarjeta',
+                mpPaymentId,
+                shippingMethod: checkoutData.shippingMethod,
+                shipping: {
+                    address: checkoutData.address,
+                    city: checkoutData.city,
+                    province: checkoutData.province,
+                    zipCode: checkoutData.zipCode,
+                    fee: shippingFee,
+                },
+                couponCode: appliedCoupon?.code || null,
+                cart: cart.map(i => ({
+                    productId: i.product?.id,
+                    quantity: i.quantity,
+                    isPromo: i.product?.isPromo === true,
+                    promoItems: Array.isArray(i.product?.items)
+                        ? i.product.items.map((entry) => ({
+                            productId: String(entry?.productId || '').trim(),
+                            quantity: Number(entry?.quantity) || 0
+                        })).filter((entry) => entry.productId && entry.quantity > 0)
+                        : []
+                })),
+            }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) throw new Error('Tu sesión venció. Iniciá sesión nuevamente e intentá otra vez.');
+        if (!res.ok) {
+            const compensation = String(data?.compensation || '').trim();
+            let message = data.error || 'Error guardando el pedido';
+            if (compensation === 'refund_initiated') {
+                message = `${message}. Se inició un reintegro automático del pago.`;
+            } else if (compensation === 'refund_failed') {
+                message = `${message}. El reintegro automático falló; contactá soporte de inmediato.`;
+            }
+            const err = new Error(message);
+            err.code = data?.code || '';
+            throw err;
+        }
+
+        setCart([]);
+        setAppliedCoupon(null);
+        if (mpBrickController) {
+            try { mpBrickController.unmount(); } catch (e) { }
+        }
+        setMpBrickController(null);
+        setView('profile');
     };
 
     // Effect para inicializar el Brick cuando se selecciona MP
@@ -6314,40 +6332,32 @@ function App() {
             try {
                 if (!auth.currentUser || auth.currentUser.isAnonymous) throw new Error('Sesión inválida');
                 const token = await auth.currentUser.getIdToken();
-                // 1. Actualización Crítica (Auth) vía API si cambió email o password
-                const authUpdate = {};
-                if (formData.email !== user.email) authUpdate.email = formData.email;
-                if (formData.newPassword) authUpdate.password = formData.newPassword;
+                const normalizedUsername = String(formData.username || '').trim().toLowerCase();
+                const res = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        action: 'update',
+                        uid: user.id,
+                        name: formData.name,
+                        username: normalizedUsername,
+                        email: formData.email,
+                        phone: formData.phone,
+                        dni: formData.dni,
+                        role: formData.role,
+                        password: formData.newPassword || undefined,
+                    })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(result.error || 'Error al actualizar perfil');
 
-                if (Object.keys(authUpdate).length > 0) {
-                    const res = await fetch('/api/admin/users', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ action: 'update', uid: user.id, ...authUpdate })
-                    });
-                    const result = await res.json();
-                    if (!res.ok) throw new Error(result.error);
+                if (result.warning) {
+                    showToast(result.warning, "warning");
                 }
 
-                // 2. Actualización de Perfil (Firestore)
-                const firestoreUpdate = {
-                    name: formData.name,
-                    username: formData.username,
-                    email: formData.email,
-                    emailLower: formData.email.toLowerCase(),
-                    phone: formData.phone,
-                    dni: formData.dni,
-                    role: formData.role,
-                    lastModifiedBy: currentUser.email,
-                    updatedAt: new Date().toISOString()
-                };
-
-                // Si cambió la contraseña, también actualizarla en Firestore
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id), firestoreUpdate);
-
-                // Si estamos editando nuestro propio usuario, actualizar el estado global inmediatamente
                 if (currentUser && currentUser.id === user.id) {
-                    setCurrentUser(prev => ({ ...prev, ...firestoreUpdate }));
+                    const profile = result.profile || {};
+                    setCurrentUser(prev => ({ ...prev, ...profile }));
                 }
 
                 showToast("Perfil de usuario actualizado correctamente.", "success");
@@ -6375,9 +6385,8 @@ function App() {
                         headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ action: 'delete', uid: user.id })
                     });
-                    if (!res.ok) throw new Error("Error eliminando acceso de Auth");
-
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.id));
+                    const result = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(result.error || "Error eliminando usuario");
 
                     showToast("Usuario eliminado definitivamente.", "success");
                     closeDrawer();

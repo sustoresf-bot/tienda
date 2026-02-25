@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import { getAdmin } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
+import { emailToDocKey, normalizeUsernameForKey } from '../../lib/userIdentity.js';
 
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX = 20;
@@ -186,6 +187,10 @@ export default async function handler(req, res) {
         delete dataToCopy.password;
         delete dataToCopy._adminVerified;
         delete dataToCopy.id;
+        const usernameLower = normalizeUsernameForKey(dataToCopy.usernameLower || dataToCopy.username || '');
+        if (usernameLower) {
+            dataToCopy.usernameLower = usernameLower;
+        }
 
         const batch = db.batch();
         batch.set(uidRef, { ...dataToCopy, email: emailLower, emailLower, updatedAt: nowIso, migratedFrom: legacyDoc.id }, { merge: true });
@@ -194,12 +199,20 @@ export default async function handler(req, res) {
             batch.delete(legacyDoc.ref);
         }
 
-        const usernameLower = String(dataToCopy.usernameLower || '').trim().toLowerCase();
         if (usernameLower) {
             const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
             const usernameSnap = await usernameRef.get();
             if (!usernameSnap.exists) {
                 batch.set(usernameRef, { uid, emailLower, createdAt: nowIso, updatedAt: nowIso }, { merge: true });
+            }
+        }
+
+        const emailKey = emailToDocKey(emailLower);
+        if (emailKey) {
+            const emailRef = db.doc(`artifacts/${storeId}/public/data/emails/${emailKey}`);
+            const emailSnap = await emailRef.get();
+            if (!emailSnap.exists) {
+                batch.set(emailRef, { uid, emailLower, createdAt: nowIso, updatedAt: nowIso }, { merge: true });
             }
         }
 

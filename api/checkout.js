@@ -3,17 +3,28 @@
 
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
-function isSameOriginRequest(req) {
-    const origin = String(req?.headers?.origin || '').trim();
-    if (!origin) return true;
-    const host = String(req?.headers?.host || '').trim().toLowerCase();
-    if (!host) return false;
+function hostMatchesUrlHost(urlValue, host) {
+    if (!urlValue) return false;
     try {
-        const parsedOrigin = new URL(origin);
-        return String(parsedOrigin.host || '').trim().toLowerCase() === host;
+        const parsed = new URL(urlValue);
+        return String(parsed.host || '').trim().toLowerCase() === host;
     } catch {
         return false;
     }
+}
+
+function isSameOriginRequest(req) {
+    const host = String(req?.headers?.host || '').trim().toLowerCase();
+    if (!host) return false;
+
+    const origin = String(req?.headers?.origin || '').trim();
+    if (origin) return hostMatchesUrlHost(origin, host);
+
+    const referer = String(req?.headers?.referer || '').trim();
+    if (referer) return hostMatchesUrlHost(referer, host);
+
+    const method = String(req?.method || '').toUpperCase();
+    return method === 'GET' || method === 'HEAD';
 }
 
 export default async function handler(req, res) {
