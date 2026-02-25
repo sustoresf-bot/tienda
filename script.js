@@ -89,25 +89,40 @@ const setupSmoothWheelScroll = () => {
     if (window.__smoothWheelScrollEnabled) return;
     window.__smoothWheelScrollEnabled = true;
 
+    // Respect user preference for reduced motion
     const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
 
-    const getDocumentScrollingElement = () => document.scrollingElement || document.documentElement;
-    const elementStates = new WeakMap();
+    // Skip on touch-only devices (smooth scroll is mainly for mouse wheel)
+    let isTouchDevice = false;
+    try { isTouchDevice = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && !window.matchMedia('(pointer: fine)').matches; } catch (e) { }
+    if (isTouchDevice) return;
 
-    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-    const maxScrollTopForEl = (el) => Math.max(0, el.scrollHeight - el.clientHeight);
+    const getDocEl = () => document.scrollingElement || document.documentElement;
+
+    // --- Lerp-based smooth scroll (antigravity.google style) ---
+    // Instead of velocity+friction, we keep a "target" scroll position and
+    // lerp the real scroll position toward it each frame. This produces
+    // the signature fluid, gliding deceleration.
+
+    const LERP = 0.1;             // Lower = more glide / longer deceleration (0.05-0.12 sweet spot)
+    const WHEEL_MULTIPLIER = 0.55; // Keep close to native speed, just smooth it out
+    const STOP_THRESHOLD = 0.5;   // px – stop animating when close enough to target
+
+    const elStates = new WeakMap();
+
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const maxTop = (el) => Math.max(0, el.scrollHeight - el.clientHeight);
 
     const isScrollable = (el) => {
         if (!el || !(el instanceof Element)) return false;
-        const style = window.getComputedStyle(el);
-        const overflowY = style.overflowY;
-        if (overflowY === 'hidden' || overflowY === 'visible') return false;
+        const s = window.getComputedStyle(el);
+        if (s.overflowY === 'hidden' || s.overflowY === 'visible') return false;
         return el.scrollHeight > el.clientHeight + 1;
     };
 
-    const findScrollableAncestor = (startEl) => {
-        let el = startEl;
+    const findScrollParent = (start) => {
+        let el = start;
         while (el && el instanceof Element && el !== document.body && el !== document.documentElement) {
             if (isScrollable(el)) return el;
             el = el.parentElement;
@@ -116,69 +131,81 @@ const setupSmoothWheelScroll = () => {
     };
 
     const getState = (el) => {
-        const existing = elementStates.get(el);
-        if (existing) return existing;
-        const state = { rafId: null, velocity: 0, lastTs: 0 };
-        elementStates.set(el, state);
-        return state;
+        let st = elStates.get(el);
+        if (st) return st;
+        st = { target: el.scrollTop, current: el.scrollTop, rafId: null };
+        elStates.set(el, st);
+        return st;
     };
 
-    const animateElement = (el, ts) => {
-        const state = getState(el);
-        if (!state.lastTs) state.lastTs = ts;
-        const dt = Math.min(48, ts - state.lastTs);
-        state.lastTs = ts;
+    // Core animation loop – lerp toward target each frame
+    const tick = (el) => {
+        const st = getState(el);
+        const max = maxTop(el);
 
-        const frictionPerFrame = 0.86;
-        const friction = Math.pow(frictionPerFrame, dt / 16.67);
+        // Clamp target within bounds
+        st.target = clamp(st.target, 0, max);
 
-        const current = el.scrollTop;
-        const next = clamp(current + state.velocity * (dt / 16.67), 0, maxScrollTopForEl(el));
-        el.scrollTop = next;
+        // Lerp
+        st.current += (st.target - st.current) * LERP;
 
-        if (next === 0 || next === maxScrollTopForEl(el)) {
-            state.velocity *= 0.5;
-        }
-
-        state.velocity *= friction;
-
-        if (Math.abs(state.velocity) < 0.1) {
-            state.rafId = null;
-            state.velocity = 0;
-            state.lastTs = 0;
+        // Snap if close enough
+        if (Math.abs(st.target - st.current) < STOP_THRESHOLD) {
+            st.current = st.target;
+            el.scrollTop = st.current;
+            st.rafId = null;
             return;
         }
 
-        state.rafId = window.requestAnimationFrame((nextTs) => animateElement(el, nextTs));
+        el.scrollTop = st.current;
+        st.rafId = requestAnimationFrame(() => tick(el));
+    };
+
+    const startAnimation = (el) => {
+        const st = getState(el);
+        if (st.rafId === null) {
+            st.rafId = requestAnimationFrame(() => tick(el));
+        }
     };
 
     const onWheel = (e) => {
         if (e.defaultPrevented) return;
         if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-        const targetEl = e.target instanceof Element ? e.target : null;
-        const scrollEl = (targetEl && findScrollableAncestor(targetEl)) || getDocumentScrollingElement();
 
-        const deltaX = e.deltaX;
+        const target = e.target instanceof Element ? e.target : null;
+        const scrollEl = (target && findScrollParent(target)) || getDocEl();
+
         let deltaY = e.deltaY;
+        const deltaX = e.deltaX;
         if (Math.abs(deltaX) > Math.abs(deltaY)) return;
         if (!Number.isFinite(deltaY) || Math.abs(deltaY) < 0.01) return;
 
         e.preventDefault();
 
-        if (e.deltaMode === 1) deltaY *= 40;
-        else if (e.deltaMode === 2) deltaY *= window.innerHeight;
+        // Normalize delta modes
+        if (e.deltaMode === 1) deltaY *= 40;        // lines
+        else if (e.deltaMode === 2) deltaY *= window.innerHeight; // pages
 
-        const state = getState(scrollEl);
-        const strength = 0.9;
-        state.velocity += deltaY * strength;
-        state.velocity = clamp(state.velocity, -4500, 4500);
-        if (state.rafId === null) state.rafId = window.requestAnimationFrame((ts) => animateElement(scrollEl, ts));
+        const st = getState(scrollEl);
+
+        // Sync current if user scrolled by other means (keyboard, scrollbar drag)
+        if (st.rafId === null) {
+            st.current = scrollEl.scrollTop;
+            st.target = scrollEl.scrollTop;
+        }
+
+        st.target += deltaY * WHEEL_MULTIPLIER;
+        st.target = clamp(st.target, 0, maxTop(scrollEl));
+
+        startAnimation(scrollEl);
     };
 
+    // Reset state on resize (page height may change)
     const onResize = () => {
-        const docEl = getDocumentScrollingElement();
-        const state = getState(docEl);
-        state.velocity = clamp(state.velocity, -4500, 4500);
+        const el = getDocEl();
+        const st = getState(el);
+        st.current = el.scrollTop;
+        st.target = clamp(st.target, 0, maxTop(el));
     };
 
     document.addEventListener('wheel', onWheel, { passive: false, capture: true });
