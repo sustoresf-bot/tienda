@@ -4,6 +4,7 @@
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getAdmin } from '../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../lib/authz.js';
+import { handleMercadoPagoOAuthCallback } from '../lib/mercadopago/oauth-callback.js';
 import {
     getStoreAccessTokenForOperations,
     getStorePublicKeyForCheckout,
@@ -51,6 +52,10 @@ export default async function handler(req, res) {
             const base = `http://${req?.headers?.host || 'localhost'}`;
             const url = new URL(String(req?.url || ''), base);
             const action = String(url.searchParams.get('action') || '').trim();
+
+            if (action === 'mp_oauth_callback') {
+                return await handleMercadoPagoOAuthCallback({ req, res });
+            }
 
             if (action !== 'public_config') {
                 return res.status(400).json({ error: 'Invalid action' });

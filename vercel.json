@@ -138,6 +138,22 @@
         {
             "source": "/api/admin/import-store",
             "destination": "/api/admin?action=import"
+        },
+        {
+            "source": "/api/mercadopago/oauth/connect",
+            "destination": "/api/admin?action=mp-oauth-connect"
+        },
+        {
+            "source": "/api/mercadopago/oauth/status",
+            "destination": "/api/admin?action=mp-oauth-status"
+        },
+        {
+            "source": "/api/mercadopago/oauth/disconnect",
+            "destination": "/api/admin?action=mp-oauth-disconnect"
+        },
+        {
+            "source": "/api/mercadopago/oauth/callback",
+            "destination": "/api/checkout?action=mp_oauth_callback"
         }
     ]
 }

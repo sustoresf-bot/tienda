@@ -1,5 +1,10 @@
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest, isAdminEmail } from '../../lib/authz.js';
+import { createAuthorizationUrl } from '../../lib/mercadopago/oauth.js';
+import {
+    disconnectStoreOAuthCredentials,
+    getStoreOAuthStatus,
+} from '../../lib/mercadopago/store-credentials.js';
 
 const SANITIZE_COLLECTIONS = [
     'products', 'orders', 'users', 'usernames', 'promos', 'coupons',
@@ -88,6 +93,19 @@ function sanitizeValue(value) {
     }
 
     return { value, changed: false, updatedStrings: 0 };
+}
+
+function getRequestOrigin(req) {
+    const forwardedProto = String(req?.headers?.['x-forwarded-proto'] || '').split(',')[0].trim();
+    const forwardedHost = String(req?.headers?.['x-forwarded-host'] || '').split(',')[0].trim();
+    const host = forwardedHost || String(req?.headers?.host || '').split(',')[0].trim();
+    if (!host) {
+        const fallback = String(process.env.PUBLIC_SITE_URL || '').trim();
+        return fallback || null;
+    }
+    const isLocalHost = host.includes('localhost') || host.startsWith('127.0.0.1') || host.startsWith('::1');
+    const protocol = forwardedProto || (isLocalHost ? 'http' : 'https');
+    return `${protocol}://${host}`;
 }
 
 async function handleUsers(req, res, admin, decoded, storeId) {
@@ -281,8 +299,41 @@ async function handleSanitizeText(req, res, admin, decoded, storeId) {
     });
 }
 
+async function handleMercadoPagoOAuthConnect(req, res, admin, decoded, storeId) {
+    const db = admin.firestore();
+    const returnTo = getRequestOrigin(req);
+    const result = await createAuthorizationUrl({
+        storeId,
+        uid: decoded.uid,
+        db,
+        returnTo,
+    });
+    return res.status(200).json({
+        authorizationUrl: result.authorizationUrl,
+        expiresAt: result.expiresAt,
+    });
+}
+
+async function handleMercadoPagoOAuthStatus(req, res, admin, decoded, storeId) {
+    const db = admin.firestore();
+    const status = await getStoreOAuthStatus({ db, storeId });
+    return res.status(200).json(status);
+}
+
+async function handleMercadoPagoOAuthDisconnect(req, res, admin, decoded, storeId) {
+    const db = admin.firestore();
+    await disconnectStoreOAuthCredentials({ db, storeId });
+    return res.status(200).json({ success: true });
+}
+
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const base = `http://${req?.headers?.host || 'localhost'}`;
+    const url = new URL(String(req?.url || ''), base);
+    const action = String(url.searchParams.get('action') || '').trim();
+
+    const allowsGet = action === 'mp-oauth-status';
+    const methodAllowed = req.method === 'POST' || (req.method === 'GET' && allowsGet);
+    if (!methodAllowed) return res.status(405).json({ error: 'Method not allowed' });
 
     const decoded = await verifyIdTokenFromRequest(req);
     if (!decoded?.email) return res.status(401).json({ error: 'Unauthorized' });
@@ -292,10 +343,6 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const base = `http://${req?.headers?.host || 'localhost'}`;
-    const url = new URL(String(req?.url || ''), base);
-    const action = String(url.searchParams.get('action') || '').trim();
-
     try {
         const admin = getAdmin();
         if (action === 'users') return await handleUsers(req, res, admin, decoded, storeId);
@@ -303,9 +350,15 @@ export default async function handler(req, res) {
         if (action === 'export') return await handleExport(req, res, admin, decoded, storeId);
         if (action === 'import') return await handleImport(req, res, admin, decoded, storeId);
         if (action === 'sanitize-text') return await handleSanitizeText(req, res, admin, decoded, storeId);
+        if (action === 'mp-oauth-connect') return await handleMercadoPagoOAuthConnect(req, res, admin, decoded, storeId);
+        if (action === 'mp-oauth-status') return await handleMercadoPagoOAuthStatus(req, res, admin, decoded, storeId);
+        if (action === 'mp-oauth-disconnect') return await handleMercadoPagoOAuthDisconnect(req, res, admin, decoded, storeId);
 
         return res.status(400).json({ error: 'Invalid admin action' });
     } catch (error) {
-        return res.status(500).json({ error: error.message || 'Internal error' });
+        return res.status(Number(error?.status) || 500).json({
+            error: error?.message || 'Internal error',
+            code: error?.code || null,
+        });
     }
 }
