@@ -108,6 +108,17 @@ function getRequestOrigin(req) {
     return `${protocol}://${host}`;
 }
 
+function mapPublicAdminError(error) {
+    const code = String(error?.code || '').trim();
+    if (code === 'oauth_not_configured') {
+        return 'Mercado Pago OAuth no esta configurado en el servidor. Completa las variables en Vercel y volve a desplegar.';
+    }
+    if (code === 'missing_encryption_key') {
+        return 'Falta la clave de cifrado de tokens en el servidor (MP_TOKEN_ENCRYPTION_KEY).';
+    }
+    return String(error?.message || 'Internal error');
+}
+
 async function handleUsers(req, res, admin, decoded, storeId) {
     const uid = String(req.body?.uid || '').trim();
     if (!uid) {
@@ -357,7 +368,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid admin action' });
     } catch (error) {
         return res.status(Number(error?.status) || 500).json({
-            error: error?.message || 'Internal error',
+            error: mapPublicAdminError(error),
             code: error?.code || null,
         });
     }

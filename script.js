@@ -1699,6 +1699,40 @@ function App() {
     const [isMpOAuthConnecting, setIsMpOAuthConnecting] = useState(false);
     const [isMpOAuthDisconnecting, setIsMpOAuthDisconnecting] = useState(false);
 
+    const getOAuthApiErrorMessage = useCallback((payload, fallbackMessage) => {
+        const code = String(payload?.code || '').trim().toLowerCase();
+        if (code === 'oauth_not_configured') {
+            return 'Mercado Pago OAuth no esta configurado en el servidor. Carga las variables OAuth en Vercel y volve a desplegar.';
+        }
+        if (code === 'missing_encryption_key') {
+            return 'Falta la variable MP_TOKEN_ENCRYPTION_KEY en el backend para cifrar los tokens.';
+        }
+        const raw = String(payload?.error || '').trim();
+        if (!raw) return fallbackMessage;
+        if (/^mp_[a-z0-9_]+(?:\|mp_[a-z0-9_]+)? is not configured$/i.test(raw)) {
+            return 'Mercado Pago OAuth no esta configurado en el servidor.';
+        }
+        return raw;
+    }, []);
+
+    const getOAuthRedirectErrorMessage = useCallback((rawErrorCode) => {
+        const code = String(rawErrorCode || '').trim().toLowerCase();
+        if (!code) return '';
+        if (code === 'oauth_not_configured') {
+            return 'El servidor no tiene configuradas las credenciales OAuth de Mercado Pago.';
+        }
+        if (code === 'missing_encryption_key') {
+            return 'Falta la clave de cifrado MP_TOKEN_ENCRYPTION_KEY en el servidor.';
+        }
+        if (code === 'invalid_state' || code === 'oauth_state_not_found' || code === 'oauth_state_expired' || code === 'oauth_state_already_used') {
+            return 'La sesion de autorizacion expiro o ya fue utilizada. Reintenta desde el panel.';
+        }
+        if (code === 'access_denied' || code === 'denied') {
+            return 'La autorizacion fue cancelada en Mercado Pago.';
+        }
+        return code.replace(/_/g, ' ');
+    }, []);
+
     // Estados de Interfaz de Usuario
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -4184,7 +4218,7 @@ function App() {
 
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                throw new Error(data?.error || 'No se pudo consultar la conexión de Mercado Pago.');
+                throw new Error(getOAuthApiErrorMessage(data, 'No se pudo consultar la conexion de Mercado Pago.'));
             }
 
             setMpOAuthStatus({
@@ -4204,7 +4238,7 @@ function App() {
                 error: error?.message || 'No se pudo consultar Mercado Pago OAuth.',
             }));
         }
-    }, [appId, isAdminUser, getAuthenticatedUser]);
+    }, [appId, isAdminUser, getAuthenticatedUser, getOAuthApiErrorMessage]);
 
     const connectMercadoPagoOAuth = async () => {
         if (isMpOAuthConnecting) return;
@@ -4233,7 +4267,7 @@ function App() {
 
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                throw new Error(data?.error || 'No se pudo iniciar la conexión con Mercado Pago.');
+                throw new Error(getOAuthApiErrorMessage(data, 'No se pudo iniciar la conexion con Mercado Pago.'));
             }
 
             const authorizationUrl = String(data?.authorizationUrl || '').trim();
@@ -4244,7 +4278,7 @@ function App() {
             window.location.assign(authorizationUrl);
             return;
         } catch (error) {
-            showToast(error?.message || 'No se pudo iniciar la conexión con Mercado Pago.', 'error');
+            showToast(error?.message || 'No se pudo iniciar la conexion con Mercado Pago.', 'error');
         } finally {
             setIsMpOAuthConnecting(false);
         }
@@ -4277,7 +4311,7 @@ function App() {
 
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                throw new Error(data?.error || 'No se pudo desconectar Mercado Pago.');
+                throw new Error(getOAuthApiErrorMessage(data, 'No se pudo desconectar Mercado Pago.'));
             }
 
             setMpOAuthStatus({
@@ -4306,11 +4340,10 @@ function App() {
         if (!result) return;
 
         const rawError = String(current.searchParams.get('mp_oauth_error') || '').trim();
-        const safeError = rawError ? rawError.replace(/_/g, ' ') : '';
+        const safeError = getOAuthRedirectErrorMessage(rawError);
 
         setView('admin');
-        setAdminTab('settings');
-        setSettingsTab('payments');
+        setAdminTab('dashboard');
         invalidateMercadoPagoPublicKey(appId || '');
 
         if (result === 'connected') {
@@ -4324,13 +4357,13 @@ function App() {
         current.searchParams.delete('mp_oauth');
         current.searchParams.delete('mp_oauth_error');
         window.history.replaceState({}, '', `${current.pathname}${current.search}${current.hash}`);
-    }, [appId]);
+    }, [appId, getOAuthRedirectErrorMessage]);
 
     useEffect(() => {
         if (!appId || !isAdminUser) return;
-        if (view !== 'admin' || adminTab !== 'settings' || settingsTab !== 'payments') return;
+        if (view !== 'admin' || adminTab !== 'dashboard') return;
         loadMercadoPagoOAuthStatus();
-    }, [appId, isAdminUser, view, adminTab, settingsTab, loadMercadoPagoOAuthStatus]);
+    }, [appId, isAdminUser, view, adminTab, loadMercadoPagoOAuthStatus]);
 
     // 5. Confirmación de Pedido (Checkout)
     const confirmOrder = async () => {
@@ -8380,6 +8413,137 @@ function App() {
                                                 </div>
                                             </div>
 
+                                            <div className="bg-gradient-to-b from-slate-950 to-slate-900/90 p-6 rounded-2xl border border-slate-700">
+                                                <div className="flex flex-col gap-5">
+                                                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                                                        <div className="flex items-start gap-4">
+                                                            <div className="min-w-[110px] h-12 px-3 rounded-xl bg-white/95 flex items-center justify-center text-[11px] font-black uppercase tracking-wide text-sky-700 shadow-inner">
+                                                                mercado pago
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <p className="font-bold text-white">Gateway</p>
+                                                                <div className="flex flex-wrap items-center gap-3 text-xs">
+                                                                    <span className="text-slate-300">✓ Checkout transparente</span>
+                                                                    <span className={mpOAuthStatus.connected ? 'text-green-400' : 'text-slate-500'}>
+                                                                        {mpOAuthStatus.loading
+                                                                            ? 'Consultando estado...'
+                                                                            : mpOAuthStatus.connected
+                                                                                ? 'Cuenta conectada'
+                                                                                : 'Cuenta no conectada'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center flex-wrap gap-2">
+                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${mpOAuthStatus.connected ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                                                                {mpOAuthStatus.connected ? 'Activado' : 'Nuevo'}
+                                                            </span>
+                                                            {typeof mpOAuthStatus.liveMode === 'boolean' && (
+                                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${mpOAuthStatus.liveMode ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' : 'bg-amber-500/10 text-amber-300 border-amber-500/30'}`}>
+                                                                    {mpOAuthStatus.liveMode ? 'Produccion' : 'Sandbox'}
+                                                                </span>
+                                                            )}
+                                                            <button
+                                                                onClick={loadMercadoPagoOAuthStatus}
+                                                                disabled={mpOAuthStatus.loading || !isAdminUser}
+                                                                className={`px-3 py-2 rounded-lg border text-xs font-bold transition flex items-center gap-2 ${mpOAuthStatus.loading || !isAdminUser
+                                                                    ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+                                                                    : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700 hover:text-white'
+                                                                    }`}
+                                                            >
+                                                                <RefreshCw className={`w-3.5 h-3.5 ${mpOAuthStatus.loading ? 'animate-spin' : ''}`} />
+                                                                Actualizar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="overflow-auto border border-slate-800 rounded-xl">
+                                                        <table className="min-w-[740px] w-full text-sm">
+                                                            <thead>
+                                                                <tr className="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider">
+                                                                    <th className="text-left py-3 px-4 font-bold">En ventas con</th>
+                                                                    <th className="text-left py-3 px-4 font-bold">Recibi en</th>
+                                                                    <th className="text-left py-3 px-4 font-bold">Tasas</th>
+                                                                    <th className="text-left py-3 px-4 font-bold">CPI</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="text-slate-200">
+                                                                <tr className="border-t border-slate-800">
+                                                                    <td className="py-4 px-4 align-top text-xs leading-relaxed text-slate-300">
+                                                                        Tarjeta de credito, Tarjeta de debito, Billetera virtual y redes de pago en efectivo
+                                                                    </td>
+                                                                    <td className="py-4 px-4 text-sm font-semibold">En el momento</td>
+                                                                    <td className="py-4 px-4 text-sm font-semibold">{mpOAuthStatus.connected ? 'Definidas por tu cuenta MP' : 'Conecta tu cuenta para visualizar'}</td>
+                                                                    <td className="py-4 px-4 text-sm font-semibold">{mpOAuthStatus.connected ? 'Variable' : '-'}</td>
+                                                                </tr>
+                                                                <tr className="border-t border-slate-800 text-slate-300">
+                                                                    <td className="py-3 px-4 text-xs"></td>
+                                                                    <td className="py-3 px-4 text-sm">10 dias</td>
+                                                                    <td className="py-3 px-4 text-sm">Ver detalle en Mercado Pago</td>
+                                                                    <td className="py-3 px-4 text-sm">-</td>
+                                                                </tr>
+                                                                <tr className="border-t border-slate-800 text-slate-300">
+                                                                    <td className="py-3 px-4 text-xs"></td>
+                                                                    <td className="py-3 px-4 text-sm">18 dias</td>
+                                                                    <td className="py-3 px-4 text-sm">Ver detalle en Mercado Pago</td>
+                                                                    <td className="py-3 px-4 text-sm">-</td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+
+                                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                        <button
+                                                            onClick={() => window.open('https://www.mercadopago.com/developers/panel/app', '_blank')}
+                                                            className="text-left text-sm font-bold text-sky-400 hover:text-sky-300 transition flex items-center gap-2"
+                                                        >
+                                                            <ExternalLink className="w-4 h-4" />
+                                                            Ir a Mercado Pago
+                                                        </button>
+                                                        <div className="flex flex-wrap gap-3">
+                                                            {mpOAuthStatus.connected && (
+                                                                <button
+                                                                    onClick={disconnectMercadoPagoOAuth}
+                                                                    disabled={isMpOAuthDisconnecting || isMpOAuthConnecting || !isAdminUser}
+                                                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition border ${isMpOAuthDisconnecting || isMpOAuthConnecting || !isAdminUser
+                                                                        ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+                                                                        : 'bg-slate-900 text-red-400 border-red-500/40 hover:bg-red-500 hover:text-white'
+                                                                        }`}
+                                                                >
+                                                                    {isMpOAuthDisconnecting ? 'Desconectando...' : 'Desactivar'}
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={connectMercadoPagoOAuth}
+                                                                disabled={isMpOAuthConnecting || isMpOAuthDisconnecting || !isAdminUser}
+                                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition ${isMpOAuthConnecting || isMpOAuthDisconnecting || !isAdminUser
+                                                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                                                    : 'bg-orange-600 text-white hover:bg-orange-500'
+                                                                    }`}
+                                                            >
+                                                                {isMpOAuthConnecting
+                                                                    ? 'Conectando...'
+                                                                    : (mpOAuthStatus.connected ? 'Editar configuracion' : 'Conectar Mercado Pago')}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {(mpOAuthStatus.mpUserId != null || mpOAuthStatus.scope || mpOAuthStatus.expiresAt || mpOAuthStatus.error) && (
+                                                        <div className="pt-2 text-xs">
+                                                            {mpOAuthStatus.error ? (
+                                                                <p className="text-red-400">{mpOAuthStatus.error}</p>
+                                                            ) : (
+                                                                <p className="text-slate-500">
+                                                                    {mpOAuthStatus.mpUserId != null ? `ID MP: ${String(mpOAuthStatus.mpUserId)} · ` : ''}
+                                                                    {mpOAuthStatus.scope ? `Permisos: ${mpOAuthStatus.scope} · ` : ''}
+                                                                    {mpOAuthStatus.expiresAt ? `Vence: ${new Date(mpOAuthStatus.expiresAt).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}` : ''}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
                                             {/* SECCIÓN 1: ANALÍTICA FINANCIERA (Lista Gráfica) */}
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                 {/* INGRESOS BRUTOS */}
@@ -11954,134 +12118,21 @@ function App() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="bg-gradient-to-b from-slate-950 to-slate-900/90 p-6 rounded-2xl border border-slate-700">
-                                                                <div className="flex flex-col gap-5">
-                                                                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                                                                        <div className="flex items-start gap-4">
-                                                                            <div className="min-w-[110px] h-12 px-3 rounded-xl bg-white/95 flex items-center justify-center text-[11px] font-black uppercase tracking-wide text-sky-700 shadow-inner">
-                                                                                mercado pago
-                                                                            </div>
-                                                                            <div className="space-y-1">
-                                                                                <p className="font-bold text-white">Gateway</p>
-                                                                                <div className="flex flex-wrap items-center gap-3 text-xs">
-                                                                                    <span className="text-slate-300">✓ Checkout transparente</span>
-                                                                                    <span className={mpOAuthStatus.connected ? 'text-green-400' : 'text-slate-500'}>
-                                                                                        {mpOAuthStatus.loading
-                                                                                            ? 'Consultando estado...'
-                                                                                            : mpOAuthStatus.connected
-                                                                                                ? 'Cuenta conectada'
-                                                                                                : 'Cuenta no conectada'}
-                                                                                    </span>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-center flex-wrap gap-2">
-                                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${mpOAuthStatus.connected ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                                                                                {mpOAuthStatus.connected ? 'Activado' : 'Nuevo'}
-                                                                            </span>
-                                                                            {typeof mpOAuthStatus.liveMode === 'boolean' && (
-                                                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${mpOAuthStatus.liveMode ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' : 'bg-amber-500/10 text-amber-300 border-amber-500/30'}`}>
-                                                                                    {mpOAuthStatus.liveMode ? 'Producción' : 'Sandbox'}
-                                                                                </span>
-                                                                            )}
-                                                                            <button
-                                                                                onClick={loadMercadoPagoOAuthStatus}
-                                                                                disabled={mpOAuthStatus.loading || !isAdminUser}
-                                                                                className={`px-3 py-2 rounded-lg border text-xs font-bold transition flex items-center gap-2 ${mpOAuthStatus.loading || !isAdminUser
-                                                                                    ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
-                                                                                    : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700 hover:text-white'
-                                                                                    }`}
-                                                                            >
-                                                                                <RefreshCw className={`w-3.5 h-3.5 ${mpOAuthStatus.loading ? 'animate-spin' : ''}`} />
-                                                                                Actualizar
-                                                                            </button>
-                                                                        </div>
+                                                            <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-5">
+                                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Conexión Mercado Pago OAuth</p>
+                                                                        <p className="text-xs text-slate-400 mt-1">
+                                                                            Esta integración ahora se administra desde Inicio en el panel de admin.
+                                                                        </p>
                                                                     </div>
-
-                                                                    <div className="overflow-auto border border-slate-800 rounded-xl">
-                                                                        <table className="min-w-[740px] w-full text-sm">
-                                                                            <thead>
-                                                                                <tr className="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider">
-                                                                                    <th className="text-left py-3 px-4 font-bold">En ventas con</th>
-                                                                                    <th className="text-left py-3 px-4 font-bold">Recibí en</th>
-                                                                                    <th className="text-left py-3 px-4 font-bold">Tasas</th>
-                                                                                    <th className="text-left py-3 px-4 font-bold">CPI</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody className="text-slate-200">
-                                                                                <tr className="border-t border-slate-800">
-                                                                                    <td className="py-4 px-4 align-top text-xs leading-relaxed text-slate-300">
-                                                                                        Tarjeta de crédito, Tarjeta de débito, Billetera virtual y redes de pago en efectivo
-                                                                                    </td>
-                                                                                    <td className="py-4 px-4 text-sm font-semibold">En el momento</td>
-                                                                                    <td className="py-4 px-4 text-sm font-semibold">{mpOAuthStatus.connected ? 'Definidas por tu cuenta MP' : 'Conectá tu cuenta para visualizar'}</td>
-                                                                                    <td className="py-4 px-4 text-sm font-semibold">{mpOAuthStatus.connected ? 'Variable' : '-'}</td>
-                                                                                </tr>
-                                                                                <tr className="border-t border-slate-800 text-slate-300">
-                                                                                    <td className="py-3 px-4 text-xs"></td>
-                                                                                    <td className="py-3 px-4 text-sm">10 días</td>
-                                                                                    <td className="py-3 px-4 text-sm">Ver detalle en Mercado Pago</td>
-                                                                                    <td className="py-3 px-4 text-sm">-</td>
-                                                                                </tr>
-                                                                                <tr className="border-t border-slate-800 text-slate-300">
-                                                                                    <td className="py-3 px-4 text-xs"></td>
-                                                                                    <td className="py-3 px-4 text-sm">18 días</td>
-                                                                                    <td className="py-3 px-4 text-sm">Ver detalle en Mercado Pago</td>
-                                                                                    <td className="py-3 px-4 text-sm">-</td>
-                                                                                </tr>
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </div>
-
-                                                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                                                        <button
-                                                                            onClick={() => window.open('https://www.mercadopago.com/developers/panel/app', '_blank')}
-                                                                            className="text-left text-sm font-bold text-sky-400 hover:text-sky-300 transition flex items-center gap-2"
-                                                                        >
-                                                                            <ExternalLink className="w-4 h-4" />
-                                                                            Ir a Mercado Pago
-                                                                        </button>
-                                                                        <div className="flex flex-wrap gap-3">
-                                                                            {mpOAuthStatus.connected && (
-                                                                                <button
-                                                                                    onClick={disconnectMercadoPagoOAuth}
-                                                                                    disabled={isMpOAuthDisconnecting || isMpOAuthConnecting || !isAdminUser}
-                                                                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition border ${isMpOAuthDisconnecting || isMpOAuthConnecting || !isAdminUser
-                                                                                        ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
-                                                                                        : 'bg-slate-900 text-red-400 border-red-500/40 hover:bg-red-500 hover:text-white'
-                                                                                        }`}
-                                                                                >
-                                                                                    {isMpOAuthDisconnecting ? 'Desconectando...' : 'Desactivar'}
-                                                                                </button>
-                                                                            )}
-                                                                            <button
-                                                                                onClick={connectMercadoPagoOAuth}
-                                                                                disabled={isMpOAuthConnecting || isMpOAuthDisconnecting || !isAdminUser}
-                                                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition ${isMpOAuthConnecting || isMpOAuthDisconnecting || !isAdminUser
-                                                                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                                                                    : 'bg-orange-600 text-white hover:bg-orange-500'
-                                                                                    }`}
-                                                                            >
-                                                                                {isMpOAuthConnecting
-                                                                                    ? 'Conectando...'
-                                                                                    : (mpOAuthStatus.connected ? 'Editar configuración' : 'Conectar Mercado Pago')}
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {(mpOAuthStatus.mpUserId != null || mpOAuthStatus.scope || mpOAuthStatus.expiresAt || mpOAuthStatus.error) && (
-                                                                        <div className="pt-2 text-xs">
-                                                                            {mpOAuthStatus.error ? (
-                                                                                <p className="text-red-400">{mpOAuthStatus.error}</p>
-                                                                            ) : (
-                                                                                <p className="text-slate-500">
-                                                                                    {mpOAuthStatus.mpUserId != null ? `ID MP: ${String(mpOAuthStatus.mpUserId)} · ` : ''}
-                                                                                    {mpOAuthStatus.scope ? `Permisos: ${mpOAuthStatus.scope} · ` : ''}
-                                                                                    {mpOAuthStatus.expiresAt ? `Vence: ${new Date(mpOAuthStatus.expiresAt).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}` : ''}
-                                                                                </p>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
+                                                                    <button
+                                                                        onClick={() => setAdminTab('dashboard')}
+                                                                        className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 transition flex items-center gap-2"
+                                                                    >
+                                                                        <ArrowRight className="w-4 h-4" />
+                                                                        Ir a Inicio
+                                                                    </button>
                                                                 </div>
                                                             </div>
 
