@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FNAF - Who Am I?</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --red: #dc2626;
+            --red-glow: rgba(220, 38, 38, .4);
+            --green: #22c55e;
+            --yellow: #eab308;
+            --blue: #3b82f6;
+            --purple: #a855f7;
+            --bg: #000;
+            --surface: #0a0a0a;
+            --surface2: #141414;
+            --border: #1e1e1e;
+            --text: #e5e5e5;
+            --text-dim: #737373;
+            --font-display: 'Creepster', cursive;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace
+        }
+
+        html,
+        body,
+        #root {
+            height: 100%;
+            overflow: hidden
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes glitch {
+
+            0%,
+            100% {
+                transform: translate(0)
+            }
+
+            20% {
+                transform: translate(-2px, 1px)
+            }
+
+            40% {
+                transform: translate(2px, -1px)
+            }
+
+            60% {
+                transform: translate(-1px, 2px)
+            }
+
+            80% {
+                transform: translate(1px, -2px)
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .5
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0)
+            }
+
+            25% {
+                transform: translateX(-4px)
+            }
+
+            75% {
+                transform: translateX(4px)
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-6px)
+            }
+        }
+
+        @keyframes confettiDrop {
+            0% {
+                transform: translateY(-100vh) rotate(0);
+                opacity: 1
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0
+            }
+        }
+
+        @keyframes streakFire {
+
+            0%,
+            100% {
+                text-shadow: 0 0 10px #ff6600, 0 0 20px #ff3300
+            }
+
+            50% {
+                text-shadow: 0 0 20px #ff9900, 0 0 40px #ff6600
+            }
+        }
+
+        @keyframes eyeBlink {
+
+            0%,
+            45%,
+            55%,
+            100% {
+                transform: scaleY(1)
+            }
+
+            50% {
+                transform: scaleY(.1)
+            }
+        }
+
+        @keyframes staticFlash {
+
+            0%,
+            95%,
+            100% {
+                opacity: 0
+            }
+
+            97% {
+                opacity: .12
+            }
+        }
+
+        @keyframes countPop {
+            from {
+                transform: scale(1.4);
+                opacity: 0
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1
+            }
+        }
+
+        .crt {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999
+        }
+
+        .crt::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 0, 0, .12) 1px, rgba(0, 0, 0, .12) 2px);
+            z-index: 1
+        }
+
+        .crt::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(255, 0, 0, .03), rgba(0, 255, 0, .015), rgba(0, 0, 255, .03));
+            background-size: 3px 100%;
+            z-index: 1
+        }
+
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, .8));
+            pointer-events: none;
+            z-index: 9998
+        }
+
+        .static-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9997;
+            animation: staticFlash 6s ease-in-out infinite;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E")
+        }
+
+        .gc {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            position: relative;
+            overflow-y: auto
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 0 30px rgba(220, 38, 38, .08), 0 20px 60px rgba(0, 0, 0, .5)
+        }
+
+        .btn {
+            padding: 14px 24px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: 2px solid;
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            border-radius: 4px;
+            outline: none
+        }
+
+        .btn:active {
+            transform: scale(.97)
+        }
+
+        .btn-w {
+            background: #fff;
+            color: #000;
+            border-color: #fff
+        }
+
+        .btn-w:hover {
+            background: var(--red);
+            color: #fff;
+            border-color: var(--red)
+        }
+
+        .btn-g {
+            background: #166534;
+            color: #fff;
+            border-color: #15803d;
+            box-shadow: 0 0 20px rgba(22, 163, 74, .3)
+        }
+
+        .btn-g:hover {
+            background: #15803d
+        }
+
+        .btn-d {
+            background: var(--surface2);
+            color: var(--text-dim);
+            border-color: var(--border)
+        }
+
+        .btn-d:hover {
+            border-color: var(--red);
+            color: var(--red)
+        }
+
+        .btn-r {
+            background: #991b1b;
+            color: #fff;
+            border-color: #b91c1c
+        }
+
+        .btn-r:hover {
+            background: #b91c1c
+        }
+
+        .btn-off {
+            opacity: .3;
+            cursor: not-allowed;
+            pointer-events: none
+        }
+
+        .title {
+            font-family: var(--font-display);
+            font-size: clamp(42px, 10vw, 68px);
+            color: #fff;
+            text-align: center;
+            line-height: 1;
+            text-shadow: 0 0 10px var(--red-glow), 0 0 30px var(--red-glow), 2px 2px 0 var(--red)
+        }
+
+        .sub {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: #991b1b;
+            text-align: center
+        }
+
+        .inp {
+            width: 100%;
+            padding: 12px 16px;
+            background: #000;
+            border: 1px solid var(--border);
+            color: #fff;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color .2s;
+            border-radius: 2px
+        }
+
+        .inp:focus {
+            border-color: var(--red)
+        }
+
+        .inp::placeholder {
+            color: #333;
+            text-transform: none;
+            font-size: 12px
+        }
+
+        .pi {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #050505;
+            border-left: 2px solid var(--red);
+            margin-bottom: 4px;
+            animation: fadeUp .3s ease-out both
+        }
+
+        .pi span {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: #999
+        }
+
+        .pi .n {
+            color: #fff;
+            font-weight: 700
+        }
+
+        .pi button {
+            background: none;
+            border: none;
+            color: #444;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px 8px
+        }
+
+        .pi button:hover {
+            color: var(--red)
+        }
+
+        .cr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all .15s;
+            margin-bottom: 6px;
+            background: var(--surface2);
+            border-radius: 0 4px 4px 0
+        }
+
+        .cr:hover {
+            filter: brightness(1.2)
+        }
+
+        .cr.u {
+            opacity: .4;
+            background: rgba(10, 10, 10, .5);
+            border-color: #333 !important
+        }
+
+        .cr.u .ct {
+            text-decoration: line-through;
+            color: #555
+        }
+
+        .cl {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #666;
+            letter-spacing: 1px
+        }
+
+        .ct {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: #fff;
+            font-size: 13px
+        }
+
+        .ck {
+            width: 20px;
+            height: 20px;
+            border: 2px solid;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0
+        }
+
+        .tb {
+            width: 100%;
+            height: 6px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            overflow: hidden
+        }
+
+        .tf {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .4s linear
+        }
+
+        .sd {
+            font-family: var(--font-mono);
+            font-size: 26px;
+            font-weight: 900
+        }
+
+        .sb {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff6600, #ff3300);
+            color: #fff;
+            animation: streakFire 1s ease-in-out infinite
+        }
+
+        .lr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-left: 2px solid var(--border);
+            margin-bottom: 3px;
+            background: #050505;
+            font-family: var(--font-mono);
+            font-size: 12px
+        }
+
+        .lr.a {
+            background: rgba(153, 27, 27, .15);
+            border-color: var(--red)
+        }
+
+        .lr.f {
+            border-color: var(--yellow)
+        }
+
+        .cf {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            z-index: 10000;
+            animation: confettiDrop 3s ease-in forwards;
+            pointer-events: none;
+            border-radius: 2px
+        }
+
+        .db {
+            padding: 12px;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+            border-radius: 6px;
+            flex: 1
+        }
+
+        .db:hover {
+            border-color: #555
+        }
+
+        .db.on {
+            color: #fff;
+            border-width: 2px
+        }
+
+        .nr {
+            font-family: var(--font-display);
+            font-size: clamp(28px, 8vw, 48px);
+            color: #fff;
+            text-align: center;
+            text-shadow: 0 0 15px rgba(255, 255, 255, .2);
+            word-break: break-word
+        }
+
+        .topb {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--surface);
+            border-bottom: 2px solid #1a0000;
+            margin-bottom: 8px;
+            border-radius: 6px 6px 0 0
+        }
+
+        .sl {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px
+        }
+
+        .sv {
+            font-family: var(--font-mono);
+            font-weight: 900;
+            font-size: 13px
+        }
+
+        .fs {
+            text-align: center;
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px
+        }
+
+        .fs .v {
+            font-family: var(--font-display);
+            font-size: 32px;
+            color: #fff
+        }
+
+        .fs .l {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px
+        }
+
+        .rc {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: #555;
+            letter-spacing: 2px;
+            text-transform: uppercase
+        }
+
+        .eb {
+            display: inline-block;
+            animation: eyeBlink 4s ease-in-out infinite
+        }
+
+        .gx {
+            animation: glitch .3s ease both
+        }
+
+        .cp {
+            animation: countPop .4s ease-out both
+        }
+
+        @keyframes jumpscareFlash {
+            0% {
+                opacity: 1;
+                background: #ff0000
+            }
+
+            50% {
+                opacity: 0.8;
+                background: #000
+            }
+
+            100% {
+                opacity: 0;
+                background: transparent
+            }
+        }
+
+        @keyframes heartbeat {
+
+            0%,
+            100% {
+                transform: scale(1)
+            }
+
+            50% {
+                transform: scale(1.05)
+            }
+        }
+
+        .jsf {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            pointer-events: none;
+            animation: jumpscareFlash .6s ease-out forwards;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 120px;
+        }
+
+        .pwo {
+            position: fixed;
+            inset: 0;
+            z-index: 99998;
+            background: #000;
+            pointer-events: none;
+            animation: fadeUp .3s ease-out reverse forwards;
+        }
+
+        .hb {
+            animation: heartbeat .5s ease-in-out infinite
+        }
+
+        .evt-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: fadeUp .3s ease-out both;
+        }
+
+        .sab-btn {
+            background: linear-gradient(135deg, #7c2d12, #991b1b);
+            border: 2px solid #dc2626;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sab-btn:hover {
+            background: #dc2626;
+            transform: scale(1.03)
+        }
+
+        .sab-btn:active {
+            transform: scale(.97)
+        }
+
+        .gal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 10px;
+            width: 100%;
+        }
+
+        .gal-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            cursor: default;
+            transition: all .3s ease;
+        }
+
+        .gal-card:hover {
+            border-color: var(--red);
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 8px 25px var(--red-glow);
+        }
+
+        .gal-card .gn {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: #999;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .gal-card:hover .gn {
+            color: #fff
+        }
+
+        .gal-card .gg {
+            font-family: var(--font-mono);
+            font-size: 7px;
+            color: #444;
+            margin-top: 2px;
+        }
+
+        .gal-section {
+            font-family: var(--font-display);
+            font-size: 18px;
+            color: var(--red);
+            margin: 16px 0 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .extras-btn {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid #333;
+            color: #888;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .3s;
+            width: 100%;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .extras-btn:hover {
+            border-color: var(--purple);
+            color: var(--purple);
+            box-shadow: 0 0 15px rgba(168, 85, 247, .2);
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 6px;
+            font-weight: 900;
+            font-family: var(--font-display);
+            font-size: 22px;
+            border: 2px solid rgba(255, 255, 255, .15);
+            transition: border-color .3s, box-shadow .3s;
+        }
+
+        .gal-card:hover .avatar {
+            border-color: var(--red);
+            box-shadow: 0 0 12px var(--red-glow)
+        }
+
+        .avatar-lg {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 8px auto 4px;
+            font-weight: 900;
+            font-family: var(--font-display);
+            font-size: 42px;
+            border: 3px solid var(--red);
+            box-shadow: 0 0 25px var(--red-glow);
+            animation: fadeUp .4s ease-out both;
+        }
+
+        @media(max-width:480px) {
+            .card {
+                padding: 16px;
+                border-radius: 8px
+            }
+
+            .btn {
+                padding: 12px 16px;
+                font-size: 11px
+            }
+
+            .cr {
+                padding: 10px 12px
+            }
+
+            .nr {
+                font-size: 24px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="crt"></div>
+    <div class="vignette"></div>
+    <div class="static-bg"></div>
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+        const GAME_COLORS = { 'FNAF 1': '#b91c1c', 'FNAF 2': '#1d4ed8', 'FNAF 3': '#15803d', 'FNAF 4': '#7e22ce', 'Sister Location': '#be185d', 'FFPS': '#b45309', 'UCN': '#0f766e', 'Help Wanted': '#4338ca', 'Security Breach': '#0369a1' };
+        const getAvColor = (game) => GAME_COLORS[game] || '#555';
+        const getInitials = (name) => { const w = name.replace(/[()]/g, '').split(' '); return w.length > 1 ? (w[0][0] + w[1][0]).toUpperCase() : name.substring(0, 2).toUpperCase(); };
+        const ANIMATRONICS = [
+            // === FNAF 1 ===
+            { id: 1, name: "Freddy Fazbear", game: "FNAF 1", species: "Oso", color: "Marrón", trait: "Líder de la banda, se ríe en la oscuridad" },
+            { id: 2, name: "Bonnie", game: "FNAF 1", species: "Conejo", color: "Morado", trait: "Guitarrista, el primero en moverse" },
+            { id: 3, name: "Chica", game: "FNAF 1", species: "Pollo", color: "Amarillo", trait: "Tiene un Cupcake, 'Let's Eat'" },
+            { id: 4, name: "Foxy", game: "FNAF 1", species: "Zorro", color: "Rojo", trait: "Pirata, corre por el pasillo, fuera de servicio" },
+            { id: 5, name: "Golden Freddy", game: "FNAF 1", species: "Oso", color: "Dorado", trait: "Aparece sentado, teletransportación, 'It's Me'" },
+            // === FNAF 2 (Toys) ===
+            { id: 6, name: "Toy Freddy", game: "FNAF 2", species: "Oso", color: "Marrón Claro", trait: "Juega videojuegos, mejillas rojas" },
+            { id: 7, name: "Toy Bonnie", game: "FNAF 2", species: "Conejo", color: "Azul Celeste", trait: "Guitarra moderna, se mete en conductos" },
+            { id: 8, name: "Toy Chica", game: "FNAF 2", species: "Pollo", color: "Amarillo/Rosa", trait: "Se quita el pico, lleva el Cupcake" },
+            { id: 9, name: "Mangle", game: "FNAF 2", species: "Zorro", color: "Blanco/Rosa", trait: "Desarmado, trepa por el techo, estática de radio" },
+            { id: 10, name: "Balloon Boy", game: "FNAF 2", species: "Humano", color: "Rojo/Azul", trait: "Te quita las pilas, se mueve por los conductos, se ríe" },
+            { id: 11, name: "JJ", game: "FNAF 2", species: "Humano", color: "Morado/Azul", trait: "Versión femenina de BB, se esconde debajo de la mesa" },
+            { id: 63, name: "Shadow Bonnie", game: "FNAF 2", species: "Conejo", color: "Negro/Sombra", trait: "Cierra el juego, jumpscare visual, aparece sentado" },
+            { id: 64, name: "Shadow Freddy", game: "FNAF 2", species: "Oso", color: "Morado Oscuro", trait: "Sombra misteriosa, crashea el juego" },
+            // === FNAF 2 (Withereds) ===
+            { id: 13, name: "Withered Freddy", game: "FNAF 2", species: "Oso", color: "Marrón Sucio", trait: "Viejo modelo, ojos vacíos" },
+            { id: 14, name: "Withered Bonnie", game: "FNAF 2", species: "Conejo", color: "Azul/Gris", trait: "No tiene cara, brazo arrancado" },
+            { id: 15, name: "Withered Chica", game: "FNAF 2", species: "Pollo", color: "Amarillo Sucio", trait: "Mandíbula desencajada, brazos extendidos" },
+            { id: 16, name: "Withered Foxy", game: "FNAF 2", species: "Zorro", color: "Rojo Desteñido", trait: "Salta hacia ti, necesita luz de linterna" },
+            { id: 71, name: "Withered Golden Freddy", game: "FNAF 2", species: "Oso", color: "Dorado Viejo", trait: "Cabeza gigante, aparece en la oficina, crashea el juego" },
+            { id: 12, name: "The Puppet", game: "FNAF 2", species: "Marioneta", color: "Negro/Blanco", trait: "Necesita la caja de música, cuerpo muy delgado, da vida" },
+            // === FNAF 3 ===
+            { id: 17, name: "Springtrap", game: "FNAF 3", species: "Conejo", color: "Verde Podrido", trait: "El único que mata, cadáver dentro, atraído por audio" },
+            { id: 18, name: "Phantom Freddy", game: "FNAF 3", species: "Oso", color: "Verde Quemado", trait: "Jumpscare, camina cojeando por la ventana" },
+            { id: 72, name: "Phantom Foxy", game: "FNAF 3", species: "Zorro", color: "Verde Quemado", trait: "Jumpscare, aparece de golpe en la oficina" },
+            { id: 73, name: "Phantom Chica", game: "FNAF 3", species: "Pollo", color: "Verde Quemado", trait: "Jumpscare, aparece en la pantalla del arcade" },
+            { id: 20, name: "Phantom Mangle", game: "FNAF 3", species: "Zorro", color: "Quemado", trait: "Ataque visual y auditivo, estática de radio" },
+            { id: 19, name: "Phantom BB", game: "FNAF 3", species: "Humano", color: "Quemado", trait: "Jumpscare, aparece en las cámaras" },
+            { id: 74, name: "Phantom Puppet", game: "FNAF 3", species: "Marioneta", color: "Quemado/Negro", trait: "Ataque visual, bloquea la pantalla con su cara" },
+            // === FNAF 4 (Nightmares) ===
+            { id: 21, name: "Nightmare Freddy", game: "FNAF 4", species: "Oso", color: "Marrón Oscuro", trait: "Tiene mini-freddies (Freddles) en la cama" },
+            { id: 75, name: "Freddles", game: "FNAF 4", species: "Oso", color: "Marrón Oscuro", trait: "Son 3 mini-Freddys, aparecen en la cama, invocan a Nightmare Freddy" },
+            { id: 22, name: "Nightmare Bonnie", game: "FNAF 4", species: "Conejo", color: "Azul Oscuro", trait: "Ataca por el pasillo izquierdo, respira fuerte" },
+            { id: 23, name: "Nightmare Chica", game: "FNAF 4", species: "Pollo", color: "Amarillo Quemado", trait: "Pasillo derecho, cupcake agresivo" },
+            { id: 76, name: "Nightmare Cupcake", game: "FNAF 4", species: "Cupcake", color: "Rosa/Rojo", trait: "Versión pesadilla del Cupcake, dientes afilados, ataca solo" },
+            { id: 24, name: "Nightmare Foxy", game: "FNAF 4", species: "Zorro", color: "Rojo Oscuro", trait: "Se esconde en el armario, se convierte en peluche" },
+            { id: 25, name: "Nightmare Fredbear", game: "FNAF 4", species: "Oso", color: "Dorado", trait: "Dientes en el estómago, sombrero morado" },
+            { id: 26, name: "Nightmare", game: "FNAF 4", species: "Oso", color: "Negro Transparente", trait: "Versión oscura de Fredbear, cuerpo invisible" },
+            { id: 77, name: "Nightmare Mangle", game: "FNAF 4", species: "Zorro", color: "Blanco/Rosa Oscuro", trait: "Versión pesadilla de Mangle, trepa por el techo del cuarto" },
+            { id: 65, name: "Nightmare Balloon Boy", game: "FNAF 4", species: "Humano", color: "Rojo/Azul Oscuro", trait: "Aparece en el armario, reemplaza a Foxy" },
+            { id: 68, name: "Nightmarionne", game: "FNAF 4", species: "Marioneta", color: "Negro", trait: "Puppet pesadilla, brazos y dedos extremadamente largos" },
+            { id: 66, name: "Jack-O-Bonnie", game: "FNAF 4", species: "Conejo", color: "Naranja/Fuego", trait: "Versión Halloween, ojos de fuego, calabaza interna" },
+            { id: 67, name: "Jack-O-Chica", game: "FNAF 4", species: "Pollo", color: "Naranja/Fuego", trait: "Versión Halloween, calabaza en vez de cupcake" },
+            { id: 27, name: "Plushtrap", game: "FNAF 4", species: "Conejo", color: "Verde Oliva", trait: "Mini juego de la silla, hay que atraparlo con la luz" },
+            // === Sister Location ===
+            { id: 28, name: "Circus Baby", game: "Sister Location", species: "Humanoide", color: "Rojo/Blanco", trait: "Antagonista principal, hace helados, garra en el estómago" },
+            { id: 29, name: "Ballora", game: "Sister Location", species: "Humanoide", color: "Azul/Blanco", trait: "Bailarina, ojos cerrados, escucha música" },
+            { id: 30, name: "Funtime Freddy", game: "Sister Location", species: "Oso", color: "Blanco/Morado", trait: "Tiene a Bon-Bon como marioneta de mano, grita '¡BON-BON!'" },
+            { id: 78, name: "Bon-Bon", game: "Sister Location", species: "Conejo", color: "Azul/Celeste", trait: "Marioneta de mano de Funtime Freddy, pequeño y adorable" },
+            { id: 31, name: "Funtime Foxy", game: "Sister Location", species: "Zorro", color: "Blanco/Rosa", trait: "Activado por movimiento, showman del escenario" },
+            { id: 79, name: "Bidybabs", game: "Sister Location", species: "Humanoide", color: "Piel/Blanco", trait: "Pequeños, intentan abrir el armario donde te escondes" },
+            { id: 80, name: "Electrobab", game: "Sister Location", species: "Humanoide", color: "Azul/Eléctrico", trait: "Versión eléctrica de Bidybab, drena la energía" },
+            { id: 81, name: "Minireenas", game: "Sister Location", species: "Humanoide", color: "Piel/Ballet", trait: "Mini bailarinas de Ballora, se trepan encima tuyo" },
+            { id: 32, name: "Ennard", game: "Sister Location", species: "Amalgama", color: "Gris/Cables", trait: "Mezcla de todos los funtime, máscara de payaso, te usa de disfraz" },
+            { id: 82, name: "Bonnet", game: "Sister Location", species: "Conejo", color: "Rosa", trait: "Versión rosa de Bon-Bon, camina por la pantalla, hay que clickearle la nariz" },
+            { id: 83, name: "Yenndo", game: "Sister Location", species: "Oso", color: "Amarillo/Endoesqueleto", trait: "Endoesqueleto misterioso, aparece de la nada en la oficina" },
+            { id: 84, name: "Lolbit", game: "Sister Location", species: "Zorro", color: "Naranja/Morado", trait: "Interferencia visual y auditiva, 'PLEASE STAND BY'" },
+            // === FFPS (Pizzeria Simulator) ===
+            { id: 46, name: "Scrap Baby", game: "FFPS", species: "Humanoide", color: "Rojo/Oxido", trait: "Patines de ruedas, pinza gigante, corona rota" },
+            { id: 47, name: "Scraptrap", game: "FFPS", species: "Conejo", color: "Verde Hueso", trait: "Frente enorme, brazo de hueso, 'I always come back'" },
+            { id: 45, name: "Molten Freddy", game: "FFPS", species: "Oso/Cables", color: "Marrón/Oxido", trait: "Masa de cables con máscara de oso, risa maníaca" },
+            { id: 48, name: "Lefty", game: "FFPS", species: "Oso", color: "Negro", trait: "Ojo faltante, captura a Puppet dentro de él" },
+            { id: 69, name: "Music Man", game: "FFPS", species: "Araña", color: "Blanco", trait: "Se activa con el ruido, toca platillos, se acerca lentamente" },
+            { id: 33, name: "Helpy", game: "FFPS", species: "Oso", color: "Blanco/Rosa", trait: "Pequeño y adorable, ayuda en minijuegos" },
+            { id: 34, name: "Happy Frog", game: "FFPS", species: "Rana", color: "Verde", trait: "Mediocre Melody, inmune al audio lure" },
+            { id: 35, name: "Mr. Hippo", game: "FFPS", species: "Hipopótamo", color: "Morado", trait: "Cuenta historias aburridas y larguísimas al morir" },
+            { id: 36, name: "Pigpatch", game: "FFPS", species: "Cerdo", color: "Rosa", trait: "Toca el banjo, ojos de diferente color" },
+            { id: 37, name: "Nedd Bear", game: "FFPS", species: "Oso", color: "Marrón Claro", trait: "Ojos bizcos, sombrero de muelle" },
+            { id: 38, name: "Orville Elephant", game: "FFPS", species: "Elefante", color: "Naranja", trait: "Mago, usa varita mágica" },
+            { id: 39, name: "Rockstar Freddy", game: "FFPS", species: "Oso", color: "Marrón", trait: "Pide 5 monedas, 'Please deposit five coins'" },
+            { id: 40, name: "Rockstar Bonnie", game: "FFPS", species: "Conejo", color: "Azul", trait: "Pierde su guitarra y la busca" },
+            { id: 41, name: "Rockstar Chica", game: "FFPS", species: "Pollo", color: "Amarillo", trait: "Teme al cartel de piso mojado" },
+            { id: 42, name: "Rockstar Foxy", game: "FFPS", species: "Zorro", color: "Rojo", trait: "Tiene un loro verde, puede ayudarte o matarte" },
+            { id: 43, name: "El Chip", game: "FFPS", species: "Castor", color: "Marrón", trait: "Toca la mandolina, interrumpe con anuncios de tacos" },
+            { id: 44, name: "Funtime Chica", game: "FFPS", species: "Pollo", color: "Blanco/Rosa", trait: "Le gusta ser el centro de atención, flashes de cámara" },
+            // === UCN ===
+            { id: 49, name: "Dee Dee", game: "UCN", species: "Humano", color: "Rosa/Naranja", trait: "Añade animatrónicos extra a la partida, canta molesto" },
+            { id: 50, name: "Old Man Consequences", game: "UCN", species: "Cocodrilo", color: "Rojo", trait: "Pesca en un lago rojo, sprite 8-bit" },
+            // === Help Wanted ===
+            { id: 61, name: "Glitchtrap", game: "Help Wanted", species: "Conejo", color: "Amarillo/Dorado", trait: "Virus digital, te saluda desde lejos, ojos morados" },
+            { id: 62, name: "Dreadbear", game: "Help Wanted", species: "Oso", color: "Verde", trait: "Frankenstein, cerebro expuesto, DLC Halloween" },
+            // === Security Breach ===
+            { id: 51, name: "Glamrock Freddy", game: "Security Breach", species: "Oso", color: "Naranja/Azul", trait: "Te protege, tiene compartimento en el pecho, tu aliado" },
+            { id: 52, name: "Glamrock Chica", game: "Security Breach", species: "Pollo", color: "Blanco/Rosa", trait: "Come basura, le gusta la pizza, pendiente de estrella" },
+            { id: 53, name: "Montgomery Gator", game: "Security Breach", species: "Caimán", color: "Verde", trait: "Gafas de sol, rompe cosas, muy agresivo" },
+            { id: 54, name: "Roxanne Wolf", game: "Security Breach", species: "Lobo", color: "Gris/Morado", trait: "Narcisista, habla con su reflejo, pelo largo, ojos láser" },
+            { id: 55, name: "Sun (Sundrop)", game: "Security Breach", species: "Humanoide", color: "Amarillo", trait: "Energético, le gusta la luz, reparte caramelos" },
+            { id: 56, name: "Moon (Moondrop)", game: "Security Breach", species: "Humanoide", color: "Azul/Noche", trait: "Aparece cuando se apaga la luz, gorro de dormir, te persigue" },
+            { id: 57, name: "Vanny", game: "Security Breach", species: "Humano", color: "Blanco", trait: "Disfraz de conejo hecho a mano, saltitos, controlada por Glitchtrap" },
+            { id: 58, name: "DJ Music Man", game: "Security Breach", species: "Araña", color: "Blanco/Rosa", trait: "Gigantesco, camina por las paredes, auriculares, persecución épica" },
+            { id: 59, name: "Burntrap", game: "Security Breach", species: "Conejo", color: "Quemado", trait: "Springtrap quemado, controla a otros desde las ruinas" },
+            { id: 60, name: "The Blob", game: "Security Breach", species: "Amalgama", color: "Negro/Varios", trait: "Montaña de cables y máscaras antiguas fundidas" },
+        ];
+
+        const DIFFICULTY = { easy: { label: "FÁCIL", clues: 4, timer: 90, color: "var(--green)" }, normal: { label: "NORMAL", clues: 3, timer: 60, color: "var(--yellow)" }, nightmare: { label: "PESADILLA", clues: 2, timer: 30, color: "var(--red)" } };
+        const BASE_PTS = 200; const CLUE_PTS = 200; const STREAK_BONUS = 50; const MAX_ROUNDS = 10;
+
+        const EVENTS = [
+            { type: 'JUMPSCARE', emoji: '😱', label: '¡JUMPSCARE!', desc: 'Todos gritan — -5 seg', penalty: 5 },
+            { type: 'POWER_OUT', emoji: '⚡', label: 'CORTE DE LUZ', desc: 'Oscuridad total — -3 seg', penalty: 3 },
+            { type: 'STATIC', emoji: '📺', label: 'INTERFERENCIA', desc: 'Estática — -2 seg', penalty: 2 },
+            { type: 'DOUBLE', emoji: '🎰', label: 'DOBLE O NADA', desc: '¡Puntos x2 esta ronda!', penalty: 0 },
+            { type: 'GOLDEN', emoji: '🐻', label: 'GOLDEN FREDDY', desc: '¡IT\'S ME! +500 bonus si acierta', penalty: 0 },
+        ];
+
+        const getRank = (score) => {
+            if (score >= 8000) return { title: 'El Hombre Morado', icon: '💀', color: '#a855f7' };
+            if (score >= 5000) return { title: 'Phone Guy', icon: '📞', color: '#22c55e' };
+            if (score >= 3000) return { title: 'Guardia Veterano', icon: '🛡️', color: '#3b82f6' };
+            if (score >= 1500) return { title: 'Guardia Nocturno', icon: '🔦', color: '#eab308' };
+            return { title: 'Novato de la Pizzería', icon: '🍕', color: '#666' };
+        };
+
+        function playSound(freq, dur, type = 'square') {
+            try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value = freq; o.type = type; g.gain.value = 0.08; o.start(); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur); o.stop(ctx.currentTime + dur); } catch (e) { }
+        }
+        function sfxCorrect() { playSound(523, .1); setTimeout(() => playSound(659, .1), 100); setTimeout(() => playSound(784, .2), 200); }
+        function sfxWrong() { playSound(200, .4, 'sawtooth'); }
+        function sfxTick() { playSound(900, .03); }
+        function sfxEvent() { playSound(150, .5, 'sawtooth'); setTimeout(() => playSound(100, .3, 'sawtooth'), 200); }
+
+        function spawnConfetti() { const c = []; for (let i = 0; i < 40; i++) { const el = document.createElement('div'); el.className = 'cf'; el.style.left = Math.random() * 100 + 'vw'; el.style.background = ['#dc2626', '#22c55e', '#eab308', '#3b82f6', '#a855f7', '#f97316', '#fff'][Math.floor(Math.random() * 7)]; el.style.animationDelay = Math.random() * 1.5 + 's'; el.style.animationDuration = (2 + Math.random() * 2) + 's'; document.body.appendChild(el); c.push(el); } setTimeout(() => c.forEach(e => e.remove()), 5000); }
+
+        function App() {
+            const [state, setState] = useState('SETUP');
+            const [players, setPlayers] = useState([]);
+            const [np, setNp] = useState('');
+            const [ci, setCi] = useState(0);
+            const [card, setCard] = useState(null);
+            const [scores, setScores] = useState({});
+            const [used, setUsed] = useState([]);
+            const [clues, setClues] = useState({ game: false, species: false, color: false, trait: false });
+            const [diff, setDiff] = useState('normal');
+            const [timer, setTimer] = useState(60);
+            const [timerActive, setTimerActive] = useState(false);
+            const [streak, setStreak] = useState(0);
+            const [round, setRound] = useState(0);
+            const [maxRounds, setMaxRounds] = useState(MAX_ROUNDS);
+            const [history, setHistory] = useState([]);
+            const [glitch, setGlitch] = useState(false);
+            const [lastScore, setLastScore] = useState(0);
+            const [wasSuccess, setWasSuccess] = useState(false);
+            const [sabotaged, setSabotaged] = useState(false);
+            const [activeEvent, setActiveEvent] = useState(null);
+            const [bonusRound, setBonusRound] = useState(false);
+            const [showJumpscare, setShowJumpscare] = useState(false);
+            const [showBlackout, setShowBlackout] = useState(false);
+            const inputRef = useRef(null);
+
+            const triggerGlitch = () => { setGlitch(true); setTimeout(() => setGlitch(false), 300); };
+
+            const triggerRandomEvent = useCallback(() => {
+                if (Math.random() > 0.35) return null;
+                const evt = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+                setActiveEvent(evt); sfxEvent();
+                if (evt.type === 'JUMPSCARE') { setShowJumpscare(true); setTimeout(() => setShowJumpscare(false), 600); }
+                if (evt.type === 'POWER_OUT') { setShowBlackout(true); setTimeout(() => setShowBlackout(false), 2000); }
+                if (evt.penalty > 0) setTimer(t => Math.max(1, t - evt.penalty));
+                return evt;
+            }, []);
+
+            const doSabotage = () => { if (sabotaged) return; setSabotaged(true); setTimer(t => Math.max(1, t - 10)); sfxEvent(); triggerGlitch(); };
+
+            // Timer
+            useEffect(() => {
+                if (!timerActive || timer <= 0) return;
+                const id = setInterval(() => setTimer(t => { if (t <= 1) { setTimerActive(false); handleEnd(false); return 0; } if (t <= 10) sfxTick(); return t - 1; }), 1000);
+                return () => clearInterval(id);
+            }, [timerActive, timer]);
+
+            const addPlayer = () => { const n = np.trim(); if (!n) return; setPlayers(p => [...p, n]); setScores(s => ({ ...s, [n]: 0 })); setNp(''); inputRef.current?.focus(); };
+            const removePlayer = (i) => { const nm = players[i]; setPlayers(p => p.filter((_, j) => j !== i)); setScores(s => { const c = { ...s }; delete c[nm]; return c; }); };
+
+            const startGame = () => { if (players.length < 1) return; triggerGlitch(); setState('INSTRUCTIONS'); };
+
+            const setupRound = () => {
+                let avail = ANIMATRONICS.filter(c => !used.includes(c.id));
+                if (avail.length === 0) { avail = ANIMATRONICS; setUsed([]); }
+                const rc = avail[Math.floor(Math.random() * avail.length)];
+                setCard(rc); setUsed(u => [...u, rc.id]);
+                setClues({ game: false, species: false, color: false, trait: false });
+                setTimer(DIFFICULTY[diff].timer); setTimerActive(false);
+                setSabotaged(false); setActiveEvent(null);
+                const isBonus = (round + 1) % 5 === 0 && round > 0;
+                setBonusRound(isBonus);
+                setRound(r => r + 1); setState('PRE_REVEAL'); triggerGlitch();
+            };
+
+            const revealCard = () => { triggerGlitch(); setTimerActive(true); triggerRandomEvent(); setState('GAME_REVEAL'); };
+
+            const toggleClue = (k) => setClues(c => ({ ...c, [k]: !c[k] }));
+
+            const calcScore = () => {
+                let s = BASE_PTS;
+                if (!clues.game) s += CLUE_PTS; if (!clues.species) s += CLUE_PTS;
+                if (!clues.color) s += CLUE_PTS; if (!clues.trait) s += CLUE_PTS;
+                s += streak * STREAK_BONUS;
+                const timeBonus = Math.floor(timer / DIFFICULTY[diff].timer * 100);
+                s += timeBonus;
+                if (bonusRound) s = Math.floor(s * 2);
+                if (activeEvent?.type === 'DOUBLE') s = Math.floor(s * 2);
+                if (activeEvent?.type === 'GOLDEN') s += 500;
+                return s;
+            };
+
+            const handleEnd = (success) => {
+                setTimerActive(false);
+                const pts = success ? calcScore() : 0;
+                if (success) {
+                    const p = players[ci];
+                    setScores(s => ({ ...s, [p]: (s[p] || 0) + pts }));
+                    setStreak(st => st + 1);
+                    spawnConfetti(); sfxCorrect();
+                } else { setStreak(0); sfxWrong(); }
+                setLastScore(pts); setWasSuccess(success);
+                setHistory(h => [...h, { name: card.name, player: players[ci], success, pts, img: card.img }]);
+                setState('ROUND_RESULT'); triggerGlitch();
+            };
+
+            const nextTurn = () => {
+                if (round >= maxRounds) { setState('FINAL'); triggerGlitch(); return; }
+                setCi(i => (i + 1) % players.length); setupRound();
+            };
+
+            const resetGame = () => { setState('SETUP'); setPlayers([]); setScores({}); setCi(0); setUsed([]); setRound(0); setStreak(0); setHistory([]); triggerGlitch(); };
+
+            // === SCREENS ===
+
+            // SETUP
+            if (state === 'SETUP') return (
+                <div className={`gc ${glitch ? 'gx' : ''}`}>
+                    <div style={{ animation: 'fadeUp .6s ease-out both', width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div className="title">WHO AM I?</div>
+                            <div className="sub" style={{ marginTop: 8 }}>Five Nights at Freddy's Edition</div>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#333', marginTop: 4 }}>{ANIMATRONICS.length} animatrónicos</div>
+                        </div>
+                        <div className="card">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                                <span style={{ fontSize: 20 }}>👥</span>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: '#fff' }}>JUGADORES</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                                <input ref={inputRef} className="inp" value={np} onChange={e => setNp(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPlayer()} placeholder="Nombre del jugador..." />
+                                <button onClick={addPlayer} className="btn btn-r" style={{ width: 'auto', padding: '12px 20px' }}>+</button>
+                            </div>
+                            <div style={{ maxHeight: 160, overflowY: 'auto' }}>
+                                {players.length === 0 && <div style={{ textAlign: 'center', padding: 24, color: '#333', fontFamily: 'var(--font-mono)', fontSize: 12, fontStyle: 'italic' }}>Esperando personal de seguridad...</div>}
+                                {players.map((p, i) => <div key={i} className="pi"><span>P{i + 1}: <span className="n">{p}</span></span><button onClick={() => removePlayer(i)}>✕</button></div>)}
+                            </div>
+                        </div>
+                        {/* Config */}
+                        <div className="card">
+                            <div className="cl" style={{ marginBottom: 12 }}>DIFICULTAD</div>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                                {Object.entries(DIFFICULTY).map(([k, v]) => (
+                                    <button key={k} className={`db ${diff === k ? 'on' : ''}`} style={diff === k ? { borderColor: v.color, color: v.color } : {}} onClick={() => setDiff(k)}>
+                                        {v.label}<br /><span style={{ fontSize: 9, opacity: .6 }}>{v.timer}s · {v.clues} pistas</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="cl" style={{ marginBottom: 8 }}>RONDAS</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <button className="btn btn-d" style={{ width: 40, padding: 8 }} onClick={() => setMaxRounds(r => Math.max(3, r - 1))}>-</button>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 900, color: '#fff', minWidth: 30, textAlign: 'center' }}>{maxRounds}</span>
+                                <button className="btn btn-d" style={{ width: 40, padding: 8 }} onClick={() => setMaxRounds(r => Math.min(30, r + 1))}>+</button>
+                            </div>
+                        </div>
+                        <button onClick={startGame} className={`btn btn-w ${players.length === 0 ? 'btn-off' : ''}`}>
+                            ☠️ COMENZAR NOCHE
+                        </button>
+                        <button className="extras-btn" onClick={() => { triggerGlitch(); setState('EXTRAS'); }}>
+                            📋 EXTRAS — VER TODOS LOS ANIMATRÓNICOS
+                        </button>
+                    </div></div>
+            );
+
+            // EXTRAS - Gallery of all animatronics
+            if (state === 'EXTRAS') {
+                const games = [...new Set(ANIMATRONICS.map(a => a.game))];
+                return (
+                    <div className={`gc ${glitch ? 'gx' : ''}`} style={{ justifyContent: 'flex-start', paddingTop: 16 }}>
+                        <div style={{ width: '100%', maxWidth: 600, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: '#fff' }}>📋 EXTRAS</div>
+                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#555', marginTop: 4 }}>{ANIMATRONICS.length} animatrónicos desbloqueados</div>
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 80px' }}>
+                                {games.map(game => {
+                                    const chars = ANIMATRONICS.filter(a => a.game === game);
+                                    return (
+                                        <div key={game}>
+                                            <div className="gal-section">{game} <span style={{ fontSize: 12, color: '#555' }}>({chars.length})</span></div>
+                                            <div className="gal-grid">
+                                                {chars.map(a => (
+                                                    <div key={a.id} className="gal-card">
+                                                        <div className="avatar" style={{ background: getAvColor(a.game) }}>{getInitials(a.name)}</div>
+                                                        <div className="gn">{a.name}</div>
+                                                        <div className="gg">{a.species}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div style={{ position: 'sticky', bottom: 0, padding: '12px 8px', background: 'linear-gradient(transparent, var(--bg) 30%)' }}>
+                                <button onClick={() => { triggerGlitch(); setState('SETUP'); }} className="btn btn-w" style={{ fontSize: 14 }}>⬅️ VOLVER AL MENÚ</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // INSTRUCTIONS
+            if (state === 'INSTRUCTIONS') return (
+                <div className={`gc ${glitch ? 'gx' : ''}`}>
+                    <div style={{ animation: 'fadeUp .6s ease-out both', width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
+                        <div className="eb" style={{ fontSize: 48 }}>👁️</div>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: '#fff' }}>REGLAS DEL TURNO</div>
+                        <div className="card" style={{ textAlign: 'left' }}>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#ccc', lineHeight: 2 }}>
+                                <p>1. <span style={{ color: '#ef4444', fontWeight: 700 }}>MODO FIESTA:</span> Jugamos todos juntos.</p>
+                                <p>2. El jugador en turno <span style={{ color: '#fff', textDecoration: 'underline' }}>NO PUEDE VER LA PANTALLA</span>.</p>
+                                <p>3. Sus amigos ven la tarjeta y las pistas.</p>
+                                <p>4. <span style={{ color: '#22c55e', fontWeight: 700 }}>MENOS PISTAS = MÁS PUNTOS</span></p>
+                                <p>5. <span style={{ color: '#eab308', fontWeight: 700 }}>RACHA:</span> ¡Aciertos seguidos dan bonus!</p>
+                                <p>6. <span style={{ color: '#ef4444', fontWeight: 700 }}>TIEMPO LÍMITE:</span> ¡{DIFFICULTY[diff].timer}s por ronda!</p>
+                            </div>
+                        </div>
+                        <div className="card" style={{ borderColor: '#991b1b' }}>
+                            <div className="cl" style={{ marginBottom: 8 }}>SISTEMA DE PUNTOS</div>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#999', lineHeight: 1.8 }}>
+                                <div>✅ Acierto base: <span style={{ color: '#fff' }}>200 pts</span></div>
+                                <div>🟢 Sin pista juego: <span style={{ color: '#22c55e' }}>+200 pts</span></div>
+                                <div>🔵 Sin pista especie: <span style={{ color: '#3b82f6' }}>+200 pts</span></div>
+                                <div>🟡 Sin pista color: <span style={{ color: '#eab308' }}>+200 pts</span></div>
+                                <div>🟣 Sin pista rasgo: <span style={{ color: '#a855f7' }}>+200 pts</span></div>
+                                <div>🔥 Racha: <span style={{ color: '#f97316' }}>+50 pts × racha</span></div>
+                                <div>⏱️ Bonus tiempo: <span style={{ color: '#fff' }}>hasta +100 pts</span></div>
+                            </div>
+                        </div>
+                        <button onClick={setupRound} className="btn btn-r">ENTENDIDO — ¡A JUGAR!</button>
+                    </div></div>
+            );
+
+            // PRE_REVEAL
+            if (state === 'PRE_REVEAL') {
+                const cp = players[ci]; return (
+                    <div className={`gc ${glitch ? 'gx' : ''}`}>
+                        <div style={{ animation: 'fadeUp .5s ease-out both', width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
+                            <div className="rc">Ronda {round} de {maxRounds}</div>
+                            <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: '#555', letterSpacing: 3 }}>TURNO ACTUAL</div>
+                            <div style={{ fontSize: 'clamp(32px,8vw,48px)', fontFamily: 'var(--font-display)', color: '#fff', background: 'var(--surface)', padding: '16px 32px', borderLeft: '6px solid var(--red)', borderRight: '6px solid var(--red)', transform: 'skewX(-3deg)' }}>
+                                <span style={{ display: 'inline-block', transform: 'skewX(3deg)' }}>{cp}</span>
+                            </div>
+                            <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                                <div className="eb" style={{ fontSize: 64, opacity: .3 }}>👁️</div>
+                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#999', lineHeight: 1.8 }}>
+                                    <p style={{ color: '#fff', fontWeight: 700, marginBottom: 4 }}>¡ALTO!</p>
+                                    <p>1. Gira el dispositivo hacia tus amigos.</p>
+                                    <p>2. <span style={{ color: '#ef4444' }}>No mires la pantalla.</span></p>
+                                    <p>3. Pulsa el botón cuando estés listo.</p>
+                                </div>
+                            </div>
+                            {streak > 0 && <div className="sb">🔥 Racha: {streak}</div>}
+                            <button onClick={revealCard} className="btn btn-w" style={{ fontSize: 18, padding: 20 }}>👁️ MOSTRAR TARJETA</button>
+                        </div></div>
+                );
+            }
+
+            // GAME_REVEAL
+            if (state === 'GAME_REVEAL') {
+                const cp = players[ci]; const cs = calcScore();
+                const pct = timer / DIFFICULTY[diff].timer * 100;
+                const tColor = pct > 60 ? 'var(--green)' : pct > 30 ? 'var(--yellow)' : 'var(--red)';
+                const clueKeys = [
+                    { key: 'game', label: 'JUEGO', color: 'var(--green)', val: card.game },
+                    { key: 'species', label: 'ESPECIE', color: 'var(--blue)', val: card.species },
+                    { key: 'color', label: 'COLOR', color: 'var(--yellow)', val: card.color },
+                    { key: 'trait', label: 'CARACTERÍSTICA', color: 'var(--purple)', val: card.trait },
+                ];
+                return (
+                    <div className={`gc ${glitch ? 'gx' : ''}`} style={{ justifyContent: 'flex-start', paddingTop: 8 }}>
+                        {showJumpscare && <div className="jsf">😱</div>}
+                        {showBlackout && <div className="pwo"></div>}
+                        <div style={{ width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            {/* Event + Bonus badges */}
+                            {(activeEvent || bonusRound) && <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
+                                {bonusRound && <div className="evt-badge" style={{ background: 'linear-gradient(135deg,#854d0e,#a16207)', color: '#fef08a' }}>🌟 RONDA BONUS x2</div>}
+                                {activeEvent && <div className="evt-badge" style={{ background: activeEvent.penalty > 0 ? 'linear-gradient(135deg,#991b1b,#7f1d1d)' : 'linear-gradient(135deg,#166534,#14532d)', color: '#fff' }}>{activeEvent.emoji} {activeEvent.label}</div>}
+                            </div>}
+                            {/* Top bar */}
+                            <div className="topb">
+                                <div><div className="sl">Adivinando</div><div className="sv" style={{ color: '#fff' }}>{cp}</div></div>
+                                <div style={{ textAlign: 'center' }}><div className="sl">Ronda</div><div className="sv" style={{ color: '#fff' }}>{round}/{maxRounds}</div></div>
+                                <div style={{ textAlign: 'right' }}><div className="sl">Valor</div><div className={`sd cp`} style={{ color: cs >= 800 ? 'var(--green)' : cs >= 500 ? 'var(--yellow)' : 'var(--red)' }}>{cs}</div></div>
+                            </div>
+                            {/* Timer */}
+                            <div style={{ width: '100%', maxWidth: 420, marginBottom: 8, padding: '0 4px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span className="sl">⏱️ Tiempo</span>
+                                    <span className={timer <= 10 ? 'hb' : ''} style={{ fontFamily: 'var(--font-mono)', fontSize: timer <= 10 ? 18 : 14, fontWeight: 900, color: tColor, transition: 'all .3s' }}>{timer}s</span>
+                                </div>
+                                <div className="tb"><div className="tf" style={{ width: pct + '%', background: tColor, boxShadow: pct < 25 ? `0 0 15px ${tColor}, 0 0 30px ${tColor}` : '' }}></div></div>
+                            </div>
+                            {/* Card */}
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
+                                <div style={{ background: 'rgba(0,0,0,.5)', border: '1px solid var(--border)', padding: 16, marginBottom: 12, textAlign: 'center', position: 'relative', borderRadius: 8 }}>
+                                    <div style={{ position: 'absolute', top: 0, left: 0, background: bonusRound ? 'var(--yellow)' : 'var(--red)', color: bonusRound ? '#000' : '#fff', fontSize: 9, padding: '2px 8px', fontFamily: 'var(--font-mono)', fontWeight: 700, borderRadius: '8px 0 8px 0' }}>{bonusRound ? '⭐ BONUS' : 'CONFIDENCIAL'}</div>
+                                    <div className="avatar-lg" style={{ background: getAvColor(card.game), borderColor: bonusRound ? 'var(--yellow)' : 'var(--red)', boxShadow: `0 0 25px ${bonusRound ? 'rgba(234,179,8,.4)' : 'var(--red-glow)'}` }}>{getInitials(card.name)}</div>
+                                    <div className="nr" style={{ margin: '8px 0' }}>{card.name}</div>
+                                </div>
+                                <div className="cl" style={{ textAlign: 'center', background: 'var(--surface)', padding: 6, marginBottom: 8, borderRadius: 4 }}>PISTAS — MARCAR SI SE LEEN</div>
+                                {clueKeys.map(({ key, label, color, val }) => (
+                                    <div key={key} className={`cr ${clues[key] ? 'u' : ''}`} style={{ borderColor: clues[key] ? '#333' : color }} onClick={() => toggleClue(key)}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div className="cl">{label} (-200 pts)</div>
+                                            <div className="ct" style={key === 'trait' ? { fontSize: 12, fontStyle: 'italic' } : {}}>{key === 'trait' ? `"${val}"` : val}</div>
+                                        </div>
+                                        <div className="ck" style={{ borderColor: clues[key] ? 'var(--red)' : color, color: clues[key] ? 'var(--red)' : color }}>{clues[key] ? '✓' : ''}</div>
+                                    </div>
+                                ))}
+                                {streak > 0 && <div style={{ textAlign: 'center', marginTop: 8 }}><span className="sb">🔥 Racha × {streak} (+{streak * STREAK_BONUS})</span></div>}
+                            </div>
+                            {/* Buttons */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 4px', borderTop: '1px solid var(--border)' }}>
+                                {!sabotaged && players.length > 1 && <button className="sab-btn" onClick={doSabotage}>⚡ SABOTAJE — Quitar 10 segundos</button>}
+                                {sabotaged && <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 10, color: '#ef4444', letterSpacing: 2 }}>⚡ SABOTAJE ACTIVADO ⚡</div>}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <button className="btn btn-d" onClick={() => handleEnd(false)}>💀 SE RINDE</button>
+                                    <button className="btn btn-g" onClick={() => handleEnd(true)}>✅ ¡ACERTÓ! (+{cs})</button>
+                                </div>
+                            </div>
+                        </div></div>
+                );
+            }
+
+            // ROUND_RESULT
+            if (state === 'ROUND_RESULT') {
+                const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+                const medals = ['🥇', '🥈', '🥉'];
+                return (
+                    <div className={`gc ${glitch ? 'gx' : ''}`}>
+                        <div style={{ animation: 'fadeUp .5s ease-out both', width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#666', letterSpacing: 3 }}>FIN DE TURNO</div>
+                            <div className="card" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                                <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(0,0,0,.05) 10px,rgba(0,0,0,.05) 20px)', pointerEvents: 'none' }}></div>
+                                <div className="cl" style={{ marginBottom: 4 }}>Objetivo</div>
+                                <div className="nr" style={{ color: wasSuccess ? 'var(--green)' : 'var(--red)', fontSize: 'clamp(24px,6vw,36px)', marginBottom: 12 }}>{card.name}</div>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 16 }}>
+                                    <div><div className="sl">Pistas</div><div className="sv" style={{ color: '#fff', fontSize: 18 }}>{Object.values(clues).filter(Boolean).length}/4</div></div>
+                                    <div><div className="sl">Puntos</div><div className="sv cp" style={{ color: wasSuccess ? 'var(--green)' : 'var(--red)', fontSize: 18 }}>{wasSuccess ? '+' : ''}{lastScore}</div></div>
+                                    {streak > 0 && <div><div className="sl">Racha</div><div className="sv" style={{ color: '#f97316', fontSize: 18 }}>🔥{streak}</div></div>}
+                                </div>
+                                {!wasSuccess && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#666', padding: 8, background: '#0a0000', borderRadius: 4, border: '1px solid #1a0000' }}>💀 Racha perdida</div>}
+                            </div>
+                            {/* Leaderboard */}
+                            <div className="card">
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
+                                    <span style={{ fontSize: 14 }}>🏆</span>
+                                    <span className="cl">TABLA DE LÍDERES</span>
+                                </div>
+                                <div style={{ maxHeight: 160, overflowY: 'auto' }}>
+                                    {sorted.map(([name, score], idx) => (
+                                        <div key={name} className={`lr ${name === players[ci] ? 'a' : ''} ${idx === 0 ? 'f' : ''}`}>
+                                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                                <span style={{ fontSize: idx < 3 ? 14 : 12 }}>{medals[idx] || `#${idx + 1}`}</span>
+                                                <span style={{ color: name === players[ci] ? '#fff' : '#999', fontWeight: 700 }}>{name}</span>
+                                            </div>
+                                            <span style={{ color: '#fff' }}>{score}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <button onClick={nextTurn} className="btn btn-w" style={{ fontSize: 16 }}>
+                                {round >= maxRounds ? '🏆 VER RESULTADOS FINALES' : '▶️ SIGUIENTE JUGADOR'}
+                            </button>
+                            <button onClick={resetGame} style={{ background: 'none', border: 'none', color: '#444', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer', padding: 8 }}>🔄 REINICIAR</button>
+                        </div></div>
+                );
+            }
+
+            // FINAL
+            if (state === 'FINAL') {
+                const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+                const medals = ['🥇', '🥈', '🥉'];
+                const winner = sorted[0];
+                const totalCorrect = history.filter(h => h.success).length;
+                const totalPts = history.reduce((a, h) => a + h.pts, 0);
+                return (
+                    <div className={`gc ${glitch ? 'gx' : ''}`}>
+                        <div style={{ animation: 'fadeUp .6s ease-out both', width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,8vw,48px)', color: 'var(--yellow)', textShadow: '0 0 20px rgba(234,179,8,.4)', textAlign: 'center' }}>FIN DE LA NOCHE</div>
+                            {/* Winner */}
+                            {winner && <div className="card" style={{ textAlign: 'center', borderColor: '#854d0e', boxShadow: '0 0 30px rgba(234,179,8,.15)' }}>
+                                <div style={{ fontSize: 48, marginBottom: 8 }}>🏆</div>
+                                <div className="cl" style={{ marginBottom: 4 }}>GANADOR</div>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'var(--yellow)' }}>{winner[0]}</div>
+                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 900, color: '#fff', marginTop: 4 }}>{winner[1]} PTS</div>
+                                {(() => { const r = getRank(winner[1]); return <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 12, color: r.color, padding: '6px 16px', background: 'rgba(0,0,0,.5)', borderRadius: 20, display: 'inline-block' }}>{r.icon} {r.title}</div>; })()}
+                            </div>}
+                            {/* Stats */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, width: '100%' }}>
+                                <div className="fs"><div className="v">{maxRounds}</div><div className="l">Rondas</div></div>
+                                <div className="fs"><div className="v" style={{ color: 'var(--green)' }}>{totalCorrect}</div><div className="l">Aciertos</div></div>
+                                <div className="fs"><div className="v" style={{ color: 'var(--yellow)' }}>{totalPts}</div><div className="l">Pts Total</div></div>
+                            </div>
+                            {/* Full Leaderboard with Ranks */}
+                            <div className="card">
+                                <div className="cl" style={{ textAlign: 'center', marginBottom: 8 }}>CLASIFICACIÓN FINAL</div>
+                                {sorted.map(([name, score], idx) => {
+                                    const r = getRank(score); return (
+                                        <div key={name} className={`lr ${idx === 0 ? 'f' : ''}`} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                                    <span style={{ fontSize: idx < 3 ? 16 : 12 }}>{medals[idx] || `#${idx + 1}`}</span>
+                                                    <span style={{ color: '#fff', fontWeight: 700 }}>{name}</span>
+                                                </div>
+                                                <span style={{ color: '#fff', fontWeight: 700 }}>{score}</span>
+                                            </div>
+                                            <div style={{ fontSize: 9, color: r.color, paddingLeft: 24 }}>{r.icon} {r.title}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {/* History */}
+                            <div className="card">
+                                <div className="cl" style={{ textAlign: 'center', marginBottom: 8 }}>HISTORIAL DE RONDAS</div>
+                                <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+                                    {history.map((h, i) => (
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', borderLeft: `2px solid ${h.success ? 'var(--green)' : 'var(--red)'}`, marginBottom: 3, background: '#050505', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                                            <div>
+                                                <span style={{ color: '#555' }}>R{i + 1}</span>{' '}
+                                                <span style={{ color: '#999' }}>{h.player}:</span>{' '}
+                                                <span style={{ color: '#fff' }}>{h.name}</span>
+                                            </div>
+                                            <span style={{ color: h.success ? 'var(--green)' : 'var(--red)', fontWeight: 700 }}>{h.success ? `+${h.pts}` : '✕'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <button onClick={resetGame} className="btn btn-w">🔄 NUEVA PARTIDA</button>
+                        </div></div>
+                );
+            }
+
+            return null;
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+
+</html>

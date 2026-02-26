@@ -1910,13 +1910,13 @@ span {
     }
 
     .premium-hero-ctas {
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
+        gap: 0.65rem !important;
+        flex-direction: row;
+        /* allow side-by-side on mobile */
     }
 
     .premium-hero-ctas button {
-        width: 100%;
+        min-height: 48px !important;
     }
 
     .premium-hero-proof {
@@ -2020,9 +2020,9 @@ span {
     }
 
     .premium-hero-ctas button {
-        min-height: 48px !important;
-        font-size: 0.9rem !important;
-        border-radius: 0.9rem !important;
+        min-height: 44px !important;
+        font-size: 0.85rem !important;
+        border-radius: 0.75rem !important;
     }
 
     .premium-benefits {

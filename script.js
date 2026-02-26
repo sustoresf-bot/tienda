@@ -14,7 +14,7 @@ import {
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, EyeOff, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
     Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload, ChevronLeft,
-    HelpCircle, Lightbulb, MessageCircle
+    HelpCircle, Lightbulb, MessageCircle, ImagePlus
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -580,7 +580,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                 <>
                     <button
                         type="button"
-                        className={`absolute left-2 sm:left-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-all duration-200 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/40 sm:bg-black/50 hover:bg-black/70 text-white/70 hover:text-white' : 'bg-white/40 sm:bg-white/50 hover:bg-white/70 text-slate-700 hover:text-slate-900'}`}
+                        className={`absolute left-2 sm:left-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full transition-all duration-200 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/40 sm:bg-black/50 hover:bg-black/70 text-white/70 hover:text-white' : 'bg-white/40 sm:bg-white/50 hover:bg-white/70 text-slate-700 hover:text-slate-900'}`}
                         onClick={(e) => { e.stopPropagation(); goPrev(); }}
                         aria-label="Banner anterior"
                     >
@@ -588,7 +588,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                     </button>
                     <button
                         type="button"
-                        className={`absolute right-2 sm:right-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-all duration-200 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/40 sm:bg-black/50 hover:bg-black/70 text-white/70 hover:text-white' : 'bg-white/40 sm:bg-white/50 hover:bg-white/70 text-slate-700 hover:text-slate-900'}`}
+                        className={`absolute right-2 sm:right-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full transition-all duration-200 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/40 sm:bg-black/50 hover:bg-black/70 text-white/70 hover:text-white' : 'bg-white/40 sm:bg-white/50 hover:bg-white/70 text-slate-700 hover:text-slate-900'}`}
                         onClick={(e) => { e.stopPropagation(); goNext(); }}
                         aria-label="Banner siguiente"
                     >
@@ -921,6 +921,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
         prev.p.isFeatured === next.p.isFeatured &&
         prev.p.name === next.p.name &&
         prev.p.image === next.p.image &&
+        (prev.p.images?.length || 0) === (next.p.images?.length || 0) &&
         prev.currentUser?.favorites?.includes(prev.p.id) === next.currentUser?.favorites?.includes(next.p.id)
     );
 });
@@ -1946,8 +1947,9 @@ function App() {
         name: '',
         basePrice: '',
         stock: '',
-        categories: [], // Cambio: Ahora es un array para múltiples categorías
+        categories: [],
         image: '',
+        images: [],
         description: '',
         discount: 0,
         purchasePrice: ''
@@ -4584,14 +4586,17 @@ function App() {
             (newProduct.category ? [newProduct.category] : []);
         if (categories.length === 0) return showToast("Selecciona al menos una categoría.", "warning");
 
+        const cleanImages = Array.isArray(newProduct.images) ? newProduct.images.filter(Boolean) : [];
+        const primaryImage = cleanImages.length > 0 ? cleanImages[0] : (newProduct.image || 'https://via.placeholder.com/150');
         const productData = {
             ...newProduct,
-            categories: categories, // Guardar como array
+            categories: categories,
             basePrice: Number(newProduct.basePrice) || 0,
             purchasePrice: Number(newProduct.purchasePrice || 0),
             stock: Number(newProduct.stock) || 0,
             discount: sanitizeDiscount(newProduct.discount),
-            image: newProduct.image || 'https://via.placeholder.com/150',
+            image: primaryImage,
+            images: cleanImages.length > 0 ? cleanImages : (newProduct.image ? [newProduct.image] : []),
             lastUpdated: new Date().toISOString()
         };
 
@@ -4612,7 +4617,7 @@ function App() {
                 showToast("Producto creado correctamente.", "success");
             }
             // Resetear formulario
-            setNewProduct({ name: '', basePrice: '', purchasePrice: '', stock: '', categories: [], image: '', description: '', discount: 0 });
+            setNewProduct({ name: '', basePrice: '', purchasePrice: '', stock: '', categories: [], image: '', images: [], description: '', discount: 0 });
             setEditingId(null);
             setShowProductForm(false);
         } catch (e) {
@@ -4716,6 +4721,107 @@ function App() {
             img.src = event.target.result;
         };
         reader.readAsDataURL(file);
+    };
+
+    // --- Multi-Image Upload for Products ---
+    const MAX_PRODUCT_IMAGES = 5;
+
+    const processImageToDataUrl = (file) => {
+        return new Promise((resolve, reject) => {
+            if (!file || !file.type.startsWith('image/')) {
+                reject(new Error('Archivo no válido'));
+                return;
+            }
+            const config = {
+                maxWidth: 700, maxHeight: 700, quality: 0.75,
+                minQuality: 0.55, qualityStep: 0.05,
+                outputType: 'image/jpeg', maxBytes: 120 * 1024
+            };
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const scaleRatio = Math.min(config.maxWidth / width, config.maxHeight / height, 1);
+                    width = Math.max(1, Math.round(width * scaleRatio));
+                    height = Math.max(1, Math.round(height * scaleRatio));
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) { reject(new Error('No canvas context')); return; }
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, width, height);
+                    let quality = config.quality;
+                    let dataUrl = canvas.toDataURL(config.outputType, quality);
+                    let sizeBytes = getDataUrlSizeBytes(dataUrl);
+                    while (sizeBytes > config.maxBytes && quality > config.minQuality) {
+                        quality = Math.max(config.minQuality, quality - config.qualityStep);
+                        dataUrl = canvas.toDataURL(config.outputType, quality);
+                        sizeBytes = getDataUrlSizeBytes(dataUrl);
+                    }
+                    resolve(dataUrl);
+                };
+                img.onerror = () => reject(new Error('Error al cargar imagen'));
+                img.src = event.target.result;
+            };
+            reader.onerror = () => reject(new Error('Error al leer archivo'));
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleMultiImageAdd = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        const currentImages = Array.isArray(newProduct.images) ? newProduct.images : [];
+        const slotsAvailable = MAX_PRODUCT_IMAGES - currentImages.length;
+
+        if (slotsAvailable <= 0) {
+            showToast(`Máximo ${MAX_PRODUCT_IMAGES} imágenes por producto.`, 'warning');
+            e.target.value = '';
+            return;
+        }
+
+        const filesToProcess = files.slice(0, slotsAvailable);
+        if (files.length > slotsAvailable) {
+            showToast(`Solo se agregarán ${slotsAvailable} de ${files.length} imágenes (máximo ${MAX_PRODUCT_IMAGES}).`, 'warning');
+        }
+
+        try {
+            const results = await Promise.all(filesToProcess.map(f => processImageToDataUrl(f)));
+            const newImages = [...currentImages, ...results];
+            setNewProduct(prev => ({
+                ...prev,
+                images: newImages,
+                image: newImages[0] || prev.image
+            }));
+            showToast(`${results.length} imagen${results.length > 1 ? 'es' : ''} cargada${results.length > 1 ? 's' : ''}.`, 'success');
+        } catch (err) {
+            console.error(err);
+            showToast('Error al procesar alguna imagen.', 'error');
+        }
+        e.target.value = '';
+    };
+
+    const removeProductImage = (index) => {
+        setNewProduct(prev => {
+            const updated = [...(prev.images || [])];
+            updated.splice(index, 1);
+            return { ...prev, images: updated, image: updated[0] || '' };
+        });
+    };
+
+    const moveProductImage = (fromIndex, toIndex) => {
+        if (toIndex < 0 || toIndex >= (newProduct.images || []).length) return;
+        setNewProduct(prev => {
+            const updated = [...(prev.images || [])];
+            const [moved] = updated.splice(fromIndex, 1);
+            updated.splice(toIndex, 0, moved);
+            return { ...prev, images: updated, image: updated[0] || '' };
+        });
     };
 
     const resetHomeBannerForm = () => {
@@ -5606,11 +5712,22 @@ function App() {
 
         const [qty, setQty] = useState(1);
         const [added, setAdded] = useState(false);
+        const [activeImgIdx, setActiveImgIdx] = useState(0);
+
+        // Build gallery: prefer images array, fallback to single image
+        const allImages = useMemo(() => {
+            if (Array.isArray(selectedProduct.images) && selectedProduct.images.filter(Boolean).length > 0) {
+                return selectedProduct.images.filter(Boolean);
+            }
+            return selectedProduct.image ? [selectedProduct.image] : [];
+        }, [selectedProduct]);
+
+        const hasGallery = allImages.length > 1;
+        const safeIdx = Math.min(activeImgIdx, allImages.length - 1);
 
         const isPromo = selectedProduct.isPromo || !!selectedProduct.items;
-        const stockLimit = isPromo ? Number(selectedProduct.stock) : Number(selectedProduct.stock);
+        const stockLimit = Number(selectedProduct.stock);
 
-        // Calcular stock real disponible restando lo que ya está en carrito
         const cartItem = cart.find(item => item.product.id === selectedProduct.id);
         const inCartQty = cartItem ? cartItem.quantity : 0;
         const availableToAdd = Math.max(0, stockLimit - inCartQty);
@@ -5643,24 +5760,83 @@ function App() {
             setTimeout(() => setAdded(false), 2000);
         };
 
+        const goGalleryPrev = (e) => {
+            e.stopPropagation();
+            setActiveImgIdx(prev => prev <= 0 ? allImages.length - 1 : prev - 1);
+        };
+        const goGalleryNext = (e) => {
+            e.stopPropagation();
+            setActiveImgIdx(prev => prev >= allImages.length - 1 ? 0 : prev + 1);
+        };
+
         return (
             <div className="fixed inset-0 z-[20000] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in p-0 sm:p-4" onClick={() => setSelectedProduct(null)}>
                 <div className={`border rounded-t-3xl sm:rounded-[2.5rem] max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl animate-scale-up relative max-h-[95dvh] sm:max-h-[90vh] md:max-h-none md:h-auto overflow-y-auto md:overflow-hidden ${darkMode ? 'bg-[#0a0a0a] border-slate-800' : 'bg-white border-slate-200'}`} onClick={e => e.stopPropagation()}>
 
-                    {/* Imagen con Zoom y Efectos */}
-                    <div className={`md:w-1/2 h-56 sm:h-72 md:h-[550px] p-4 sm:p-8 md:p-12 flex items-center justify-center relative overflow-hidden group flex-shrink-0 ${darkMode ? 'bg-gradient-to-b from-slate-900 to-[#0a0a0a]' : 'bg-gradient-to-b from-slate-100 to-white'}`}>
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
-                        <img
-                            src={selectedProduct.image}
-                            alt={selectedProduct.name || 'Producto'}
-                            className={`w-full h-full object-contain z-10 transition-transform duration-700 hover:scale-110 ${darkMode ? 'drop-shadow-[0_0_50px_rgba(255,255,255,0.15)]' : 'drop-shadow-[0_0_50px_rgba(0,0,0,0.1)]'}`}
-                        />
-                        {/* Badges de Estado */}
-                        {!hasStock && (
-                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-                                <div className="border-4 border-red-500 p-4 -rotate-12 bg-black shadow-2xl">
-                                    <span className="text-red-500 font-black text-2xl tracking-widest uppercase">AGOTADO</span>
+                    {/* Imagen con Galería */}
+                    <div className={`md:w-1/2 flex flex-col flex-shrink-0 ${darkMode ? 'bg-gradient-to-b from-slate-900 to-[#0a0a0a]' : 'bg-gradient-to-b from-slate-100 to-white'}`}>
+                        {/* Main Image */}
+                        <div className="relative h-56 sm:h-72 md:h-[520px] p-4 sm:p-8 md:p-12 flex items-center justify-center overflow-hidden group">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
+                            {allImages.length > 0 ? (
+                                <img
+                                    src={allImages[safeIdx]}
+                                    alt={`${selectedProduct.name || 'Producto'} - Imagen ${safeIdx + 1}`}
+                                    className={`w-full h-full object-contain z-10 transition-transform duration-700 hover:scale-110 ${darkMode ? 'drop-shadow-[0_0_50px_rgba(255,255,255,0.15)]' : 'drop-shadow-[0_0_50px_rgba(0,0,0,0.1)]'}`}
+                                />
+                            ) : (
+                                <div className="flex items-center justify-center w-full h-full">
+                                    <ImageIcon className={`w-16 h-16 ${darkMode ? 'text-slate-700' : 'text-slate-300'}`} />
                                 </div>
+                            )}
+
+                            {/* Gallery Arrows */}
+                            {hasGallery && (
+                                <>
+                                    <button
+                                        onClick={goGalleryPrev}
+                                        className={`absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all shadow-lg border ${darkMode ? 'bg-black/70 hover:bg-black/90 text-white border-white/10' : 'bg-white/80 hover:bg-white text-slate-800 border-slate-200'}`}
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={goGalleryNext}
+                                        className={`absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all shadow-lg border ${darkMode ? 'bg-black/70 hover:bg-black/90 text-white border-white/10' : 'bg-white/80 hover:bg-white text-slate-800 border-slate-200'}`}
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                    {/* Image Counter */}
+                                    <div className={`absolute bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-[11px] font-bold backdrop-blur-md ${darkMode ? 'bg-black/60 text-white/80 border border-white/10' : 'bg-white/70 text-slate-700 border border-slate-200'}`}>
+                                        {safeIdx + 1} / {allImages.length}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Badge AGOTADO */}
+                            {!hasStock && (
+                                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                                    <div className="border-4 border-red-500 p-4 -rotate-12 bg-black shadow-2xl">
+                                        <span className="text-red-500 font-black text-2xl tracking-widest uppercase">AGOTADO</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Thumbnail Strip */}
+                        {hasGallery && (
+                            <div className="flex gap-2 px-4 sm:px-6 md:px-8 pb-4 overflow-x-auto">
+                                {allImages.map((imgSrc, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={(e) => { e.stopPropagation(); setActiveImgIdx(idx); }}
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all duration-300 ${idx === safeIdx
+                                            ? (darkMode ? 'border-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]' : 'border-orange-500 shadow-md')
+                                            : (darkMode ? 'border-slate-700 hover:border-slate-500 opacity-60 hover:opacity-100' : 'border-slate-200 hover:border-slate-400 opacity-60 hover:opacity-100')
+                                            }`}
+                                    >
+                                        <img src={imgSrc} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
                             </div>
                         )}
                     </div>
@@ -6896,15 +7072,15 @@ function App() {
                                                     {settings?.heroTitle2 || 'que transmite confianza y vende más'}
                                                 </span>
                                             </h1>
-                                            <p className={`text-xs sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-semibold hidden sm:block ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                                            <p className={`text-[10px] sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-semibold line-clamp-2 md:line-clamp-none ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                                                 {settings?.heroSubtitle || 'Diseño premium, compra simple y una experiencia fluida en cualquier dispositivo.'}
                                             </p>
                                             <div className="flex flex-row items-center gap-2 sm:gap-4 premium-hero-ctas">
-                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="px-4 py-2.5 sm:px-8 sm:py-4 bg-white text-black font-black text-sm sm:text-base rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-2 group/btn pointer-events-auto">
-                                                    Ver catálogo <ArrowRight className="w-3.5 h-3.5 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
+                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="flex-1 sm:flex-none px-2 py-2 sm:px-8 sm:py-4 bg-white text-black font-black text-xs sm:text-base rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-1 sm:gap-2 group/btn pointer-events-auto">
+                                                    Ver catálogo <ArrowRight className="w-3 h-3 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
-                                                <button onClick={() => setView('guide')} className={`px-3 py-2.5 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition font-bold text-sm sm:text-sm group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
-                                                    <Info className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Cómo comprar
+                                                <button onClick={() => setView('guide')} className={`flex-1 sm:flex-none px-2 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1 sm:gap-2 transition font-bold text-xs sm:text-sm group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
+                                                    <Info className={`w-3 h-3 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Cómo comprar
                                                 </button>
                                             </div>
                                         </>
@@ -9917,185 +10093,193 @@ function App() {
 
                                             {/* Formulario Productos (Expandido) */}
                                             {showProductForm && (
-                                                <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] mb-10 shadow-2xl relative">
-                                                    <h3 className="text-xl font-bold text-white mb-6">
+                                                <div className="bg-[#0a0a0a] border border-orange-500/30 p-6 sm:p-8 rounded-[2rem] mb-10 shadow-2xl relative">
+                                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                                                        <Package className="w-5 h-5 text-orange-400" />
                                                         {editingId ? 'Editar Producto' : 'Nuevo Producto'}
                                                     </h3>
 
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                                        <div className="space-y-4">
-                                                            <input className="input-cyber w-full p-4" placeholder="Nombre del Producto" value={newProduct.name || ''} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
-                                                            <div className="flex gap-4">
-                                                                <input className="input-cyber w-full p-4" type="number" placeholder="Precio Venta ($)" value={newProduct.basePrice || ''} onChange={e => setNewProduct({ ...newProduct, basePrice: e.target.value })} />
-                                                                <input className="input-cyber w-full p-4" type="number" placeholder="Costo Compra ($)" value={newProduct.purchasePrice || ''} onChange={e => setNewProduct({ ...newProduct, purchasePrice: e.target.value })} />
-                                                                <input className="input-cyber w-full p-4" type="number" placeholder="Stock" value={newProduct.stock || ''} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
-                                                            </div>
-                                                            <div className="space-y-2">
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
-                                                                    Categorías (Selecciona una o más)
-                                                                </label>
-                                                                <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
-                                                                    {(settings?.categories || []).length === 0 ? (
-                                                                        <p className="text-center text-slate-600 py-4 text-sm">
-                                                                            No hay categorías disponibles. Agrégalas abajo.
-                                                                        </p>
-                                                                    ) : (
-                                                                        (settings?.categories || []).map(cat => {
-                                                                            // Soporte retrocompatible: verificar tanto categories (array) como category (string)
-                                                                            const isSelected = Array.isArray(newProduct.categories)
-                                                                                ? newProduct.categories.includes(cat)
-                                                                                : (newProduct.category === cat);
+                                                    <div className="space-y-6">
+                                                        {/* Nombre */}
+                                                        <input className="input-cyber w-full p-4 text-lg" placeholder="Nombre del Producto" value={newProduct.name || ''} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
 
-                                                                            return (
-                                                                                <label
-                                                                                    key={cat}
-                                                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all group hover:bg-slate-800 mb-2 last:mb-0 ${isSelected ? 'bg-orange-900/20 border border-orange-500/30' : 'border border-transparent'
-                                                                                        }`}
-                                                                                >
-                                                                                    <input
-                                                                                        type="checkbox"
-                                                                                        checked={isSelected}
-                                                                                        onChange={(e) => {
-                                                                                            if (e.target.checked) {
-                                                                                                // Agregar categoría
-                                                                                                const current = Array.isArray(newProduct.categories)
-                                                                                                    ? newProduct.categories
-                                                                                                    : (newProduct.category ? [newProduct.category] : []);
-                                                                                                setNewProduct({
-                                                                                                    ...newProduct,
-                                                                                                    categories: [...current, cat],
-                                                                                                    category: undefined // Eliminar el campo antiguo
-                                                                                                });
-                                                                                            } else {
-                                                                                                // Remover categoría
-                                                                                                const updated = Array.isArray(newProduct.categories)
-                                                                                                    ? newProduct.categories.filter(c => c !== cat)
-                                                                                                    : [];
-                                                                                                setNewProduct({
-                                                                                                    ...newProduct,
-                                                                                                    categories: updated
-                                                                                                });
-                                                                                            }
-                                                                                        }}
-                                                                                        className="w-4 h-4 text-orange-600 bg-slate-900 border-slate-600 rounded focus:ring-orange-500 focus:ring-2"
-                                                                                    />
-                                                                                    <span className={`flex-1 text-sm font-medium transition-colors ${isSelected ? 'text-orange-400' : 'text-slate-300 group-hover:text-white'
-                                                                                        }`}>
-                                                                                        {cat}
-                                                                                    </span>
-                                                                                    {isSelected && (
-                                                                                        <span className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded flex items-center gap-1">
-                                                                                            <CheckCircle className="w-3 h-3" />
-                                                                                        </span>
-                                                                                    )}
-                                                                                </label>
-                                                                            );
-                                                                        })
-                                                                    )}
-                                                                </div>
-                                                                {/* Mostrar categorías seleccionadas como tags */}
-                                                                {newProduct.categories && newProduct.categories.length > 0 && (
-                                                                    <div className="flex flex-wrap gap-2 mt-3">
-                                                                        {newProduct.categories.map(cat => (
-                                                                            <span
+                                                        {/* Precios y Stock en fila */}
+                                                        <div className="grid grid-cols-3 gap-3">
+                                                            <div>
+                                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Precio Venta</label>
+                                                                <input className="input-cyber w-full p-3" type="number" placeholder="$0" value={newProduct.basePrice || ''} onChange={e => setNewProduct({ ...newProduct, basePrice: e.target.value })} />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Costo</label>
+                                                                <input className="input-cyber w-full p-3" type="number" placeholder="$0" value={newProduct.purchasePrice || ''} onChange={e => setNewProduct({ ...newProduct, purchasePrice: e.target.value })} />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Stock</label>
+                                                                <input className="input-cyber w-full p-3" type="number" placeholder="0" value={newProduct.stock || ''} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Categorías */}
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
+                                                                Categorías
+                                                            </label>
+                                                            <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 max-h-48 overflow-y-auto custom-scrollbar">
+                                                                {(settings?.categories || []).length === 0 ? (
+                                                                    <p className="text-center text-slate-600 py-2 text-sm">No hay categorías. Agregalas abajo.</p>
+                                                                ) : (
+                                                                    (settings?.categories || []).map(cat => {
+                                                                        const isSelected = Array.isArray(newProduct.categories)
+                                                                            ? newProduct.categories.includes(cat)
+                                                                            : (newProduct.category === cat);
+                                                                        return (
+                                                                            <label
                                                                                 key={cat}
-                                                                                className="bg-orange-500/20 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-500/30 flex items-center gap-2"
+                                                                                className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all group hover:bg-slate-800 mb-1 last:mb-0 ${isSelected ? 'bg-orange-900/20 border border-orange-500/30' : 'border border-transparent'}`}
                                                                             >
-                                                                                {cat}
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        setNewProduct({
-                                                                                            ...newProduct,
-                                                                                            categories: newProduct.categories.filter(c => c !== cat)
-                                                                                        });
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={isSelected}
+                                                                                    onChange={(e) => {
+                                                                                        if (e.target.checked) {
+                                                                                            const current = Array.isArray(newProduct.categories) ? newProduct.categories : (newProduct.category ? [newProduct.category] : []);
+                                                                                            setNewProduct({ ...newProduct, categories: [...current, cat], category: undefined });
+                                                                                        } else {
+                                                                                            const updated = Array.isArray(newProduct.categories) ? newProduct.categories.filter(c => c !== cat) : [];
+                                                                                            setNewProduct({ ...newProduct, categories: updated });
+                                                                                        }
                                                                                     }}
-                                                                                    className="hover:text-orange-300 transition"
-                                                                                >
-                                                                                    <X className="w-3 h-3" />
-                                                                                </button>
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
+                                                                                    className="w-4 h-4 text-orange-600 bg-slate-900 border-slate-600 rounded focus:ring-orange-500 focus:ring-2"
+                                                                                />
+                                                                                <span className={`flex-1 text-sm font-medium transition-colors ${isSelected ? 'text-orange-400' : 'text-slate-300 group-hover:text-white'}`}>{cat}</span>
+                                                                                {isSelected && <CheckCircle className="w-3.5 h-3.5 text-orange-500" />}
+                                                                            </label>
+                                                                        );
+                                                                    })
                                                                 )}
                                                             </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setShowCategoryModal(true)}
-                                                                className="w-full mt-2 py-2 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-orange-800"
-                                                            >
+                                                            {newProduct.categories && newProduct.categories.length > 0 && (
+                                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                                    {newProduct.categories.map(cat => (
+                                                                        <span key={cat} className="bg-orange-500/20 text-orange-400 text-xs font-bold px-2.5 py-1 rounded-full border border-orange-500/30 flex items-center gap-1.5">
+                                                                            {cat}
+                                                                            <button type="button" onClick={() => setNewProduct({ ...newProduct, categories: newProduct.categories.filter(c => c !== cat) })} className="hover:text-orange-300 transition"><X className="w-3 h-3" /></button>
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            <button type="button" onClick={() => setShowCategoryModal(true)} className="w-full mt-2 py-2 bg-orange-900/20 hover:bg-orange-900/40 text-orange-400 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-orange-800">
                                                                 <FolderPlus className="w-4 h-4" /> Nueva Categoría
                                                             </button>
                                                         </div>
 
-                                                        <div className="space-y-4">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                    Imagen del Producto
-                                                                </label>
-                                                                <div className="space-y-3">
-                                                                    <input
-                                                                        type="file"
-                                                                        accept="image/*"
-                                                                        onChange={(e) => handleImageUpload(e, setNewProduct)}
-                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
-                                                                    />
-                                                                    {newProduct.image && (
-                                                                        <div className="bg-white rounded-xl p-3 w-32 h-32 overflow-hidden product-preview-frame">
-                                                                            <img src={newProduct.image} className="w-full h-full object-contain" alt="Preview" />
+                                                        {/* Multi-Image Upload */}
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                                                                <ImageIcon className="w-4 h-4" /> Imágenes del Producto
+                                                                <span className="text-[10px] text-slate-600 font-normal ml-auto">
+                                                                    {(newProduct.images || []).length}/{MAX_PRODUCT_IMAGES}
+                                                                </span>
+                                                            </label>
+
+                                                            {/* Image Grid */}
+                                                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3">
+                                                                {(newProduct.images || []).map((imgSrc, idx) => (
+                                                                    <div key={idx} className="relative group aspect-square bg-white rounded-xl overflow-hidden border-2 border-slate-700 hover:border-orange-500/50 transition-all">
+                                                                        <img src={imgSrc} alt={`Imagen ${idx + 1}`} className="w-full h-full object-contain p-1" />
+                                                                        {/* Principal badge */}
+                                                                        {idx === 0 && (
+                                                                            <div className="absolute top-1 left-1 bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                                                Principal
+                                                                            </div>
+                                                                        )}
+                                                                        {/* Controls overlay */}
+                                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                                                            {idx > 0 && (
+                                                                                <button type="button" onClick={() => moveProductImage(idx, idx - 1)} className="w-7 h-7 bg-white/90 text-slate-700 rounded-lg flex items-center justify-center hover:bg-white transition" title="Mover izquierda">
+                                                                                    <ChevronLeft className="w-4 h-4" />
+                                                                                </button>
+                                                                            )}
+                                                                            {idx < (newProduct.images || []).length - 1 && (
+                                                                                <button type="button" onClick={() => moveProductImage(idx, idx + 1)} className="w-7 h-7 bg-white/90 text-slate-700 rounded-lg flex items-center justify-center hover:bg-white transition" title="Mover derecha">
+                                                                                    <ChevronRight className="w-4 h-4" />
+                                                                                </button>
+                                                                            )}
+                                                                            <button type="button" onClick={() => removeProductImage(idx)} className="w-7 h-7 bg-red-500/90 text-white rounded-lg flex items-center justify-center hover:bg-red-600 transition" title="Eliminar">
+                                                                                <X className="w-4 h-4" />
+                                                                            </button>
                                                                         </div>
-                                                                    )}
-                                                                </div>
+                                                                    </div>
+                                                                ))}
+
+                                                                {/* Add image button */}
+                                                                {(newProduct.images || []).length < MAX_PRODUCT_IMAGES && (
+                                                                    <label className="aspect-square border-2 border-dashed border-slate-700 hover:border-orange-500/50 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-orange-500/5 group">
+                                                                        <ImagePlus className="w-6 h-6 text-slate-600 group-hover:text-orange-400 transition mb-1" />
+                                                                        <span className="text-[10px] text-slate-600 group-hover:text-orange-400 font-bold transition">Agregar</span>
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="image/*"
+                                                                            multiple
+                                                                            onChange={handleMultiImageAdd}
+                                                                            className="hidden"
+                                                                        />
+                                                                    </label>
+                                                                )}
                                                             </div>
+                                                            <p className="text-[10px] text-slate-600">La primera imagen será la principal. Podés reordenar pasando el mouse.</p>
+                                                        </div>
+
+                                                        {/* Descuento */}
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                             <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                    Descuento (%)
-                                                                </label>
-                                                                <p className="text-xs text-slate-400 mb-2">Porcentaje de descuento sobre el precio base (0-100)</p>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Descuento (%)</label>
                                                                 <input
                                                                     type="number"
                                                                     min="0"
                                                                     max="100"
-                                                                    className="input-cyber w-full p-4"
+                                                                    className="input-cyber w-full p-3"
                                                                     placeholder="0"
                                                                     value={newProduct.discount || 0}
                                                                     onChange={e => setNewProduct({ ...newProduct, discount: sanitizeDiscount(e.target.value) })}
                                                                 />
+                                                            </div>
+                                                            <div className="flex items-end">
                                                                 {productFormBasePrice > 0 ? (
-                                                                    <div className={`mt-3 rounded-xl border p-3 ${productFormDiscount > 0 ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-slate-700 bg-slate-900/40'}`}>
-                                                                        <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                                                                            Precio original: <span className="text-slate-300">${productFormBasePrice.toLocaleString()}</span>
+                                                                    <div className={`w-full rounded-xl border p-3 ${productFormDiscount > 0 ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-slate-700 bg-slate-900/40'}`}>
+                                                                        <p className="text-[11px] text-slate-400 font-semibold">
+                                                                            Original: <span className="text-slate-300">${productFormBasePrice.toLocaleString()}</span>
                                                                         </p>
-                                                                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                                        <div className="mt-1 flex items-center gap-2">
                                                                             <span className={`text-sm font-black ${productFormDiscount > 0 ? 'text-emerald-300' : 'text-slate-200'}`}>
-                                                                                Total final: ${productFormFinalPrice.toLocaleString()}
+                                                                                Final: ${productFormFinalPrice.toLocaleString()}
                                                                             </span>
                                                                             {productFormDiscount > 0 && (
-                                                                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-2 py-1 text-[11px] font-bold text-orange-300 border border-orange-500/30">
-                                                                                    <Percent className="w-3 h-3" />
-                                                                                    Ahorro ${productFormSavings.toLocaleString()}
+                                                                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-bold text-orange-300 border border-orange-500/30">
+                                                                                    <Percent className="w-3 h-3" /> -{productFormDiscount}%
                                                                                 </span>
                                                                             )}
                                                                         </div>
                                                                     </div>
                                                                 ) : (
-                                                                    <p className="text-[11px] text-slate-500 mt-2">
-                                                                        Cargá el precio de venta para ver el total con descuento.
-                                                                    </p>
+                                                                    <p className="text-[11px] text-slate-500 pb-3">Cargá el precio para ver el total con descuento.</p>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                    </div>
 
-                                                    <textarea className="input-cyber w-full h-32 p-4 mb-6 resize-none" placeholder="Descripción detallada del producto..." value={newProduct.description || ''} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
+                                                        {/* Descripción */}
+                                                        <textarea className="input-cyber w-full h-28 p-4 resize-none" placeholder="Descripción del producto (opcional)..." value={newProduct.description || ''} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
 
-                                                    <div className="flex gap-4 justify-end">
-                                                        <button onClick={() => setShowProductForm(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition">Cancelar</button>
-                                                        <button onClick={saveProductFn} className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition">Guardar Producto</button>
+                                                        {/* Botones */}
+                                                        <div className="flex gap-4 justify-end pt-2">
+                                                            <button onClick={() => setShowProductForm(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition">Cancelar</button>
+                                                            <button onClick={saveProductFn} className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition flex items-center gap-2">
+                                                                <Save className="w-4 h-4" /> Guardar Producto
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
-
                                             {/* Lista de Productos */}
                                             <div className="grid gap-3">
                                                 {products.map((p, idx) => (
@@ -10175,7 +10359,7 @@ function App() {
                                                             <button onClick={() => openManualSaleModal(p)} className="p-3 bg-slate-900 rounded-xl text-green-400 hover:bg-green-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95" title="Venta Manual (Descontar 1)">
                                                                 <DollarSign className="w-5 h-5" />
                                                             </button>
-                                                            <button onClick={() => { setNewProduct(p); setEditingId(p.id); setShowProductForm(true) }} className="p-3 bg-slate-900 rounded-xl text-orange-400 hover:bg-orange-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
+                                                            <button onClick={() => { const editData = { ...p, images: Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []) }; setNewProduct(editData); setEditingId(p.id); setShowProductForm(true) }} className="p-3 bg-slate-900 rounded-xl text-orange-400 hover:bg-orange-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
                                                                 <Edit className="w-5 h-5" />
                                                             </button>
                                                             <button onClick={() => deleteProductFn(p)} className="p-3 bg-slate-900 rounded-xl text-red-400 hover:bg-red-900/20 transition border border-slate-800 transform hover:scale-105 active:scale-95">
@@ -10186,2204 +10370,2208 @@ function App() {
                                                 ))}
                                             </div>
                                         </div>
-                                    )}
+                                    )
+                                    }
 
 
 
                                     {/* TAB: CARRUSEL */}
-                                    {adminTab === 'carousel' && (
-                                        <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
-                                            {!['business', 'premium'].includes(settings?.subscriptionPlan) ? (
-                                                <div className="flex flex-col items-center justify-center py-20 text-center">
-                                                    <div className="w-20 h-20 bg-yellow-900/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
-                                                        <Lock className="w-10 h-10 text-yellow-500" />
-                                                    </div>
-                                                    <h3 className="text-2xl font-black text-white mb-4">Carrusel Bloqueado</h3>
-                                                    <p className="text-slate-400 mb-6 max-w-md">El carrusel de banners del home está disponible a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>. Mejorá tu plan para personalizar los slides de tu tienda.</p>
-                                                    <button
-                                                        onClick={() => setShowPlansModal(true)}
-                                                        className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
-                                                    >
-                                                        <Zap className="w-5 h-5" /> Ver Planes Disponibles
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-                                                        <div>
-                                                            <h1 className="text-3xl md:text-4xl font-black text-white neon-text">Carrusel</h1>
-                                                            <p className="text-slate-500 mt-2">Administrá los banners rotativos del home de tu tienda.</p>
+                                    {
+                                        adminTab === 'carousel' && (
+                                            <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
+                                                {!['business', 'premium'].includes(settings?.subscriptionPlan) ? (
+                                                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                                                        <div className="w-20 h-20 bg-yellow-900/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
+                                                            <Lock className="w-10 h-10 text-yellow-500" />
                                                         </div>
-                                                        <AdminHowToUse guideKey="carousel" />
+                                                        <h3 className="text-2xl font-black text-white mb-4">Carrusel Bloqueado</h3>
+                                                        <p className="text-slate-400 mb-6 max-w-md">El carrusel de banners del home está disponible a partir del <span className="text-purple-400 font-bold">Plan Negocio</span>. Mejorá tu plan para personalizar los slides de tu tienda.</p>
+                                                        <button
+                                                            onClick={() => setShowPlansModal(true)}
+                                                            className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition flex items-center gap-2"
+                                                        >
+                                                            <Zap className="w-5 h-5" /> Ver Planes Disponibles
+                                                        </button>
                                                     </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                            <div>
+                                                                <h1 className="text-3xl md:text-4xl font-black text-white neon-text">Carrusel</h1>
+                                                                <p className="text-slate-500 mt-2">Administrá los banners rotativos del home de tu tienda.</p>
+                                                            </div>
+                                                            <AdminHowToUse guideKey="carousel" />
+                                                        </div>
 
-                                                    <div className="space-y-6">
-                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                <Play className="w-5 h-5 text-orange-400" /> Configuración del Carrusel
+                                                        <div className="space-y-6">
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                    <Play className="w-5 h-5 text-orange-400" /> Configuración del Carrusel
+                                                                </h3>
+
+                                                                <div className="space-y-6">
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Mostrar carrusel</p>
+                                                                                <p className="text-xs text-slate-500">Si está apagado, se usa la imagen Hero tradicional.</p>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showHomeBannerCarousel: settings?.showHomeBannerCarousel === false ? true : false })}
+                                                                                className={`w-14 h-8 rounded-full transition relative ${settings?.showHomeBannerCarousel !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showHomeBannerCarousel !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cambio automático (segundos)</label>
+                                                                            <input
+                                                                                type="number"
+                                                                                min="1"
+                                                                                className="input-cyber w-full p-3"
+                                                                                value={Number.isFinite(Number(settings?.homeBannerAutoplayMs)) ? Math.max(1, Math.round(Number(settings.homeBannerAutoplayMs) / 1000)) : 5}
+                                                                                onChange={(e) => {
+                                                                                    const seconds = Number(e.target.value);
+                                                                                    const safeSeconds = Number.isFinite(seconds) ? Math.max(1, seconds) : 5;
+                                                                                    setSettings({ ...settings, homeBannerAutoplayMs: Math.round(safeSeconds * 1000) });
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                                        <div className="lg:col-span-1">
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen del slide</label>
+                                                                            <input
+                                                                                type="file"
+                                                                                accept="image/*"
+                                                                                onChange={(e) => handleImageUpload(e, setNewHomeBanner, 'imageUrl')}
+                                                                                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
+                                                                            />
+                                                                            {newHomeBanner?.imageUrl && (
+                                                                                <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-28">
+                                                                                    <img src={newHomeBanner.imageUrl} className="w-full h-full object-cover" alt="Banner preview" />
+                                                                                </div>
+                                                                            )}
+                                                                            <p className="text-xs text-slate-500 mt-2">Recomendado: 2400x1350 px mínimo para que no pierda nitidez en pantallas grandes</p>
+                                                                        </div>
+
+                                                                        <div className="lg:col-span-2 space-y-4">
+                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                <div>
+                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Acción al hacer click</label>
+                                                                                    <select
+                                                                                        className="input-cyber w-full p-3"
+                                                                                        value={newHomeBanner?.targetType || 'none'}
+                                                                                        onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetType: e.target.value, targetId: '' }))}
+                                                                                    >
+                                                                                        <option value="none">Solo mostrar (sin link)</option>
+                                                                                        <option value="product">Abrir producto</option>
+                                                                                        <option value="promo">Abrir promo</option>
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Orden (0 = primero)</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        className="input-cyber w-full p-3"
+                                                                                        value={Number.isFinite(Number(newHomeBanner?.order)) ? Number(newHomeBanner.order) : 0}
+                                                                                        onChange={(e) => setNewHomeBanner(prev => ({ ...prev, order: e.target.value }))}
+                                                                                    />
+                                                                                    <p className="text-xs text-slate-500 mt-2">Menor número aparece primero (0, 1, 2...).</p>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {newHomeBanner?.targetType !== 'none' && (
+                                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                    <div>
+                                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                                                                            {newHomeBanner?.targetType === 'promo' ? 'Promo al hacer click' : 'Producto al hacer click'}
+                                                                                        </label>
+                                                                                        <select
+                                                                                            className="input-cyber w-full p-3"
+                                                                                            value={newHomeBanner?.targetId || ''}
+                                                                                            onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetId: e.target.value }))}
+                                                                                        >
+                                                                                            <option value="">Seleccionar...</option>
+                                                                                            {(newHomeBanner?.targetType === 'promo' ? [...promos] : [...products])
+                                                                                                .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''))
+                                                                                                .map(item => (
+                                                                                                    <option key={item.id} value={item.id}>{item.name}</option>
+                                                                                                ))}
+                                                                                        </select>
+                                                                                    </div>
+                                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 flex items-center gap-4">
+                                                                                        {(() => {
+                                                                                            const isPromo = newHomeBanner?.targetType === 'promo';
+                                                                                            const item = isPromo
+                                                                                                ? promos.find(p => p.id === newHomeBanner?.targetId)
+                                                                                                : products.find(p => p.id === newHomeBanner?.targetId);
+                                                                                            const img = isPromo ? item?.image : item?.image;
+                                                                                            return (
+                                                                                                <>
+                                                                                                    <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
+                                                                                                        {img ? <img src={img} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon className="w-6 h-6 text-slate-600" />}
+                                                                                                    </div>
+                                                                                                    <div className="min-w-0">
+                                                                                                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Vista previa</p>
+                                                                                                        <p className="font-black text-white truncate">{item?.name || 'Sin selección'}</p>
+                                                                                                    </div>
+                                                                                                </>
+                                                                                            );
+                                                                                        })()}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+
+                                                                            <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                                                                <div className="flex items-center justify-between flex-1 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                                    <div>
+                                                                                        <p className="font-bold text-white">Slide habilitado</p>
+                                                                                        <p className="text-xs text-slate-500">Si está apagado no se muestra.</p>
+                                                                                    </div>
+                                                                                    <button
+                                                                                        onClick={() => setNewHomeBanner(prev => ({ ...prev, enabled: prev?.enabled === false ? true : false }))}
+                                                                                        className={`w-14 h-8 rounded-full transition relative ${newHomeBanner?.enabled !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                                    >
+                                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${newHomeBanner?.enabled !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                                    </button>
+                                                                                </div>
+
+                                                                                <div className="flex gap-3">
+                                                                                    {editingHomeBannerId && (
+                                                                                        <button
+                                                                                            onClick={resetHomeBannerForm}
+                                                                                            className="px-6 py-3 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition"
+                                                                                        >
+                                                                                            Cancelar
+                                                                                        </button>
+                                                                                    )}
+                                                                                    <button
+                                                                                        onClick={saveHomeBannerFn}
+                                                                                        className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition"
+                                                                                    >
+                                                                                        {editingHomeBannerId ? 'Guardar Slide' : 'Agregar Slide'}
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="space-y-3">
+                                                                        {homeBanners.length === 0 ? (
+                                                                            <p className="text-slate-500 text-sm">Todavía no hay slides en el carrusel.</p>
+                                                                        ) : (
+                                                                            homeBanners.map(b => {
+                                                                                const targetType = b.targetType || (b.promoId ? 'promo' : b.productId ? 'product' : 'none');
+                                                                                const targetId = b.targetId || b.promoId || b.productId || '';
+                                                                                const targetItem = targetType === 'promo'
+                                                                                    ? promos.find(p => p.id === targetId)
+                                                                                    : targetType === 'product'
+                                                                                        ? products.find(p => p.id === targetId)
+                                                                                        : null;
+                                                                                const targetName = targetType === 'none'
+                                                                                    ? 'Solo imagen'
+                                                                                    : targetItem?.name || (targetType === 'promo' ? 'Promo inexistente' : 'Producto inexistente');
+                                                                                const isEnabled = b?.enabled !== false;
+                                                                                return (
+                                                                                    <div key={b.id} className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-slate-900/40 rounded-2xl border border-slate-800">
+                                                                                        <div className="w-full md:w-40 h-20 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex-shrink-0">
+                                                                                            {b?.imageUrl ? (
+                                                                                                <img src={b.imageUrl} className="w-full h-full object-cover" alt="Slide" />
+                                                                                            ) : null}
+                                                                                        </div>
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <div className="flex items-center gap-3 flex-wrap">
+                                                                                                <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
+                                                                                                    {targetItem?.image ? <img src={targetItem.image} className="w-full h-full object-cover" alt="Target" /> : <ImageIcon className="w-4 h-4 text-slate-600" />}
+                                                                                                </div>
+                                                                                                <p className="font-black text-white truncate">{targetName}</p>
+                                                                                                <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${isEnabled ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-800/30'}`}>
+                                                                                                    {isEnabled ? 'ACTIVO' : 'PAUSADO'}
+                                                                                                </span>
+                                                                                                <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
+                                                                                                    {targetType === 'promo' ? 'PROMO' : targetType === 'product' ? 'PRODUCTO' : 'SIN LINK'}
+                                                                                                </span>
+                                                                                                <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
+                                                                                                    ORDEN {Number.isFinite(Number(b.order)) ? Number(b.order) : 0}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <p className="text-xs text-slate-500 mt-1 truncate">{targetType === 'none' ? 'Click desactivado' : targetId}</p>
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <button
+                                                                                                onClick={() => editHomeBannerFn(b)}
+                                                                                                className="px-4 py-2 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition flex items-center gap-2"
+                                                                                            >
+                                                                                                <Edit className="w-4 h-4" /> Editar
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => deleteHomeBannerFn(b)}
+                                                                                                className="px-4 py-2 rounded-xl font-bold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition flex items-center gap-2"
+                                                                                            >
+                                                                                                <Trash2 className="w-4 h-4" /> Eliminar
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Save Button for carousel settings - only for super admin */}
+                                                            {currentUser?.email === SUPER_ADMIN_EMAIL && (
+                                                                <div className="fixed bottom-8 right-8 z-50">
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                setIsLoading(true);
+                                                                                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                                                                                await setDoc(settingsRef, settings, { merge: true });
+                                                                                showToast("Configuración del carrusel guardada", "success");
+                                                                            } catch (e) {
+                                                                                console.error(e);
+                                                                                showToast("Error al guardar", "error");
+                                                                            } finally {
+                                                                                setIsLoading(false);
+                                                                            }
+                                                                        }}
+                                                                        className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
+                                                                    >
+                                                                        <Save className="w-5 h-5" /> Guardar Cambios
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        )
+                                    }
+
+                                    {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
+                                    {
+                                        adminTab === 'settings' && (
+                                            <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
+
+                                                {/* Developer-Only Access Block */}
+                                                {currentUser?.email !== SUPER_ADMIN_EMAIL && (
+                                                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-[2.5rem]">
+                                                        <div className="text-center p-8 max-w-lg">
+                                                            <div className="w-24 h-24 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
+                                                                <Shield className="w-12 h-12 text-red-400" />
+                                                            </div>
+                                                            <h3 className="text-3xl font-black text-white mb-4">Acceso Restringido</h3>
+                                                            <p className="text-slate-400 mb-6">Esta sección está reservada únicamente para el <span className="text-orange-400 font-bold">desarrollador</span> de la plataforma.</p>
+                                                            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mb-6">
+                                                                <p className="text-sm text-slate-500 mb-2">Para solicitar cambios en la configuración, contacta a:</p>
+                                                                <p className="text-orange-400 font-bold text-lg">lautarocorazza63@gmail.com</p>
+                                                            </div>
+                                                            <p className="text-xs text-slate-600">Si necesitas modificar tu tienda, envía un email detallando los cambios que deseas realizar.</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                                                    <h1 className="text-4xl font-black text-white neon-text flex items-center gap-3">
+                                                        <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
+                                                    </h1>
+                                                    <AdminHowToUse guideKey="settings" />
+                                                </div>
+
+                                                {/* Sub-Navigation Tabs */}
+                                                <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-slate-800">
+                                                    {[
+                                                        { id: 'store', label: 'Tienda', icon: Store },
+                                                        { id: 'appearance', label: 'Apariencia', icon: Palette },
+                                                        { id: 'social', label: 'Redes', icon: Share2 },
+                                                        { id: 'payments', label: 'Pagos', icon: CreditCard },
+                                                        { id: 'ticket', label: 'Ticket', icon: Ticket },
+                                                        { id: 'shipping', label: 'Envíos', icon: Truck },
+                                                        { id: 'seo', label: 'SEO', icon: Globe },
+                                                        { id: 'advanced', label: 'Avanzado', icon: Cog },
+                                                        { id: 'team', label: 'Equipo', icon: Users },
+                                                        // Only show Subscription tab to Super Admin
+                                                        ...(currentUser?.email === SUPER_ADMIN_EMAIL ? [{ id: 'subscription', label: 'Suscripciones', icon: Zap }] : [])
+                                                    ].map(tab => (
+                                                        <button
+                                                            key={tab.id}
+                                                            onClick={() => setSettingsTab(tab.id)}
+                                                            className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all duration-300 border ${settingsTab === tab.id ? 'bg-orange-600 text-white shadow-[0_0_20px_rgba(8,145,178,0.4)] border-orange-400 transform scale-105' : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'}`}
+                                                        >
+                                                            <tab.icon className={`w-4 h-4 ${settingsTab === tab.id ? 'animate-pulse' : ''}`} /> {tab.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                {/* === SUBSCRIPTION MANAGEMENT (SUPER ADMIN ONLY) === */}
+                                                {settingsTab === 'subscription' && currentUser?.email === SUPER_ADMIN_EMAIL && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(249,115,22,0.1)]">
+                                                            <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                                                                <Zap className="w-6 h-6 text-yellow-500 fill-current" />
+                                                                Modelos de Suscripción
                                                             </h3>
 
+                                                            <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center gap-4">
+                                                                <AlertTriangle className="w-8 h-8 text-yellow-500" />
+                                                                <div>
+                                                                    <p className="font-bold text-yellow-500">Zona de Peligro: Super Admin</p>
+                                                                    <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los límites y funcionalidades de la tienda.</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="mb-8 p-6 bg-slate-900/40 border border-slate-800 rounded-2xl">
+                                                                <div className="flex items-center justify-between gap-4 flex-wrap">
+                                                                    <div>
+                                                                        <p className="text-white font-black text-lg">Backup de Tienda</p>
+                                                                        <p className="text-slate-500 text-xs font-mono">storeId: {appId || '—'}</p>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <button
+                                                                            disabled={isExportingBackup || !appId}
+                                                                            onClick={exportBackup}
+                                                                            className="px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-black text-[10px] uppercase tracking-widest hover:bg-green-500/20 transition disabled:opacity-50"
+                                                                        >
+                                                                            {isExportingBackup ? 'Exportando…' : 'Exportar'}
+                                                                        </button>
+                                                                        <label className={`px-4 py-3 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-200 font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600/30 transition ${isImportingBackup || !appId ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                                            {isImportingBackup ? 'Importando…' : 'Importar'}
+                                                                            <input
+                                                                                type="file"
+                                                                                accept="application/json"
+                                                                                className="hidden"
+                                                                                onChange={(e) => {
+                                                                                    const file = e.target.files && e.target.files[0];
+                                                                                    if (file) importBackupFile(file);
+                                                                                    e.target.value = '';
+                                                                                }}
+                                                                            />
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-slate-600 text-xs mt-4">Importar escribe con merge (no borra por defecto). Usalo con cuidado.</p>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                                {/* Plan Emprendedor */}
+                                                                <button
+                                                                    onClick={() => handlePlanChange('entrepreneur')}
+                                                                    className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan ? 'bg-slate-900 border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                                >
+                                                                    <div className="flex justify-between items-start mb-4">
+                                                                        <div className="p-3 bg-slate-800 rounded-xl">
+                                                                            <Store className="w-6 h-6 text-orange-400" />
+                                                                        </div>
+                                                                        {(settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan) && <div className="bg-orange-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                                    </div>
+                                                                    <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
+                                                                    <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sólido y económico.</p>
+                                                                    <div className="text-2xl font-black text-orange-400 mb-6">US$5.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                                    <ul className="space-y-2 text-sm text-slate-300">
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Hasta 30 productos</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Mercado Pago integrado</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> 1 promoción activa</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Panel de control completo</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Soporte técnico por Gmail</li>
+                                                                    </ul>
+                                                                </button>
+
+                                                                {/* Plan Negocio */}
+                                                                <button
+                                                                    onClick={() => handlePlanChange('business')}
+                                                                    className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                                >
+                                                                    <div className="flex justify-between items-start mb-4">
+                                                                        <div className="p-3 bg-slate-800 rounded-xl">
+                                                                            <Briefcase className="w-6 h-6 text-purple-400" />
+                                                                        </div>
+                                                                        {settings.subscriptionPlan === 'business' && <div className="bg-purple-500 text-white text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                                    </div>
+                                                                    <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
+                                                                    <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
+                                                                    <div className="text-2xl font-black text-purple-400 mb-6">US$9.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                                    <ul className="space-y-2 text-sm text-slate-300">
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Incluye todo Emprendedor</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Promociones ilimitadas + cupones</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Analítica de clientes + carrusel</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp flotante</li>
+                                                                    </ul>
+                                                                </button>
+
+                                                                {/* Plan Premium */}
+                                                                <button
+                                                                    onClick={() => handlePlanChange('premium')}
+                                                                    className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
+                                                                >
+                                                                    <div className="flex justify-between items-start mb-4">
+                                                                        <div className="p-3 bg-slate-800 rounded-xl">
+                                                                            <Sparkles className="w-6 h-6 text-yellow-400" />
+                                                                        </div>
+                                                                        {settings.subscriptionPlan === 'premium' && <div className="bg-yellow-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
+                                                                    </div>
+                                                                    <h4 className="text-xl font-black text-white mb-1">Premium</h4>
+                                                                    <p className="text-sm text-slate-400 mb-4 h-10">Servicio full con IA.</p>
+                                                                    <div className="text-2xl font-black text-yellow-400 mb-6">US$17.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
+
+                                                                    <ul className="space-y-2 text-sm text-slate-300">
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Incluye todo Negocio</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Productos y promos ilimitados</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Asistente IA 24/7 (SustIA)</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga VIP inicial (10 productos)</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento mensual full</li>
+                                                                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Omnicanalidad total</li>
+                                                                    </ul>
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Billing Cycle Selection */}
+                                                            <div className="mt-8 pt-8 border-t border-slate-800/50">
+                                                                <h4 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
+                                                                    <Calendar className="w-5 h-5 text-green-400" /> Ciclo de Facturación
+                                                                </h4>
+                                                                <div className="grid grid-cols-3 gap-4">
+                                                                    {[
+                                                                        { id: 'Semanal', label: 'Semanal' },
+                                                                        { id: 'Mensual', label: 'Mensual' },
+                                                                        { id: 'Anual', label: 'Anual' }
+                                                                    ].map(cycle => (
+                                                                        <button
+                                                                            key={cycle.id}
+                                                                            onClick={() => setSettings({ ...settings, subscriptionBillingCycle: cycle.id })}
+                                                                            className={`p-3 rounded-xl border transition-all font-bold ${settings?.subscriptionBillingCycle === cycle.id
+                                                                                ? 'bg-green-500 text-black border-green-400 shadow-lg shadow-green-500/20'
+                                                                                : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                                                                                }`}
+                                                                        >
+                                                                            {cycle.label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                                <p className="text-xs text-slate-500 mt-2">Define la frecuencia de cobro para este plan.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {settingsTab === 'store' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Store className="w-5 h-5 text-orange-400" /> Información de la Tienda
+                                                            </h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre de la Tienda</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.storeName || ''}
+                                                                        onChange={e => setSettings({ ...settings, storeName: e.target.value })}
+                                                                        placeholder="Mi Tienda"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Email de Contacto</label>
+                                                                    <input
+                                                                        type="email"
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.storeEmail || ''}
+                                                                        onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
+                                                                        placeholder="contacto@mitienda.com"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Teléfono</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.storePhone || ''}
+                                                                        onChange={e => setSettings({ ...settings, storePhone: e.target.value })}
+                                                                        placeholder="+54 11 1234-5678"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Dirección</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.storeAddress || ''}
+                                                                        onChange={e => setSettings({ ...settings, storeAddress: e.target.value })}
+                                                                        placeholder="Av. Corrientes 1234, CABA"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-6">
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción de la Tienda</label>
+                                                                <textarea
+                                                                    className="input-cyber w-full p-4 h-24 resize-none"
+                                                                    value={settings?.storeDescription || ''}
+                                                                    onChange={e => setSettings({ ...settings, storeDescription: e.target.value })}
+                                                                    placeholder="Breve descripción de tu tienda..."
+                                                                />
+                                                            </div>
+                                                            <div className="mt-6">
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto de Nosotros</label>
+                                                                <textarea
+                                                                    className="input-cyber w-full p-4 h-32 resize-none"
+                                                                    value={settings?.aboutUsText || ''}
+                                                                    onChange={e => setSettings({ ...settings, aboutUsText: e.target.value })}
+                                                                    placeholder="Historia de tu marca, valores, misión..."
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Copyright Configuration */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <FileText className="w-5 h-5 text-orange-400" /> Textos de Copyright
+                                                            </h3>
                                                             <div className="space-y-6">
-                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                    <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                        <div>
-                                                                            <p className="font-bold text-white">Mostrar carrusel</p>
-                                                                            <p className="text-xs text-slate-500">Si está apagado, se usa la imagen Hero tradicional.</p>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Menú Lateral</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.menuCopyright || ''}
+                                                                        onChange={e => setSettings({ ...settings, menuCopyright: e.target.value })}
+                                                                        placeholder={`${settings?.storeName || 'Mi Tienda'} © ${new Date().getFullYear()}`}
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-2">Aparece al final del menú hamburguesa</p>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Footer</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.footerCopyright || ''}
+                                                                        onChange={e => setSettings({ ...settings, footerCopyright: e.target.value })}
+                                                                        placeholder={`© ${new Date().getFullYear()} ${settings?.storeName || 'Mi Tienda'}. All rights reserved.`}
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-2">Aparece en la barra inferior del sitio</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Guía "Cómo Comprar" Configuration */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <FileQuestion className="w-5 h-5 text-orange-400" /> Guía "Cómo Comprar"
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                {/* Toggle para mostrar la página */}
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Mostrar en Menú</p>
+                                                                        <p className="text-xs text-slate-500">Mostrar enlace "Cómo Comprar" en el menú lateral</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showGuideLink: settings?.showGuideLink === false ? true : false })}
+                                                                        className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showGuideLink !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideLink !== false ? 'left-8' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Título de la página */}
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de la Página</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.guideTitle || ''}
+                                                                        onChange={e => setSettings({ ...settings, guideTitle: e.target.value })}
+                                                                        placeholder="Cómo Comprar"
+                                                                    />
+                                                                </div>
+
+                                                                {/* Paso 1 */}
+                                                                <div className="border-t border-slate-800 pt-4">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">1</span>
+                                                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 1</label>
                                                                         </div>
                                                                         <button
-                                                                            onClick={() => setSettings({ ...settings, showHomeBannerCarousel: settings?.showHomeBannerCarousel === false ? true : false })}
-                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.showHomeBannerCarousel !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                                                            onClick={() => setSettings({ ...settings, showGuideStep1: settings?.showGuideStep1 === false ? true : false })}
+                                                                            className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep1 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
                                                                         >
-                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showHomeBannerCarousel !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                            <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep1 !== false ? 'left-6' : 'left-1'}`}></div>
                                                                         </button>
                                                                     </div>
-                                                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Cambio automático (segundos)</label>
+                                                                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep1 === false ? 'opacity-50' : ''}`}>
                                                                         <input
-                                                                            type="number"
-                                                                            min="1"
                                                                             className="input-cyber w-full p-3"
-                                                                            value={Number.isFinite(Number(settings?.homeBannerAutoplayMs)) ? Math.max(1, Math.round(Number(settings.homeBannerAutoplayMs) / 1000)) : 5}
-                                                                            onChange={(e) => {
-                                                                                const seconds = Number(e.target.value);
-                                                                                const safeSeconds = Number.isFinite(seconds) ? Math.max(1, seconds) : 5;
-                                                                                setSettings({ ...settings, homeBannerAutoplayMs: Math.round(safeSeconds * 1000) });
-                                                                            }}
+                                                                            value={settings?.guideStep1Title || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep1Title: e.target.value })}
+                                                                            placeholder="Selecciona Productos"
+                                                                            disabled={settings?.showGuideStep1 === false}
+                                                                        />
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep1Text || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep1Text: e.target.value })}
+                                                                            placeholder="Descripción del paso..."
+                                                                            disabled={settings?.showGuideStep1 === false}
                                                                         />
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                                    <div className="lg:col-span-1">
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen del slide</label>
+                                                                {/* Paso 2 */}
+                                                                <div className="border-t border-slate-800 pt-4">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">2</span>
+                                                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 2</label>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showGuideStep2: settings?.showGuideStep2 === false ? true : false })}
+                                                                            className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep2 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep2 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep2 === false ? 'opacity-50' : ''}`}>
                                                                         <input
-                                                                            type="file"
-                                                                            accept="image/*"
-                                                                            onChange={(e) => handleImageUpload(e, setNewHomeBanner, 'imageUrl')}
-                                                                            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep2Title || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep2Title: e.target.value })}
+                                                                            placeholder="Revisa tu Carrito"
+                                                                            disabled={settings?.showGuideStep2 === false}
                                                                         />
-                                                                        {newHomeBanner?.imageUrl && (
-                                                                            <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-28">
-                                                                                <img src={newHomeBanner.imageUrl} className="w-full h-full object-cover" alt="Banner preview" />
-                                                                            </div>
-                                                                        )}
-                                                                        <p className="text-xs text-slate-500 mt-2">Recomendado: 2400x1350 px mínimo para que no pierda nitidez en pantallas grandes</p>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep2Text || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep2Text: e.target.value })}
+                                                                            placeholder="Descripción del paso..."
+                                                                            disabled={settings?.showGuideStep2 === false}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Paso 3 */}
+                                                                <div className="border-t border-slate-800 pt-4">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">3</span>
+                                                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 3</label>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showGuideStep3: settings?.showGuideStep3 === false ? true : false })}
+                                                                            className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep3 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep3 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep3 === false ? 'opacity-50' : ''}`}>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep3Title || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep3Title: e.target.value })}
+                                                                            placeholder="Datos de Envío"
+                                                                            disabled={settings?.showGuideStep3 === false}
+                                                                        />
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep3Text || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep3Text: e.target.value })}
+                                                                            placeholder="Descripción del paso..."
+                                                                            disabled={settings?.showGuideStep3 === false}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Paso 4 */}
+                                                                <div className="border-t border-slate-800 pt-4">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">4</span>
+                                                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 4</label>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showGuideStep4: settings?.showGuideStep4 === false ? true : false })}
+                                                                            className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep4 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep4 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep4 === false ? 'opacity-50' : ''}`}>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep4Title || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep4Title: e.target.value })}
+                                                                            placeholder="Pago y Confirmación"
+                                                                            disabled={settings?.showGuideStep4 === false}
+                                                                        />
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep4Text || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep4Text: e.target.value })}
+                                                                            placeholder="Descripción del paso..."
+                                                                            disabled={settings?.showGuideStep4 === false}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Paso 5 */}
+                                                                <div className="border-t border-slate-800 pt-4">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">5</span>
+                                                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 5</label>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showGuideStep5: settings?.showGuideStep5 === false ? true : false })}
+                                                                            className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep5 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep5 !== false ? 'left-6' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep5 === false ? 'opacity-50' : ''}`}>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep5Title || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep5Title: e.target.value })}
+                                                                            placeholder="¡Listo!"
+                                                                            disabled={settings?.showGuideStep5 === false}
+                                                                        />
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.guideStep5Text || ''}
+                                                                            onChange={e => setSettings({ ...settings, guideStep5Text: e.target.value })}
+                                                                            placeholder="Descripción del paso..."
+                                                                            disabled={settings?.showGuideStep5 === false}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Bell className="w-5 h-5 text-yellow-400" /> Anuncios
+                                                            </h3>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Anuncio (Banner superior)</label>
+                                                                <input
+                                                                    className="input-cyber w-full p-4"
+                                                                    value={settings?.announcementMessage || ''}
+                                                                    onChange={e => setSettings({ ...settings, announcementMessage: e.target.value })}
+                                                                    placeholder="🔥 ¡Envío gratis en compras mayores a $50.000!"
+                                                                />
+                                                                <p className="text-xs text-slate-500 mt-2">Dejar vacío para ocultar el banner.</p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Zap className="w-5 h-5 text-yellow-500" /> Pantalla de Carga
+                                                            </h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de Carga</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.loadingTitle || ''}
+                                                                        onChange={e => setSettings({ ...settings, loadingTitle: e.target.value })}
+                                                                        placeholder={settings?.storeName || "SUSTORE"}
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-2">Aparece en grande (ej. SUSTORE).</p>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Carga</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.loadingText || ''}
+                                                                        onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
+                                                                        placeholder="Cargando sistema..."
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-2">Texto pequeño debajo del título.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* === APPEARANCE === */}
+                                                {settingsTab === 'appearance' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <ImageIcon className="w-5 h-5 text-purple-400" /> Imágenes
+                                                            </h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen Hero (Banner Principal)</label>
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl')}
+                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
+                                                                    />
+                                                                    {settings?.heroUrl && (
+                                                                        <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
+                                                                            <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Logo de la Tienda</label>
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        onChange={(e) => handleImageUpload(e, setSettings, 'logoUrl')}
+                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
+                                                                    />
+                                                                    {settings?.logoUrl && (
+                                                                        <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
+                                                                            <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Palette className="w-5 h-5 text-pink-400" /> Colores del Tema
+                                                            </h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Primario</label>
+                                                                    <div className="flex gap-3 items-center">
+                                                                        <input
+                                                                            type="color"
+                                                                            value={settings?.primaryColor || '#f97316'}
+                                                                            onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
+                                                                            className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                                        />
+                                                                        <input
+                                                                            type="text"
+                                                                            value={settings?.primaryColor || '#f97316'}
+                                                                            onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
+                                                                            className="input-cyber flex-1 p-3 font-mono"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Secundario</label>
+                                                                    <div className="flex gap-3 items-center">
+                                                                        <input
+                                                                            type="color"
+                                                                            value={settings?.secondaryColor || '#8b5cf6'}
+                                                                            onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
+                                                                            className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                                        />
+                                                                        <input
+                                                                            type="text"
+                                                                            value={settings?.secondaryColor || '#8b5cf6'}
+                                                                            onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
+                                                                            className="input-cyber flex-1 p-3 font-mono"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Acento</label>
+                                                                    <div className="flex gap-3 items-center">
+                                                                        <input
+                                                                            type="color"
+                                                                            value={settings?.accentColor || '#22c55e'}
+                                                                            onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
+                                                                            className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
+                                                                        />
+                                                                        <input
+                                                                            type="text"
+                                                                            value={settings?.accentColor || '#22c55e'}
+                                                                            onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
+                                                                            className="input-cyber flex-1 p-3 font-mono"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Brand Ticker Configuration */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Sparkles className="w-5 h-5 text-orange-400" /> Ticker de Marca
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Mostrar Ticker</p>
+                                                                        <p className="text-xs text-slate-500">Activar/desactivar la cinta de texto animada.</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Ticker</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.tickerText || ''}
+                                                                        onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
+                                                                        placeholder="TECNOLOGÍA • INNOVACIÓN • CALIDAD PREMIUM • FUTURO"
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-2">Este texto se repetirá en bucle.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Hero Banner Configuration */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <ImageIcon className="w-5 h-5 text-purple-400" /> Banner Principal (Hero)
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Badge/Etiqueta</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.heroBadge || ''}
+                                                                        onChange={e => setSettings({ ...settings, heroBadge: e.target.value })}
+                                                                        placeholder="Nueva Colección 2026"
+                                                                    />
+                                                                </div>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 1</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.heroTitle1 || ''}
+                                                                            onChange={e => setSettings({ ...settings, heroTitle1: e.target.value })}
+                                                                            placeholder="TECNOLOGÍA"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 2</label>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.heroTitle2 || ''}
+                                                                            onChange={e => setSettings({ ...settings, heroTitle2: e.target.value })}
+                                                                            placeholder="DEL FUTURO"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Subtítulo</label>
+                                                                    <textarea
+                                                                        className="input-cyber w-full p-3 h-20 resize-none"
+                                                                        value={settings?.heroSubtitle || ''}
+                                                                        onChange={e => setSettings({ ...settings, heroSubtitle: e.target.value })}
+                                                                        placeholder="Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado."
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen de Fondo</label>
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl')}
+                                                                        className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
+                                                                    />
+                                                                    {settings?.heroUrl && (
+                                                                        <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
+                                                                            <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
+                                                                        </div>
+                                                                    )}
+                                                                    <p className="text-xs text-slate-500 mt-2">Recomendado: 2400x1000 px mínimo para máxima nitidez</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Features Section Configuration */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Star className="w-5 h-5 text-yellow-400" /> Beneficios Destacados
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                {/* Toggle para mostrar toda la sección */}
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Mostrar Sección de Beneficios</p>
+                                                                        <p className="text-xs text-slate-500">Activa/desactiva toda la sección de beneficios</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showFeaturesSection: settings?.showFeaturesSection === false ? true : false })}
+                                                                        className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showFeaturesSection !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeaturesSection !== false ? 'left-8' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Feature 1 */}
+                                                                <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Zap className="w-4 h-4 text-orange-400" />
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 1 (Rayo)</label>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showFeature1: settings?.showFeature1 === false ? true : false })}
+                                                                            className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature1 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature1 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature1 === false ? 'opacity-50' : ''}`}>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.feature1Title || ''}
+                                                                            onChange={e => setSettings({ ...settings, feature1Title: e.target.value })}
+                                                                            placeholder="Envío Ultra Rápido"
+                                                                            disabled={settings?.showFeature1 === false}
+                                                                        />
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.feature1Desc || ''}
+                                                                            onChange={e => setSettings({ ...settings, feature1Desc: e.target.value })}
+                                                                            placeholder="Subtítulo corto..."
+                                                                            disabled={settings?.showFeature1 === false}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                {/* Feature 2 */}
+                                                                <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Shield className="w-4 h-4 text-purple-400" />
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 2 (Escudo)</label>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showFeature2: settings?.showFeature2 === false ? true : false })}
+                                                                            className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature2 !== false ? 'bg-purple-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature2 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature2 === false ? 'opacity-50' : ''}`}>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.feature2Title || ''}
+                                                                            onChange={e => setSettings({ ...settings, feature2Title: e.target.value })}
+                                                                            placeholder="Garantía Extendida"
+                                                                            disabled={settings?.showFeature2 === false}
+                                                                        />
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.feature2Desc || ''}
+                                                                            onChange={e => setSettings({ ...settings, feature2Desc: e.target.value })}
+                                                                            placeholder="Subtítulo corto..."
+                                                                            disabled={settings?.showFeature2 === false}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                {/* Feature 3 */}
+                                                                <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Headphones className="w-4 h-4 text-green-400" />
+                                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 3 (Soporte)</label>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showFeature3: settings?.showFeature3 === false ? true : false })}
+                                                                            className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature3 !== false ? 'bg-green-600' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature3 !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature3 === false ? 'opacity-50' : ''}`}>
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.feature3Title || ''}
+                                                                            onChange={e => setSettings({ ...settings, feature3Title: e.target.value })}
+                                                                            placeholder="Soporte 24/7"
+                                                                            disabled={settings?.showFeature3 === false}
+                                                                        />
+                                                                        <input
+                                                                            className="input-cyber w-full p-3"
+                                                                            value={settings?.feature3Desc || ''}
+                                                                            onChange={e => setSettings({ ...settings, feature3Desc: e.target.value })}
+                                                                            placeholder="Subtítulo corto..."
+                                                                            disabled={settings?.showFeature3 === false}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Footer Contact Configuration */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <MessageCircle className="w-5 h-5 text-green-400" /> Sección Contacto (Footer)
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Mostrar Sección</p>
+                                                                        <p className="text-xs text-slate-500">Activa/desactiva la sección de contacto en el footer</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showFooterContact: settings?.showFooterContact === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showFooterContact !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showFooterContact !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.footerContactTitle || ''}
+                                                                        onChange={e => setSettings({ ...settings, footerContactTitle: e.target.value })}
+                                                                        placeholder="Contacto"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.footerContactDescription || ''}
+                                                                        onChange={e => setSettings({ ...settings, footerContactDescription: e.target.value })}
+                                                                        placeholder="¿Tienes alguna duda? Estamos aquí para ayudarte."
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Botón</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.footerContactButtonText || ''}
+                                                                        onChange={e => setSettings({ ...settings, footerContactButtonText: e.target.value })}
+                                                                        placeholder="Contactar Soporte"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo de Contacto</label>
+                                                                    <select
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.footerContactType || 'whatsapp'}
+                                                                        onChange={e => setSettings({ ...settings, footerContactType: e.target.value })}
+                                                                    >
+                                                                        <option value="whatsapp">WhatsApp</option>
+                                                                        <option value="instagram">Instagram</option>
+                                                                        <option value="email">Email</option>
+                                                                    </select>
+
+                                                                    {/* Conditional Input based on Type */}
+                                                                    {(!settings?.footerContactType || settings?.footerContactType === 'whatsapp') && (
+                                                                        <div className="mt-3 animate-fade-in">
+                                                                            <label className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1 block">Enlace de WhatsApp</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3 text-sm border-green-500/30 focus:border-green-500"
+                                                                                value={settings?.whatsappLink || ''}
+                                                                                onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
+                                                                                placeholder="https://wa.me/54911..."
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {settings?.footerContactType === 'instagram' && (
+                                                                        <div className="mt-3 animate-fade-in">
+                                                                            <label className="text-[10px] font-bold text-pink-500 uppercase tracking-wider mb-1 block">Perfil de Instagram</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3 text-sm border-pink-500/30 focus:border-pink-500"
+                                                                                value={settings?.instagramLink || ''}
+                                                                                onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
+                                                                                placeholder="https://instagram.com/usuario"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {settings?.footerContactType === 'email' && (
+                                                                        <div className="mt-3 animate-fade-in">
+                                                                            <label className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1 block">Email de Soporte</label>
+                                                                            <input
+                                                                                className="input-cyber w-full p-3 text-sm border-blue-500/30 focus:border-blue-500"
+                                                                                value={settings?.storeEmail || ''}
+                                                                                onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
+                                                                                placeholder="soporte@tienda.com"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Footer Brand Configuration */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Store className="w-5 h-5 text-orange-400" /> Marca en Footer
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Sufijo del Nombre</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.footerSuffix || ''}
+                                                                        onChange={e => setSettings({ ...settings, footerSuffix: e.target.value })}
+                                                                        placeholder=".SF"
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-1">Aparece junto al nombre de la tienda (ej: SUSTORE.SF)</p>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                                                    <textarea
+                                                                        className="input-cyber w-full p-3 h-24 resize-none"
+                                                                        value={settings?.footerDescription || ''}
+                                                                        onChange={e => setSettings({ ...settings, footerDescription: e.target.value })}
+                                                                        placeholder="Tu destino premium para tecnología de vanguardia..."
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Legal Links Configuration */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <FileText className="w-5 h-5 text-slate-400" /> Links Legales
+                                                            </h3>
+                                                            <div className="space-y-4">
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Política de Privacidad</p>
+                                                                        <p className="text-xs text-slate-500">Mostrar link en el footer</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showPrivacyPolicy: settings?.showPrivacyPolicy === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showPrivacyPolicy !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showPrivacyPolicy !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Terms of Service</p>
+                                                                        <p className="text-xs text-slate-500">Mostrar link en el footer</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showTermsOfService: settings?.showTermsOfService === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showTermsOfService !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showTermsOfService !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {settingsTab === 'ticket' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Ticket className="w-5 h-5 text-orange-400" /> Ticket / Comprobante
+                                                            </h3>
+                                                            <p className="text-sm text-slate-500 mb-6">Estos datos se usan en el comprobante que se envía por email al confirmar la compra.</p>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre que aparece en el ticket</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.ticket?.brandName || ''}
+                                                                        onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, brandName: e.target.value } })}
+                                                                        placeholder={settings?.storeName || 'Mi Tienda'}
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Link de WhatsApp (para el ticket)</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.ticket?.whatsappLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, whatsappLink: e.target.value } })}
+                                                                        placeholder={settings?.whatsappLink || 'https://wa.me/5491112345678'}
+                                                                    />
+                                                                </div>
+                                                                <div className="md:col-span-2">
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Link de la página (para el ticket)</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.ticket?.siteUrl || ''}
+                                                                        onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, siteUrl: e.target.value } })}
+                                                                        placeholder={settings?.seoUrl || ''}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* === SOCIAL MEDIA === */}
+                                                {settingsTab === 'social' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Share2 className="w-5 h-5 text-blue-400" /> Redes Sociales
+                                                            </h3>
+                                                            <p className="text-sm text-slate-500 mb-6">Configura los enlaces y activa/desactiva la visibilidad de cada red social en el footer.</p>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                {/* WhatsApp */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                            <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
+                                                                        </label>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[10px] text-slate-500 font-mono uppercase">Footer</span>
+                                                                            <button
+                                                                                onClick={() => setSettings({ ...settings, showWhatsapp: !settings?.showWhatsapp })}
+                                                                                className={`w-10 h-5 rounded-full transition relative ${settings?.showWhatsapp === true ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                            >
+                                                                                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showWhatsapp === true ? '22px' : '2px' }}></div>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm mb-3"
+                                                                        value={settings?.whatsappLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
+                                                                        placeholder="https://wa.me/5491112345678"
+                                                                    />
+
+                                                                    {/* Floating Button Toggle */}
+                                                                    <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
+                                                                        <div>
+                                                                            <p className="text-xs text-slate-400 font-bold flex items-center gap-2">
+                                                                                Botón Flotante
+                                                                                {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
+                                                                                    <Lock className="w-3 h-3 text-yellow-500" />
+                                                                                )}
+                                                                            </p>
+                                                                            {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
+                                                                                <p className="text-[9px] text-yellow-500/80 mt-0.5">Requiere Plan Negocio</p>
+                                                                            )}
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                if (['business', 'premium'].includes(settings?.subscriptionPlan)) {
+                                                                                    setSettings({ ...settings, showFloatingWhatsapp: !settings?.showFloatingWhatsapp });
+                                                                                } else {
+                                                                                    setShowPlansModal(true);
+                                                                                }
+                                                                            }}
+                                                                            className={`w-10 h-5 rounded-full transition relative ${settings?.showFloatingWhatsapp ? 'bg-green-500' : 'bg-slate-700'} ${(!['business', 'premium'].includes(settings?.subscriptionPlan)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                        >
+                                                                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showFloatingWhatsapp ? '22px' : '2px' }}></div>
+                                                                        </button>
                                                                     </div>
 
-                                                                    <div className="lg:col-span-2 space-y-4">
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    {/* Cart Button Toggle */}
+                                                                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-800/50">
+                                                                        <div>
+                                                                            <p className="text-xs text-slate-400 font-bold">Botón en Carrito</p>
+                                                                            <p className="text-[9px] text-slate-500 mt-0.5">“Terminar compra por WhatsApp”</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showCartWhatsappCheckout: !settings?.showCartWhatsappCheckout })}
+                                                                            className={`w-10 h-5 rounded-full transition relative ${settings?.showCartWhatsappCheckout ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showCartWhatsappCheckout ? '22px' : '2px' }}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                {/* Instagram */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                            <Instagram className="w-4 h-4 text-pink-400" /> Instagram
+                                                                        </label>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showInstagram: settings?.showInstagram === false ? true : false })}
+                                                                            className={`w-12 h-6 rounded-full transition relative ${settings?.showInstagram !== false ? 'bg-pink-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showInstagram !== false ? 'left-6' : 'left-0.5'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm"
+                                                                        value={settings?.instagramLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
+                                                                        placeholder="https://instagram.com/mitienda"
+                                                                    />
+                                                                </div>
+                                                                {/* Facebook */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                            <Facebook className="w-4 h-4 text-blue-500" /> Facebook
+                                                                        </label>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showFacebook: !settings?.showFacebook })}
+                                                                            className={`w-12 h-6 rounded-full transition relative ${settings?.showFacebook ? 'bg-blue-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showFacebook ? 'left-6' : 'left-0.5'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm"
+                                                                        value={settings?.facebookLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, facebookLink: e.target.value })}
+                                                                        placeholder="https://facebook.com/mitienda"
+                                                                    />
+                                                                </div>
+                                                                {/* Twitter */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                            <Twitter className="w-4 h-4 text-sky-400" /> Twitter/X
+                                                                        </label>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showTwitter: !settings?.showTwitter })}
+                                                                            className={`w-12 h-6 rounded-full transition relative ${settings?.showTwitter ? 'bg-sky-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTwitter ? 'left-6' : 'left-0.5'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm"
+                                                                        value={settings?.twitterLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, twitterLink: e.target.value })}
+                                                                        placeholder="https://twitter.com/mitienda"
+                                                                    />
+                                                                </div>
+                                                                {/* TikTok */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                            <Music className="w-4 h-4 text-rose-400" /> TikTok
+                                                                        </label>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showTiktok: !settings?.showTiktok })}
+                                                                            className={`w-12 h-6 rounded-full transition relative ${settings?.showTiktok ? 'bg-rose-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTiktok ? 'left-6' : 'left-0.5'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm"
+                                                                        value={settings?.tiktokLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, tiktokLink: e.target.value })}
+                                                                        placeholder="https://tiktok.com/@mitienda"
+                                                                    />
+                                                                </div>
+                                                                {/* YouTube */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <label className="text-sm font-bold text-white flex items-center gap-2">
+                                                                            <Youtube className="w-4 h-4 text-red-500" /> YouTube
+                                                                        </label>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, showYoutube: !settings?.showYoutube })}
+                                                                            className={`w-12 h-6 rounded-full transition relative ${settings?.showYoutube ? 'bg-red-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showYoutube ? 'left-6' : 'left-0.5'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3 text-sm"
+                                                                        value={settings?.youtubeLink || ''}
+                                                                        onChange={e => setSettings({ ...settings, youtubeLink: e.target.value })}
+                                                                        placeholder="https://youtube.com/c/mitienda"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* === PAYMENTS === */}
+                                                {settingsTab === 'payments' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <CreditCard className="w-5 h-5 text-green-400" /> Métodos de Pago
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                {/* Transfer */}
+                                                                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <Building className="w-6 h-6 text-orange-400" />
                                                                             <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Acción al hacer click</label>
-                                                                                <select
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={newHomeBanner?.targetType || 'none'}
-                                                                                    onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetType: e.target.value, targetId: '' }))}
+                                                                                <p className="font-bold text-white">Transferencia Bancaria</p>
+                                                                                <p className="text-xs text-slate-500">Activado / Desactivado</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, enabled: !settings?.paymentTransfer?.enabled } })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.paymentTransfer?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentTransfer?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    {settings?.paymentTransfer?.enabled && (
+                                                                        <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">Titular</label>
+                                                                                <input
+                                                                                    className="input-cyber w-full p-3 text-sm"
+                                                                                    value={settings?.paymentTransfer?.holderName || ''}
+                                                                                    onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, holderName: e.target.value } })}
+                                                                                    placeholder="Nombre y apellido"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">Alias</label>
+                                                                                <input
+                                                                                    className="input-cyber w-full p-3 text-sm"
+                                                                                    value={settings?.paymentTransfer?.alias || ''}
+                                                                                    onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, alias: e.target.value } })}
+                                                                                    placeholder="alias.ejemplo"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">CBU</label>
+                                                                                <input
+                                                                                    className="input-cyber w-full p-3 text-sm"
+                                                                                    value={settings?.paymentTransfer?.cbu || ''}
+                                                                                    onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, cbu: e.target.value } })}
+                                                                                    placeholder="0000000000000000000000"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Cash */}
+                                                                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <Banknote className="w-6 h-6 text-green-400" />
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Efectivo</p>
+                                                                                <p className="text-xs text-slate-500">Pago al recibir</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                // Validar que Retiro en Local esté activo
+                                                                                if (!settings?.shippingPickup?.enabled) {
+                                                                                    showToast('Debes activar "Retiro en Local" (Envíos) para habilitar efectivo.', 'warning');
+                                                                                    return;
+                                                                                }
+                                                                                setSettings({ ...settings, paymentCash: !settings?.paymentCash });
+                                                                            }}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'} ${!settings?.shippingPickup?.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    {!settings?.shippingPickup?.enabled && (
+                                                                        <p className="text-[10px] text-orange-400/80 mt-2 flex items-center gap-1">
+                                                                            <AlertTriangle className="w-3 h-3" /> Requiere activar Retiro en Local
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* MercadoPago (Tarjeta) */}
+                                                                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <CreditCard className="w-6 h-6 text-orange-400" />
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Tarjeta (Mercado Pago)</p>
+                                                                                <p className="text-xs text-slate-500">Activado / Desactivado</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, paymentMercadoPago: { ...settings?.paymentMercadoPago, enabled: !settings?.paymentMercadoPago?.enabled } })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.paymentMercadoPago?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentMercadoPago?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* === SHIPPING === */}
+                                                {settingsTab === 'shipping' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Truck className="w-5 h-5 text-orange-400" /> Opciones de Envío
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                {/* Pickup */}
+                                                                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-4">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <MapPin className="w-6 h-6 text-orange-400" />
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Retiro en Local</p>
+                                                                                <p className="text-xs text-slate-500">El cliente pasa a buscar</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, enabled: !settings?.shippingPickup?.enabled } })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    {settings?.shippingPickup?.enabled && (
+                                                                        <input
+                                                                            className="input-cyber w-full p-4"
+                                                                            value={settings?.shippingPickup?.address || ''}
+                                                                            onChange={e => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, address: e.target.value } })}
+                                                                            placeholder="Dirección de retiro: Av. Corrientes 1234"
+                                                                        />
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Delivery */}
+                                                                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-4">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <Package className="w-6 h-6 text-purple-400" />
+                                                                            <div>
+                                                                                <p className="font-bold text-white">Envío a Domicilio</p>
+                                                                                <p className="text-xs text-slate-500">Delivery estándar</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, enabled: !settings?.shippingDelivery?.enabled } })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.shippingDelivery?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingDelivery?.enabled ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+                                                                    {settings?.shippingDelivery?.enabled && (
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <div>
+                                                                                <label className="text-xs text-slate-500 mb-1 block">Costo de Envío ($)</label>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    className="input-cyber w-full p-4"
+                                                                                    value={settings?.shippingDelivery?.fee || 0}
+                                                                                    onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, fee: parseFloat(e.target.value) || 0 } })}
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-xs text-slate-500 mb-1 block">Gratis desde ($)</label>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    className="input-cyber w-full p-4"
+                                                                                    value={settings?.shippingDelivery?.freeAbove || 0}
+                                                                                    onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, freeAbove: parseFloat(e.target.value) || 0 } })}
+                                                                                    placeholder="0 = nunca gratis"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* === SEO === */}
+                                                {settingsTab === 'seo' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Globe className="w-5 h-5 text-green-400" /> Optimización SEO
+                                                            </h3>
+                                                            <div className="space-y-6">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título del Sitio</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.seoTitle || ''}
+                                                                        onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
+                                                                        placeholder="Mi Tienda Online | Los Mejores Productos"
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-1">Aparece en la pestaña del navegador</p>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta Descripción</label>
+                                                                    <textarea
+                                                                        className="input-cyber w-full p-4 h-20 resize-none"
+                                                                        value={settings?.seoDescription || ''}
+                                                                        onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
+                                                                        placeholder="Tienda online de productos de alta calidad. Envíos a todo el país. ¡Visitanos!"
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-1">Descripción que aparece en Google (max 160 caracteres)</p>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Palabras Clave</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.seoKeywords || ''}
+                                                                        onChange={e => setSettings({ ...settings, seoKeywords: e.target.value })}
+                                                                        placeholder="tienda online, productos, ofertas, descuentos"
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
+                                                                </div>
+
+                                                                {/* URL Canónica */}
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Canónica)</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.seoUrl || ''}
+                                                                        onChange={e => setSettings({ ...settings, seoUrl: e.target.value })}
+                                                                        placeholder="https://mitienda.vercel.app"
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-1">URL oficial de tu tienda (aparece en Google y redes sociales)</p>
+                                                                </div>
+
+                                                                {/* Autor */}
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Autor / Empresa</label>
+                                                                    <input
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.seoAuthor || ''}
+                                                                        onChange={e => setSettings({ ...settings, seoAuthor: e.target.value })}
+                                                                        placeholder="Mi Empresa S.A."
+                                                                    />
+                                                                    <p className="text-xs text-slate-500 mt-1">Nombre que aparece como autor del sitio</p>
+                                                                </div>
+
+                                                                {/* OG Image Upload */}
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen para Redes Sociales (OG:Image)</label>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="relative group w-32 h-32 bg-slate-900 rounded-xl border-2 border-dashed border-slate-700 hover:border-orange-500 transition flex items-center justify-center overflow-hidden cursor-pointer">
+                                                                            {settings?.seoImage ? (
+                                                                                <img src={settings.seoImage} alt="SEO Preview" className="w-full h-full object-cover" />
+                                                                            ) : (
+                                                                                <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-orange-500 transition" />
+                                                                            )}
+                                                                            <input
+                                                                                type="file"
+                                                                                accept="image/*"
+                                                                                className="absolute inset-0 opacity-0 cursor-pointer z-50"
+                                                                                onChange={(e) => handleImageUpload(e, setSettings, 'seoImage', 1200)}
+                                                                            />
+                                                                            {/* Overlay al hacer hover para indicar cambio */}
+                                                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
+                                                                                <Upload className="w-6 h-6 text-white" />
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <p className="text-sm text-slate-400 mb-2">Sube una imagen atractiva (ej: logo con fondo, banner).</p>
+                                                                            <p className="text-xs text-slate-600">Recomendado: 1200x630 píxeles para mejor visualización en Facebook/WhatsApp.</p>
+                                                                            {settings?.seoImage && (
+                                                                                <button
+                                                                                    onClick={() => setSettings({ ...settings, seoImage: '' })}
+                                                                                    className="mt-2 text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
                                                                                 >
-                                                                                    <option value="none">Solo mostrar (sin link)</option>
-                                                                                    <option value="product">Abrir producto</option>
-                                                                                    <option value="promo">Abrir promo</option>
+                                                                                    <Trash2 className="w-3 h-3" /> Eliminar imagen
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Links Status */}
+                                                                <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-4">
+                                                                    <a href="/sitemap.xml" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
+                                                                        <div>
+                                                                            <p className="text-sm font-bold text-white">Ver Sitemap.xml</p>
+                                                                            <p className="text-xs text-green-500">Activo</p>
+                                                                        </div>
+                                                                        <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
+                                                                    </a>
+                                                                    <a href="/robots.txt" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
+                                                                        <div>
+                                                                            <p className="text-sm font-bold text-white">Ver Robots.txt</p>
+                                                                            <p className="text-xs text-green-500">Activo</p>
+                                                                        </div>
+                                                                        <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* === ADVANCED === */}
+                                                {settingsTab === 'advanced' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Cog className="w-5 h-5 text-slate-400" /> Configuración Avanzada
+                                                            </h3>
+                                                            <div className="space-y-4">
+                                                                {/* Maintenance Mode */}
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Modo Mantenimiento</p>
+                                                                        <p className="text-xs text-slate-500">Mostrar página de "Volvemos pronto"</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, maintenanceMode: !settings?.maintenanceMode })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.maintenanceMode ? 'bg-red-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* PWA & Performance Controls */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 space-y-4">
+                                                                    <h4 className="text-sm font-bold text-orange-400 uppercase tracking-wider mb-2">Rendimiento & PWA</h4>
+
+                                                                    {/* Lazy Loading */}
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Carga Diferida (Lazy Load)</p>
+                                                                            <p className="text-xs text-slate-500">Mejora velocidad cargando imágenes al hacer scroll</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, enableLazyLoad: settings?.enableLazyLoad === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.enableLazyLoad !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enableLazyLoad !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* PWA Service Worker */}
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Modo Offline (PWA)</p>
+                                                                            <p className="text-xs text-slate-500">Permite instalar la app y uso sin internet</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, enablePWA: settings?.enablePWA === false ? true : false })}
+                                                                            className={`w-14 h-8 rounded-full transition relative ${settings?.enablePWA !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                        >
+                                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enablePWA !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Clear Cache Button */}
+                                                                    <div className="pt-2 border-t border-slate-700">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                if ('caches' in window) {
+                                                                                    caches.keys().then(names => {
+                                                                                        names.forEach(name => caches.delete(name));
+                                                                                        showToast('Caché limpiada. Recargando...', 'success');
+                                                                                        setTimeout(() => window.location.reload(), 1500);
+                                                                                    });
+                                                                                } else {
+                                                                                    showToast('Tu navegador no soporta gestión de caché', 'warning');
+                                                                                }
+                                                                            }}
+                                                                            className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" /> Forzar Limpieza de Caché y Recargar
+                                                                        </button>
+                                                                        <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores gráficos o versiones antiguas.</p>
+                                                                    </div>
+
+                                                                    {/* UTF-8 Text Sanitize */}
+                                                                    <div className="pt-2 border-t border-slate-700">
+                                                                        <button
+                                                                            disabled={isSanitizingText || !appId}
+                                                                            onClick={() => openConfirm(
+                                                                                'Reparar textos (UTF-8)',
+                                                                                'Se corregirán caracteres rotos en la configuración y datos guardados de esta tienda. ¿Continuar?',
+                                                                                async () => {
+                                                                                    await runTextSanitization();
+                                                                                }
+                                                                            )}
+                                                                            className="w-full py-2 px-4 bg-cyan-900/40 hover:bg-cyan-800/50 border border-cyan-500/30 text-cyan-200 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            {isSanitizingText ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                                                            {isSanitizingText ? 'Reparando textos…' : 'Reparar textos (UTF-8)'}
+                                                                        </button>
+                                                                        <p className="text-xs text-slate-500 mt-2 text-center">Corrige mojibake en Firestore sin modificar el tono de los textos.</p>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Loading Text */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div className="mb-3">
+                                                                        <p className="font-bold text-white">Texto de Carga</p>
+                                                                        <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la página</p>
+                                                                    </div>
+                                                                    <input
+                                                                        className="input-cyber w-full p-3"
+                                                                        value={settings?.loadingText || ''}
+                                                                        onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
+                                                                        placeholder="Cargando sistema..."
+                                                                    />
+                                                                </div>
+
+                                                                {/* Show Announcement Banner */}
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Banner de Anuncio</p>
+                                                                        <p className="text-xs text-slate-500">Barra superior con mensaje promocional</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showAnnouncementBanner: settings?.showAnnouncementBanner === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showAnnouncementBanner !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showAnnouncementBanner !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Show Brand Ticker */}
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Ticker de Marca</p>
+                                                                        <p className="text-xs text-slate-500">Texto en movimiento debajo del anuncio</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Show Stock */}
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Mostrar Stock Disponible</p>
+                                                                        <p className="text-xs text-slate-500">Los clientes ven cuántas unidades hay</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, showStockCount: settings?.showStockCount === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.showStockCount !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showStockCount !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Require Phone */}
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Requerir Teléfono</p>
+                                                                        <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, requirePhone: settings?.requirePhone === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.requirePhone !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requirePhone !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Require DNI */}
+                                                                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div>
+                                                                        <p className="font-bold text-white">Requerir DNI</p>
+                                                                        <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSettings({ ...settings, requireDNI: settings?.requireDNI === false ? true : false })}
+                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.requireDNI !== false ? 'bg-green-500' : 'bg-slate-700'}`}
+                                                                    >
+                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requireDNI !== false ? 'left-7' : 'left-1'}`}></div>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Low Stock Threshold */}
+                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div>
+                                                                            <p className="font-bold text-white">Umbral de Stock Bajo</p>
+                                                                            <p className="text-xs text-slate-500">Alerta cuando el stock es menor a este valor</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-cyber w-full p-4"
+                                                                        value={settings?.lowStockThreshold || 5}
+                                                                        onChange={e => setSettings({ ...settings, lowStockThreshold: parseInt(e.target.value) || 5 })}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* AI Config Block (SustIA) */}
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Sparkles className="w-5 h-5 text-yellow-500" /> Personalización IA
+                                                            </h3>
+                                                            <div className="flex items-center gap-6">
+                                                                <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-dashed border-slate-700 hover:border-yellow-500 transition flex items-center justify-center overflow-hidden cursor-pointer shrink-0 shadow-xl">
+                                                                    {settings?.botImage ? (
+                                                                        <img src={settings.botImage} alt="Bot Preview" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <Sparkles className="w-8 h-8 text-slate-600 group-hover:text-yellow-500 transition" />
+                                                                    )}
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        className="absolute inset-0 opacity-0 cursor-pointer z-50"
+                                                                        onChange={(e) => handleImageUpload(e, setSettings, 'botImage', 300)}
+                                                                    />
+                                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
+                                                                        <Upload className="w-6 h-6 text-white" />
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-bold text-white text-base mb-1">Avatar del Asistente</p>
+                                                                    <p className="text-xs text-slate-500 mb-3 max-w-xs leading-relaxed">Sube una imagen personalizada para el bot (PNG/JPG). Se recomienda formato cuadrado.</p>
+                                                                    {settings?.botImage ? (
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, botImage: '' })}
+                                                                            className="text-xs bg-red-900/20 text-red-400 hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition flex items-center gap-2 border border-red-500/20"
+                                                                        >
+                                                                            <Trash2 className="w-3 h-3" /> Restaurar Default
+                                                                        </button>
+                                                                    ) : (
+                                                                        <span className="text-xs text-yellow-600 bg-yellow-900/20 px-3 py-1 rounded-lg border border-yellow-700/30">
+                                                                            Usando imagen por defecto
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <FolderPlus className="w-5 h-5 text-orange-400" /> Categorías de Productos
+                                                            </h3>
+                                                            <div className="flex flex-wrap gap-2 mb-4">
+                                                                {(settings?.categories || []).map((cat, idx) => (
+                                                                    <div key={idx} className="bg-slate-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-700">
+                                                                        <span>{cat}</span>
+                                                                        <button
+                                                                            onClick={() => setSettings({ ...settings, categories: (settings?.categories || []).filter((_, i) => i !== idx) })}
+                                                                            className="text-red-400 hover:text-red-300"
+                                                                        >
+                                                                            <X className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setShowCategoryModal(true)}
+                                                                className="px-4 py-2 bg-orange-900/20 text-orange-400 rounded-lg font-bold text-sm border border-orange-500/30 hover:bg-orange-900/40 transition flex items-center gap-2"
+                                                            >
+                                                                <Plus className="w-4 h-4" /> Agregar Categoría
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* === TEAM === */}
+                                                {settingsTab === 'team' && (
+                                                    <div className="space-y-6 animate-fade-up">
+                                                        <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
+                                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                                                <Users className="w-5 h-5 text-purple-400" /> Equipo y Accesos
+                                                            </h3>
+                                                            <p className="text-slate-500 mb-6">Gestiona los miembros del equipo, sus roles de acceso y participación en ganancias.</p>
+
+                                                            <div className="space-y-4 mb-6">
+                                                                {(settings?.team || []).map((member, idx) => (
+                                                                    <div key={idx} className="flex flex-col md:flex-row md:items-center gap-4 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                                                            {member.name?.charAt(0)?.toUpperCase() || '?'}
+                                                                        </div>
+                                                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                                            <div>
+                                                                                <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Nombre</label>
+                                                                                <input
+                                                                                    className="input-cyber w-full p-2 text-sm"
+                                                                                    value={member.name || ''}
+                                                                                    onChange={e => {
+                                                                                        const updated = [...(settings?.team || [])];
+                                                                                        updated[idx] = { ...updated[idx], name: e.target.value };
+                                                                                        setSettings({ ...settings, team: updated });
+                                                                                    }}
+                                                                                    placeholder="Nombre"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Email (Acceso)</label>
+                                                                                <input
+                                                                                    type="email"
+                                                                                    className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                                    value={member.email || ''}
+                                                                                    onChange={e => {
+                                                                                        const updated = [...(settings?.team || [])];
+                                                                                        updated[idx] = { ...updated[idx], email: e.target.value };
+                                                                                        setSettings({ ...settings, team: updated });
+                                                                                    }}
+                                                                                    placeholder="usuario@email.com"
+                                                                                    disabled={member.email === SUPER_ADMIN_EMAIL}
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Rol</label>
+                                                                                <select
+                                                                                    className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                                    value={member.role || 'employee'}
+                                                                                    onChange={e => {
+                                                                                        const updated = [...(settings?.team || [])];
+                                                                                        updated[idx] = { ...updated[idx], role: e.target.value };
+                                                                                        setSettings({ ...settings, team: updated });
+                                                                                    }}
+                                                                                    disabled={member.email === SUPER_ADMIN_EMAIL}
+                                                                                >
+                                                                                    <option value="employee">Empleado</option>
+                                                                                    <option value="admin">Admin</option>
                                                                                 </select>
                                                                             </div>
                                                                             <div>
-                                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Orden (0 = primero)</label>
-                                                                                <input
-                                                                                    type="number"
-                                                                                    className="input-cyber w-full p-3"
-                                                                                    value={Number.isFinite(Number(newHomeBanner?.order)) ? Number(newHomeBanner.order) : 0}
-                                                                                    onChange={(e) => setNewHomeBanner(prev => ({ ...prev, order: e.target.value }))}
-                                                                                />
-                                                                                <p className="text-xs text-slate-500 mt-2">Menor número aparece primero (0, 1, 2...).</p>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {newHomeBanner?.targetType !== 'none' && (
-                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                                <div>
-                                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                                                                                        {newHomeBanner?.targetType === 'promo' ? 'Promo al hacer click' : 'Producto al hacer click'}
-                                                                                    </label>
-                                                                                    <select
-                                                                                        className="input-cyber w-full p-3"
-                                                                                        value={newHomeBanner?.targetId || ''}
-                                                                                        onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetId: e.target.value }))}
-                                                                                    >
-                                                                                        <option value="">Seleccionar...</option>
-                                                                                        {(newHomeBanner?.targetType === 'promo' ? [...promos] : [...products])
-                                                                                            .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''))
-                                                                                            .map(item => (
-                                                                                                <option key={item.id} value={item.id}>{item.name}</option>
-                                                                                            ))}
-                                                                                    </select>
-                                                                                </div>
-                                                                                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 flex items-center gap-4">
-                                                                                    {(() => {
-                                                                                        const isPromo = newHomeBanner?.targetType === 'promo';
-                                                                                        const item = isPromo
-                                                                                            ? promos.find(p => p.id === newHomeBanner?.targetId)
-                                                                                            : products.find(p => p.id === newHomeBanner?.targetId);
-                                                                                        const img = isPromo ? item?.image : item?.image;
-                                                                                        return (
-                                                                                            <>
-                                                                                                <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
-                                                                                                    {img ? <img src={img} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon className="w-6 h-6 text-slate-600" />}
-                                                                                                </div>
-                                                                                                <div className="min-w-0">
-                                                                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Vista previa</p>
-                                                                                                    <p className="font-black text-white truncate">{item?.name || 'Sin selección'}</p>
-                                                                                                </div>
-                                                                                            </>
-                                                                                        );
-                                                                                    })()}
+                                                                                <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Total Invertido</label>
+                                                                                <div className="input-cyber w-full p-2 text-sm bg-slate-900/50 text-slate-400 flex items-center cursor-not-allowed">
+                                                                                    $ {investments.filter(inv => inv.investor === member.name || inv.investor === member.email).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toLocaleString()}
                                                                                 </div>
                                                                             </div>
-                                                                        )}
-
-                                                                        <div className="flex flex-col md:flex-row md:items-center gap-4">
-                                                                            <div className="flex items-center justify-between flex-1 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                                <div>
-                                                                                    <p className="font-bold text-white">Slide habilitado</p>
-                                                                                    <p className="text-xs text-slate-500">Si está apagado no se muestra.</p>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setNewHomeBanner(prev => ({ ...prev, enabled: prev?.enabled === false ? true : false }))}
-                                                                                    className={`w-14 h-8 rounded-full transition relative ${newHomeBanner?.enabled !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                                >
-                                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${newHomeBanner?.enabled !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                                </button>
-                                                                            </div>
-
-                                                                            <div className="flex gap-3">
-                                                                                {editingHomeBannerId && (
-                                                                                    <button
-                                                                                        onClick={resetHomeBannerForm}
-                                                                                        className="px-6 py-3 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition"
-                                                                                    >
-                                                                                        Cancelar
-                                                                                    </button>
-                                                                                )}
-                                                                                <button
-                                                                                    onClick={saveHomeBannerFn}
-                                                                                    className="px-8 py-3 bg-orange-600 rounded-xl text-white font-bold shadow-lg hover:bg-orange-500 transition"
-                                                                                >
-                                                                                    {editingHomeBannerId ? 'Guardar Slide' : 'Agregar Slide'}
-                                                                                </button>
-                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="space-y-3">
-                                                                    {homeBanners.length === 0 ? (
-                                                                        <p className="text-slate-500 text-sm">Todavía no hay slides en el carrusel.</p>
-                                                                    ) : (
-                                                                        homeBanners.map(b => {
-                                                                            const targetType = b.targetType || (b.promoId ? 'promo' : b.productId ? 'product' : 'none');
-                                                                            const targetId = b.targetId || b.promoId || b.productId || '';
-                                                                            const targetItem = targetType === 'promo'
-                                                                                ? promos.find(p => p.id === targetId)
-                                                                                : targetType === 'product'
-                                                                                    ? products.find(p => p.id === targetId)
-                                                                                    : null;
-                                                                            const targetName = targetType === 'none'
-                                                                                ? 'Solo imagen'
-                                                                                : targetItem?.name || (targetType === 'promo' ? 'Promo inexistente' : 'Producto inexistente');
-                                                                            const isEnabled = b?.enabled !== false;
-                                                                            return (
-                                                                                <div key={b.id} className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-slate-900/40 rounded-2xl border border-slate-800">
-                                                                                    <div className="w-full md:w-40 h-20 rounded-xl overflow-hidden border border-slate-700 bg-black/30 flex-shrink-0">
-                                                                                        {b?.imageUrl ? (
-                                                                                            <img src={b.imageUrl} className="w-full h-full object-cover" alt="Slide" />
-                                                                                        ) : null}
-                                                                                    </div>
-                                                                                    <div className="flex-1 min-w-0">
-                                                                                        <div className="flex items-center gap-3 flex-wrap">
-                                                                                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-700 bg-black/30 flex items-center justify-center flex-shrink-0">
-                                                                                                {targetItem?.image ? <img src={targetItem.image} className="w-full h-full object-cover" alt="Target" /> : <ImageIcon className="w-4 h-4 text-slate-600" />}
-                                                                                            </div>
-                                                                                            <p className="font-black text-white truncate">{targetName}</p>
-                                                                                            <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${isEnabled ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-800/30'}`}>
-                                                                                                {isEnabled ? 'ACTIVO' : 'PAUSADO'}
-                                                                                            </span>
-                                                                                            <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
-                                                                                                {targetType === 'promo' ? 'PROMO' : targetType === 'product' ? 'PRODUCTO' : 'SIN LINK'}
-                                                                                            </span>
-                                                                                            <span className="text-[10px] font-black px-2 py-1 rounded-lg border border-slate-700 bg-slate-800/30 text-slate-300">
-                                                                                                ORDEN {Number.isFinite(Number(b.order)) ? Number(b.order) : 0}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                        <p className="text-xs text-slate-500 mt-1 truncate">{targetType === 'none' ? 'Click desactivado' : targetId}</p>
-                                                                                    </div>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <button
-                                                                                            onClick={() => editHomeBannerFn(b)}
-                                                                                            className="px-4 py-2 rounded-xl font-bold border border-slate-700 text-slate-200 hover:bg-slate-900/60 transition flex items-center gap-2"
-                                                                                        >
-                                                                                            <Edit className="w-4 h-4" /> Editar
-                                                                                        </button>
-                                                                                        <button
-                                                                                            onClick={() => deleteHomeBannerFn(b)}
-                                                                                            className="px-4 py-2 rounded-xl font-bold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition flex items-center gap-2"
-                                                                                        >
-                                                                                            <Trash2 className="w-4 h-4" /> Eliminar
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </div>
-                                                                            );
-                                                                        })
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Save Button for carousel settings - only for super admin */}
-                                                        {currentUser?.email === SUPER_ADMIN_EMAIL && (
-                                                            <div className="fixed bottom-8 right-8 z-50">
-                                                                <button
-                                                                    onClick={async () => {
-                                                                        try {
-                                                                            setIsLoading(true);
-                                                                            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
-                                                                            await setDoc(settingsRef, settings, { merge: true });
-                                                                            showToast("Configuración del carrusel guardada", "success");
-                                                                        } catch (e) {
-                                                                            console.error(e);
-                                                                            showToast("Error al guardar", "error");
-                                                                        } finally {
-                                                                            setIsLoading(false);
-                                                                        }
-                                                                    }}
-                                                                    className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
-                                                                >
-                                                                    <Save className="w-5 h-5" /> Guardar Cambios
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
-                                    {adminTab === 'settings' && (
-                                        <div className="max-w-6xl mx-auto animate-fade-up pb-20 relative">
-
-                                            {/* Developer-Only Access Block */}
-                                            {currentUser?.email !== SUPER_ADMIN_EMAIL && (
-                                                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-[2.5rem]">
-                                                    <div className="text-center p-8 max-w-lg">
-                                                        <div className="w-24 h-24 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
-                                                            <Shield className="w-12 h-12 text-red-400" />
-                                                        </div>
-                                                        <h3 className="text-3xl font-black text-white mb-4">Acceso Restringido</h3>
-                                                        <p className="text-slate-400 mb-6">Esta sección está reservada únicamente para el <span className="text-orange-400 font-bold">desarrollador</span> de la plataforma.</p>
-                                                        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mb-6">
-                                                            <p className="text-sm text-slate-500 mb-2">Para solicitar cambios en la configuración, contacta a:</p>
-                                                            <p className="text-orange-400 font-bold text-lg">lautarocorazza63@gmail.com</p>
-                                                        </div>
-                                                        <p className="text-xs text-slate-600">Si necesitas modificar tu tienda, envía un email detallando los cambios que deseas realizar.</p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-                                                <h1 className="text-4xl font-black text-white neon-text flex items-center gap-3">
-                                                    <Settings className="w-8 h-8 text-orange-500 animate-spin-slow" /> Configuración General
-                                                </h1>
-                                                <AdminHowToUse guideKey="settings" />
-                                            </div>
-
-                                            {/* Sub-Navigation Tabs */}
-                                            <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-slate-800">
-                                                {[
-                                                    { id: 'store', label: 'Tienda', icon: Store },
-                                                    { id: 'appearance', label: 'Apariencia', icon: Palette },
-                                                    { id: 'social', label: 'Redes', icon: Share2 },
-                                                    { id: 'payments', label: 'Pagos', icon: CreditCard },
-                                                    { id: 'ticket', label: 'Ticket', icon: Ticket },
-                                                    { id: 'shipping', label: 'Envíos', icon: Truck },
-                                                    { id: 'seo', label: 'SEO', icon: Globe },
-                                                    { id: 'advanced', label: 'Avanzado', icon: Cog },
-                                                    { id: 'team', label: 'Equipo', icon: Users },
-                                                    // Only show Subscription tab to Super Admin
-                                                    ...(currentUser?.email === SUPER_ADMIN_EMAIL ? [{ id: 'subscription', label: 'Suscripciones', icon: Zap }] : [])
-                                                ].map(tab => (
-                                                    <button
-                                                        key={tab.id}
-                                                        onClick={() => setSettingsTab(tab.id)}
-                                                        className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all duration-300 border ${settingsTab === tab.id ? 'bg-orange-600 text-white shadow-[0_0_20px_rgba(8,145,178,0.4)] border-orange-400 transform scale-105' : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'}`}
-                                                    >
-                                                        <tab.icon className={`w-4 h-4 ${settingsTab === tab.id ? 'animate-pulse' : ''}`} /> {tab.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-
-                                            {/* === SUBSCRIPTION MANAGEMENT (SUPER ADMIN ONLY) === */}
-                                            {settingsTab === 'subscription' && currentUser?.email === SUPER_ADMIN_EMAIL && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-orange-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(249,115,22,0.1)]">
-                                                        <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                                                            <Zap className="w-6 h-6 text-yellow-500 fill-current" />
-                                                            Modelos de Suscripción
-                                                        </h3>
-
-                                                        <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center gap-4">
-                                                            <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                                                            <div>
-                                                                <p className="font-bold text-yellow-500">Zona de Peligro: Super Admin</p>
-                                                                <p className="text-sm text-yellow-200">Cambiar el plan afecta inmediatamente los límites y funcionalidades de la tienda.</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="mb-8 p-6 bg-slate-900/40 border border-slate-800 rounded-2xl">
-                                                            <div className="flex items-center justify-between gap-4 flex-wrap">
-                                                                <div>
-                                                                    <p className="text-white font-black text-lg">Backup de Tienda</p>
-                                                                    <p className="text-slate-500 text-xs font-mono">storeId: {appId || '—'}</p>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <button
-                                                                        disabled={isExportingBackup || !appId}
-                                                                        onClick={exportBackup}
-                                                                        className="px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-black text-[10px] uppercase tracking-widest hover:bg-green-500/20 transition disabled:opacity-50"
-                                                                    >
-                                                                        {isExportingBackup ? 'Exportando…' : 'Exportar'}
-                                                                    </button>
-                                                                    <label className={`px-4 py-3 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-200 font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600/30 transition ${isImportingBackup || !appId ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                                        {isImportingBackup ? 'Importando…' : 'Importar'}
-                                                                        <input
-                                                                            type="file"
-                                                                            accept="application/json"
-                                                                            className="hidden"
-                                                                            onChange={(e) => {
-                                                                                const file = e.target.files && e.target.files[0];
-                                                                                if (file) importBackupFile(file);
-                                                                                e.target.value = '';
-                                                                            }}
-                                                                        />
-                                                                    </label>
-                                                                </div>
-                                                            </div>
-                                                            <p className="text-slate-600 text-xs mt-4">Importar escribe con merge (no borra por defecto). Usalo con cuidado.</p>
-                                                        </div>
-
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                            {/* Plan Emprendedor */}
-                                                            <button
-                                                                onClick={() => handlePlanChange('entrepreneur')}
-                                                                className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan ? 'bg-slate-900 border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
-                                                            >
-                                                                <div className="flex justify-between items-start mb-4">
-                                                                    <div className="p-3 bg-slate-800 rounded-xl">
-                                                                        <Store className="w-6 h-6 text-orange-400" />
-                                                                    </div>
-                                                                    {(settings.subscriptionPlan === 'entrepreneur' || !settings.subscriptionPlan) && <div className="bg-orange-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
-                                                                </div>
-                                                                <h4 className="text-xl font-black text-white mb-1">Emprendedor</h4>
-                                                                <p className="text-sm text-slate-400 mb-4 h-10">El esencial para arrancar sólido y económico.</p>
-                                                                <div className="text-2xl font-black text-orange-400 mb-6">US$5.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-
-                                                                <ul className="space-y-2 text-sm text-slate-300">
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Hasta 30 productos</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Mercado Pago integrado</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> 1 promoción activa</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Panel de control completo</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-orange-500" /> Soporte técnico por Gmail</li>
-                                                                </ul>
-                                                            </button>
-
-                                                            {/* Plan Negocio */}
-                                                            <button
-                                                                onClick={() => handlePlanChange('business')}
-                                                                className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'business' ? 'bg-slate-900 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
-                                                            >
-                                                                <div className="flex justify-between items-start mb-4">
-                                                                    <div className="p-3 bg-slate-800 rounded-xl">
-                                                                        <Briefcase className="w-6 h-6 text-purple-400" />
-                                                                    </div>
-                                                                    {settings.subscriptionPlan === 'business' && <div className="bg-purple-500 text-white text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
-                                                                </div>
-                                                                <h4 className="text-xl font-black text-white mb-1">Negocio</h4>
-                                                                <p className="text-sm text-slate-400 mb-4 h-10">Para marcas con identidad definida.</p>
-                                                                <div className="text-2xl font-black text-purple-400 mb-6">US$9.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-
-                                                                <ul className="space-y-2 text-sm text-slate-300">
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Incluye todo Emprendedor</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Hasta 50 productos</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Promociones ilimitadas + cupones</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Analítica de clientes + carrusel</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-purple-500" /> Botón WhatsApp flotante</li>
-                                                                </ul>
-                                                            </button>
-
-                                                            {/* Plan Premium */}
-                                                            <button
-                                                                onClick={() => handlePlanChange('premium')}
-                                                                className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${settings.subscriptionPlan === 'premium' ? 'bg-slate-900 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-105 z-10' : 'bg-[#050505] border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'}`}
-                                                            >
-                                                                <div className="flex justify-between items-start mb-4">
-                                                                    <div className="p-3 bg-slate-800 rounded-xl">
-                                                                        <Sparkles className="w-6 h-6 text-yellow-400" />
-                                                                    </div>
-                                                                    {settings.subscriptionPlan === 'premium' && <div className="bg-yellow-500 text-black text-xs font-black px-2 py-1 rounded">ACTIVO</div>}
-                                                                </div>
-                                                                <h4 className="text-xl font-black text-white mb-1">Premium</h4>
-                                                                <p className="text-sm text-slate-400 mb-4 h-10">Servicio full con IA.</p>
-                                                                <div className="text-2xl font-black text-yellow-400 mb-6">US$17.99 <span className="text-sm text-slate-500 font-normal">/mes</span></div>
-
-                                                                <ul className="space-y-2 text-sm text-slate-300">
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Incluye todo Negocio</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Productos y promos ilimitados</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Asistente IA 24/7 (SustIA)</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Carga VIP inicial (10 productos)</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Mantenimiento mensual full</li>
-                                                                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-yellow-500" /> Omnicanalidad total</li>
-                                                                </ul>
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Billing Cycle Selection */}
-                                                        <div className="mt-8 pt-8 border-t border-slate-800/50">
-                                                            <h4 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
-                                                                <Calendar className="w-5 h-5 text-green-400" /> Ciclo de Facturación
-                                                            </h4>
-                                                            <div className="grid grid-cols-3 gap-4">
-                                                                {[
-                                                                    { id: 'Semanal', label: 'Semanal' },
-                                                                    { id: 'Mensual', label: 'Mensual' },
-                                                                    { id: 'Anual', label: 'Anual' }
-                                                                ].map(cycle => (
-                                                                    <button
-                                                                        key={cycle.id}
-                                                                        onClick={() => setSettings({ ...settings, subscriptionBillingCycle: cycle.id })}
-                                                                        className={`p-3 rounded-xl border transition-all font-bold ${settings?.subscriptionBillingCycle === cycle.id
-                                                                            ? 'bg-green-500 text-black border-green-400 shadow-lg shadow-green-500/20'
-                                                                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
-                                                                            }`}
-                                                                    >
-                                                                        {cycle.label}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                            <p className="text-xs text-slate-500 mt-2">Define la frecuencia de cobro para este plan.</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {settingsTab === 'store' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Store className="w-5 h-5 text-orange-400" /> Información de la Tienda
-                                                        </h3>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre de la Tienda</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.storeName || ''}
-                                                                    onChange={e => setSettings({ ...settings, storeName: e.target.value })}
-                                                                    placeholder="Mi Tienda"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Email de Contacto</label>
-                                                                <input
-                                                                    type="email"
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.storeEmail || ''}
-                                                                    onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
-                                                                    placeholder="contacto@mitienda.com"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Teléfono</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.storePhone || ''}
-                                                                    onChange={e => setSettings({ ...settings, storePhone: e.target.value })}
-                                                                    placeholder="+54 11 1234-5678"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Dirección</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.storeAddress || ''}
-                                                                    onChange={e => setSettings({ ...settings, storeAddress: e.target.value })}
-                                                                    placeholder="Av. Corrientes 1234, CABA"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-6">
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción de la Tienda</label>
-                                                            <textarea
-                                                                className="input-cyber w-full p-4 h-24 resize-none"
-                                                                value={settings?.storeDescription || ''}
-                                                                onChange={e => setSettings({ ...settings, storeDescription: e.target.value })}
-                                                                placeholder="Breve descripción de tu tienda..."
-                                                            />
-                                                        </div>
-                                                        <div className="mt-6">
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto de Nosotros</label>
-                                                            <textarea
-                                                                className="input-cyber w-full p-4 h-32 resize-none"
-                                                                value={settings?.aboutUsText || ''}
-                                                                onChange={e => setSettings({ ...settings, aboutUsText: e.target.value })}
-                                                                placeholder="Historia de tu marca, valores, misión..."
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Copyright Configuration */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <FileText className="w-5 h-5 text-orange-400" /> Textos de Copyright
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Menú Lateral</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.menuCopyright || ''}
-                                                                    onChange={e => setSettings({ ...settings, menuCopyright: e.target.value })}
-                                                                    placeholder={`${settings?.storeName || 'Mi Tienda'} © ${new Date().getFullYear()}`}
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-2">Aparece al final del menú hamburguesa</p>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Copyright del Footer</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.footerCopyright || ''}
-                                                                    onChange={e => setSettings({ ...settings, footerCopyright: e.target.value })}
-                                                                    placeholder={`© ${new Date().getFullYear()} ${settings?.storeName || 'Mi Tienda'}. All rights reserved.`}
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-2">Aparece en la barra inferior del sitio</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Guía "Cómo Comprar" Configuration */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <FileQuestion className="w-5 h-5 text-orange-400" /> Guía "Cómo Comprar"
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            {/* Toggle para mostrar la página */}
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Mostrar en Menú</p>
-                                                                    <p className="text-xs text-slate-500">Mostrar enlace "Cómo Comprar" en el menú lateral</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showGuideLink: settings?.showGuideLink === false ? true : false })}
-                                                                    className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showGuideLink !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideLink !== false ? 'left-8' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* Título de la página */}
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de la Página</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.guideTitle || ''}
-                                                                    onChange={e => setSettings({ ...settings, guideTitle: e.target.value })}
-                                                                    placeholder="Cómo Comprar"
-                                                                />
-                                                            </div>
-
-                                                            {/* Paso 1 */}
-                                                            <div className="border-t border-slate-800 pt-4">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">1</span>
-                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 1</label>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showGuideStep1: settings?.showGuideStep1 === false ? true : false })}
-                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep1 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep1 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep1 === false ? 'opacity-50' : ''}`}>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep1Title || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep1Title: e.target.value })}
-                                                                        placeholder="Selecciona Productos"
-                                                                        disabled={settings?.showGuideStep1 === false}
-                                                                    />
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep1Text || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep1Text: e.target.value })}
-                                                                        placeholder="Descripción del paso..."
-                                                                        disabled={settings?.showGuideStep1 === false}
-                                                                    />
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Paso 2 */}
-                                                            <div className="border-t border-slate-800 pt-4">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">2</span>
-                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 2</label>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showGuideStep2: settings?.showGuideStep2 === false ? true : false })}
-                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep2 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep2 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep2 === false ? 'opacity-50' : ''}`}>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep2Title || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep2Title: e.target.value })}
-                                                                        placeholder="Revisa tu Carrito"
-                                                                        disabled={settings?.showGuideStep2 === false}
-                                                                    />
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep2Text || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep2Text: e.target.value })}
-                                                                        placeholder="Descripción del paso..."
-                                                                        disabled={settings?.showGuideStep2 === false}
-                                                                    />
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Paso 3 */}
-                                                            <div className="border-t border-slate-800 pt-4">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">3</span>
-                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 3</label>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showGuideStep3: settings?.showGuideStep3 === false ? true : false })}
-                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep3 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep3 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep3 === false ? 'opacity-50' : ''}`}>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep3Title || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep3Title: e.target.value })}
-                                                                        placeholder="Datos de Envío"
-                                                                        disabled={settings?.showGuideStep3 === false}
-                                                                    />
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep3Text || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep3Text: e.target.value })}
-                                                                        placeholder="Descripción del paso..."
-                                                                        disabled={settings?.showGuideStep3 === false}
-                                                                    />
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Paso 4 */}
-                                                            <div className="border-t border-slate-800 pt-4">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">4</span>
-                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 4</label>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showGuideStep4: settings?.showGuideStep4 === false ? true : false })}
-                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep4 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep4 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep4 === false ? 'opacity-50' : ''}`}>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep4Title || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep4Title: e.target.value })}
-                                                                        placeholder="Pago y Confirmación"
-                                                                        disabled={settings?.showGuideStep4 === false}
-                                                                    />
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep4Text || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep4Text: e.target.value })}
-                                                                        placeholder="Descripción del paso..."
-                                                                        disabled={settings?.showGuideStep4 === false}
-                                                                    />
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Paso 5 */}
-                                                            <div className="border-t border-slate-800 pt-4">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-6 h-6 rounded-full bg-orange-900/30 text-orange-400 text-xs font-bold flex items-center justify-center">5</span>
-                                                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Paso 5</label>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showGuideStep5: settings?.showGuideStep5 === false ? true : false })}
-                                                                        className={`w-10 h-5 rounded-full transition-all duration-300 relative ${settings?.showGuideStep5 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showGuideStep5 !== false ? 'left-6' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${settings?.showGuideStep5 === false ? 'opacity-50' : ''}`}>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep5Title || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep5Title: e.target.value })}
-                                                                        placeholder="¡Listo!"
-                                                                        disabled={settings?.showGuideStep5 === false}
-                                                                    />
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.guideStep5Text || ''}
-                                                                        onChange={e => setSettings({ ...settings, guideStep5Text: e.target.value })}
-                                                                        placeholder="Descripción del paso..."
-                                                                        disabled={settings?.showGuideStep5 === false}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Bell className="w-5 h-5 text-yellow-400" /> Anuncios
-                                                        </h3>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Anuncio (Banner superior)</label>
-                                                            <input
-                                                                className="input-cyber w-full p-4"
-                                                                value={settings?.announcementMessage || ''}
-                                                                onChange={e => setSettings({ ...settings, announcementMessage: e.target.value })}
-                                                                placeholder="🔥 ¡Envío gratis en compras mayores a $50.000!"
-                                                            />
-                                                            <p className="text-xs text-slate-500 mt-2">Dejar vacío para ocultar el banner.</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Zap className="w-5 h-5 text-yellow-500" /> Pantalla de Carga
-                                                        </h3>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título de Carga</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.loadingTitle || ''}
-                                                                    onChange={e => setSettings({ ...settings, loadingTitle: e.target.value })}
-                                                                    placeholder={settings?.storeName || "SUSTORE"}
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-2">Aparece en grande (ej. SUSTORE).</p>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mensaje de Carga</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.loadingText || ''}
-                                                                    onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
-                                                                    placeholder="Cargando sistema..."
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-2">Texto pequeño debajo del título.</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* === APPEARANCE === */}
-                                            {settingsTab === 'appearance' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <ImageIcon className="w-5 h-5 text-purple-400" /> Imágenes
-                                                        </h3>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen Hero (Banner Principal)</label>
-                                                                <input
-                                                                    type="file"
-                                                                    accept="image/*"
-                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl')}
-                                                                    className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
-                                                                />
-                                                                {settings?.heroUrl && (
-                                                                    <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
-                                                                        <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Logo de la Tienda</label>
-                                                                <input
-                                                                    type="file"
-                                                                    accept="image/*"
-                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'logoUrl')}
-                                                                    className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-900/20 file:text-orange-400 hover:file:bg-orange-900/40 transition"
-                                                                />
-                                                                {settings?.logoUrl && (
-                                                                    <div className="mt-4 w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-white p-2">
-                                                                        <img src={settings.logoUrl} className="w-full h-full object-contain" alt="Logo Preview" />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Palette className="w-5 h-5 text-pink-400" /> Colores del Tema
-                                                        </h3>
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Primario</label>
-                                                                <div className="flex gap-3 items-center">
-                                                                    <input
-                                                                        type="color"
-                                                                        value={settings?.primaryColor || '#f97316'}
-                                                                        onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
-                                                                        className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
-                                                                    />
-                                                                    <input
-                                                                        type="text"
-                                                                        value={settings?.primaryColor || '#f97316'}
-                                                                        onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
-                                                                        className="input-cyber flex-1 p-3 font-mono"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Secundario</label>
-                                                                <div className="flex gap-3 items-center">
-                                                                    <input
-                                                                        type="color"
-                                                                        value={settings?.secondaryColor || '#8b5cf6'}
-                                                                        onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
-                                                                        className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
-                                                                    />
-                                                                    <input
-                                                                        type="text"
-                                                                        value={settings?.secondaryColor || '#8b5cf6'}
-                                                                        onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
-                                                                        className="input-cyber flex-1 p-3 font-mono"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Color Acento</label>
-                                                                <div className="flex gap-3 items-center">
-                                                                    <input
-                                                                        type="color"
-                                                                        value={settings?.accentColor || '#22c55e'}
-                                                                        onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
-                                                                        className="w-12 h-12 rounded-lg border border-slate-700 cursor-pointer"
-                                                                    />
-                                                                    <input
-                                                                        type="text"
-                                                                        value={settings?.accentColor || '#22c55e'}
-                                                                        onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
-                                                                        className="input-cyber flex-1 p-3 font-mono"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Brand Ticker Configuration */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Sparkles className="w-5 h-5 text-orange-400" /> Ticker de Marca
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Mostrar Ticker</p>
-                                                                    <p className="text-xs text-slate-500">Activar/desactivar la cinta de texto animada.</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-orange-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Ticker</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.tickerText || ''}
-                                                                    onChange={e => setSettings({ ...settings, tickerText: e.target.value })}
-                                                                    placeholder="TECNOLOGÍA • INNOVACIÓN • CALIDAD PREMIUM • FUTURO"
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-2">Este texto se repetirá en bucle.</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Hero Banner Configuration */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <ImageIcon className="w-5 h-5 text-purple-400" /> Banner Principal (Hero)
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Badge/Etiqueta</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.heroBadge || ''}
-                                                                    onChange={e => setSettings({ ...settings, heroBadge: e.target.value })}
-                                                                    placeholder="Nueva Colección 2026"
-                                                                />
-                                                            </div>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                <div>
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 1</label>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.heroTitle1 || ''}
-                                                                        onChange={e => setSettings({ ...settings, heroTitle1: e.target.value })}
-                                                                        placeholder="TECNOLOGÍA"
-                                                                    />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título Línea 2</label>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.heroTitle2 || ''}
-                                                                        onChange={e => setSettings({ ...settings, heroTitle2: e.target.value })}
-                                                                        placeholder="DEL FUTURO"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Subtítulo</label>
-                                                                <textarea
-                                                                    className="input-cyber w-full p-3 h-20 resize-none"
-                                                                    value={settings?.heroSubtitle || ''}
-                                                                    onChange={e => setSettings({ ...settings, heroSubtitle: e.target.value })}
-                                                                    placeholder="Explora nuestra selección premium. Calidad garantizada y soporte técnico especializado."
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen de Fondo</label>
-                                                                <input
-                                                                    type="file"
-                                                                    accept="image/*"
-                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'heroUrl')}
-                                                                    className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-900/20 file:text-purple-400 hover:file:bg-purple-900/40 transition"
-                                                                />
-                                                                {settings?.heroUrl && (
-                                                                    <div className="mt-4 rounded-xl overflow-hidden border border-slate-700 h-32">
-                                                                        <img src={settings.heroUrl} className="w-full h-full object-cover" alt="Hero Preview" />
-                                                                    </div>
-                                                                )}
-                                                                <p className="text-xs text-slate-500 mt-2">Recomendado: 2400x1000 px mínimo para máxima nitidez</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Features Section Configuration */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Star className="w-5 h-5 text-yellow-400" /> Beneficios Destacados
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            {/* Toggle para mostrar toda la sección */}
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Mostrar Sección de Beneficios</p>
-                                                                    <p className="text-xs text-slate-500">Activa/desactiva toda la sección de beneficios</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showFeaturesSection: settings?.showFeaturesSection === false ? true : false })}
-                                                                    className={`w-14 h-7 rounded-full transition-all duration-300 relative ${settings?.showFeaturesSection !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeaturesSection !== false ? 'left-8' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* Feature 1 */}
-                                                            <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Zap className="w-4 h-4 text-orange-400" />
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 1 (Rayo)</label>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showFeature1: settings?.showFeature1 === false ? true : false })}
-                                                                        className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature1 !== false ? 'bg-orange-600' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature1 !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature1 === false ? 'opacity-50' : ''}`}>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.feature1Title || ''}
-                                                                        onChange={e => setSettings({ ...settings, feature1Title: e.target.value })}
-                                                                        placeholder="Envío Ultra Rápido"
-                                                                        disabled={settings?.showFeature1 === false}
-                                                                    />
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.feature1Desc || ''}
-                                                                        onChange={e => setSettings({ ...settings, feature1Desc: e.target.value })}
-                                                                        placeholder="Subtítulo corto..."
-                                                                        disabled={settings?.showFeature1 === false}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            {/* Feature 2 */}
-                                                            <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Shield className="w-4 h-4 text-purple-400" />
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 2 (Escudo)</label>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showFeature2: settings?.showFeature2 === false ? true : false })}
-                                                                        className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature2 !== false ? 'bg-purple-600' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature2 !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature2 === false ? 'opacity-50' : ''}`}>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.feature2Title || ''}
-                                                                        onChange={e => setSettings({ ...settings, feature2Title: e.target.value })}
-                                                                        placeholder="Garantía Extendida"
-                                                                        disabled={settings?.showFeature2 === false}
-                                                                    />
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.feature2Desc || ''}
-                                                                        onChange={e => setSettings({ ...settings, feature2Desc: e.target.value })}
-                                                                        placeholder="Subtítulo corto..."
-                                                                        disabled={settings?.showFeature2 === false}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            {/* Feature 3 */}
-                                                            <div className={`transition-opacity duration-300 ${settings?.showFeaturesSection === false ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Headphones className="w-4 h-4 text-green-400" />
-                                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Beneficio 3 (Soporte)</label>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showFeature3: settings?.showFeature3 === false ? true : false })}
-                                                                        className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings?.showFeature3 !== false ? 'bg-green-600' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-md ${settings?.showFeature3 !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${settings?.showFeature3 === false ? 'opacity-50' : ''}`}>
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.feature3Title || ''}
-                                                                        onChange={e => setSettings({ ...settings, feature3Title: e.target.value })}
-                                                                        placeholder="Soporte 24/7"
-                                                                        disabled={settings?.showFeature3 === false}
-                                                                    />
-                                                                    <input
-                                                                        className="input-cyber w-full p-3"
-                                                                        value={settings?.feature3Desc || ''}
-                                                                        onChange={e => setSettings({ ...settings, feature3Desc: e.target.value })}
-                                                                        placeholder="Subtítulo corto..."
-                                                                        disabled={settings?.showFeature3 === false}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Footer Contact Configuration */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <MessageCircle className="w-5 h-5 text-green-400" /> Sección Contacto (Footer)
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Mostrar Sección</p>
-                                                                    <p className="text-xs text-slate-500">Activa/desactiva la sección de contacto en el footer</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showFooterContact: settings?.showFooterContact === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showFooterContact !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showFooterContact !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.footerContactTitle || ''}
-                                                                    onChange={e => setSettings({ ...settings, footerContactTitle: e.target.value })}
-                                                                    placeholder="Contacto"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.footerContactDescription || ''}
-                                                                    onChange={e => setSettings({ ...settings, footerContactDescription: e.target.value })}
-                                                                    placeholder="¿Tienes alguna duda? Estamos aquí para ayudarte."
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Texto del Botón</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.footerContactButtonText || ''}
-                                                                    onChange={e => setSettings({ ...settings, footerContactButtonText: e.target.value })}
-                                                                    placeholder="Contactar Soporte"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Tipo de Contacto</label>
-                                                                <select
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.footerContactType || 'whatsapp'}
-                                                                    onChange={e => setSettings({ ...settings, footerContactType: e.target.value })}
-                                                                >
-                                                                    <option value="whatsapp">WhatsApp</option>
-                                                                    <option value="instagram">Instagram</option>
-                                                                    <option value="email">Email</option>
-                                                                </select>
-
-                                                                {/* Conditional Input based on Type */}
-                                                                {(!settings?.footerContactType || settings?.footerContactType === 'whatsapp') && (
-                                                                    <div className="mt-3 animate-fade-in">
-                                                                        <label className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1 block">Enlace de WhatsApp</label>
-                                                                        <input
-                                                                            className="input-cyber w-full p-3 text-sm border-green-500/30 focus:border-green-500"
-                                                                            value={settings?.whatsappLink || ''}
-                                                                            onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
-                                                                            placeholder="https://wa.me/54911..."
-                                                                        />
-                                                                    </div>
-                                                                )}
-
-                                                                {settings?.footerContactType === 'instagram' && (
-                                                                    <div className="mt-3 animate-fade-in">
-                                                                        <label className="text-[10px] font-bold text-pink-500 uppercase tracking-wider mb-1 block">Perfil de Instagram</label>
-                                                                        <input
-                                                                            className="input-cyber w-full p-3 text-sm border-pink-500/30 focus:border-pink-500"
-                                                                            value={settings?.instagramLink || ''}
-                                                                            onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
-                                                                            placeholder="https://instagram.com/usuario"
-                                                                        />
-                                                                    </div>
-                                                                )}
-
-                                                                {settings?.footerContactType === 'email' && (
-                                                                    <div className="mt-3 animate-fade-in">
-                                                                        <label className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1 block">Email de Soporte</label>
-                                                                        <input
-                                                                            className="input-cyber w-full p-3 text-sm border-blue-500/30 focus:border-blue-500"
-                                                                            value={settings?.storeEmail || ''}
-                                                                            onChange={e => setSettings({ ...settings, storeEmail: e.target.value })}
-                                                                            placeholder="soporte@tienda.com"
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Footer Brand Configuration */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Store className="w-5 h-5 text-orange-400" /> Marca en Footer
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Sufijo del Nombre</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.footerSuffix || ''}
-                                                                    onChange={e => setSettings({ ...settings, footerSuffix: e.target.value })}
-                                                                    placeholder=".SF"
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-1">Aparece junto al nombre de la tienda (ej: SUSTORE.SF)</p>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Descripción</label>
-                                                                <textarea
-                                                                    className="input-cyber w-full p-3 h-24 resize-none"
-                                                                    value={settings?.footerDescription || ''}
-                                                                    onChange={e => setSettings({ ...settings, footerDescription: e.target.value })}
-                                                                    placeholder="Tu destino premium para tecnología de vanguardia..."
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Legal Links Configuration */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <FileText className="w-5 h-5 text-slate-400" /> Links Legales
-                                                        </h3>
-                                                        <div className="space-y-4">
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Política de Privacidad</p>
-                                                                    <p className="text-xs text-slate-500">Mostrar link en el footer</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showPrivacyPolicy: settings?.showPrivacyPolicy === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showPrivacyPolicy !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showPrivacyPolicy !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Terms of Service</p>
-                                                                    <p className="text-xs text-slate-500">Mostrar link en el footer</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showTermsOfService: settings?.showTermsOfService === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showTermsOfService !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showTermsOfService !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {settingsTab === 'ticket' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Ticket className="w-5 h-5 text-orange-400" /> Ticket / Comprobante
-                                                        </h3>
-                                                        <p className="text-sm text-slate-500 mb-6">Estos datos se usan en el comprobante que se envía por email al confirmar la compra.</p>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nombre que aparece en el ticket</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.ticket?.brandName || ''}
-                                                                    onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, brandName: e.target.value } })}
-                                                                    placeholder={settings?.storeName || 'Mi Tienda'}
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Link de WhatsApp (para el ticket)</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.ticket?.whatsappLink || ''}
-                                                                    onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, whatsappLink: e.target.value } })}
-                                                                    placeholder={settings?.whatsappLink || 'https://wa.me/5491112345678'}
-                                                                />
-                                                            </div>
-                                                            <div className="md:col-span-2">
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Link de la página (para el ticket)</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.ticket?.siteUrl || ''}
-                                                                    onChange={e => setSettings({ ...settings, ticket: { ...settings?.ticket, siteUrl: e.target.value } })}
-                                                                    placeholder={settings?.seoUrl || ''}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* === SOCIAL MEDIA === */}
-                                            {settingsTab === 'social' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Share2 className="w-5 h-5 text-blue-400" /> Redes Sociales
-                                                        </h3>
-                                                        <p className="text-sm text-slate-500 mb-6">Configura los enlaces y activa/desactiva la visibilidad de cada red social en el footer.</p>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            {/* WhatsApp */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                        <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
-                                                                    </label>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-[10px] text-slate-500 font-mono uppercase">Footer</span>
-                                                                        <button
-                                                                            onClick={() => setSettings({ ...settings, showWhatsapp: !settings?.showWhatsapp })}
-                                                                            className={`w-10 h-5 rounded-full transition relative ${settings?.showWhatsapp === true ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                        >
-                                                                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showWhatsapp === true ? '22px' : '2px' }}></div>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                                <input
-                                                                    className="input-cyber w-full p-3 text-sm mb-3"
-                                                                    value={settings?.whatsappLink || ''}
-                                                                    onChange={e => setSettings({ ...settings, whatsappLink: e.target.value })}
-                                                                    placeholder="https://wa.me/5491112345678"
-                                                                />
-
-                                                                {/* Floating Button Toggle */}
-                                                                <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
-                                                                    <div>
-                                                                        <p className="text-xs text-slate-400 font-bold flex items-center gap-2">
-                                                                            Botón Flotante
-                                                                            {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
-                                                                                <Lock className="w-3 h-3 text-yellow-500" />
-                                                                            )}
-                                                                        </p>
-                                                                        {(!['business', 'premium'].includes(settings?.subscriptionPlan)) && (
-                                                                            <p className="text-[9px] text-yellow-500/80 mt-0.5">Requiere Plan Negocio</p>
-                                                                        )}
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            if (['business', 'premium'].includes(settings?.subscriptionPlan)) {
-                                                                                setSettings({ ...settings, showFloatingWhatsapp: !settings?.showFloatingWhatsapp });
-                                                                            } else {
-                                                                                setShowPlansModal(true);
-                                                                            }
-                                                                        }}
-                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showFloatingWhatsapp ? 'bg-green-500' : 'bg-slate-700'} ${(!['business', 'premium'].includes(settings?.subscriptionPlan)) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                    >
-                                                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showFloatingWhatsapp ? '22px' : '2px' }}></div>
-                                                                    </button>
-                                                                </div>
-
-                                                                {/* Cart Button Toggle */}
-                                                                <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-800/50">
-                                                                    <div>
-                                                                        <p className="text-xs text-slate-400 font-bold">Botón en Carrito</p>
-                                                                        <p className="text-[9px] text-slate-500 mt-0.5">“Terminar compra por WhatsApp”</p>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showCartWhatsappCheckout: !settings?.showCartWhatsappCheckout })}
-                                                                        className={`w-10 h-5 rounded-full transition relative ${settings?.showCartWhatsappCheckout ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition`} style={{ left: settings?.showCartWhatsappCheckout ? '22px' : '2px' }}></div>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                            {/* Instagram */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                        <Instagram className="w-4 h-4 text-pink-400" /> Instagram
-                                                                    </label>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showInstagram: settings?.showInstagram === false ? true : false })}
-                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showInstagram !== false ? 'bg-pink-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showInstagram !== false ? 'left-6' : 'left-0.5'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <input
-                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                    value={settings?.instagramLink || ''}
-                                                                    onChange={e => setSettings({ ...settings, instagramLink: e.target.value })}
-                                                                    placeholder="https://instagram.com/mitienda"
-                                                                />
-                                                            </div>
-                                                            {/* Facebook */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                        <Facebook className="w-4 h-4 text-blue-500" /> Facebook
-                                                                    </label>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showFacebook: !settings?.showFacebook })}
-                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showFacebook ? 'bg-blue-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showFacebook ? 'left-6' : 'left-0.5'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <input
-                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                    value={settings?.facebookLink || ''}
-                                                                    onChange={e => setSettings({ ...settings, facebookLink: e.target.value })}
-                                                                    placeholder="https://facebook.com/mitienda"
-                                                                />
-                                                            </div>
-                                                            {/* Twitter */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                        <Twitter className="w-4 h-4 text-sky-400" /> Twitter/X
-                                                                    </label>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showTwitter: !settings?.showTwitter })}
-                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showTwitter ? 'bg-sky-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTwitter ? 'left-6' : 'left-0.5'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <input
-                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                    value={settings?.twitterLink || ''}
-                                                                    onChange={e => setSettings({ ...settings, twitterLink: e.target.value })}
-                                                                    placeholder="https://twitter.com/mitienda"
-                                                                />
-                                                            </div>
-                                                            {/* TikTok */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                        <Music className="w-4 h-4 text-rose-400" /> TikTok
-                                                                    </label>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showTiktok: !settings?.showTiktok })}
-                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showTiktok ? 'bg-rose-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showTiktok ? 'left-6' : 'left-0.5'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <input
-                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                    value={settings?.tiktokLink || ''}
-                                                                    onChange={e => setSettings({ ...settings, tiktokLink: e.target.value })}
-                                                                    placeholder="https://tiktok.com/@mitienda"
-                                                                />
-                                                            </div>
-                                                            {/* YouTube */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                        <Youtube className="w-4 h-4 text-red-500" /> YouTube
-                                                                    </label>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, showYoutube: !settings?.showYoutube })}
-                                                                        className={`w-12 h-6 rounded-full transition relative ${settings?.showYoutube ? 'bg-red-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${settings?.showYoutube ? 'left-6' : 'left-0.5'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                <input
-                                                                    className="input-cyber w-full p-3 text-sm"
-                                                                    value={settings?.youtubeLink || ''}
-                                                                    onChange={e => setSettings({ ...settings, youtubeLink: e.target.value })}
-                                                                    placeholder="https://youtube.com/c/mitienda"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* === PAYMENTS === */}
-                                            {settingsTab === 'payments' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <CreditCard className="w-5 h-5 text-green-400" /> Métodos de Pago
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            {/* Transfer */}
-                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <Building className="w-6 h-6 text-orange-400" />
-                                                                        <div>
-                                                                            <p className="font-bold text-white">Transferencia Bancaria</p>
-                                                                            <p className="text-xs text-slate-500">Activado / Desactivado</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, enabled: !settings?.paymentTransfer?.enabled } })}
-                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.paymentTransfer?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentTransfer?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                {settings?.paymentTransfer?.enabled && (
-                                                                    <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">Titular</label>
-                                                                            <input
-                                                                                className="input-cyber w-full p-3 text-sm"
-                                                                                value={settings?.paymentTransfer?.holderName || ''}
-                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, holderName: e.target.value } })}
-                                                                                placeholder="Nombre y apellido"
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">Alias</label>
-                                                                            <input
-                                                                                className="input-cyber w-full p-3 text-sm"
-                                                                                value={settings?.paymentTransfer?.alias || ''}
-                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, alias: e.target.value } })}
-                                                                                placeholder="alias.ejemplo"
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-xs font-bold text-slate-400 uppercase ml-2 mb-1 block">CBU</label>
-                                                                            <input
-                                                                                className="input-cyber w-full p-3 text-sm"
-                                                                                value={settings?.paymentTransfer?.cbu || ''}
-                                                                                onChange={e => setSettings({ ...settings, paymentTransfer: { ...settings?.paymentTransfer, cbu: e.target.value } })}
-                                                                                placeholder="0000000000000000000000"
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Cash */}
-                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <Banknote className="w-6 h-6 text-green-400" />
-                                                                        <div>
-                                                                            <p className="font-bold text-white">Efectivo</p>
-                                                                            <p className="text-xs text-slate-500">Pago al recibir</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            // Validar que Retiro en Local esté activo
-                                                                            if (!settings?.shippingPickup?.enabled) {
-                                                                                showToast('Debes activar "Retiro en Local" (Envíos) para habilitar efectivo.', 'warning');
-                                                                                return;
-                                                                            }
-                                                                            setSettings({ ...settings, paymentCash: !settings?.paymentCash });
-                                                                        }}
-                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'} ${!settings?.shippingPickup?.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                    >
-                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentCash && settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                {!settings?.shippingPickup?.enabled && (
-                                                                    <p className="text-[10px] text-orange-400/80 mt-2 flex items-center gap-1">
-                                                                        <AlertTriangle className="w-3 h-3" /> Requiere activar Retiro en Local
-                                                                    </p>
-                                                                )}
-                                                            </div>
-
-                                                            {/* MercadoPago (Tarjeta) */}
-                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <CreditCard className="w-6 h-6 text-orange-400" />
-                                                                        <div>
-                                                                            <p className="font-bold text-white">Tarjeta (Mercado Pago)</p>
-                                                                            <p className="text-xs text-slate-500">Activado / Desactivado</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, paymentMercadoPago: { ...settings?.paymentMercadoPago, enabled: !settings?.paymentMercadoPago?.enabled } })}
-                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.paymentMercadoPago?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.paymentMercadoPago?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* === SHIPPING === */}
-                                            {settingsTab === 'shipping' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Truck className="w-5 h-5 text-orange-400" /> Opciones de Envío
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            {/* Pickup */}
-                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <MapPin className="w-6 h-6 text-orange-400" />
-                                                                        <div>
-                                                                            <p className="font-bold text-white">Retiro en Local</p>
-                                                                            <p className="text-xs text-slate-500">El cliente pasa a buscar</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, enabled: !settings?.shippingPickup?.enabled } })}
-                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.shippingPickup?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingPickup?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                {settings?.shippingPickup?.enabled && (
-                                                                    <input
-                                                                        className="input-cyber w-full p-4"
-                                                                        value={settings?.shippingPickup?.address || ''}
-                                                                        onChange={e => setSettings({ ...settings, shippingPickup: { ...settings?.shippingPickup, address: e.target.value } })}
-                                                                        placeholder="Dirección de retiro: Av. Corrientes 1234"
-                                                                    />
-                                                                )}
-                                                            </div>
-
-                                                            {/* Delivery */}
-                                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <Package className="w-6 h-6 text-purple-400" />
-                                                                        <div>
-                                                                            <p className="font-bold text-white">Envío a Domicilio</p>
-                                                                            <p className="text-xs text-slate-500">Delivery estándar</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, enabled: !settings?.shippingDelivery?.enabled } })}
-                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.shippingDelivery?.enabled ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.shippingDelivery?.enabled ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-                                                                {settings?.shippingDelivery?.enabled && (
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <div>
-                                                                            <label className="text-xs text-slate-500 mb-1 block">Costo de Envío ($)</label>
-                                                                            <input
-                                                                                type="number"
-                                                                                className="input-cyber w-full p-4"
-                                                                                value={settings?.shippingDelivery?.fee || 0}
-                                                                                onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, fee: parseFloat(e.target.value) || 0 } })}
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-xs text-slate-500 mb-1 block">Gratis desde ($)</label>
-                                                                            <input
-                                                                                type="number"
-                                                                                className="input-cyber w-full p-4"
-                                                                                value={settings?.shippingDelivery?.freeAbove || 0}
-                                                                                onChange={e => setSettings({ ...settings, shippingDelivery: { ...settings?.shippingDelivery, freeAbove: parseFloat(e.target.value) || 0 } })}
-                                                                                placeholder="0 = nunca gratis"
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* === SEO === */}
-                                            {settingsTab === 'seo' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Globe className="w-5 h-5 text-green-400" /> Optimización SEO
-                                                        </h3>
-                                                        <div className="space-y-6">
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Título del Sitio</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.seoTitle || ''}
-                                                                    onChange={e => setSettings({ ...settings, seoTitle: e.target.value })}
-                                                                    placeholder="Mi Tienda Online | Los Mejores Productos"
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-1">Aparece en la pestaña del navegador</p>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Meta Descripción</label>
-                                                                <textarea
-                                                                    className="input-cyber w-full p-4 h-20 resize-none"
-                                                                    value={settings?.seoDescription || ''}
-                                                                    onChange={e => setSettings({ ...settings, seoDescription: e.target.value })}
-                                                                    placeholder="Tienda online de productos de alta calidad. Envíos a todo el país. ¡Visitanos!"
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-1">Descripción que aparece en Google (max 160 caracteres)</p>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Palabras Clave</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.seoKeywords || ''}
-                                                                    onChange={e => setSettings({ ...settings, seoKeywords: e.target.value })}
-                                                                    placeholder="tienda online, productos, ofertas, descuentos"
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-1">Separadas por comas</p>
-                                                            </div>
-
-                                                            {/* URL Canónica */}
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">URL del Sitio (Canónica)</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.seoUrl || ''}
-                                                                    onChange={e => setSettings({ ...settings, seoUrl: e.target.value })}
-                                                                    placeholder="https://mitienda.vercel.app"
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-1">URL oficial de tu tienda (aparece en Google y redes sociales)</p>
-                                                            </div>
-
-                                                            {/* Autor */}
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Autor / Empresa</label>
-                                                                <input
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.seoAuthor || ''}
-                                                                    onChange={e => setSettings({ ...settings, seoAuthor: e.target.value })}
-                                                                    placeholder="Mi Empresa S.A."
-                                                                />
-                                                                <p className="text-xs text-slate-500 mt-1">Nombre que aparece como autor del sitio</p>
-                                                            </div>
-
-                                                            {/* OG Image Upload */}
-                                                            <div>
-                                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Imagen para Redes Sociales (OG:Image)</label>
-                                                                <div className="flex items-center gap-4">
-                                                                    <div className="relative group w-32 h-32 bg-slate-900 rounded-xl border-2 border-dashed border-slate-700 hover:border-orange-500 transition flex items-center justify-center overflow-hidden cursor-pointer">
-                                                                        {settings?.seoImage ? (
-                                                                            <img src={settings.seoImage} alt="SEO Preview" className="w-full h-full object-cover" />
-                                                                        ) : (
-                                                                            <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-orange-500 transition" />
-                                                                        )}
-                                                                        <input
-                                                                            type="file"
-                                                                            accept="image/*"
-                                                                            className="absolute inset-0 opacity-0 cursor-pointer z-50"
-                                                                            onChange={(e) => handleImageUpload(e, setSettings, 'seoImage', 1200)}
-                                                                        />
-                                                                        {/* Overlay al hacer hover para indicar cambio */}
-                                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
-                                                                            <Upload className="w-6 h-6 text-white" />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex-1">
-                                                                        <p className="text-sm text-slate-400 mb-2">Sube una imagen atractiva (ej: logo con fondo, banner).</p>
-                                                                        <p className="text-xs text-slate-600">Recomendado: 1200x630 píxeles para mejor visualización en Facebook/WhatsApp.</p>
-                                                                        {settings?.seoImage && (
+                                                                        {member.email !== SUPER_ADMIN_EMAIL && (
                                                                             <button
-                                                                                onClick={() => setSettings({ ...settings, seoImage: '' })}
-                                                                                className="mt-2 text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                                                                                onClick={() => setSettings({ ...settings, team: (settings?.team || []).filter((_, i) => i !== idx) })}
+                                                                                className="p-3 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition flex-shrink-0"
+                                                                                title="Eliminar Miembro"
                                                                             >
-                                                                                <Trash2 className="w-3 h-3" /> Eliminar imagen
+                                                                                <Trash2 className="w-5 h-5" />
                                                                             </button>
                                                                         )}
                                                                     </div>
-                                                                </div>
+                                                                ))}
                                                             </div>
 
-                                                            {/* Links Status */}
-                                                            <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-4">
-                                                                <a href="/sitemap.xml" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
-                                                                    <div>
-                                                                        <p className="text-sm font-bold text-white">Ver Sitemap.xml</p>
-                                                                        <p className="text-xs text-green-500">Activo</p>
-                                                                    </div>
-                                                                    <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
-                                                                </a>
-                                                                <a href="/robots.txt" target="_blank" className="p-3 bg-slate-900 rounded-xl hover:bg-slate-800 transition flex items-center justify-between group">
-                                                                    <div>
-                                                                        <p className="text-sm font-bold text-white">Ver Robots.txt</p>
-                                                                        <p className="text-xs text-green-500">Activo</p>
-                                                                    </div>
-                                                                    <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
-                                                                </a>
-                                                            </div>
+                                                            <button
+                                                                onClick={() => setSettings({ ...settings, team: [...(settings?.team || []), { name: '', email: '', role: 'employee', investment: 0 }] })}
+                                                                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-600/30 flex items-center gap-2 transition"
+                                                            >
+                                                                <UserPlus className="w-5 h-5" /> Agregar Nuevo Miembro
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
 
-                                            {/* === ADVANCED === */}
-                                            {settingsTab === 'advanced' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Cog className="w-5 h-5 text-slate-400" /> Configuración Avanzada
-                                                        </h3>
-                                                        <div className="space-y-4">
-                                                            {/* Maintenance Mode */}
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Modo Mantenimiento</p>
-                                                                    <p className="text-xs text-slate-500">Mostrar página de "Volvemos pronto"</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, maintenanceMode: !settings?.maintenanceMode })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.maintenanceMode ? 'bg-red-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* PWA & Performance Controls */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 space-y-4">
-                                                                <h4 className="text-sm font-bold text-orange-400 uppercase tracking-wider mb-2">Rendimiento & PWA</h4>
-
-                                                                {/* Lazy Loading */}
-                                                                <div className="flex items-center justify-between">
-                                                                    <div>
-                                                                        <p className="font-bold text-white">Carga Diferida (Lazy Load)</p>
-                                                                        <p className="text-xs text-slate-500">Mejora velocidad cargando imágenes al hacer scroll</p>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, enableLazyLoad: settings?.enableLazyLoad === false ? true : false })}
-                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.enableLazyLoad !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enableLazyLoad !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-
-                                                                {/* PWA Service Worker */}
-                                                                <div className="flex items-center justify-between">
-                                                                    <div>
-                                                                        <p className="font-bold text-white">Modo Offline (PWA)</p>
-                                                                        <p className="text-xs text-slate-500">Permite instalar la app y uso sin internet</p>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, enablePWA: settings?.enablePWA === false ? true : false })}
-                                                                        className={`w-14 h-8 rounded-full transition relative ${settings?.enablePWA !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                    >
-                                                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.enablePWA !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                    </button>
-                                                                </div>
-
-                                                                {/* Clear Cache Button */}
-                                                                <div className="pt-2 border-t border-slate-700">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            if ('caches' in window) {
-                                                                                caches.keys().then(names => {
-                                                                                    names.forEach(name => caches.delete(name));
-                                                                                    showToast('Caché limpiada. Recargando...', 'success');
-                                                                                    setTimeout(() => window.location.reload(), 1500);
-                                                                                });
-                                                                            } else {
-                                                                                showToast('Tu navegador no soporta gestión de caché', 'warning');
-                                                                            }
-                                                                        }}
-                                                                        className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4" /> Forzar Limpieza de Caché y Recargar
-                                                                    </button>
-                                                                    <p className="text-xs text-slate-500 mt-2 text-center">Usar si ves errores gráficos o versiones antiguas.</p>
-                                                                </div>
-
-                                                                {/* UTF-8 Text Sanitize */}
-                                                                <div className="pt-2 border-t border-slate-700">
-                                                                    <button
-                                                                        disabled={isSanitizingText || !appId}
-                                                                        onClick={() => openConfirm(
-                                                                            'Reparar textos (UTF-8)',
-                                                                            'Se corregirán caracteres rotos en la configuración y datos guardados de esta tienda. ¿Continuar?',
-                                                                            async () => {
-                                                                                await runTextSanitization();
-                                                                            }
-                                                                        )}
-                                                                        className="w-full py-2 px-4 bg-cyan-900/40 hover:bg-cyan-800/50 border border-cyan-500/30 text-cyan-200 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                    >
-                                                                        {isSanitizingText ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                                                        {isSanitizingText ? 'Reparando textos…' : 'Reparar textos (UTF-8)'}
-                                                                    </button>
-                                                                    <p className="text-xs text-slate-500 mt-2 text-center">Corrige mojibake en Firestore sin modificar el tono de los textos.</p>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Loading Text */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div className="mb-3">
-                                                                    <p className="font-bold text-white">Texto de Carga</p>
-                                                                    <p className="text-xs text-slate-500">Mensaje que aparece mientras carga la página</p>
-                                                                </div>
-                                                                <input
-                                                                    className="input-cyber w-full p-3"
-                                                                    value={settings?.loadingText || ''}
-                                                                    onChange={e => setSettings({ ...settings, loadingText: e.target.value })}
-                                                                    placeholder="Cargando sistema..."
-                                                                />
-                                                            </div>
-
-                                                            {/* Show Announcement Banner */}
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Banner de Anuncio</p>
-                                                                    <p className="text-xs text-slate-500">Barra superior con mensaje promocional</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showAnnouncementBanner: settings?.showAnnouncementBanner === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showAnnouncementBanner !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showAnnouncementBanner !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* Show Brand Ticker */}
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Ticker de Marca</p>
-                                                                    <p className="text-xs text-slate-500">Texto en movimiento debajo del anuncio</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showBrandTicker: settings?.showBrandTicker === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showBrandTicker !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showBrandTicker !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* Show Stock */}
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Mostrar Stock Disponible</p>
-                                                                    <p className="text-xs text-slate-500">Los clientes ven cuántas unidades hay</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, showStockCount: settings?.showStockCount === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.showStockCount !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.showStockCount !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* Require Phone */}
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Requerir Teléfono</p>
-                                                                    <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, requirePhone: settings?.requirePhone === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.requirePhone !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requirePhone !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* Require DNI */}
-                                                            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div>
-                                                                    <p className="font-bold text-white">Requerir DNI</p>
-                                                                    <p className="text-xs text-slate-500">Obligatorio al registrarse</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSettings({ ...settings, requireDNI: settings?.requireDNI === false ? true : false })}
-                                                                    className={`w-14 h-8 rounded-full transition relative ${settings?.requireDNI !== false ? 'bg-green-500' : 'bg-slate-700'}`}
-                                                                >
-                                                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${settings?.requireDNI !== false ? 'left-7' : 'left-1'}`}></div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* Low Stock Threshold */}
-                                                            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div>
-                                                                        <p className="font-bold text-white">Umbral de Stock Bajo</p>
-                                                                        <p className="text-xs text-slate-500">Alerta cuando el stock es menor a este valor</p>
-                                                                    </div>
-                                                                </div>
-                                                                <input
-                                                                    type="number"
-                                                                    className="input-cyber w-full p-4"
-                                                                    value={settings?.lowStockThreshold || 5}
-                                                                    onChange={e => setSettings({ ...settings, lowStockThreshold: parseInt(e.target.value) || 5 })}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* AI Config Block (SustIA) */}
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Sparkles className="w-5 h-5 text-yellow-500" /> Personalización IA
-                                                        </h3>
-                                                        <div className="flex items-center gap-6">
-                                                            <div className="relative group w-24 h-24 bg-slate-900 rounded-full border-2 border-dashed border-slate-700 hover:border-yellow-500 transition flex items-center justify-center overflow-hidden cursor-pointer shrink-0 shadow-xl">
-                                                                {settings?.botImage ? (
-                                                                    <img src={settings.botImage} alt="Bot Preview" className="w-full h-full object-cover" />
-                                                                ) : (
-                                                                    <Sparkles className="w-8 h-8 text-slate-600 group-hover:text-yellow-500 transition" />
-                                                                )}
-                                                                <input
-                                                                    type="file"
-                                                                    accept="image/*"
-                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-50"
-                                                                    onChange={(e) => handleImageUpload(e, setSettings, 'botImage', 300)}
-                                                                />
-                                                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition pointer-events-none">
-                                                                    <Upload className="w-6 h-6 text-white" />
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-bold text-white text-base mb-1">Avatar del Asistente</p>
-                                                                <p className="text-xs text-slate-500 mb-3 max-w-xs leading-relaxed">Sube una imagen personalizada para el bot (PNG/JPG). Se recomienda formato cuadrado.</p>
-                                                                {settings?.botImage ? (
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, botImage: '' })}
-                                                                        className="text-xs bg-red-900/20 text-red-400 hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition flex items-center gap-2 border border-red-500/20"
-                                                                    >
-                                                                        <Trash2 className="w-3 h-3" /> Restaurar Default
-                                                                    </button>
-                                                                ) : (
-                                                                    <span className="text-xs text-yellow-600 bg-yellow-900/20 px-3 py-1 rounded-lg border border-yellow-700/30">
-                                                                        Usando imagen por defecto
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <FolderPlus className="w-5 h-5 text-orange-400" /> Categorías de Productos
-                                                        </h3>
-                                                        <div className="flex flex-wrap gap-2 mb-4">
-                                                            {(settings?.categories || []).map((cat, idx) => (
-                                                                <div key={idx} className="bg-slate-900 text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-700">
-                                                                    <span>{cat}</span>
-                                                                    <button
-                                                                        onClick={() => setSettings({ ...settings, categories: (settings?.categories || []).filter((_, i) => i !== idx) })}
-                                                                        className="text-red-400 hover:text-red-300"
-                                                                    >
-                                                                        <X className="w-4 h-4" />
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
+                                                {/* Save Button - only for super admin */}
+                                                {currentUser?.email === SUPER_ADMIN_EMAIL && (
+                                                    <div className="fixed bottom-8 right-8 z-50">
                                                         <button
-                                                            onClick={() => setShowCategoryModal(true)}
-                                                            className="px-4 py-2 bg-orange-900/20 text-orange-400 rounded-lg font-bold text-sm border border-orange-500/30 hover:bg-orange-900/40 transition flex items-center gap-2"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    setIsLoading(true);
+                                                                    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                                                                    await setDoc(settingsRef, settings, { merge: true });
+                                                                    showToast("Configuración guardada exitosamente", "success");
+                                                                } catch (e) {
+                                                                    console.error(e);
+                                                                    showToast("Error al guardar", "error");
+                                                                } finally {
+                                                                    setIsLoading(false);
+                                                                }
+                                                            }}
+                                                            className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
                                                         >
-                                                            <Plus className="w-4 h-4" /> Agregar Categoría
+                                                            <Save className="w-5 h-5" /> Guardar Cambios
                                                         </button>
                                                     </div>
-                                                </div>
-                                            )}
-
-                                            {/* === TEAM === */}
-                                            {settingsTab === 'team' && (
-                                                <div className="space-y-6 animate-fade-up">
-                                                    <div className="bg-[#0a0a0a] border border-slate-800 p-8 rounded-[2rem]">
-                                                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                            <Users className="w-5 h-5 text-purple-400" /> Equipo y Accesos
-                                                        </h3>
-                                                        <p className="text-slate-500 mb-6">Gestiona los miembros del equipo, sus roles de acceso y participación en ganancias.</p>
-
-                                                        <div className="space-y-4 mb-6">
-                                                            {(settings?.team || []).map((member, idx) => (
-                                                                <div key={idx} className="flex flex-col md:flex-row md:items-center gap-4 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                                                                        {member.name?.charAt(0)?.toUpperCase() || '?'}
-                                                                    </div>
-                                                                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                                        <div>
-                                                                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Nombre</label>
-                                                                            <input
-                                                                                className="input-cyber w-full p-2 text-sm"
-                                                                                value={member.name || ''}
-                                                                                onChange={e => {
-                                                                                    const updated = [...(settings?.team || [])];
-                                                                                    updated[idx] = { ...updated[idx], name: e.target.value };
-                                                                                    setSettings({ ...settings, team: updated });
-                                                                                }}
-                                                                                placeholder="Nombre"
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Email (Acceso)</label>
-                                                                            <input
-                                                                                type="email"
-                                                                                className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                                value={member.email || ''}
-                                                                                onChange={e => {
-                                                                                    const updated = [...(settings?.team || [])];
-                                                                                    updated[idx] = { ...updated[idx], email: e.target.value };
-                                                                                    setSettings({ ...settings, team: updated });
-                                                                                }}
-                                                                                placeholder="usuario@email.com"
-                                                                                disabled={member.email === SUPER_ADMIN_EMAIL}
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Rol</label>
-                                                                            <select
-                                                                                className={`input-cyber w-full p-2 text-sm ${member.email === SUPER_ADMIN_EMAIL ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                                value={member.role || 'employee'}
-                                                                                onChange={e => {
-                                                                                    const updated = [...(settings?.team || [])];
-                                                                                    updated[idx] = { ...updated[idx], role: e.target.value };
-                                                                                    setSettings({ ...settings, team: updated });
-                                                                                }}
-                                                                                disabled={member.email === SUPER_ADMIN_EMAIL}
-                                                                            >
-                                                                                <option value="employee">Empleado</option>
-                                                                                <option value="admin">Admin</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Total Invertido</label>
-                                                                            <div className="input-cyber w-full p-2 text-sm bg-slate-900/50 text-slate-400 flex items-center cursor-not-allowed">
-                                                                                $ {investments.filter(inv => inv.investor === member.name || inv.investor === member.email).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toLocaleString()}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    {member.email !== SUPER_ADMIN_EMAIL && (
-                                                                        <button
-                                                                            onClick={() => setSettings({ ...settings, team: (settings?.team || []).filter((_, i) => i !== idx) })}
-                                                                            className="p-3 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition flex-shrink-0"
-                                                                            title="Eliminar Miembro"
-                                                                        >
-                                                                            <Trash2 className="w-5 h-5" />
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-
-                                                        <button
-                                                            onClick={() => setSettings({ ...settings, team: [...(settings?.team || []), { name: '', email: '', role: 'employee', investment: 0 }] })}
-                                                            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-600/30 flex items-center gap-2 transition"
-                                                        >
-                                                            <UserPlus className="w-5 h-5" /> Agregar Nuevo Miembro
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Save Button - only for super admin */}
-                                            {currentUser?.email === SUPER_ADMIN_EMAIL && (
-                                                <div className="fixed bottom-8 right-8 z-50">
-                                                    <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                setIsLoading(true);
-                                                                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
-                                                                await setDoc(settingsRef, settings, { merge: true });
-                                                                showToast("Configuración guardada exitosamente", "success");
-                                                            } catch (e) {
-                                                                console.error(e);
-                                                                showToast("Error al guardar", "error");
-                                                            } finally {
-                                                                setIsLoading(false);
-                                                            }
-                                                        }}
-                                                        className="px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold rounded-2xl shadow-2xl shadow-orange-900/30 flex items-center gap-3 transition transform hover:scale-105"
-                                                    >
-                                                        <Save className="w-5 h-5" /> Guardar Cambios
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )
+                                                )}
+                                            </div>
+                                        )
                                     }
 
                                     {/* 7.3 Modal Proveedores (Selector Visual) */}
@@ -12829,10 +13017,10 @@ function App() {
                 settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
                     <button
                         onClick={() => window.open(settings.whatsappLink, '_blank')}
-                        className="fixed bottom-24 right-6 z-50 p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
+                        className="fixed bottom-24 right-4 sm:right-6 z-50 p-3 sm:p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
                         title="Chatea con nosotros"
                     >
-                        <MessageCircle className="w-8 h-8 text-white fill-white" />
+                        <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white fill-white" />
                     </button>
                 )
             }
