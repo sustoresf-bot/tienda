@@ -889,7 +889,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                             ${finalPrice.toLocaleString()}
                         </span>
                         {hasDiscount && savingsAmount > 0 && (
-                            <span className="mt-1 inline-flex items-center rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                            <span className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold ${darkMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
                                 Ahorrás ${savingsAmount.toLocaleString()}
                             </span>
                         )}
@@ -5849,10 +5849,10 @@ function App() {
                             </span>
                             <h2 className={`text-2xl sm:text-3xl md:text-4xl font-black leading-[1.1] mb-3 sm:mb-6 ${darkMode ? 'text-white neon-text-small' : 'text-slate-900'}`}>{selectedProduct.name}</h2>
                             {hasProductDiscount && (
-                                <div className="mb-3 inline-flex flex-wrap items-center gap-2 rounded-xl border border-rose-400/30 bg-gradient-to-r from-rose-500/25 to-orange-500/20 px-3 py-2">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-200">Oferta activa</span>
+                                <div className={`mb-3 inline-flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 ${darkMode ? 'border-rose-400/30 bg-gradient-to-r from-rose-500/25 to-orange-500/20' : 'border-rose-200 bg-gradient-to-r from-rose-50 to-orange-50'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-rose-200' : 'text-rose-700'}`}>Oferta activa</span>
                                     <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-black text-white">-{selectedDiscount}% OFF</span>
-                                    <span className="text-[11px] font-bold text-emerald-300">Ahorrás ${unitSavings.toLocaleString()} por unidad</span>
+                                    <span className={`text-[11px] font-bold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>Ahorrás ${unitSavings.toLocaleString()} por unidad</span>
                                 </div>
                             )}
                             <p className={`text-xs sm:text-sm md:text-base leading-relaxed line-clamp-3 sm:line-clamp-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -5898,7 +5898,7 @@ function App() {
                                         </span>
                                     </div>
                                     {hasProductDiscount && totalSavings > 0 && (
-                                        <span className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
+                                        <span className={`mt-2 inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-[11px] font-bold ${darkMode ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
                                             Ahorrás ${totalSavings.toLocaleString()} en total
                                         </span>
                                     )}
@@ -7031,7 +7031,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full max-w-5xl mx-auto aspect-video rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200 bg-white'}`}>
+                        <div className={`relative w-full max-w-5xl mx-auto aspect-video rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
