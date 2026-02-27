@@ -594,17 +594,6 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                     >
                         <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
-                    <div className="absolute bottom-2 sm:bottom-3 inset-x-0 z-20 flex items-center justify-center gap-1.5 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                        {slides.map((_, idx) => (
-                            <button
-                                key={`dot-${idx}`}
-                                type="button"
-                                aria-label={`Ir al banner ${idx + 1}`}
-                                className={`rounded-full transition-all duration-300 ${idx === activeIndex ? 'w-6 h-2 bg-white shadow-lg' : 'w-2 h-2 bg-white/40 hover:bg-white/60'}`}
-                                onClick={() => setActiveIndex(idx)}
-                            />
-                        ))}
-                    </div>
                 </>
             )}
         </div>
@@ -795,7 +784,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                             loading="lazy"
                             decoding="async"
                             onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.nextSibling.style.display = 'flex'; }}
-                            className={`w-full h-full max-w-full max-h-full object-contain object-center block rounded-xl sm:rounded-2xl border-2 ${darkMode ? 'border-orange-500/20' : 'border-slate-100'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-105 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                            className={`w-full h-full max-w-full max-h-full object-contain object-center block rounded-xl sm:rounded-2xl border-2 ${darkMode ? 'border-orange-500/20' : 'border-slate-100'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                         />
                     </div>
                 ) : null}
@@ -831,7 +820,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
 
                 {/* BADGE: DESTACADO */}
                 {p.isFeatured && p.stock > 0 && (
-                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[9px] sm:text-[10px] font-black px-2 sm:px-4 py-1 sm:py-1.5 rounded-br-xl sm:rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1">
+                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[9px] sm:text-[10px] font-black px-2 sm:px-4 py-1 sm:py-1.5 rounded-br-xl sm:rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1 animate-pulse">
                         <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" /> Destacado
                     </div>
                 )}
@@ -839,7 +828,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                 {/* Badge de Oferta Mejorado */}
                 {hasDiscount && p.stock > 0 && (
                     <div className={`absolute z-20 ${p.isFeatured ? 'top-8 sm:top-10 left-2 sm:left-4' : 'top-2 sm:top-4 left-2 sm:left-4'}`}>
-                        <div className="rounded-xl border border-red-300/30 bg-gradient-to-r from-rose-600 via-red-500 to-orange-500 px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-[0_10px_24px_rgba(239,68,68,0.3)]">
+                        <div className="rounded-xl border border-red-300/30 bg-gradient-to-r from-rose-600 via-red-500 to-orange-500 px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-[0_10px_24px_rgba(239,68,68,0.3)] transition-transform duration-300 group-hover:-translate-y-1">
                             <div className="text-[8px] sm:text-[9px] leading-none font-black tracking-[0.22em] text-rose-100">OFERTA</div>
                             <div className="mt-1 flex items-center gap-1 text-[10px] sm:text-[11px] font-black leading-none text-white">
                                 <Percent className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -922,7 +911,9 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
         prev.p.name === next.p.name &&
         prev.p.image === next.p.image &&
         (prev.p.images?.length || 0) === (next.p.images?.length || 0) &&
-        prev.currentUser?.favorites?.includes(prev.p.id) === next.currentUser?.favorites?.includes(next.p.id)
+        prev.currentUser?.favorites?.includes(prev.p.id) === next.currentUser?.favorites?.includes(next.p.id) &&
+        prev.darkMode === next.darkMode &&
+        prev.settings === next.settings
     );
 });
 
@@ -6849,7 +6840,7 @@ function App() {
                         </button>
                         <div className="cursor-pointer group flex items-center gap-2 sm:gap-3 min-w-0" onClick={() => setView('store')}>
                             {settings?.logoUrl && (
-                                <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 transition-colors duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                     <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
                                 </div>
                             )}
@@ -6880,13 +6871,13 @@ function App() {
                         {/* Botones de Contacto */}
                         <div className="hidden md:flex items-center gap-2">
                             {settings?.showWhatsapp !== false && settings?.whatsappLink && (
-                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition font-bold text-sm">
-                                    <MessageCircle className="w-5 h-5" /> WhatsApp
+                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition-all font-bold text-sm hover:scale-105 active:scale-95 btn-press ripple">
+                                    <MessageCircle className="w-5 h-5 group-hover:animate-bounce" /> WhatsApp
                                 </button>
                             )}
                             {settings?.showInstagram !== false && settings?.instagramLink && (
-                                <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition font-bold text-sm">
-                                    <Instagram className="w-5 h-5" /> Instagram
+                                <button onClick={() => window.open(settings?.instagramLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-900/10 text-pink-400 hover:bg-pink-500 hover:text-white border border-pink-500/20 transition-all font-bold text-sm hover:scale-105 active:scale-95 btn-press ripple group">
+                                    <Instagram className="w-5 h-5 group-hover:-rotate-12 transition-transform" /> Instagram
                                 </button>
                             )}
                         </div>
@@ -6907,7 +6898,7 @@ function App() {
 
                         {/* Botón Carrito */}
                         <button onClick={() => setView('cart')} className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50 hover:border-orange-500/30' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200 hover:border-orange-400'}`}>
-                            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
+                            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 group-hover:-rotate-12 transition-transform" />
                             {cart.length > 0 && (
                                 <span className={`absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-orange-500 text-white text-[9px] sm:text-[10px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg border-2 animate-bounce-short ${darkMode ? 'border-[#050505]' : 'border-white'}`}>
                                     {cart.length}
