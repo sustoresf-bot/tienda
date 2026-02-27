@@ -739,7 +739,7 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 
             <button
                 onClick={handleAdd}
-                className={`w-full py-2.5 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-xs font-bold uppercase tracking-wide ${added
+                className={`w-full py-2.5 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-xs font-bold uppercase tracking-wide btn-press ripple ${added
                     ? 'bg-green-500 text-white shadow-green-500/30'
                     : darkMode
                         ? 'bg-white text-black hover:bg-orange-400 hover:text-black shadow-white/10'
@@ -783,7 +783,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const savingsAmount = Math.max(0, basePrice - finalPrice);
 
     return (
-        <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col h-full animate-fade-in content-visibility-auto contain-content`}>
+        <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col h-full card-hover animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
             <div className={`h-56 sm:h-72 ${imageBg} premium-product-image m-2 sm:m-3 p-2 sm:p-3 flex items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
@@ -5934,7 +5934,7 @@ function App() {
                                 <button
                                     onClick={handleAdd}
                                     disabled={!hasStock || isMaxInCart}
-                                    className={`flex-1 py-3.5 sm:py-5 rounded-xl sm:rounded-2xl font-black text-sm sm:text-base transition flex items-center justify-center gap-2 sm:gap-3 shadow-2xl ${added
+                                    className={`flex-1 py-3.5 sm:py-5 rounded-xl sm:rounded-2xl font-black text-sm sm:text-base transition flex items-center justify-center gap-2 sm:gap-3 shadow-2xl btn-press ripple ${added
                                         ? 'bg-green-500 text-white'
                                         : (hasStock && !isMaxInCart)
                                             ? (darkMode ? 'bg-white text-black hover:bg-orange-400 hover:text-white hover:scale-[1.02] active:scale-[0.98]' : 'bg-slate-900 text-white hover:bg-orange-600 hover:scale-[1.02] active:scale-[0.98]')
@@ -7031,7 +7031,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full max-w-5xl mx-auto aspect-video rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
+                        <div className={`relative w-full max-w-5xl mx-auto aspect-video rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero animate-fade-in-scale ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
@@ -7112,7 +7112,7 @@ function App() {
                                     <>
                                         {/* Beneficio 1 */}
                                         {settings?.showFeature1 !== false && (
-                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card animate-fade-up stagger-1 ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-orange-900/20' : 'bg-orange-100'}`}>
                                                     <Zap className={`w-5 h-5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />
                                                 </div>
@@ -7122,7 +7122,7 @@ function App() {
                                         )}
                                         {/* Beneficio 2 */}
                                         {settings?.showFeature2 !== false && (
-                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card animate-fade-up stagger-2 ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-purple-900/20' : 'bg-purple-100'}`}>
                                                     <Shield className={`w-5 h-5 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
                                                 </div>
@@ -7132,7 +7132,7 @@ function App() {
                                         )}
                                         {/* Beneficio 3 */}
                                         {settings?.showFeature3 !== false && (
-                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
+                                            <div className={`p-4 rounded-[1.5rem] border backdrop-blur-sm flex flex-col items-center text-center transition duration-500 group premium-feature-card animate-fade-up stagger-3 ${darkMode ? 'bg-slate-900/35 border-slate-800 hover:bg-slate-900/50' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'}`}>
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition ${darkMode ? 'bg-green-900/20' : 'bg-green-100'}`}>
                                                     <Headphones className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
                                                 </div>
@@ -7156,7 +7156,7 @@ function App() {
                         </div>
 
                         {/* Filtros de Categoría */}
-                        <div id="catalog" className={`sticky top-14 sm:top-16 md:top-20 z-40 backdrop-blur-xl py-2.5 sm:py-3 md:py-4 mb-4 sm:mb-6 md:mb-8 -mx-3 px-3 sm:-mx-4 sm:px-4 border-y transition-colors duration-300 premium-category-bar ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/90 border-slate-200'}`}>
+                        <div id="catalog" className={`sticky top-14 sm:top-16 md:top-20 z-40 backdrop-blur-xl py-2.5 sm:py-3 md:py-4 mb-4 sm:mb-6 md:mb-8 -mx-3 px-3 sm:-mx-4 sm:px-4 border-y transition-colors duration-300 premium-category-bar animate-fade-in ${darkMode ? 'bg-[#050505]/80 border-slate-800/50' : 'bg-white/90 border-slate-200'}`}>
                             <div
                                 ref={categoriesScrollRef}
                                 onMouseDown={handleMouseDownCategories}
@@ -7339,18 +7339,19 @@ function App() {
                                     </div>
                                 )}
                                 <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-3 sm:gap-6 md:gap-8 pb-32 product-grid-responsive">
-                                    {filteredProducts.map(p => (
-                                        <ProductCard
-                                            key={p.id}
-                                            p={p}
-                                            settings={settings}
-                                            currentUser={currentUser}
-                                            toggleFavorite={toggleFavorite}
-                                            setSelectedProduct={setSelectedProduct}
-                                            manageCart={manageCart}
-                                            calculateItemPrice={calculateItemPrice}
-                                            darkMode={darkMode}
-                                        />
+                                    {filteredProducts.map((p, idx) => (
+                                        <div key={p.id} className="animate-fade-up h-full" style={{ animationDelay: `${(idx % 20) * 50}ms`, animationFillMode: 'both' }}>
+                                            <ProductCard
+                                                p={p}
+                                                settings={settings}
+                                                currentUser={currentUser}
+                                                toggleFavorite={toggleFavorite}
+                                                setSelectedProduct={setSelectedProduct}
+                                                manageCart={manageCart}
+                                                calculateItemPrice={calculateItemPrice}
+                                                darkMode={darkMode}
+                                            />
+                                        </div>
                                     ))}
                                 </div>
 
