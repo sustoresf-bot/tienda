@@ -7046,7 +7046,7 @@ function App() {
                             />
 
                             {/* Overlay de Texto - solo visible en el primer slide */}
-                            <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-3 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none transition-opacity duration-500 ${homeBannerActiveIndex === 0 ? (darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/72 sm:from-[#050505] sm:via-[#050505]/82 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-white/45 via-white/20 sm:from-white/25 sm:via-white/10 to-transparent') : 'bg-transparent opacity-0'}`}>
+                            <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-3 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none transition-opacity duration-500 ${homeBannerActiveIndex === 0 ? (darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505] via-[#050505]/72 sm:from-[#050505] sm:via-[#050505]/82 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-black/65 via-black/40 sm:from-black/60 sm:via-black/35 to-transparent') : 'bg-transparent opacity-0'}`}>
                                 <div className="max-w-2xl animate-fade-up premium-hero-content">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
@@ -7066,21 +7066,21 @@ function App() {
                                             <span className="bg-orange-500 text-black px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2 sm:mb-4 inline-block">
                                                 {settings?.heroBadge || 'Tienda profesional lista para vender'}
                                             </span>
-                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 ${darkMode ? 'text-white hero-title-neon' : 'text-slate-900 hero-title-neon-light'}`}>
+                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 text-white hero-title-neon`} style={{ textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}>
                                                 {settings?.heroTitle1 || (settings?.storeName || 'Tu tienda online')} <br />
                                                 <span className={`text-transparent bg-clip-text bg-gradient-to-r hero-title-neon-gradient ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || 'que transmite confianza y vende más'}
                                                 </span>
                                             </h1>
-                                            <p className={`text-[10px] sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-semibold line-clamp-2 md:line-clamp-none ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                                            <p className={`text-[10px] sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-semibold line-clamp-2 md:line-clamp-none text-white/85`} style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
                                                 {settings?.heroSubtitle || 'Diseño premium, compra simple y una experiencia fluida en cualquier dispositivo.'}
                                             </p>
                                             <div className="flex flex-row items-center gap-2 sm:gap-4 premium-hero-ctas">
                                                 <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="flex-1 sm:flex-none px-2 py-2 sm:px-8 sm:py-4 bg-white text-black font-black text-xs sm:text-base rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-1 sm:gap-2 group/btn pointer-events-auto">
                                                     Ver catálogo <ArrowRight className="w-3 h-3 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
-                                                <button onClick={() => setView('guide')} className={`flex-1 sm:flex-none px-2 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1 sm:gap-2 transition font-bold text-xs sm:text-sm group pointer-events-auto ${darkMode ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-900'}`}>
-                                                    <Info className={`w-3 h-3 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} /> Cómo comprar
+                                                <button onClick={() => setView('guide')} className={`flex-1 sm:flex-none px-2 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1 sm:gap-2 transition font-bold text-xs sm:text-sm group pointer-events-auto bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white`}>
+                                                    <Info className={`w-3 h-3 sm:w-4 sm:h-4 text-orange-400`} /> Cómo comprar
                                                 </button>
                                             </div>
                                         </>
