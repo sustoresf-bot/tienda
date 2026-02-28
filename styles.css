@@ -1803,6 +1803,59 @@ span {
     position: relative;
 }
 
+.storefront-side-ambient {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    height: min(44rem, 78vh);
+    pointer-events: none;
+    z-index: 1;
+    background:
+        linear-gradient(90deg,
+            rgba(249, 115, 22, 0.24) 0%,
+            rgba(249, 115, 22, 0.14) 14%,
+            rgba(249, 115, 22, 0.07) 24%,
+            rgba(249, 115, 22, 0) 42%),
+        linear-gradient(270deg,
+            rgba(37, 99, 235, 0.24) 0%,
+            rgba(37, 99, 235, 0.14) 14%,
+            rgba(37, 99, 235, 0.07) 24%,
+            rgba(37, 99, 235, 0) 42%);
+}
+
+:root:not(.dark-mode) .storefront-side-ambient {
+    background:
+        linear-gradient(90deg,
+            rgba(249, 115, 22, 0.19) 0%,
+            rgba(249, 115, 22, 0.11) 14%,
+            rgba(249, 115, 22, 0.05) 24%,
+            rgba(249, 115, 22, 0) 42%),
+        linear-gradient(270deg,
+            rgba(37, 99, 235, 0.18) 0%,
+            rgba(37, 99, 235, 0.10) 14%,
+            rgba(37, 99, 235, 0.05) 24%,
+            rgba(37, 99, 235, 0) 42%);
+}
+
+@media (min-width: 640px) {
+    .storefront-side-ambient {
+        top: 64px;
+    }
+}
+
+@media (min-width: 768px) {
+    .storefront-side-ambient {
+        top: 80px;
+    }
+}
+
+@media (max-width: 640px) {
+    .storefront-side-ambient {
+        height: min(30rem, 65vh);
+    }
+}
+
 .storefront-shell::before {
     content: '';
     position: absolute;
