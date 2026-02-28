@@ -2039,6 +2039,7 @@ function App() {
     const [mpBrickController, setMpBrickController] = useState(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
     const [paymentError, setPaymentError] = useState(null);
+    const [lastApprovedPaymentId, setLastApprovedPaymentId] = useState('');
     const isInitializingBrick = useRef(false);
     const cardPaymentBrickRef = useRef(null);
 
@@ -4320,10 +4321,12 @@ function App() {
                     },
                     onSubmit: async (cardFormData) => {
                         console.log('🚀 Mercado Pago: Procesando pago...');
+                        let approvedPaymentId = '';
 
                         // Bloquear clics dobles pero permitir reintentos si falla
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
+                        setLastApprovedPaymentId('');
 
                         // Validar datos críticos antes de enviar
                         if (!cardFormData?.token) {
@@ -4372,9 +4375,19 @@ function App() {
                             }
 
                             if (result.status === 'approved') {
-                                await confirmOrderAfterPayment(result.id);
+                                approvedPaymentId = String(result?.id || '').trim();
+                                if (!approvedPaymentId) {
+                                    setIsPaymentProcessing(false);
+                                    setPaymentError({ message: 'Pago aprobado sin identificador. Contactá soporte.' });
+                                    showToast('Error al validar el pago aprobado.', 'error');
+                                    return;
+                                }
+
+                                setLastApprovedPaymentId(approvedPaymentId);
+                                await confirmOrderAfterPayment(approvedPaymentId);
                                 showToast('¡Compra realizada!', 'success');
                                 setIsPaymentProcessing(false);
+                                setLastApprovedPaymentId('');
                                 isInitializingBrick.current = false;
                                 // Limpiar controlador de MP para que la próxima compra reinicie de cero
                                 if (mpBrickController) {
@@ -4386,6 +4399,7 @@ function App() {
                             } else if (result.status === 'in_process' || result.status === 'pending') {
                                 setIsPaymentProcessing(false);
                                 isInitializingBrick.current = false;
+                                setLastApprovedPaymentId('');
                                 setPaymentError({
                                     message: 'El pago quedó pendiente. Aún no se confirmó el pedido. Si no se acredita en unos minutos, contactá soporte.',
                                     code: String(result.status || '').trim(),
@@ -4406,6 +4420,7 @@ function App() {
                                 isInitializingBrick.current = false;
 
                                 setIsPaymentProcessing(false);
+                                setLastApprovedPaymentId('');
                                 setPaymentError({ message: details.message, code: details.code || '' });
                                 showToast('El pago no se pudo completar. Revisá los detalles.', 'error');
                             }
@@ -4414,6 +4429,20 @@ function App() {
                             setIsPaymentProcessing(false);
                             const message = String(error?.message || '').trim();
                             const looksLikeNetworkError = /failed to fetch|networkerror|load failed|fetch/i.test(message);
+                            const paymentIdToRecover = approvedPaymentId || lastApprovedPaymentId;
+                            if (paymentIdToRecover) {
+                                const visibleMessage = message && !looksLikeNetworkError
+                                    ? message
+                                    : 'No se pudo confirmar el pedido después del pago.';
+                                setLastApprovedPaymentId(paymentIdToRecover);
+                                setPaymentError({
+                                    message: `${visibleMessage} Podés reintentar la confirmación sin volver a pagar.`,
+                                    code: String(error?.code || '').trim(),
+                                    canRetryConfirmation: true,
+                                });
+                                showToast('Pago recibido. Reintentá confirmar el pedido.', 'warning');
+                                return;
+                            }
                             if (message && !looksLikeNetworkError) {
                                 setPaymentError({ message });
                                 showToast('No se pudo procesar el pago. Revisá los detalles.', 'error');
@@ -4488,7 +4517,12 @@ function App() {
                 })),
             }),
         });
-        const data = await res.json().catch(() => ({}));
+        const resClone = res.clone();
+        const data = await res.json().catch(async () => {
+            const raw = await resClone.text().catch(() => '');
+            const trimmed = String(raw || '').trim();
+            return trimmed ? { error: trimmed.slice(0, 400) } : {};
+        });
         if (res.status === 401) throw new Error('Tu sesión venció. Iniciá sesión nuevamente e intentá otra vez.');
         if (!res.ok) {
             const compensation = String(data?.compensation || '').trim();
@@ -4510,6 +4544,33 @@ function App() {
         }
         setMpBrickController(null);
         setView('profile');
+    };
+
+    const retryOrderConfirmation = async () => {
+        const paymentId = String(lastApprovedPaymentId || '').trim();
+        if (!paymentId) {
+            setPaymentError(null);
+            initializeCardPaymentBrick();
+            return;
+        }
+
+        setIsPaymentProcessing(true);
+        try {
+            await confirmOrderAfterPayment(paymentId);
+            setLastApprovedPaymentId('');
+            setPaymentError(null);
+            showToast('Pedido confirmado correctamente.', 'success');
+        } catch (error) {
+            const message = String(error?.message || '').trim() || 'No se pudo confirmar el pedido.';
+            setPaymentError({
+                message: `${message} Podés volver a reintentar esta confirmación.`,
+                code: String(error?.code || '').trim(),
+                canRetryConfirmation: true,
+            });
+            showToast('Todavía no se pudo confirmar el pedido.', 'error');
+        } finally {
+            setIsPaymentProcessing(false);
+        }
     };
 
     // Effect para inicializar el Brick cuando se selecciona MP
@@ -4541,6 +4602,7 @@ function App() {
             } catch (e) { }
             setMpBrickController(null);
             isInitializingBrick.current = false;
+            setLastApprovedPaymentId('');
         }
     }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
 
@@ -7678,13 +7740,21 @@ function App() {
                                                         </div>
                                                         <button
                                                             onClick={() => {
+                                                                const canRetryConfirmation = typeof paymentError !== 'string' && (paymentError?.canRetryConfirmation || !!lastApprovedPaymentId);
+                                                                if (canRetryConfirmation) {
+                                                                    retryOrderConfirmation();
+                                                                    return;
+                                                                }
                                                                 setPaymentError(null);
                                                                 initializeCardPaymentBrick();
                                                             }}
-                                                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                                            disabled={isPaymentProcessing}
+                                                            className={`w-full py-3 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${isPaymentProcessing ? 'bg-slate-700 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700'}`}
                                                         >
                                                             <RefreshCw className="w-4 h-4" />
-                                                            Reintentar Pago
+                                                            {typeof paymentError !== 'string' && (paymentError?.canRetryConfirmation || !!lastApprovedPaymentId)
+                                                                ? 'Reintentar Confirmación'
+                                                                : 'Reintentar Pago'}
                                                         </button>
                                                     </div>
                                                 )}

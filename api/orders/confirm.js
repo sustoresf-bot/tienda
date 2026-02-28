@@ -519,14 +519,15 @@ export default async function handler(req, res) {
             if (paymentStatus !== 'approved') {
                 throw createApiError('payment_not_approved', 'Pago no aprobado', 400);
             }
+            // Desde este punto el pago ya puede haber sido debitado:
+            // si falla cualquier validación posterior, se debe intentar compensar.
+            paymentVerifiedForOrder = true;
 
             const expectedCents = cents(total);
             const paidCents = cents(mpPayment?.transaction_amount);
             if (expectedCents !== paidCents) {
                 throw createApiError('payment_amount_mismatch', 'Monto de pago invalido', 400);
             }
-
-            paymentVerifiedForOrder = true;
         }
 
         const orderId = `ORD-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
@@ -566,6 +567,19 @@ export default async function handler(req, res) {
             ? db.doc(`artifacts/${storeId}/public/data/paymentLocks/${buildPaymentLockId(mpPaymentId)}`)
             : null;
 
+        if (paymentLockRef) {
+            const existingLock = await paymentLockRef.get();
+            if (existingLock.exists) {
+                const lockData = existingLock.data() || {};
+                return res.status(200).json({
+                    success: true,
+                    orderId: String(lockData.orderId || ''),
+                    emailSent: false,
+                    alreadyProcessed: true,
+                });
+            }
+        }
+
         await db.runTransaction(async (tx) => {
             if (paymentLockRef) {
                 const lockSnap = await tx.get(paymentLockRef);
@@ -574,6 +588,7 @@ export default async function handler(req, res) {
                 }
             }
 
+            const stockValidations = [];
             for (const [productId, requiredQty] of stockDeltas.entries()) {
                 const productRef = db.doc(`artifacts/${storeId}/public/data/products/${productId}`);
                 const productSnap = await tx.get(productRef);
@@ -590,19 +605,22 @@ export default async function handler(req, res) {
                     throw createApiError('stock_insufficient', `Stock insuficiente para ${product.name || 'producto'}`, 409);
                 }
 
-                tx.update(productRef, {
-                    stock: currentStock - requiredQty,
-                    salesCount: (Number(product.salesCount) || 0) + requiredQty,
+                stockValidations.push({
+                    productRef,
+                    requiredQty,
+                    currentStock,
+                    salesCount: Number(product.salesCount) || 0,
                 });
             }
 
+            let couponData = null;
             if (couponDocRef) {
                 const couponSnap = await tx.get(couponDocRef);
                 if (!couponSnap.exists) {
                     throw createApiError('coupon_invalid', 'El cupon ya no esta disponible', 400);
                 }
 
-                const couponData = couponSnap.data() || {};
+                couponData = couponSnap.data() || {};
                 if (couponData.expirationDate && new Date(couponData.expirationDate) < new Date()) {
                     throw createApiError('coupon_expired', 'El cupon expiro', 400);
                 }
@@ -624,7 +642,16 @@ export default async function handler(req, res) {
                         throw createApiError('coupon_not_available_for_user', 'Este cupon no esta disponible para tu cuenta', 400);
                     }
                 }
+            }
 
+            for (const validation of stockValidations) {
+                tx.update(validation.productRef, {
+                    stock: validation.currentStock - validation.requiredQty,
+                    salesCount: validation.salesCount + validation.requiredQty,
+                });
+            }
+
+            if (couponDocRef && couponData) {
                 tx.update(couponDocRef, { usedBy: FieldValue.arrayUnion(decoded.uid) });
             }
 
@@ -702,6 +729,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ success: true, orderId, emailSent });
     } catch (error) {
+        console.error('[orders/confirm] Error:', error);
         let refundStatus = null;
         const shouldAttemptCompensationRefund =
             paymentMethod === 'Tarjeta' &&
