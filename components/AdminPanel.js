@@ -23,7 +23,16 @@ const AdminHowToUse = ({ guideKey }) => {
         },
         products: {
             title: "Inventario Inteligente",
-            steps: ["Sincroniza stock automáticamente.", "Usa IA para descripciones (Próximamente).", "Configura variantes de producto."]
+            steps: [
+                "Usá el buscador (🔍) para encontrar productos rápidamente por nombre.",
+                "Sincroniza stock automáticamente.",
+                "Usa 'Aumento de Precios' para subir precios masivamente en % o $.",
+                "Elegí cada cuántos días o meses se aplica el aumento.",
+                "Excluí productos del aumento desmarcándolos.",
+                "Cada regla nueva usa solo productos no asignados a otra regla.",
+                "Desactivá o eliminá reglas desde la sección 'Reglas de Aumento Activas'.",
+                "Configura variantes de producto."
+            ]
         }
     };
     const guide = guides[guideKey];

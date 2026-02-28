@@ -2097,6 +2097,10 @@ function App() {
     const isInitializingBrick = useRef(false);
     const cardPaymentBrickRef = useRef(null);
 
+    // --- ESTADOS PARA AUMENTO MASIVO DE PRECIOS ---
+    const [showBulkPriceModal, setShowBulkPriceModal] = useState(false);
+    const [priceRules, setPriceRules] = useState([]);
+    const [adminProductSearch, setAdminProductSearch] = useState('');
 
     const openManualSaleModal = (product) => {
         setSaleData({
@@ -3039,11 +3043,50 @@ function App() {
             })
         );
 
+        unsubscribeFunctions.push(
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'priceRules'), (snapshot) => {
+                setPriceRules(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            }, (error) => {
+                console.error("Error fetching priceRules:", error);
+                setPriceRules([]);
+            })
+        );
+
         return () => {
             cancelled = true;
             unsubscribeFunctions.forEach(unsub => unsub());
         };
     }, [systemUser, appId]);
+
+    // Efecto para aplicar aumentos automáticos de precios
+    useEffect(() => {
+        if (!appId || !priceRules.length || !products.length) return;
+        const now = Date.now();
+        priceRules.forEach(async (rule) => {
+            if (!rule.active) return;
+            const lastApplied = rule.lastApplied ? new Date(rule.lastApplied).getTime() : 0;
+            const intervalMs = rule.intervalUnit === 'months'
+                ? rule.intervalValue * 30.44 * 24 * 60 * 60 * 1000
+                : rule.intervalValue * 24 * 60 * 60 * 1000;
+            if (now - lastApplied < intervalMs) return;
+            try {
+                const batch = writeBatch(db);
+                (rule.productIds || []).forEach(pid => {
+                    const product = products.find(p => p.id === pid);
+                    if (!product) return;
+                    const currentPrice = Number(product.basePrice) || 0;
+                    const newPrice = rule.increaseType === 'percent'
+                        ? Math.round(currentPrice * (1 + rule.increaseAmount / 100))
+                        : currentPrice + rule.increaseAmount;
+                    batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'products', pid), { basePrice: newPrice });
+                });
+                batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'priceRules', rule.id), { lastApplied: new Date().toISOString() });
+                await batch.commit();
+            } catch (err) {
+                console.error("Error aplicando regla de precios:", err);
+            }
+        });
+    }, [appId, priceRules, products]);
 
     useEffect(() => {
         if (!appId || !systemUser || systemUser.isAnonymous || !isAdminUser) {
@@ -10435,8 +10478,11 @@ function App() {
                                                         );
                                                     })()}
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-wrap gap-2">
                                                     <AdminHowToUse guideKey="products" />
+                                                    <button onClick={() => setShowBulkPriceModal(true)} className="bg-green-900/30 px-4 py-3 rounded-xl font-bold text-green-400 flex gap-2 shadow-lg hover:bg-green-900/50 transition transform hover:scale-105 active:scale-95 border border-green-500/30">
+                                                        <TrendingUp className="w-5 h-5" /> Aumento de Precios
+                                                    </button>
                                                     <button onClick={() => setShowCategoryModal(true)} className="bg-slate-800 px-6 py-3 rounded-xl font-bold text-white flex gap-2 shadow-lg hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 border border-slate-700">
                                                         <FolderPlus className="w-5 h-5" /> Categorías
                                                     </button>
@@ -10444,6 +10490,23 @@ function App() {
                                                         <Plus className="w-5 h-5" /> Agregar Producto
                                                     </button>
                                                 </div>
+                                            </div>
+
+                                            {/* Buscador de productos */}
+                                            <div className="relative mb-6">
+                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Buscar producto por nombre..."
+                                                    value={adminProductSearch}
+                                                    onChange={e => setAdminProductSearch(e.target.value)}
+                                                    className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:border-orange-500/50 focus:outline-none transition"
+                                                />
+                                                {adminProductSearch && (
+                                                    <button onClick={() => setAdminProductSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition">
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {/* Banner de advertencia si hay productos desactivados por límite de plan */}
@@ -10671,7 +10734,7 @@ function App() {
                                             )}
                                             {/* Lista de Productos */}
                                             <div className="grid gap-3">
-                                                {products.map((p, idx) => (
+                                                {products.filter(p => !adminProductSearch || (p.name || '').toLowerCase().includes(adminProductSearch.toLowerCase())).map((p, idx) => (
                                                     <div
                                                         key={p.id}
                                                         style={{ animationDelay: `${idx * 0.05}s` }}
@@ -10758,6 +10821,305 @@ function App() {
                                                     </div>
                                                 ))}
                                             </div>
+
+                                            {/* Reglas de Aumento Activas */}
+                                            {priceRules.filter(r => r.active).length > 0 && (
+                                                <div className="mt-8 space-y-3">
+                                                    <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                        <TrendingUp className="w-4 h-4" /> Reglas de Aumento Activas
+                                                    </h3>
+                                                    {priceRules.filter(r => r.active).map(rule => (
+                                                        <div key={rule.id} className="bg-green-900/10 border border-green-500/20 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                                            <div>
+                                                                <p className="text-sm text-green-400 font-bold">
+                                                                    +{rule.increaseAmount}{rule.increaseType === 'percent' ? '%' : '$'} cada {rule.intervalValue} {rule.intervalUnit === 'months' ? (rule.intervalValue === 1 ? 'mes' : 'meses') : (rule.intervalValue === 1 ? 'día' : 'días')}
+                                                                </p>
+                                                                <p className="text-xs text-slate-500 mt-1">
+                                                                    {(rule.productIds || []).length} producto(s) · Creada: {new Date(rule.createdAt).toLocaleDateString('es-AR')}
+                                                                    {rule.lastApplied && ` · Último aumento: ${new Date(rule.lastApplied).toLocaleDateString('es-AR')}`}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'priceRules', rule.id), { active: false });
+                                                                            showToast("Regla desactivada", "success");
+                                                                        } catch (e) { showToast("Error al desactivar", "error"); }
+                                                                    }}
+                                                                    className="px-4 py-2 bg-red-900/20 text-red-400 rounded-lg font-bold text-xs hover:bg-red-900/40 transition border border-red-500/30"
+                                                                >
+                                                                    Desactivar
+                                                                </button>
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'priceRules', rule.id));
+                                                                            showToast("Regla eliminada", "success");
+                                                                        } catch (e) { showToast("Error al eliminar", "error"); }
+                                                                    }}
+                                                                    className="px-4 py-2 bg-slate-900 text-slate-400 rounded-lg font-bold text-xs hover:text-red-400 transition border border-slate-800"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* MODAL: AUMENTO MASIVO DE PRECIOS */}
+                                            {showBulkPriceModal && (() => {
+                                                const usedProductIds = priceRules.filter(r => r.active).flatMap(r => r.productIds || []);
+                                                const availableProducts = products.filter(p => !usedProductIds.includes(p.id));
+
+                                                const BulkPriceModal = () => {
+                                                    const [bulkSearch, setBulkSearch] = React.useState('');
+                                                    const [selectedIds, setSelectedIds] = React.useState([]);
+                                                    const [increaseType, setIncreaseType] = React.useState('percent');
+                                                    const [increaseAmount, setIncreaseAmount] = React.useState('');
+                                                    const [intervalUnit, setIntervalUnit] = React.useState('months');
+                                                    const [intervalValue, setIntervalValue] = React.useState('1');
+                                                    const [isSaving, setIsSaving] = React.useState(false);
+
+                                                    const filteredAvailable = availableProducts.filter(p =>
+                                                        !bulkSearch || (p.name || '').toLowerCase().includes(bulkSearch.toLowerCase())
+                                                    );
+
+                                                    const toggleProduct = (id) => {
+                                                        setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+                                                    };
+
+                                                    const selectAll = () => {
+                                                        setSelectedIds(filteredAvailable.map(p => p.id));
+                                                    };
+
+                                                    const deselectAll = () => {
+                                                        setSelectedIds([]);
+                                                    };
+
+                                                    const handleSaveRule = async () => {
+                                                        if (selectedIds.length === 0) return showToast("Seleccioná al menos un producto", "warning");
+                                                        if (!increaseAmount || Number(increaseAmount) <= 0) return showToast("Ingresá un valor de aumento válido", "warning");
+                                                        if (!intervalValue || Number(intervalValue) <= 0) return showToast("Ingresá un intervalo válido", "warning");
+
+                                                        setIsSaving(true);
+                                                        try {
+                                                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'priceRules'), {
+                                                                productIds: selectedIds,
+                                                                increaseType,
+                                                                increaseAmount: Number(increaseAmount),
+                                                                intervalUnit,
+                                                                intervalValue: Number(intervalValue),
+                                                                active: true,
+                                                                createdAt: new Date().toISOString(),
+                                                                lastApplied: null
+                                                            });
+                                                            showToast(`Regla de aumento creada para ${selectedIds.length} producto(s)`, "success");
+                                                            setShowBulkPriceModal(false);
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                            showToast("Error al crear la regla", "error");
+                                                        }
+                                                        setIsSaving(false);
+                                                    };
+
+                                                    return (
+                                                        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-up" onClick={() => setShowBulkPriceModal(false)}>
+                                                            <div className="bg-[#0a0a0a] border border-slate-800 rounded-[2rem] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                                                                {/* Header */}
+                                                                <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+                                                                    <div>
+                                                                        <h3 className="text-xl font-black text-white flex items-center gap-3">
+                                                                            <TrendingUp className="w-6 h-6 text-green-400" /> Aumento Masivo de Precios
+                                                                        </h3>
+                                                                        <p className="text-xs text-slate-500 mt-1">Configurá incrementos automáticos periódicos para tus productos.</p>
+                                                                    </div>
+                                                                    <button onClick={() => setShowBulkPriceModal(false)} className="p-2 bg-slate-900 rounded-full text-slate-400 hover:text-white transition border border-slate-800">
+                                                                        <X className="w-5 h-5" />
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Configuración */}
+                                                                <div className="p-6 border-b border-slate-800 space-y-4">
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Tipo de Aumento</label>
+                                                                            <div className="flex gap-2">
+                                                                                <button
+                                                                                    onClick={() => setIncreaseType('percent')}
+                                                                                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition border ${increaseType === 'percent' ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-white'}`}
+                                                                                >
+                                                                                    <Percent className="w-4 h-4 inline mr-1" /> Porcentaje
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => setIncreaseType('fixed')}
+                                                                                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition border ${increaseType === 'fixed' ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-white'}`}
+                                                                                >
+                                                                                    <DollarSign className="w-4 h-4 inline mr-1" /> Pesos ($)
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                                                                                Cantidad ({increaseType === 'percent' ? '%' : '$'})
+                                                                            </label>
+                                                                            <input
+                                                                                type="number"
+                                                                                min="1"
+                                                                                placeholder={increaseType === 'percent' ? 'Ej: 10' : 'Ej: 500'}
+                                                                                value={increaseAmount}
+                                                                                onChange={e => setIncreaseAmount(e.target.value)}
+                                                                                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:border-green-500/50 outline-none transition"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Frecuencia</label>
+                                                                            <div className="flex gap-2">
+                                                                                <button
+                                                                                    onClick={() => setIntervalUnit('days')}
+                                                                                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition border ${intervalUnit === 'days' ? 'bg-orange-900/30 text-orange-400 border-orange-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-white'}`}
+                                                                                >
+                                                                                    Días
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => setIntervalUnit('months')}
+                                                                                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition border ${intervalUnit === 'months' ? 'bg-orange-900/30 text-orange-400 border-orange-500/30' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-white'}`}
+                                                                                >
+                                                                                    Meses
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                                                                                Cada cuántos {intervalUnit === 'months' ? 'meses' : 'días'}
+                                                                            </label>
+                                                                            <input
+                                                                                type="number"
+                                                                                min="1"
+                                                                                placeholder="Ej: 1"
+                                                                                value={intervalValue}
+                                                                                onChange={e => setIntervalValue(e.target.value)}
+                                                                                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:border-orange-500/50 outline-none transition"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    {/* Preview */}
+                                                                    {increaseAmount && Number(increaseAmount) > 0 && intervalValue && Number(intervalValue) > 0 && (
+                                                                        <div className="bg-green-900/10 border border-green-500/20 p-3 rounded-xl">
+                                                                            <p className="text-xs text-green-400 font-bold">
+                                                                                📈 Los productos seleccionados subirán <span className="text-white">+{increaseAmount}{increaseType === 'percent' ? '%' : '$'}</span> cada <span className="text-white">{intervalValue} {intervalUnit === 'months' ? (Number(intervalValue) === 1 ? 'mes' : 'meses') : (Number(intervalValue) === 1 ? 'día' : 'días')}</span>
+                                                                            </p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Selección de productos */}
+                                                                <div className="p-6 flex-1 overflow-hidden flex flex-col">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                                                            Productos disponibles ({availableProducts.length})
+                                                                        </p>
+                                                                        <div className="flex gap-2">
+                                                                            <button onClick={selectAll} className="text-[10px] text-green-400 hover:text-green-300 font-bold transition">Seleccionar todos</button>
+                                                                            <span className="text-slate-700">|</span>
+                                                                            <button onClick={deselectAll} className="text-[10px] text-slate-400 hover:text-white font-bold transition">Deseleccionar</button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Buscador dentro del modal */}
+                                                                    <div className="relative mb-3">
+                                                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                                                        <input
+                                                                            type="text"
+                                                                            placeholder="Buscar producto..."
+                                                                            value={bulkSearch}
+                                                                            onChange={e => setBulkSearch(e.target.value)}
+                                                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-800 rounded-xl text-white text-sm placeholder-slate-600 focus:border-green-500/50 outline-none transition"
+                                                                        />
+                                                                        {bulkSearch && (
+                                                                            <button onClick={() => setBulkSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition">
+                                                                                <X className="w-3 h-3" />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {availableProducts.length === 0 ? (
+                                                                        <div className="text-center py-8">
+                                                                            <p className="text-slate-500 text-sm">Todos los productos ya tienen reglas activas.</p>
+                                                                            <p className="text-slate-600 text-xs mt-1">Desactivá o eliminá una regla existente para liberar productos.</p>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 max-h-[300px]">
+                                                                            {filteredAvailable.map(p => (
+                                                                                <label
+                                                                                    key={p.id}
+                                                                                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all group hover:bg-slate-900 ${selectedIds.includes(p.id) ? 'bg-green-900/15 border border-green-500/20' : 'border border-transparent'}`}
+                                                                                >
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={selectedIds.includes(p.id)}
+                                                                                        onChange={() => toggleProduct(p.id)}
+                                                                                        className="w-4 h-4 text-green-600 bg-slate-900 border-slate-600 rounded focus:ring-green-500"
+                                                                                    />
+                                                                                    <div className="w-10 h-10 bg-white rounded-lg p-1 flex-shrink-0">
+                                                                                        <img src={p.image} alt={p.name} className="w-full h-full object-contain" />
+                                                                                    </div>
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <p className="text-sm font-bold text-white truncate">{p.name}</p>
+                                                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                                                            <span className="text-xs text-orange-400 font-bold">${Number(p.basePrice).toLocaleString()}</span>
+                                                                                            <span className="text-[10px] text-slate-600">Costo: ${Number(p.purchasePrice || 0).toLocaleString()}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    {selectedIds.includes(p.id) && increaseAmount && Number(increaseAmount) > 0 && (
+                                                                                        <div className="text-right flex-shrink-0">
+                                                                                            <p className="text-[10px] text-slate-500">Nuevo precio</p>
+                                                                                            <p className="text-xs text-green-400 font-black">
+                                                                                                ${(increaseType === 'percent'
+                                                                                                    ? Math.round(Number(p.basePrice) * (1 + Number(increaseAmount) / 100))
+                                                                                                    : Number(p.basePrice) + Number(increaseAmount)
+                                                                                                ).toLocaleString()}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </label>
+                                                                            ))}
+                                                                            {filteredAvailable.length === 0 && bulkSearch && (
+                                                                                <p className="text-center text-slate-600 py-4 text-sm">No se encontraron productos con "{bulkSearch}"</p>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Footer */}
+                                                                <div className="p-6 border-t border-slate-800 flex items-center justify-between">
+                                                                    <p className="text-sm text-slate-400">
+                                                                        <span className="text-green-400 font-bold">{selectedIds.length}</span> producto(s) seleccionado(s)
+                                                                    </p>
+                                                                    <div className="flex gap-3">
+                                                                        <button onClick={() => setShowBulkPriceModal(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition">
+                                                                            Cancelar
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={handleSaveRule}
+                                                                            disabled={isSaving || selectedIds.length === 0}
+                                                                            className={`px-8 py-3 rounded-xl font-bold shadow-lg transition flex items-center gap-2 ${isSaving || selectedIds.length === 0 ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white shadow-green-900/20'}`}
+                                                                        >
+                                                                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                                            Crear Regla
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                };
+
+                                                return <BulkPriceModal />;
+                                            })()}
                                         </div>
                                     )
                                     }
