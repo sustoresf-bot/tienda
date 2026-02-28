@@ -7118,13 +7118,13 @@ function App() {
 
             {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
             {view !== 'admin' && (
-                <nav className={`fixed top-0 w-full h-14 sm:h-16 md:h-20 z-50 px-2 sm:px-4 md:px-8 lg:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 premium-nav ${darkMode ? 'bg-[#05070b]/88 border-b border-slate-800/70' : 'bg-white/92 border-b border-slate-200/90 shadow-[0_8px_28px_rgba(15,23,42,0.08)]'}`}>
+                <nav className={`store-nav fixed top-0 w-full h-14 sm:h-16 md:h-20 z-50 px-2.5 sm:px-4 md:px-8 lg:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 premium-nav ${darkMode ? 'bg-[#05070b]/88 border-b border-slate-800/70' : 'bg-white/92 border-b border-slate-200/90 shadow-[0_8px_28px_rgba(15,23,42,0.08)]'}`}>
                     {/* Logo y Menú */}
-                    <div className="flex items-center gap-2 sm:gap-6">
-                        <button onClick={() => setIsMenuOpen(true)} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
+                    <div className="store-nav-left flex items-center gap-2 sm:gap-5 min-w-0 flex-1 pr-2 sm:pr-5">
+                        <button onClick={() => setIsMenuOpen(true)} title="Abrir menú" className={`store-nav-icon-btn inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
                             <Menu className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                         </button>
-                        <div className="cursor-pointer group flex items-center gap-2 sm:gap-3 min-w-0" onClick={() => setView('store')}>
+                        <div className="store-nav-brand cursor-pointer group flex items-center gap-2 sm:gap-3 min-w-0" onClick={() => setView('store')}>
                             {settings?.logoUrl && (
                                 <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                     <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
@@ -7153,7 +7153,7 @@ function App() {
                     </div>
 
                     {/* Acciones de Usuario */}
-                    <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="store-nav-actions flex items-center gap-1.5 sm:gap-3 shrink-0">
                         {/* Botones de Contacto */}
                         <div className="hidden md:flex items-center gap-2">
                             {settings?.showWhatsapp !== false && settings?.whatsappLink && (
@@ -7174,19 +7174,17 @@ function App() {
                         {/* Botón Modo Claro/Oscuro */}
                         <button
                             onClick={() => setDarkMode(!darkMode)}
-                            className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group overflow-hidden border ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
+                            className={`store-nav-icon-btn relative inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group overflow-hidden border ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
                             title={darkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
                         >
-                            <div className={`transform transition-all duration-500 ${darkMode ? 'rotate-0 scale-100' : 'rotate-180 scale-0 absolute'}`}>
-                                <Moon className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition" />
-                            </div>
-                            <div className={`transform transition-all duration-500 ${!darkMode ? 'rotate-0 scale-100' : '-rotate-180 scale-0 absolute'}`}>
-                                <Sun className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition" />
+                            <div className="relative w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
+                                <Moon className={`absolute inset-0 m-auto w-4 h-4 sm:w-5 sm:h-5 transform transition-all duration-500 group-hover:scale-110 ${darkMode ? 'rotate-0 scale-100' : 'rotate-180 scale-0'}`} />
+                                <Sun className={`absolute inset-0 m-auto w-4 h-4 sm:w-5 sm:h-5 transform transition-all duration-500 group-hover:scale-110 ${!darkMode ? 'rotate-0 scale-100' : '-rotate-180 scale-0'}`} />
                             </div>
                         </button>
 
                         {/* Botón Carrito */}
-                        <button onClick={() => setView('cart')} className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50 hover:border-orange-500/30' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200 hover:border-orange-400'}`}>
+                        <button onClick={() => setView('cart')} title="Ver carrito" className={`store-nav-icon-btn relative inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50 hover:border-orange-500/30' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200 hover:border-orange-400'}`}>
                             <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 group-hover:-rotate-12 transition-transform" />
                             {cart.length > 0 && (
                                 <span className={`absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-orange-500 text-white text-[9px] sm:text-[10px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg border-2 animate-bounce-short ${darkMode ? 'border-[#050505]' : 'border-white'}`}>
@@ -7197,7 +7195,7 @@ function App() {
 
                         {/* Perfil / Login - Solo mostrar perfil si el usuario tiene datos válidos */}
                         {currentUser && currentUser.id && currentUser.email && currentUser.name ? (
-                            <button onClick={() => setView('profile')} className={`flex items-center gap-2 sm:gap-3 pl-2 pr-3 sm:pr-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border transition group ${darkMode ? 'bg-slate-900/50 border-slate-700/50 hover:border-orange-500/50' : 'bg-slate-100 border-slate-200 hover:border-orange-400'}`}>
+                            <button onClick={() => setView('profile')} className={`store-nav-profile-btn h-11 sm:h-12 flex items-center gap-2 sm:gap-3 pl-1.5 pr-2.5 sm:pr-4 py-0 rounded-lg sm:rounded-xl border transition group ${darkMode ? 'bg-slate-900/50 border-slate-700/50 hover:border-orange-500/50' : 'bg-slate-100 border-slate-200 hover:border-orange-400'}`}>
                                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold shadow-lg text-xs sm:text-sm group-hover:scale-105 transition">
                                     {currentUser.name.charAt(0)}
                                 </div>
@@ -7207,8 +7205,10 @@ function App() {
                                 </div>
                             </button>
                         ) : (
-                            <button onClick={() => setView('login')} className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black transition shadow-lg flex items-center gap-1 sm:gap-2 transform hover:-translate-y-0.5 ${darkMode ? 'bg-white text-black hover:bg-orange-500 hover:text-white' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
-                                <User className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">INGRESAR</span><span className="sm:hidden">Entrar</span>
+                            <button onClick={() => setView('login')} aria-label="Entrar" className={`store-nav-login-btn h-11 sm:h-12 px-2.5 sm:px-6 rounded-lg sm:rounded-xl text-[11px] sm:text-sm font-black transition shadow-lg inline-flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap transform hover:-translate-y-0.5 ${darkMode ? 'bg-white text-black hover:bg-orange-500 hover:text-white' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
+                                <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                                <span className="hidden sm:inline">INGRESAR</span>
+                                <span className="store-nav-login-label sm:hidden">Entrar</span>
                             </button>
                         )}
                     </div>

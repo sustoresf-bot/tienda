@@ -2423,3 +2423,69 @@ span {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 }
+
+/* ===== NAVBAR BALANCE FIX ===== */
+.store-nav {
+    gap: clamp(0.25rem, 0.8vw, 0.9rem);
+}
+
+.store-nav-left {
+    min-width: 0;
+}
+
+.store-nav-brand {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.store-nav-actions {
+    align-items: center;
+}
+
+.store-nav-icon-btn {
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.store-nav-login-btn,
+.store-nav-profile-btn {
+    min-height: 2.75rem !important;
+}
+
+@media (max-width: 640px) {
+    .store-nav .store-brand-title {
+        max-width: min(34vw, 150px) !important;
+        font-size: clamp(0.95rem, 3.9vw, 1.2rem) !important;
+    }
+
+    .store-nav-left {
+        padding-right: 0.65rem !important;
+    }
+
+    .store-nav-actions {
+        gap: 0.35rem !important;
+    }
+
+    .store-nav-login-btn {
+        padding-left: 0.6rem !important;
+        padding-right: 0.6rem !important;
+        letter-spacing: 0.01em;
+    }
+}
+
+@media (max-width: 430px) {
+    .store-nav-login-label {
+        display: none;
+    }
+
+    .store-nav-login-btn {
+        width: 2.75rem;
+        min-width: 2.75rem !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .store-nav .store-brand-title {
+        max-width: min(32vw, 132px) !important;
+    }
+}
