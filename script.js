@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 
 // Lazy loaded components for code splitting
 const SustIABot = lazy(() => import('./components/SustIABot.js'));
-const AdminPanel = lazy(() => import('./components/AdminPanel.js'));
 // const CheckoutPanel = lazy(() => import('./components/CheckoutPanel.js')); // Not rendered — checkout UI is inline in App
 import {
     ShoppingBag, X, User, Search, Zap, CheckCircle, Instagram, Minus, Heart, Tag,
@@ -5239,58 +5238,6 @@ function App() {
         });
     };
 
-    // 6.6. Venta Manual (Fuera de Página)
-    const handleManualSale = (product) => {
-        if (Number(product.stock) <= 0) return showToast("No hay stock para vender.", "warning");
-
-        openConfirm("Venta Manual", `¿Registrar venta manual de 1 unidad de "${product.name}"?`, async () => {
-            try {
-                const price = Number(product.basePrice) || 0;
-                const nowIso = new Date().toISOString();
-                const newOrder = {
-                    orderId: `man-${Date.now().toString().slice(-6)}`,
-                    userId: 'manual_admin',
-                    customerId: 'manual_admin',
-                    customer: {
-                        name: 'Cliente Mostrador',
-                        email: 'offline@store.com',
-                        phone: '-',
-                        dni: '-'
-                    },
-                    items: [{
-                        productId: product.id,
-                        title: product.name,
-                        quantity: 1,
-                        unit_price: price,
-                        image: product.image || ''
-                    }],
-                    subtotal: price,
-                    discount: 0,
-                    total: price,
-                    status: 'Realizado',
-                    date: nowIso,
-                    shippingAddress: 'Entrega Presencial (Offline)',
-                    paymentMethod: 'Efectivo',
-                    source: 'manual_sale',
-                    notes: 'Venta presencial rápida',
-                    lastUpdate: nowIso
-                };
-
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
-                    stock: increment(-1)
-                });
-                if (!adminOrderAlarmMuted) {
-                    startOrderAlarm();
-                }
-                showToast("Venta registrada. Stock actualizado.", "success");
-            } catch (e) {
-                console.error(e);
-                showToast("Error al registrar venta manual.", "error");
-            }
-        });
-    };
-
     // 6.7. Gestión de Pedidos (Finalizar/Eliminar)
     const finalizeOrderFn = (orderId) => {
         openConfirm("Finalizar Pedido", "¿Marcar este pedido como REALIZADO/ENTREGADO?", async () => {
@@ -7065,7 +7012,7 @@ function App() {
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
 
-        <div className={`min-h-screen flex flex-col relative w-full bg-grid font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-slate-50'}`}>
+        <div className={`min-h-screen flex flex-col relative w-full font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-slate-50'}`}>
             {/* Efectos de Fondo Globales */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
@@ -7390,7 +7337,10 @@ function App() {
                         {settingsLoaded && settings?.showBrandTicker !== false && (
                             <div className={`mb-8 w-full overflow-hidden border-y backdrop-blur-sm py-2 premium-brand-ticker ${darkMode ? 'border-slate-800/50 bg-[#0a0a0a]/50' : 'border-slate-200 bg-slate-100/50'}`}>
                                 <div className="ticker-wrap">
-                                    <div className={`ticker-content font-mono text-xs md:text-sm tracking-[0.16em] md:tracking-[0.38em] uppercase flex items-center gap-6 md:gap-12 ${darkMode ? 'text-orange-500/50' : 'text-orange-600/70'}`}>
+                                    <div
+                                        className={`ticker-content font-mono text-xs md:text-sm tracking-[0.16em] md:tracking-[0.38em] uppercase flex items-center gap-6 md:gap-12 ${darkMode ? 'text-orange-500/50' : 'text-orange-600/70'}`}
+                                        style={{ animationDuration: `${settings?.tickerSpeed || 60}s` }}
+                                    >
                                         {[1, 2, 3, 4].map((i) => (
                                             <React.Fragment key={i}>
                                                 <span className="whitespace-nowrap">{settings?.tickerText || `${settings?.storeName || ''} • calidad profesional • atención real • compra segura`}</span>
@@ -11753,6 +11703,22 @@ function App() {
                                                                         placeholder="TECNOLOGÍA • INNOVACIÓN • CALIDAD PREMIUM • FUTURO"
                                                                     />
                                                                     <p className="text-xs text-slate-500 mt-2">Este texto se repetirá en bucle.</p>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Velocidad del Ticker (segundos)</label>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <input
+                                                                            type="range"
+                                                                            min="10"
+                                                                            max="150"
+                                                                            step="5"
+                                                                            className="w-full accent-orange-500 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                                                                            value={settings?.tickerSpeed || 60}
+                                                                            onChange={e => setSettings({ ...settings, tickerSpeed: parseInt(e.target.value) })}
+                                                                        />
+                                                                        <span className="text-white font-bold min-w-[3rem] text-right">{settings?.tickerSpeed || 60}s</span>
+                                                                    </div>
+                                                                    <p className="text-xs text-slate-500 mt-2">Un número mayor hace que se mueva más lento (Por defecto: 60s).</p>
                                                                 </div>
                                                             </div>
                                                         </div>
