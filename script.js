@@ -3580,8 +3580,14 @@ function App() {
                 return snap.exists() ? { id: snap.id, ...snap.data() } : null;
             };
 
-            const setupProfile = async (firebaseUser) => {
+            const setupProfile = async (firebaseUser, profileInput = null) => {
                 if (!appId) return;
+                const payload = profileInput && typeof profileInput === 'object' ? profileInput : {
+                    name: authData.name,
+                    username: authData.username.trim().toLowerCase(),
+                    dni: authData.dni,
+                    phone: authData.phone,
+                };
                 const token = await firebaseUser.getIdToken();
                 const res = await fetch('/api/auth/setup-profile', {
                     method: 'POST',
@@ -3590,12 +3596,7 @@ function App() {
                         'x-store-id': appId || '',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({
-                        name: authData.name,
-                        username: authData.username.trim().toLowerCase(),
-                        dni: authData.dni,
-                        phone: authData.phone
-                    })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(data.error || 'Error al crear el perfil');
@@ -3616,22 +3617,25 @@ function App() {
             };
 
             if (isRegister) {
+                const normalizedName = authData.name.trim();
                 const normalizedEmail = authData.email.trim().toLowerCase();
                 const normalizedUsername = authData.username.trim().toLowerCase();
-                if (!authData.name || authData.name.trim().length < 3) throw new Error("El nombre es muy corto.");
+                const normalizedDni = authData.dni.trim();
+                const normalizedPhone = authData.phone.trim();
+                if (!normalizedName || normalizedName.length < 3) throw new Error("El nombre es muy corto.");
                 if (!STRICT_USERNAME_REGEX.test(normalizedUsername)) {
                     throw new Error("El usuario debe tener 3-32 caracteres y solo puede incluir letras, numeros, punto, guion o guion bajo.");
                 }
                 if (!normalizedEmail || !normalizedEmail.includes('@')) throw new Error("Email inválido.");
                 if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
-                if (!authData.dni || authData.dni.trim().length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dígitos).");
-                if (!authData.phone || authData.phone.trim().length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dígitos).");
+                if (!normalizedDni || normalizedDni.length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dígitos).");
+                if (!normalizedPhone || normalizedPhone.length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dígitos).");
 
                 const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, authData.password);
 
                 const minimalUser = {
                     id: userCredential.user.uid,
-                    name: authData.name,
+                    name: normalizedName,
                     email: normalizedEmail,
                     emailLower: normalizedEmail,
                     role: String(normalizedEmail).trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase() ? 'admin' : 'user',
@@ -3645,7 +3649,12 @@ function App() {
 
                 (async () => {
                     try {
-                        await setupProfile(userCredential.user);
+                        await setupProfile(userCredential.user, {
+                            name: normalizedName,
+                            username: normalizedUsername,
+                            dni: normalizedDni,
+                            phone: normalizedPhone,
+                        });
                         const profile = await fetchProfile(userCredential.user.uid);
                         if (!profile) return;
 
@@ -3671,10 +3680,11 @@ function App() {
                 if (!input.includes('@')) throw new Error("Usa tu email para iniciar sesion.");
 
                 const emailToUse = input.toLowerCase();
+                const passwordToUse = String(authData.password || '');
                 let authUser = null;
 
                 try {
-                    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, authData.password);
+                    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, passwordToUse);
                     authUser = userCredential.user;
                 } catch (e) {
                     const code = e?.code || '';
@@ -3683,7 +3693,7 @@ function App() {
                         const res = await fetch('/api/auth/legacy-login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'x-store-id': appId || '' },
-                            body: JSON.stringify({ identifier: emailToUse, password: authData.password })
+                            body: JSON.stringify({ identifier: emailToUse, password: passwordToUse })
                         });
                         const raw = await res.text().catch(() => '');
                         let data = {};
@@ -3699,6 +3709,9 @@ function App() {
                             if (data?.code === 'firebase_admin_not_configured') {
                                 throw new Error(data.error || 'Backend no configurado (Firebase Admin)');
                             }
+                            if (res.status === 429) {
+                                throw new Error(data.error || 'Demasiados intentos. Intenta nuevamente en unos minutos.');
+                            }
                             if (superAdminAttempt) {
                                 if (!isLocalhost) {
                                     throw new Error('El Super Admin no se inicializa desde Vercel. Crealo en Firebase Auth (Authentication > Users) o inicializalo en localhost.');
@@ -3706,10 +3719,10 @@ function App() {
                                 const bootRes = await fetch('/api/auth/bootstrap-super-admin', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ email: emailToUse, password: authData.password })
+                                    body: JSON.stringify({ email: emailToUse, password: passwordToUse })
                                 });
                                 if (bootRes.ok) {
-                                    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, authData.password);
+                                    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, passwordToUse);
                                     authUser = userCredential.user;
                                 } else {
                                     const bootData = await bootRes.json().catch(() => ({}));
@@ -3720,12 +3733,16 @@ function App() {
                                 throw new Error(data.error || 'No se pudo recuperar tu cuenta legacy');
                             }
                         }
-                        const userCredential = await signInWithCustomToken(auth, data.token);
-                        authUser = userCredential.user;
+                        if (!authUser && data?.token) {
+                            const userCredential = await signInWithCustomToken(auth, data.token);
+                            authUser = userCredential.user;
+                        }
                     } else if (code === 'auth/wrong-password') {
                         throw new Error("La contraseña es incorrecta.");
                     } else if (code === 'auth/too-many-requests') {
                         throw new Error("Demasiados intentos fallidos. Intenta más tarde o restablece tu contraseña.");
+                    } else if (code === 'auth/network-request-failed') {
+                        throw new Error("No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.");
                     } else {
                         throw e;
                     }
@@ -3800,7 +3817,16 @@ function App() {
             }
         } catch (error) {
             console.error("Error de autenticación:", error);
-            showToast(error.message || 'Error de autenticación', "error");
+            const code = String(error?.code || '');
+            if (code === 'auth/network-request-failed') {
+                showToast('No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.', "error");
+            } else if (code === 'auth/email-already-in-use') {
+                showToast('Ese email ya está registrado. Inicia sesión o recupera la contraseña.', "warning");
+            } else if (code === 'auth/invalid-email') {
+                showToast('Email inválido. Revisa el formato e intenta nuevamente.', "warning");
+            } else {
+                showToast(error.message || 'Error de autenticación', "error");
+            }
         } finally {
             setIsLoading(false);
         }
