@@ -14,7 +14,7 @@ import {
     Briefcase, Calculator, Save, AlertCircle, Phone, MapPin, Copy, ExternalLink, Shield, Trophy,
     ShoppingCart, Archive, Play, FolderPlus, Eye, EyeOff, Clock, Calendar, Gift, Lock, Loader2, Star, Percent, Sparkles,
     Flame, Image as ImageIcon, Filter, ChevronDown, ChevronUp, Store, BarChart, Globe, Headphones, Palette, Share2, Cog, Facebook, Twitter, Linkedin, Youtube, Bell, Music, Building, Banknote, Smartphone, UserPlus, Maximize2, Settings2, Sun, Moon, Upload, ChevronLeft,
-    HelpCircle, Lightbulb, MessageCircle, ImagePlus
+    HelpCircle, Lightbulb, ImagePlus
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -7131,8 +7131,11 @@ function App() {
                         {/* Botones de Contacto */}
                         <div className="hidden md:flex items-center gap-2">
                             {settings?.showWhatsapp !== false && settings?.whatsappLink && (
-                                <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/10 text-green-400 hover:bg-green-500 hover:text-white border border-green-500/20 transition-all font-bold text-sm hover:scale-105 active:scale-95 btn-press ripple">
-                                    <MessageCircle className="w-5 h-5 group-hover:animate-bounce" /> WhatsApp
+                                <button
+                                    onClick={() => window.open(settings?.whatsappLink, '_blank')}
+                                    className={`group flex items-center gap-2 px-4 py-2 rounded-xl border transition-all font-bold text-sm hover:scale-105 active:scale-95 btn-press ripple ${darkMode ? 'bg-green-600 text-white border-green-500/70 hover:bg-green-500' : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-500 hover:text-white hover:border-green-500'}`}
+                                >
+                                    <WhatsAppIcon className="w-5 h-5 group-hover:animate-bounce" /> WhatsApp
                                 </button>
                             )}
                             {settings?.showInstagram !== false && settings?.instagramLink && (
@@ -7637,7 +7640,7 @@ function App() {
                                     }}
                                     className="w-full sm:w-auto px-5 py-3 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black transition shadow-lg hover:shadow-green-500/30 flex items-center justify-center gap-2"
                                 >
-                                    <MessageCircle className="w-5 h-5" /> Terminar compra por WhatsApp
+                                    <WhatsAppIcon className="w-5 h-5" /> Terminar compra por WhatsApp
                                 </button>
                             )}
                         </div>
@@ -11790,7 +11793,7 @@ function App() {
                                                         {/* Footer Contact Configuration */}
                                                         <div className="bg-[#0a0a0a] border border-slate-800 p-5 md:p-8 rounded-[2rem]">
                                                             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                                                <MessageCircle className="w-5 h-5 text-green-400" /> Sección Contacto (Footer)
+                                                                <WhatsAppIcon className="w-5 h-5 text-green-400" /> Sección Contacto (Footer)
                                                             </h3>
                                                             <div className="space-y-6">
                                                                 <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
@@ -12000,7 +12003,7 @@ function App() {
                                                                 <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800">
                                                                     <div className="flex items-center justify-between mb-3">
                                                                         <label className="text-sm font-bold text-white flex items-center gap-2">
-                                                                            <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp
+                                                                            <WhatsAppIcon className="w-4 h-4 text-green-400" /> WhatsApp
                                                                         </label>
                                                                         <div className="flex items-center gap-2">
                                                                             <span className="text-[10px] text-slate-500 font-mono uppercase">Footer</span>
@@ -13095,7 +13098,7 @@ function App() {
                                     )}
                                     {settings?.showWhatsapp === true && settings?.whatsappLink && (
                                         <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-green-400 hover:bg-green-900/10 hover:border-green-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-green-600 hover:bg-green-50 hover:border-green-300'}`}>
-                                            <MessageCircle className="w-5 h-5" />
+                                            <WhatsAppIcon className="w-5 h-5" />
                                         </button>
                                     )}
                                     {settings?.showFacebook && settings?.facebookLink && (
@@ -13308,7 +13311,7 @@ function App() {
                         className="fixed bottom-24 right-4 sm:right-6 z-50 p-3 sm:p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
                         title="Chatea con nosotros"
                     >
-                        <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white fill-white" />
+                        <WhatsAppIcon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                     </button>
                 )
             }
@@ -13590,7 +13593,7 @@ function App() {
                                                 rel="noopener noreferrer"
                                                 className="w-full md:w-auto px-8 py-4 bg-green-500 hover:bg-green-400 text-black font-black text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30 flex items-center justify-center gap-2 animate-bounce-subtle"
                                             >
-                                                <MessageCircle className="w-6 h-6 fill-current" />
+                                                <WhatsAppIcon className="w-6 h-6" />
                                                 Confirmar por WhatsApp
                                                 <ArrowRight className="w-5 h-5" />
                                             </a>
@@ -13885,7 +13888,7 @@ const PlansModalContent = ({ settings, onClose }) => {
                                 rel="noopener noreferrer"
                                 className="w-full sm:w-auto px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-black text-sm sm:text-base rounded-xl transition shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"
                             >
-                                <MessageCircle className="w-5 h-5 fill-current" /> Confirmar por WhatsApp
+                                <WhatsAppIcon className="w-5 h-5" /> Confirmar por WhatsApp
                             </a>
                         </div>
                     </div>
