@@ -4506,6 +4506,7 @@ function App() {
                                 borderRadiusLarge: '16px',
                                 textPrimaryColor: darkMode ? '#f8fafc' : '#0f172a',
                                 textSecondaryColor: darkMode ? '#cbd5e1' : '#334155',
+                                inputBackgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                             },
                         },
                     },
