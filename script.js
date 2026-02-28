@@ -735,40 +735,40 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
     const isMin = qty <= 1;
 
     return (
-        <div className="quick-add-container flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <div className={`quick-add-qty flex items-center rounded-lg ${darkMode ? 'bg-zinc-800' : 'bg-slate-100'} p-1 border ${darkMode ? 'border-zinc-700' : 'border-slate-200'}`}>
+        <div className="quick-add-container flex items-center gap-1.5 sm:gap-2 max-w-full" onClick={(e) => e.stopPropagation()}>
+            <div className={`quick-add-qty flex items-center rounded-xl ${darkMode ? 'bg-zinc-900/90' : 'bg-slate-100'} p-0.5 border ${darkMode ? 'border-zinc-700/80' : 'border-slate-200'} shadow-inner`}>
                 <button
                     onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
                     disabled={isMin}
-                    className={`w-8 h-8 flex items-center justify-center rounded-md transition ${isMin ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition ${isMin ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
                 ><Minus className="w-3 h-3" /></button>
 
-                <span className={`w-9 text-center text-xs font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
+                <span className={`w-8 sm:w-9 text-center text-[0.78rem] sm:text-xs font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
 
                 <button
                     onClick={(e) => { e.stopPropagation(); setQty(Math.min(product.stock, qty + 1)); }}
                     disabled={isMax}
-                    className={`w-8 h-8 flex items-center justify-center rounded-md transition ${isMax ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition ${isMax ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
                 ><Plus className="w-3 h-3" /></button>
             </div>
 
             <button
                 onClick={handleAdd}
-                className={`quick-add-action w-auto py-2.5 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-xs font-bold uppercase tracking-wide btn-press ripple ${added
+                className={`quick-add-action w-auto h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-[10px] sm:text-xs font-black uppercase tracking-[0.08em] border btn-press ripple ${added
                     ? 'bg-green-500 text-white shadow-green-500/30'
                     : darkMode
-                        ? 'bg-white text-black hover:bg-orange-400 hover:text-black shadow-white/10'
-                        : 'bg-orange-500 text-white hover:bg-orange-600 shadow-orange-500/20'
+                        ? 'bg-orange-500 text-white hover:bg-orange-400 border-orange-300/40 shadow-orange-500/30'
+                        : 'bg-orange-500 text-white hover:bg-orange-600 border-orange-400/50 shadow-orange-500/20'
                     }`}
             >
                 {added ? (
                     <>
-                        <CheckCircle className="w-4 h-4" />
+                        <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span>Agregado</span>
                     </>
                 ) : (
                     <>
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span>Agregar</span>
                     </>
                 )}
@@ -798,10 +798,10 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const savingsAmount = Math.max(0, basePrice - finalPrice);
 
     return (
-        <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col h-full card-hover animate-fade-in content-visibility-auto contain-content`}>
+        <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col self-start card-hover animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
-            <div className={`h-56 sm:h-72 ${imageBg} premium-product-image m-2 sm:m-3 p-2 sm:p-3 flex items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
+            <div className={`h-40 sm:h-48 lg:h-52 ${imageBg} premium-product-image m-2 sm:m-3 p-2 sm:p-3 flex items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
 
                 {p.image ? (
                     <div className="w-full h-full flex items-center justify-center overflow-hidden">
@@ -810,7 +810,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                             loading="lazy"
                             decoding="async"
                             onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.nextSibling.style.display = 'flex'; }}
-                            className={`w-full h-full max-w-full max-h-full object-contain object-center block rounded-xl sm:rounded-2xl border-2 ${darkMode ? 'border-orange-500/20' : 'border-slate-100'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                            className={`w-auto h-auto max-w-full max-h-full object-contain object-center block rounded-xl sm:rounded-2xl border-2 ${darkMode ? 'border-orange-500/20' : 'border-slate-100'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                         />
                     </div>
                 ) : null}
@@ -851,14 +851,21 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     </div>
                 )}
 
-                {/* Badge de Oferta Mejorado */}
+                {/* Badge de Oferta */}
                 {hasDiscount && p.stock > 0 && (
                     <div className={`absolute z-20 ${p.isFeatured ? 'top-8 sm:top-10 left-2 sm:left-4' : 'top-2 sm:top-4 left-2 sm:left-4'}`}>
-                        <div className="rounded-xl border border-red-300/30 bg-gradient-to-r from-rose-600 via-red-500 to-orange-500 px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-[0_10px_24px_rgba(239,68,68,0.3)] transition-transform duration-300 group-hover:-translate-y-1">
-                            <div className="text-[8px] sm:text-[9px] leading-none font-black tracking-[0.22em] text-rose-100">OFERTA</div>
-                            <div className="mt-1 flex items-center gap-1 text-[10px] sm:text-[11px] font-black leading-none text-white">
-                                <Percent className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                -{safeDiscount}% OFF
+                        <div className="relative overflow-hidden rounded-lg sm:rounded-xl border border-rose-200/20 bg-[linear-gradient(118deg,#881337_0%,#9f1239_52%,#7f1d1d_100%)] px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-[0_8px_20px_rgba(136,19,55,0.24)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_24px_rgba(136,19,55,0.32)]">
+                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),transparent_55%)]" />
+                            <div className="relative flex items-center gap-1.5">
+                                <span className="inline-flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-white/12 ring-1 ring-white/25">
+                                    <Percent className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white/95" />
+                                </span>
+                                <div className="flex flex-col leading-none">
+                                    <span className="text-[7px] sm:text-[8px] font-semibold tracking-[0.2em] text-rose-100/90">OFERTA</span>
+                                    <span className="mt-0.5 text-[10px] sm:text-[11px] font-black tracking-tight text-white">
+                                        -{safeDiscount}% <span className="font-medium tracking-[0.12em] text-rose-100/90">OFF</span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -889,18 +896,18 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     ) : null}
                 </div>
 
-                <h3 className={`${textPrimary} font-bold text-base sm:text-base leading-tight mb-2 sm:mb-4 group-hover:text-orange-600 transition line-clamp-2 min-h-[2.3rem] sm:min-h-[2.5rem]`}>
+                <h3 className={`${textPrimary} font-bold text-base sm:text-[1.05rem] leading-tight mb-2 sm:mb-3 group-hover:text-orange-600 transition line-clamp-2 min-h-[2.2rem] sm:min-h-[2.4rem]`}>
                     {p.name}
                 </h3>
 
-                <div className={`mt-auto pt-2 sm:pt-4 border-t ${borderColor} flex items-end justify-between`}>
-                    <div className="flex flex-col">
+                <div className={`product-card-footer mt-auto pt-2.5 sm:pt-3 border-t ${borderColor} flex items-end justify-between gap-2 sm:gap-3`}>
+                    <div className="product-card-price flex flex-col">
                         {hasDiscount && (
                             <span className={`text-[10px] sm:text-xs ${textSecondary} line-through font-medium mb-0.5 sm:mb-1`}>
                                 Antes: ${basePrice.toLocaleString()}
                             </span>
                         )}
-                        <span className={`text-lg sm:text-2xl font-black ${textPrimary} tracking-tight flex items-center gap-1`}>
+                        <span className={`product-card-final-price text-[1.5rem] sm:text-[1.75rem] font-black ${textPrimary} tracking-tight flex items-center gap-1`}>
                             ${finalPrice.toLocaleString()}
                         </span>
                         {hasDiscount && savingsAmount > 0 && (
@@ -913,7 +920,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     {/* Add to Cart with Quantity */}
                     {p.stock > 0 && (
                         <div
-                            className="flex items-center gap-2"
+                            className="product-card-action flex items-center gap-2 shrink-0"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <QuickAddButton
@@ -7654,7 +7661,7 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-3 sm:gap-6 md:gap-8 pb-32 product-grid-responsive">
+                                <div className="grid grid-cols-1 min-[390px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1920px]:grid-cols-6 gap-3 sm:gap-5 md:gap-6 pb-32 product-grid-responsive">
                                     {filteredProducts.map(p => (
                                         <ProductCard
                                             key={p.id}

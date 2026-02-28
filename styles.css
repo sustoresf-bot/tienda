@@ -872,8 +872,10 @@ body {
 
 .premium-product-image>img,
 .premium-product-image>div>img {
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
     object-position: center;
     display: block;
@@ -1655,21 +1657,21 @@ body {
 /* --- SMALL LAPTOPS (1025px – 1279px) --- */
 @media (min-width: 1025px) and (max-width: 1279px) {
     .product-grid-responsive {
-        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-columns: repeat(4, 1fr) !important;
     }
 }
 
 /* --- DESKTOPS (1280px – 1919px) --- */
 @media (min-width: 1280px) and (max-width: 1919px) {
     .product-grid-responsive {
-        grid-template-columns: repeat(4, 1fr) !important;
+        grid-template-columns: repeat(5, 1fr) !important;
     }
 }
 
 /* --- ULTRA-WIDE & TV (1920px+) --- */
 @media (min-width: 1920px) {
     .product-grid-responsive {
-        grid-template-columns: repeat(5, 1fr) !important;
+        grid-template-columns: repeat(6, 1fr) !important;
     }
 
     /* Larger hero */
@@ -1690,7 +1692,7 @@ body {
     }
 
     .product-grid-responsive {
-        grid-template-columns: repeat(6, 1fr) !important;
+        grid-template-columns: repeat(7, 1fr) !important;
     }
 
     .container-tv,
@@ -2110,8 +2112,10 @@ span {
 }
 
 .premium-product-image img {
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
     object-position: center;
     display: block;
@@ -2121,16 +2125,39 @@ span {
 .quick-add-container {
     align-items: center;
     justify-content: flex-end;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    width: fit-content;
+    max-width: 100%;
 }
 
 .quick-add-qty {
     flex-shrink: 0;
+    padding: 0.2rem !important;
+    border-radius: 0.9rem !important;
+}
+
+.quick-add-qty button {
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 0.72rem;
+}
+
+.quick-add-qty span {
+    width: 2.05rem;
+    font-size: 0.78rem;
 }
 
 .quick-add-action {
-    min-width: 7.25rem;
+    min-width: 5.85rem;
+    height: 2.2rem;
     white-space: nowrap;
+    border-radius: 0.9rem !important;
+    padding: 0 0.8rem !important;
+}
+
+.product-grid-responsive .premium-product-card {
+    align-self: start;
+    max-width: 100%;
 }
 
 @media (max-width: 640px) {
@@ -2167,23 +2194,29 @@ span {
     }
 
     .quick-add-container {
-        gap: 0.42rem;
+        gap: 0.32rem;
+    }
+
+    .quick-add-qty {
+        padding: 0.16rem !important;
     }
 
     .quick-add-qty button {
-        width: 1.9rem;
-        height: 1.9rem;
+        width: 1.62rem;
+        height: 1.62rem;
     }
 
     .quick-add-qty span {
-        width: 1.95rem;
-        font-size: 0.75rem;
+        width: 1.7rem;
+        font-size: 0.69rem;
     }
 
     .quick-add-action {
-        min-width: 6.9rem;
-        padding: 0.55rem 0.7rem !important;
-        font-size: 0.7rem !important;
+        min-width: 5.2rem;
+        height: 1.95rem;
+        padding: 0 0.58rem !important;
+        font-size: 0.62rem !important;
+        letter-spacing: 0.06em;
     }
 }
 
@@ -2314,7 +2347,7 @@ span {
     }
 
     .product-grid-responsive {
-        gap: 1rem !important;
+        gap: 0.8rem !important;
         padding-bottom: 7rem !important;
     }
 
@@ -2380,6 +2413,31 @@ span {
     .store-view .premium-product-card .text-\[10px\],
     .store-view .premium-product-card .text-xs {
         font-size: 0.72rem !important;
+    }
+
+    .store-view .product-card-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.55rem !important;
+    }
+
+    .store-view .product-card-action {
+        width: 100%;
+    }
+
+    .store-view .product-card-action .quick-add-container {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .store-view .product-card-action .quick-add-action {
+        flex: 1 1 auto;
+        min-width: 0 !important;
+    }
+
+    .store-view .product-card-price .product-card-final-price {
+        font-size: 1.35rem !important;
+        line-height: 1.05;
     }
 
     .cart-view .cart-item-row {
@@ -2484,13 +2542,13 @@ span {
     }
 }
 
-@media (max-width: 479px) {
+@media (max-width: 389px) {
     .product-grid-responsive {
         grid-template-columns: 1fr !important;
     }
 }
 
-@media (min-width: 480px) and (max-width: 640px) {
+@media (min-width: 390px) and (max-width: 640px) {
     .product-grid-responsive {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
