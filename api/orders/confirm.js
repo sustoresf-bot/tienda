@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
 
@@ -685,6 +684,7 @@ export default async function handler(req, res) {
 
         if (emailUser && emailPass) {
             try {
+                const { default: nodemailer } = await import('nodemailer');
                 const transporter = nodemailer.createTransport({
                     service: 'gmail',
                     auth: {
