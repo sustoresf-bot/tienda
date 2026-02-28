@@ -4307,13 +4307,6 @@ function App() {
         setLastApprovedPaymentId('');
     }, []);
 
-    const clearCardPaymentBrickContainer = useCallback(() => {
-        const container = document.getElementById('cardPaymentBrick_container');
-        if (container) {
-            container.innerHTML = '';
-        }
-    }, []);
-
     const cleanupCardPaymentBrick = useCallback(async () => {
         const activeController = mpBrickControllerRef.current;
         mpBrickControllerRef.current = null;
@@ -4322,10 +4315,9 @@ function App() {
                 await activeController.unmount();
             } catch (e) { }
         }
-        clearCardPaymentBrickContainer();
         setMpBrickController(null);
         isInitializingBrick.current = false;
-    }, [clearCardPaymentBrickContainer]);
+    }, []);
 
     // Inicializar el Card Payment Brick cuando se selecciona Mercado Pago
     const initializeCardPaymentBrick = async () => {
@@ -4380,22 +4372,11 @@ function App() {
                 console.warn('⚠️ Mercado Pago: La inicialización está tardando demasiado. Liberando bloqueo...');
                 isInitializingBrick.current = false;
                 setPaymentError({ message: 'El formulario de tarjeta tardó demasiado en cargar. Tocá "Reintentar Pago".' });
-                cleanupCardPaymentBrick();
             }
         }, 20000);
 
         // Limpiar brick anterior si existe
         await cleanupCardPaymentBrick();
-
-        // Limpiar el contenedor físicamente por si quedaron restos
-        const containerElem = document.getElementById('cardPaymentBrick_container');
-        if (containerElem) {
-            containerElem.innerHTML = '';
-            // Forzar un reflow/render
-            containerElem.style.display = 'none';
-            containerElem.offsetHeight;
-            containerElem.style.display = 'block';
-        }
 
         // Limpiar errores previos
         setPaymentError(null);
