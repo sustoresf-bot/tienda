@@ -61,6 +61,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+
     // Verificar que tenemos el Access Token configurado
     if (!process.env.MP_ACCESS_TOKEN) {
         console.error('MP_ACCESS_TOKEN not configured');
@@ -72,21 +74,38 @@ export default async function handler(req, res) {
         accessToken: process.env.MP_ACCESS_TOKEN,
     });
 
-    const { action, paymentData, payer } = req.body;
+    const action = String(body.action || '').trim();
 
     try {
         if (action === 'process_payment') {
+            const paymentData = body.paymentData && typeof body.paymentData === 'object' ? body.paymentData : null;
+            const payer = body.payer && typeof body.payer === 'object' ? body.payer : null;
+            const transactionAmount = Number(paymentData?.transaction_amount);
+            const token = String(paymentData?.token || '').trim();
+            const paymentMethodId = String(paymentData?.payment_method_id || '').trim();
+            const payerEmail = String(payer?.email || '').trim().toLowerCase();
+
+            if (!paymentData || !payer) {
+                return res.status(400).json({ error: 'Invalid payment payload' });
+            }
+            if (!Number.isFinite(transactionAmount) || transactionAmount <= 0) {
+                return res.status(400).json({ error: 'Invalid transaction amount' });
+            }
+            if (!token || !paymentMethodId || !payerEmail || !payerEmail.includes('@')) {
+                return res.status(400).json({ error: 'Missing required payment fields' });
+            }
+
             const payment = new Payment(client);
 
             const paymentBody = {
-                transaction_amount: Number(paymentData.transaction_amount),
-                token: paymentData.token,
+                transaction_amount: transactionAmount,
+                token,
                 description: paymentData.description || 'Compra en Tienda Online',
                 installments: Number(paymentData.installments) || 1,
-                payment_method_id: paymentData.payment_method_id,
+                payment_method_id: paymentMethodId,
                 issuer_id: paymentData.issuer_id ? Number(paymentData.issuer_id) : undefined,
                 payer: {
-                    email: payer.email,
+                    email: payerEmail,
                     identification: {
                         type: payer.identificationType || 'DNI',
                         number: String(payer.identificationNumber || ''),

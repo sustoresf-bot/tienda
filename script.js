@@ -4427,12 +4427,12 @@ function App() {
                         style: {
                             theme: 'default',
                             customVariables: {
-                                formBackgroundColor: '#0f172a',
+                                formBackgroundColor: darkMode ? '#0f172a' : '#ffffff',
                                 baseColor: '#f97316',
                                 borderRadiusMedium: '12px',
                                 borderRadiusLarge: '16px',
-                                textPrimaryColor: '#000000',
-                                textSecondaryColor: '#334155',
+                                textPrimaryColor: darkMode ? '#f8fafc' : '#0f172a',
+                                textSecondaryColor: darkMode ? '#cbd5e1' : '#334155',
                             },
                         },
                     },
@@ -7771,7 +7771,10 @@ function App() {
                 {/* 3. VISTA DE CHECKOUT (FINALIZAR COMPRA) */}
                 {view === 'checkout' && (
                     <div className="max-w-5xl mx-auto pb-20 animate-fade-up px-2 sm:px-4 md:px-8 checkout-view">
-                        <button onClick={() => setView('cart')} className="mb-4 sm:mb-8 mt-4 sm:mt-8 text-slate-400 hover:text-white flex items-center gap-2 font-bold transition text-sm sm:text-base">
+                        <button
+                            onClick={() => setView('cart')}
+                            className={`mb-4 sm:mb-8 mt-4 sm:mt-8 flex items-center gap-2 font-bold transition text-sm sm:text-base ${darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
+                        >
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" /> Volver al Carrito
                         </button>
 
@@ -7809,9 +7812,9 @@ function App() {
                                     </div>
 
                                     {checkoutData.shippingMethod === 'Pickup' && (
-                                        <div className="p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl animate-fade-up flex gap-3">
+                                        <div className={`p-4 rounded-xl animate-fade-up flex gap-3 border ${darkMode ? 'bg-orange-900/10 border-orange-500/20' : 'bg-orange-50 border-orange-200'}`}>
                                             <Info className="w-5 h-5 text-orange-400 shrink-0" />
-                                            <p className="text-xs text-orange-200">Retira tu pedido en: <span className="font-bold">{settings?.shippingPickup?.address || 'Dirección a coordinar'}</span></p>
+                                            <p className={`text-xs ${darkMode ? 'text-orange-200' : 'text-orange-700'}`}>Retira tu pedido en: <span className={`${darkMode ? 'text-orange-100' : 'text-orange-900'} font-bold`}>{settings?.shippingPickup?.address || 'Dirección a coordinar'}</span></p>
                                         </div>
                                     )}
 
@@ -7870,7 +7873,9 @@ function App() {
                                         {settings?.paymentMercadoPago?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Tarjeta' })}
-                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Tarjeta' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Tarjeta'
+                                                    ? (darkMode ? 'border-orange-500 bg-orange-900/20 text-orange-300 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-orange-500 bg-orange-50 text-orange-600 shadow-[0_0_16px_rgba(249,115,22,0.15)]')
+                                                    : (darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-400 hover:border-slate-500 hover:bg-slate-800' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-slate-100')}`}
                                             >
                                                 {checkoutData.paymentChoice === 'Tarjeta' && <CheckCircle className="absolute top-2 right-2 text-orange-500" />}
                                                 <CreditCard className="w-8 h-8 group-hover:scale-110 transition" />
@@ -7880,7 +7885,9 @@ function App() {
                                         {settings?.paymentTransfer?.enabled && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Transferencia' })}
-                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Transferencia' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Transferencia'
+                                                    ? (darkMode ? 'border-orange-500 bg-orange-900/20 text-orange-300 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-orange-500 bg-orange-50 text-orange-600 shadow-[0_0_16px_rgba(249,115,22,0.15)]')
+                                                    : (darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-400 hover:border-slate-500 hover:bg-slate-800' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-slate-100')}`}
                                             >
                                                 {checkoutData.paymentChoice === 'Transferencia' && <CheckCircle className="absolute top-2 right-2 text-orange-500" />}
                                                 <RefreshCw className="w-8 h-8 group-hover:scale-110 transition" />
@@ -7890,7 +7897,9 @@ function App() {
                                         {settings?.paymentCash && checkoutData.shippingMethod !== 'Delivery' && (
                                             <button
                                                 onClick={() => setCheckoutData({ ...checkoutData, paymentChoice: 'Efectivo' })}
-                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Efectivo' ? 'border-orange-500 bg-orange-900/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                className={`p-4 md:p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative overflow-hidden group ${checkoutData.paymentChoice === 'Efectivo'
+                                                    ? (darkMode ? 'border-orange-500 bg-orange-900/20 text-orange-300 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-orange-500 bg-orange-50 text-orange-600 shadow-[0_0_16px_rgba(249,115,22,0.15)]')
+                                                    : (darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-400 hover:border-slate-500 hover:bg-slate-800' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-slate-100')}`}
                                             >
                                                 {checkoutData.paymentChoice === 'Efectivo' && <CheckCircle className="absolute top-2 right-2 text-orange-500" />}
                                                 <Banknote className="w-8 h-8 group-hover:scale-110 transition" />
@@ -7902,21 +7911,21 @@ function App() {
                                     {/* Card Payment Brick Container - Solo para Tarjeta */}
                                     {checkoutData.paymentChoice === 'Tarjeta' && (
                                         <div className="mt-8 animate-fade-up">
-                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-orange-500/30">
-                                                <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                                            <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/50 border-orange-500/30' : 'bg-slate-50 border-orange-200'}`}>
+                                                <h3 className={`font-bold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                                     <CreditCard className="w-5 h-5 text-orange-400" />
                                                     Ingresá los datos de tu tarjeta
                                                 </h3>
-                                                <p className="text-slate-400 text-sm mb-4">
+                                                <p className={`text-sm mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                                     Pagá de forma segura con Visa, MasterCard, AMEX y más.
                                                 </p>
 
                                                 {/* WARNING: AD BLOCKER */}
-                                                <div className="mb-6 p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
+                                                <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 border ${darkMode ? 'bg-orange-900/10 border-orange-500/20' : 'bg-orange-50 border-orange-200'}`}>
                                                     <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                                                    <p className="text-xs text-orange-200 leading-relaxed font-medium">
-                                                        <strong className="text-orange-400 block mb-1">ATENCIÓN:</strong>
-                                                        Si tenés activado un <span className="text-white font-bold">AdBlocker/Bloqueador de Anuncios</span>, por favor desactivalo temporalmente.
+                                                    <p className={`text-xs leading-relaxed font-medium ${darkMode ? 'text-orange-200' : 'text-orange-700'}`}>
+                                                        <strong className={`block mb-1 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>ATENCIÓN:</strong>
+                                                        Si tenés activado un <span className={`${darkMode ? 'text-white' : 'text-slate-900'} font-bold`}>AdBlocker/Bloqueador de Anuncios</span>, por favor desactivalo temporalmente.
                                                         Es posible que el pago no se concrete si el bloqueador interfiere con la seguridad del banco.
                                                     </p>
                                                 </div>
@@ -7927,12 +7936,12 @@ function App() {
                                                 {/* Mensaje de error si hay */}
                                                 {paymentError && (
                                                     <div className="mt-4 space-y-3">
-                                                        <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm flex items-start gap-3">
+                                                        <div className={`p-4 border rounded-xl text-sm flex items-start gap-3 ${darkMode ? 'bg-red-900/20 border-red-500/30 text-red-400' : 'bg-red-50 border-red-200 text-red-700'}`}>
                                                             <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                                                             <div className="flex-1">
                                                                 <p>{typeof paymentError === 'string' ? paymentError : paymentError?.message}</p>
                                                                 {typeof paymentError !== 'string' && paymentError?.code && (
-                                                                    <p className="text-[11px] text-red-300/90 mt-1 font-mono">Código técnico: {paymentError.code}</p>
+                                                                    <p className={`text-[11px] mt-1 font-mono ${darkMode ? 'text-red-300/90' : 'text-red-600'}`}>Código técnico: {paymentError.code}</p>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -7947,7 +7956,9 @@ function App() {
                                                                 initializeCardPaymentBrick({ force: true });
                                                             }}
                                                             disabled={isPaymentProcessing}
-                                                            className={`w-full py-3 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${isPaymentProcessing ? 'bg-slate-700 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700'}`}
+                                                            className={`w-full py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${isPaymentProcessing
+                                                                ? (darkMode ? 'bg-slate-700 text-slate-300 cursor-not-allowed' : 'bg-slate-200 text-slate-500 cursor-not-allowed')
+                                                                : (darkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-900 text-white hover:bg-slate-800')}`}
                                                         >
                                                             <RefreshCw className="w-4 h-4" />
                                                             {typeof paymentError !== 'string' && (paymentError?.canRetryConfirmation || !!lastApprovedPaymentId)
@@ -7959,7 +7970,7 @@ function App() {
 
                                                 {/* Indicador de procesamiento */}
                                                 {isPaymentProcessing && (
-                                                    <div className="mt-4 p-4 bg-orange-900/20 border border-orange-500/30 rounded-xl text-orange-400 text-sm flex items-center gap-3">
+                                                    <div className={`mt-4 p-4 rounded-xl text-sm flex items-center gap-3 border ${darkMode ? 'bg-orange-900/20 border-orange-500/30 text-orange-400' : 'bg-orange-50 border-orange-200 text-orange-700'}`}>
                                                         <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
                                                         Procesando tu pago, por favor esperá...
                                                     </div>
@@ -7969,28 +7980,28 @@ function App() {
                                     )}
                                     {checkoutData.paymentChoice === 'Transferencia' && (
                                         <div className="mt-8 animate-fade-up">
-                                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-orange-500/20">
-                                                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                                            <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/50 border-orange-500/20' : 'bg-slate-50 border-orange-200'}`}>
+                                                <h3 className={`font-bold mb-3 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                                     <Building className="w-5 h-5 text-orange-400" />
                                                     Datos para transferir
                                                 </h3>
                                                 <div className="space-y-2 text-sm">
                                                     <div className="flex items-start justify-between gap-4">
-                                                        <span className="text-slate-400">Titular</span>
-                                                        <span className="text-white font-medium text-right break-all">{settings?.paymentTransfer?.holderName ? String(settings.paymentTransfer.holderName) : 'Sin configurar'}</span>
+                                                        <span className={`${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Titular</span>
+                                                        <span className={`font-medium text-right break-all ${darkMode ? 'text-white' : 'text-slate-900'}`}>{settings?.paymentTransfer?.holderName ? String(settings.paymentTransfer.holderName) : 'Sin configurar'}</span>
                                                     </div>
                                                     <div className="flex items-start justify-between gap-4">
-                                                        <span className="text-slate-400">Alias</span>
-                                                        <span className="text-white font-mono text-right break-all">{settings?.paymentTransfer?.alias ? String(settings.paymentTransfer.alias) : 'Sin configurar'}</span>
+                                                        <span className={`${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Alias</span>
+                                                        <span className={`font-mono text-right break-all ${darkMode ? 'text-white' : 'text-slate-900'}`}>{settings?.paymentTransfer?.alias ? String(settings.paymentTransfer.alias) : 'Sin configurar'}</span>
                                                     </div>
                                                     <div className="flex items-start justify-between gap-4">
-                                                        <span className="text-slate-400">CBU</span>
-                                                        <span className="text-white font-mono text-right break-all">{settings?.paymentTransfer?.cbu ? String(settings.paymentTransfer.cbu) : 'Sin configurar'}</span>
+                                                        <span className={`${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>CBU</span>
+                                                        <span className={`font-mono text-right break-all ${darkMode ? 'text-white' : 'text-slate-900'}`}>{settings?.paymentTransfer?.cbu ? String(settings.paymentTransfer.cbu) : 'Sin configurar'}</span>
                                                     </div>
                                                 </div>
-                                                <div className="mt-4 p-4 bg-orange-900/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
+                                                <div className={`mt-4 p-4 rounded-xl flex items-start gap-3 border ${darkMode ? 'bg-orange-900/10 border-orange-500/20' : 'bg-orange-50 border-orange-200'}`}>
                                                     <Info className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                                                    <p className="text-xs text-orange-200 leading-relaxed font-medium">
+                                                    <p className={`text-xs leading-relaxed font-medium ${darkMode ? 'text-orange-200' : 'text-orange-700'}`}>
                                                         Una vez realizada la transferencia, confirmá el pedido. Si necesitás coordinar el comprobante, te contactamos por WhatsApp si está disponible.
                                                     </p>
                                                 </div>
@@ -8038,17 +8049,17 @@ function App() {
                                                 {isProcessingOrder ? 'Procesando...' : 'Confirmar Pedido'}
                                             </button>
 
-                                            <p className="text-center text-slate-600 text-xs mt-6 leading-relaxed px-4">
+                                            <p className={`text-center text-xs mt-6 leading-relaxed px-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                                 Al confirmar, aceptas nuestros términos de servicio y política de privacidad.
                                             </p>
                                         </>
                                     ) : checkoutData.paymentChoice === 'Tarjeta' ? (
-                                        <div className="bg-orange-900/10 border border-orange-500/20 p-4 rounded-2xl text-center">
-                                            <p className="text-orange-400 text-sm font-medium flex items-center justify-center gap-2">
+                                        <div className={`p-4 rounded-2xl text-center border ${darkMode ? 'bg-orange-900/10 border-orange-500/20' : 'bg-orange-50 border-orange-200'}`}>
+                                            <p className={`text-sm font-medium flex items-center justify-center gap-2 ${darkMode ? 'text-orange-400' : 'text-orange-700'}`}>
                                                 <CreditCard className="w-4 h-4" />
                                                 Completá los datos de tu tarjeta arriba para pagar
                                             </p>
-                                            <p className="text-slate-500 text-xs mt-2">
+                                            <p className={`text-xs mt-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                                 Tu compra quedará confirmada automáticamente al procesar el pago.
                                             </p>
                                         </div>

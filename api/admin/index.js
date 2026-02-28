@@ -274,7 +274,22 @@ async function handleUsers(req, res, admin, decoded, storeId) {
 
     let action = String(req.body?.action || '').trim().toLowerCase();
     if (!action) {
-        action = req.body?.email || req.body?.password ? 'update' : 'delete';
+        const body = req.body && typeof req.body === 'object' ? req.body : {};
+        const hasProfileOrAuthUpdates =
+            hasOwn(body, 'name') ||
+            hasOwn(body, 'username') ||
+            hasOwn(body, 'email') ||
+            hasOwn(body, 'phone') ||
+            hasOwn(body, 'dni') ||
+            hasOwn(body, 'role') ||
+            hasOwn(body, 'password');
+
+        if (hasProfileOrAuthUpdates) {
+            action = 'update';
+        }
+    }
+    if (!action) {
+        return res.status(400).json({ error: 'Missing action. Usa "update" o "delete".' });
     }
 
     if (action === 'delete') {

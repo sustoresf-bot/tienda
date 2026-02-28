@@ -85,7 +85,6 @@ const filesToCopy = [
     'sustia-ai.jpg',
     'sustia-ai.png',
     'reset-password.html',
-    'fnaf-game.html',
 ];
 
 for (const file of filesToCopy) {

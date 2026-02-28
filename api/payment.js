@@ -46,6 +46,27 @@ export default async function handler(req, res) {
             return null;
         };
 
+        const body = req.body && typeof req.body === 'object' ? req.body : {};
+        const formatShippingAddress = (value) => {
+            if (!value) return 'No especificada';
+            if (typeof value === 'string') {
+                const text = value.trim();
+                return text || 'No especificada';
+            }
+            if (typeof value === 'object') {
+                const address = String(value.address || '').trim();
+                const city = String(value.city || '').trim();
+                const province = String(value.province || '').trim();
+                const zipCode = String(value.zipCode || '').trim();
+                const parts = [address, city, province].filter(Boolean);
+                const formatted = parts.join(', ');
+                if (zipCode && formatted) return `${formatted} (CP: ${zipCode})`;
+                if (zipCode) return `CP: ${zipCode}`;
+                return formatted || 'No especificada';
+            }
+            return 'No especificada';
+        };
+
         // 1. Extracción de datos con Defaults seguros
         const {
             orderId,
@@ -60,12 +81,12 @@ export default async function handler(req, res) {
             shippingMethod,
             paymentMethod,
             date
-        } = req.body;
+        } = body;
 
-        const safeCustomer = customer || {};
-        const customerName = safeCustomer.name || 'Cliente';
-        const customerEmail = safeCustomer.email;
-        const finalShippingAddress = shippingAddress || shipping || 'No especificada';
+        const safeCustomer = customer && typeof customer === 'object' ? customer : {};
+        const customerName = String(safeCustomer.name || '').trim() || 'Cliente';
+        const customerEmail = String(safeCustomer.email || '').trim().toLowerCase();
+        const finalShippingAddress = formatShippingAddress(shippingAddress ?? shipping);
         const finalShippingFee = Number(shippingFee) || 0;
         const finalSubtotal = Number(subtotal) || 0;
         const finalTotal = Number(total) || 0;
@@ -84,7 +105,7 @@ export default async function handler(req, res) {
         const year = new Date(date || Date.now()).getFullYear();
 
         // Validación Crítica
-        if (!customerEmail) {
+        if (!customerEmail || !customerEmail.includes('@')) {
             console.error("❌ ERROR CRÍTICO: No se recibió email del cliente. Abortando envío.");
             // Podríamos enviar un email al admin alertando esto, pero por ahora solo logueamos.
             return res.status(400).json({ error: 'Falta email del cliente' });
