@@ -1805,44 +1805,44 @@ span {
 
 .storefront-shell::before {
     content: '';
-    position: fixed;
-    top: 56px;
-    left: 0;
-    right: 0;
-    height: min(44rem, 78vh);
+    position: absolute;
+    top: -2rem;
+    left: calc(50% - 50vw);
+    width: 100vw;
+    height: 40rem;
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
     background:
         linear-gradient(90deg,
-            rgba(249, 115, 22, 0.24) 0%,
-            rgba(249, 115, 22, 0.14) 14%,
-            rgba(249, 115, 22, 0.07) 24%,
-            rgba(249, 115, 22, 0) 42%),
+            rgba(249, 115, 22, 0.30) 0%,
+            rgba(249, 115, 22, 0.18) 16%,
+            rgba(249, 115, 22, 0.09) 30%,
+            rgba(249, 115, 22, 0) 50%),
         linear-gradient(270deg,
-            rgba(37, 99, 235, 0.24) 0%,
-            rgba(37, 99, 235, 0.14) 14%,
-            rgba(37, 99, 235, 0.07) 24%,
-            rgba(37, 99, 235, 0) 42%),
-        radial-gradient(60% 62% at 6% 11%, rgba(249, 115, 22, 0.16), transparent 72%),
-        radial-gradient(58% 60% at 94% 10%, rgba(37, 99, 235, 0.16), transparent 74%);
+            rgba(37, 99, 235, 0.30) 0%,
+            rgba(37, 99, 235, 0.18) 16%,
+            rgba(37, 99, 235, 0.09) 30%,
+            rgba(37, 99, 235, 0) 50%),
+        radial-gradient(62% 64% at 6% 10%, rgba(249, 115, 22, 0.22), transparent 72%),
+        radial-gradient(60% 62% at 94% 10%, rgba(37, 99, 235, 0.22), transparent 74%);
     transition: opacity 0.5s ease;
 }
 
 .dark-mode .storefront-shell::before {
-    height: min(46rem, 80vh);
+    height: 42rem;
     background:
         linear-gradient(90deg,
-            rgba(249, 115, 22, 0.30) 0%,
-            rgba(249, 115, 22, 0.18) 14%,
-            rgba(249, 115, 22, 0.09) 24%,
-            rgba(249, 115, 22, 0) 42%),
+            rgba(249, 115, 22, 0.36) 0%,
+            rgba(249, 115, 22, 0.22) 16%,
+            rgba(249, 115, 22, 0.11) 30%,
+            rgba(249, 115, 22, 0) 50%),
         linear-gradient(270deg,
-            rgba(37, 99, 235, 0.30) 0%,
-            rgba(37, 99, 235, 0.18) 14%,
-            rgba(37, 99, 235, 0.09) 24%,
-            rgba(37, 99, 235, 0) 42%),
-        radial-gradient(60% 62% at 6% 11%, rgba(249, 115, 22, 0.24), transparent 72%),
-        radial-gradient(58% 60% at 94% 10%, rgba(37, 99, 235, 0.22), transparent 74%);
+            rgba(37, 99, 235, 0.36) 0%,
+            rgba(37, 99, 235, 0.22) 16%,
+            rgba(37, 99, 235, 0.11) 30%,
+            rgba(37, 99, 235, 0) 50%),
+        radial-gradient(62% 64% at 6% 10%, rgba(249, 115, 22, 0.28), transparent 72%),
+        radial-gradient(60% 62% at 94% 10%, rgba(37, 99, 235, 0.26), transparent 74%);
 }
 
 :root:not(.dark-mode) .storefront-shell::before {
@@ -1859,18 +1859,6 @@ span {
             rgba(37, 99, 235, 0) 42%),
         radial-gradient(60% 62% at 6% 11%, rgba(249, 115, 22, 0.14), transparent 72%),
         radial-gradient(58% 60% at 94% 10%, rgba(37, 99, 235, 0.12), transparent 74%);
-}
-
-@media (min-width: 640px) {
-    .storefront-shell::before {
-        top: 64px;
-    }
-}
-
-@media (min-width: 768px) {
-    .storefront-shell::before {
-        top: 80px;
-    }
 }
 
 /* --- Premium Navbar --- */
@@ -2147,8 +2135,8 @@ span {
 
 @media (max-width: 640px) {
     .storefront-shell::before {
-        top: 56px;
-        height: min(30rem, 65vh);
+        top: -1rem;
+        height: 22rem;
     }
 
     .premium-announcement p {
