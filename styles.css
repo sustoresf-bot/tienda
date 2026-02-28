@@ -1818,7 +1818,8 @@ span {
     isolation: isolate;
 }
 
-.storefront-shell::before {
+.storefront-shell::before,
+.storefront-shell::after {
     content: '';
     position: absolute;
     top: -2rem;
@@ -1827,6 +1828,12 @@ span {
     height: 40rem;
     pointer-events: none;
     z-index: 0;
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+    transition: opacity 0.5s ease;
+}
+
+.storefront-shell::before {
     background:
         linear-gradient(90deg,
             rgba(249, 115, 22, 0.34) 0%,
@@ -1838,7 +1845,13 @@ span {
             rgba(37, 99, 235, 0.34) 100%),
         radial-gradient(62% 64% at 6% 10%, rgba(249, 115, 22, 0.24), transparent 72%),
         radial-gradient(60% 62% at 94% 10%, rgba(37, 99, 235, 0.24), transparent 74%);
-    transition: opacity 0.5s ease;
+}
+
+.storefront-shell::after {
+    background-size: 40px 40px;
+    background-image:
+        linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
 }
 
 .storefront-shell>* {
@@ -1846,8 +1859,12 @@ span {
     z-index: 1;
 }
 
+.dark-mode .storefront-shell::before,
+.dark-mode .storefront-shell::after {
+    height: 44rem;
+}
+
 .dark-mode .storefront-shell::before {
-    height: 42rem;
     background:
         linear-gradient(90deg,
             rgba(249, 115, 22, 0.42) 0%,
@@ -3088,7 +3105,7 @@ span {
         padding-bottom: calc(9.8rem + var(--fab-safe-bottom)) !important;
     }
 
-.store-view.store-view-fab-safe.store-view-fab-dual .product-grid-responsive {
+    .store-view.store-view-fab-safe.store-view-fab-dual .product-grid-responsive {
         padding-right: 0 !important;
         padding-bottom: calc(12.25rem + var(--fab-safe-bottom)) !important;
     }
