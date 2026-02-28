@@ -2941,13 +2941,23 @@ span {
 }
 
 /* Keep IA launcher visually separated when WhatsApp FAB is also visible. */
-.store-sustia-root.store-sustia-root-with-wa .store-sustia-launcher-fab {
-    margin-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+@media (min-width: 640px) {
+    .store-sustia-root.store-sustia-root-with-wa {
+        bottom: calc(6.75rem + env(safe-area-inset-bottom)) !important;
+    }
+
+    .store-sustia-root.store-sustia-root-with-wa .store-sustia-launcher-fab {
+        margin-bottom: 0;
+    }
 }
 
-@media (min-width: 640px) {
+@media (max-width: 639px) {
+    .store-sustia-root.store-sustia-root-with-wa {
+        bottom: calc(6rem + env(safe-area-inset-bottom)) !important;
+    }
+
     .store-sustia-root.store-sustia-root-with-wa .store-sustia-launcher-fab {
-        margin-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+        margin-bottom: 0;
     }
 }
 
@@ -3072,8 +3082,53 @@ span {
         padding-bottom: calc(9.8rem + var(--fab-safe-bottom)) !important;
     }
 
-    .store-view.store-view-fab-safe.store-view-fab-dual .product-grid-responsive {
+.store-view.store-view-fab-safe.store-view-fab-dual .product-grid-responsive {
         padding-right: 0 !important;
         padding-bottom: calc(12.25rem + var(--fab-safe-bottom)) !important;
+    }
+}
+
+/* Mobile storefront hotfix (category overlap + quick add truncation) */
+@media (max-width: 640px) {
+    #catalog.premium-category-bar {
+        position: relative !important;
+        top: 0 !important;
+        z-index: 24 !important;
+        margin-bottom: 1.2rem !important;
+    }
+
+    .store-view .product-card-action .quick-add-container {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.28rem !important;
+    }
+
+    .store-view .product-card-action .quick-add-qty {
+        width: auto !important;
+        flex: 0 0 46% !important;
+    }
+
+    .store-view .product-card-action .quick-add-action {
+        width: auto !important;
+        flex: 1 1 54% !important;
+        min-width: 0 !important;
+        overflow: visible !important;
+        padding-left: 0.45rem !important;
+        padding-right: 0.45rem !important;
+        letter-spacing: 0.005em !important;
+    }
+
+    .store-view .product-card-action .quick-add-action .quick-add-label {
+        display: inline-block;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+        line-height: 1;
+        font-size: 0.73rem;
+    }
+
+    .store-view .product-card-action .quick-add-action .quick-add-icon {
+        display: none !important;
     }
 }

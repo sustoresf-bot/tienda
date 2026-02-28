@@ -754,6 +754,7 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 
             <button
                 onClick={handleAdd}
+                aria-label={added ? 'Producto agregado' : 'Agregar al carrito'}
                 className={`quick-add-action w-full h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-[10px] sm:text-xs font-black uppercase tracking-[0.08em] border btn-press ripple ${added
                     ? 'bg-green-500 text-white shadow-green-500/30'
                     : darkMode
@@ -763,13 +764,13 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
             >
                 {added ? (
                     <>
-                        <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span>Agregado</span>
+                        <CheckCircle className="quick-add-icon w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <strong className="quick-add-label font-black">Agregado</strong>
                     </>
                 ) : (
                     <>
-                        <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span>Agregar</span>
+                        <Plus className="quick-add-icon w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <strong className="quick-add-label font-black">Agregar</strong>
                     </>
                 )}
             </button>

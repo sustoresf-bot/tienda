@@ -958,6 +958,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     );
 }, (prevProps, nextProps) => {
     if (prevProps.settings?.subscriptionPlan !== nextProps.settings?.subscriptionPlan) return false;
+    if (prevProps.hasFloatingWhatsapp !== nextProps.hasFloatingWhatsapp) return false;
     if (prevProps.products !== nextProps.products) return false;
     return true;
 });
