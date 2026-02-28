@@ -2348,21 +2348,22 @@ function App() {
         const scheduleBeep = (at) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.value = 880;
-            gain.gain.setValueAtTime(0.0001, at);
-            gain.gain.exponentialRampToValueAtTime(0.12, at + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.09);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1046.50, at); // C6 Note
+            osc.frequency.exponentialRampToValueAtTime(880, at + 0.2); // Glide down
+            gain.gain.setValueAtTime(0, at);
+            gain.gain.linearRampToValueAtTime(1.0, at + 0.05); // Max volume
+            gain.gain.linearRampToValueAtTime(0, at + 0.25);
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.start(at);
-            osc.stop(at + 0.1);
+            osc.stop(at + 0.3);
         };
 
         const tick = () => {
             const now = ctx.currentTime;
             scheduleBeep(now);
-            scheduleBeep(now + 0.18);
+            scheduleBeep(now + 0.35); // Second beep
         };
 
         orderAlarmActiveRef.current = true;
