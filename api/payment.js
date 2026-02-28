@@ -125,6 +125,32 @@ export default async function handler(req, res) {
             day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
             timeZone: 'America/Argentina/Buenos_Aires'
         });
+        const formatDiscountLabel = (details) => {
+            if (!details || typeof details !== 'object') return null;
+
+            const type = String(details.type || '').trim().toLowerCase();
+            const value = Number(details.value);
+            if (type === 'percentage' && Number.isFinite(value) && value > 0) {
+                return `${value}%`;
+            }
+            if (type === 'fixed' && Number.isFinite(value) && value > 0) {
+                return formatMoney(value);
+            }
+
+            // Backward compatibility with legacy payloads.
+            const legacyPercentage = Number(details.percentage);
+            if (Number.isFinite(legacyPercentage) && legacyPercentage > 0) {
+                return `${legacyPercentage}%`;
+            }
+
+            const amount = Number(details.amount);
+            if (Number.isFinite(amount) && amount > 0) {
+                return formatMoney(amount);
+            }
+
+            return null;
+        };
+        const discountLabel = formatDiscountLabel(discountDetails) || formatMoney(discountDetails?.amount);
 
         // items mapping safely
         const safeItems = Array.isArray(items) ? items : [];
@@ -263,7 +289,7 @@ export default async function handler(req, res) {
                                             </tr>
                                             ${discountDetails ? `
                                                 <tr>
-                                                    <td style="padding-bottom: 8px; text-align: right; color: #22c55e; font-size: 14px;">Descuento (${discountDetails.percentage}%)</td>
+                                                    <td style="padding-bottom: 8px; text-align: right; color: #22c55e; font-size: 14px;">Descuento (${discountLabel})</td>
                                                     <td style="padding-bottom: 8px; text-align: right; color: #22c55e; font-size: 14px; font-weight: 700;">-${formatMoney(discountDetails.amount)}</td>
                                                 </tr>
                                             ` : ''}

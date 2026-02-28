@@ -17,6 +17,32 @@ function formatDate(dateString) {
     });
 }
 
+function formatDiscountLabel(discountDetails) {
+    if (!discountDetails || typeof discountDetails !== 'object') return null;
+
+    const type = String(discountDetails.type || '').trim().toLowerCase();
+    const value = Number(discountDetails.value);
+    if (type === 'percentage' && Number.isFinite(value) && value > 0) {
+        return `${value}%`;
+    }
+    if (type === 'fixed' && Number.isFinite(value) && value > 0) {
+        return formatMoney(value);
+    }
+
+    // Backward compatibility with legacy payloads.
+    const legacyPercentage = Number(discountDetails.percentage);
+    if (Number.isFinite(legacyPercentage) && legacyPercentage > 0) {
+        return `${legacyPercentage}%`;
+    }
+
+    const amount = Number(discountDetails.amount);
+    if (Number.isFinite(amount) && amount > 0) {
+        return formatMoney(amount);
+    }
+
+    return null;
+}
+
 function calculateItemPrice(basePrice, discount) {
     const base = Number(basePrice) || 0;
     const disc = Number(discount) || 0;
@@ -122,6 +148,7 @@ function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId,
     const safeBrandName = escapeHtml(brandName || 'Sustore');
     const storeUrl = normalizeUrl(ticketSiteUrl) || 'https://sustore.vercel.app/';
     const whatsappUrl = normalizeWhatsappLink(ticketWhatsappLink);
+    const discountLabel = formatDiscountLabel(discountDetails) || formatMoney(discountDetails?.amount);
     const year = new Date(date || Date.now()).getFullYear();
     return `
         <!DOCTYPE html>
@@ -210,7 +237,7 @@ function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId,
                                         </tr>
                                         ${discountDetails ? `
                                             <tr>
-                                                <td style="padding-bottom: 8px; text-align: right; color: #22c55e; font-size: 14px;">Descuento (${discountDetails.percentage}%)</td>
+                                                <td style="padding-bottom: 8px; text-align: right; color: #22c55e; font-size: 14px;">Descuento (${discountLabel})</td>
                                                 <td style="padding-bottom: 8px; text-align: right; color: #22c55e; font-size: 14px; font-weight: 700;">-${formatMoney(discountDetails.amount)}</td>
                                             </tr>
                                         ` : ''}
@@ -518,7 +545,8 @@ export default async function handler(req, res) {
                         discountAmount = Math.ceil(discountAmount);
                         if (discountAmount > 0) {
                             discountDetails = {
-                                percentage: Number(coupon.value) || 0,
+                                type: String(coupon.type || '').trim().toLowerCase() === 'fixed' ? 'fixed' : 'percentage',
+                                value: Number(coupon.value) || 0,
                                 amount: discountAmount,
                             };
                             couponDocRef = couponDoc.ref;
@@ -599,6 +627,13 @@ export default async function handler(req, res) {
             const existingLock = await paymentLockRef.get();
             if (existingLock.exists) {
                 const lockData = existingLock.data() || {};
+                const ownerId = String(lockData.customerId || '').trim();
+                if (ownerId && ownerId !== decoded.uid) {
+                    return res.status(409).json({
+                        error: 'Este pago ya fue registrado anteriormente',
+                        code: 'payment_already_used',
+                    });
+                }
                 return res.status(200).json({
                     success: true,
                     orderId: String(lockData.orderId || ''),
@@ -685,14 +720,17 @@ export default async function handler(req, res) {
 
             tx.set(orderRef, orderData);
             tx.set(cartRef, { userId: decoded.uid, items: [] }, { merge: true });
-            tx.set(userRef, {
-                address: String(shipping.address || ''),
-                city: String(shipping.city || ''),
-                province: String(shipping.province || ''),
-                zipCode: String(shipping.zipCode || ''),
+            const userUpdate = {
                 ordersCount: FieldValue.increment(1),
                 lastOrderDate: nowIso,
-            }, { merge: true });
+            };
+            if (shippingMethod === 'Delivery') {
+                userUpdate.address = String(shipping.address || '').trim();
+                userUpdate.city = String(shipping.city || '').trim();
+                userUpdate.province = String(shipping.province || '').trim();
+                userUpdate.zipCode = String(shipping.zipCode || '').trim();
+            }
+            tx.set(userRef, userUpdate, { merge: true });
 
             if (paymentLockRef) {
                 tx.set(paymentLockRef, {

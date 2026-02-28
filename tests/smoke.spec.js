@@ -49,3 +49,22 @@ test('auth hardening: username lookup deprecado y reset no enumera', async ({ re
     const bodyB = await resetB.json().catch(() => ({}));
     expect(Object.keys(bodyA).sort()).toEqual(Object.keys(bodyB).sort());
 });
+
+test('checkout endpoint: same-origin fallback acepta POST sin origin/referer', async ({ request }) => {
+    const res = await request.post('/api/checkout', {
+        headers: { 'sec-fetch-site': 'same-origin' },
+        data: { action: 'invalid_action_for_test' },
+    });
+
+    // No debe bloquear por origen en requests same-origin sin Origin/Referer.
+    expect(res.status()).toBe(400);
+});
+
+test('checkout endpoint: bloquea origen cruzado', async ({ request }) => {
+    const res = await request.post('/api/checkout', {
+        headers: { origin: 'https://example.com' },
+        data: { action: 'invalid_action_for_test' },
+    });
+
+    expect(res.status()).toBe(403);
+});

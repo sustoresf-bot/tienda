@@ -23,6 +23,10 @@ function isSameOriginRequest(req) {
     const referer = String(req?.headers?.referer || '').trim();
     if (referer) return hostMatchesUrlHost(referer, host);
 
+    // Fallback for browsers/proxies that omit Origin/Referer on same-origin requests.
+    const secFetchSite = String(req?.headers?.['sec-fetch-site'] || '').trim().toLowerCase();
+    if (secFetchSite === 'same-origin') return true;
+
     const method = String(req?.method || '').toUpperCase();
     return method === 'GET' || method === 'HEAD';
 }
