@@ -39,8 +39,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const WhatsAppIcon = ({ className = '' }) => (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true" focusable="false">
-        <path d="M16.75 13.96C17 14.09 18.24 14.7 18.5 14.83C18.76 14.97 18.95 15.03 19.03 15.16C19.11 15.3 19.11 15.95 18.88 16.59C18.66 17.22 17.58 17.82 17.09 17.87C16.6 17.92 16.05 18.1 13.94 17.28C11.39 16.29 9.74 13.84 9.61 13.67C9.5 13.5 8.63 12.33 8.63 11.12C8.63 9.91 9.25 9.32 9.47 9.08C9.69 8.85 9.94 8.79 10.1 8.79C10.26 8.79 10.42 8.79 10.56 8.8C10.7 8.81 10.89 8.75 11.07 9.19C11.25 9.63 11.68 10.84 11.74 10.96C11.8 11.09 11.84 11.24 11.74 11.4C11.64 11.57 11.59 11.66 11.47 11.81C11.35 11.95 11.22 12.13 11.12 12.24C11 12.37 10.87 12.5 11.01 12.75C11.15 13 11.64 13.84 12.41 14.53C13.41 15.43 14.25 15.71 14.5 15.81C14.75 15.91 14.89 15.89 15 15.76C15.14 15.6 15.56 15.11 15.71 14.86C15.85 14.61 16 14.65 16.25 14.74M12 2A10 10 0 0 0 2 12A10 10 0 0 0 3.67 17.43L2.5 21.5L6.7 20.39A10 10 0 0 0 12 22A10 10 0 0 0 22 12A10 10 0 0 0 12 2Z" />
+    <svg viewBox="0 0 448 512" className={className} fill="currentColor" aria-hidden="true" focusable="false">
+        <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-221.7 99.3-221.7 221.7 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 69 27 106.1 27h.1c122.3 0 221.7-99.3 221.7-221.7 0-59.3-23.1-115-64.7-157.3zM223.9 438.7h-.1c-33.1 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3 18.6-68-4.3-7c-18.5-29.4-28.2-63.4-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 54 81.2 54 130.4-.1 101.8-82.9 184.6-184.5 184.6zm101.1-138.2c-5.5-2.8-32.8-16.1-37.9-17.9-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 17.9-17.5 21.6-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.7 35.2 15.2 49 16.5 66.6 14 10.7-1.6 32.8-13.4 37.4-26.3 4.6-12.9 4.6-23.9 3.2-26.3-1.3-2.4-5-3.7-10.5-6.5z" />
     </svg>
 );
 // App store ID for single-store deployments (injected at build time when available).
@@ -13155,21 +13155,52 @@ function App() {
                                     <p className={`text-sm leading-relaxed mb-4 ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>
                                         {settings?.footerContactDescription || '¿Tienes alguna duda? Estamos aquí para ayudarte.'}
                                     </p>
-                                    <button
-                                        onClick={() => {
-                                            const type = settings?.footerContactType || 'whatsapp';
-                                            if (type === 'whatsapp' && settings?.whatsappLink) {
-                                                window.open(settings.whatsappLink, '_blank');
-                                            } else if (type === 'instagram' && settings?.instagramLink) {
-                                                window.open(settings.instagramLink, '_blank');
-                                            } else if (type === 'email' && settings?.storeEmail) {
-                                                window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${settings.storeEmail}`, '_blank');
-                                            }
-                                        }}
-                                        className={`px-6 py-3 rounded-xl text-sm font-bold transition w-full md:w-auto border ${darkMode ? 'bg-orange-900/10 text-orange-400 border-orange-500/20 hover:bg-orange-500 hover:text-white' : 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-500 hover:text-white hover:border-orange-500'}`}
-                                    >
-                                        {settings?.footerContactButtonText || 'Contactar Soporte'}
-                                    </button>
+                                    {(() => {
+                                        const type = settings?.footerContactType || 'whatsapp';
+                                        const safeLabel = String(settings?.footerContactButtonText || '').trim() || 'Contactar Soporte';
+                                        const targetUrl = type === 'whatsapp'
+                                            ? String(settings?.whatsappLink || '').trim()
+                                            : type === 'instagram'
+                                                ? String(settings?.instagramLink || '').trim()
+                                                : type === 'email'
+                                                    ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(String(settings?.storeEmail || '').trim())}`
+                                                    : '';
+                                        const hasTarget = !!targetUrl && (type !== 'email' || !!String(settings?.storeEmail || '').trim());
+
+                                        const darkStyleByType = {
+                                            whatsapp: 'bg-green-600 text-white border-green-500/70 hover:bg-green-500',
+                                            instagram: 'bg-pink-600 text-white border-pink-500/70 hover:bg-pink-500',
+                                            email: 'bg-blue-600 text-white border-blue-500/70 hover:bg-blue-500',
+                                        };
+                                        const lightStyleByType = {
+                                            whatsapp: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-500 hover:text-white hover:border-green-500',
+                                            instagram: 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-500 hover:text-white hover:border-pink-500',
+                                            email: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-500 hover:text-white hover:border-blue-500',
+                                        };
+                                        const baseTone = darkMode
+                                            ? (darkStyleByType[type] || 'bg-orange-600 text-white border-orange-500/70 hover:bg-orange-500')
+                                            : (lightStyleByType[type] || 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-500 hover:text-white hover:border-orange-500');
+
+                                        return (
+                                            <button
+                                                onClick={() => {
+                                                    if (!hasTarget) {
+                                                        showToast('Configura el contacto del footer en Admin → Configuración → Footer.', 'warning');
+                                                        return;
+                                                    }
+                                                    window.open(targetUrl, '_blank');
+                                                }}
+                                                disabled={!hasTarget}
+                                                className={`px-6 py-3 rounded-xl text-sm font-bold transition w-full md:w-auto border inline-flex items-center justify-center gap-2 ${baseTone} ${hasTarget ? '' : 'opacity-60 cursor-not-allowed'}`}
+                                                style={{ WebkitTextFillColor: 'currentColor' }}
+                                            >
+                                                {type === 'whatsapp' && <WhatsAppIcon className="w-4 h-4" />}
+                                                {type === 'instagram' && <Instagram className="w-4 h-4" />}
+                                                {type === 'email' && <Mail className="w-4 h-4" />}
+                                                <span className="leading-none">{safeLabel}</span>
+                                            </button>
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </div>
