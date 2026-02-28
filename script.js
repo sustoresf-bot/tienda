@@ -519,7 +519,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
     }, [slides, activeIndex]);
 
     const imageOpacity = 1;
-    const imageClass = `block w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`;
+    const imageClass = `absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${darkMode ? '' : 'saturate-110 contrast-110'}`;
 
     const goPrev = () => {
         setActiveIndex(i => {
@@ -7022,7 +7022,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full max-w-5xl mx-auto aspect-video rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
+                        <div className={`relative w-full max-w-5xl mx-auto aspect-[16/9] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
@@ -7400,8 +7400,8 @@ function App() {
                                     {cart.map((item) => (
                                         <div key={item.product.id} className={`cart-item-row p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border flex flex-row gap-3 sm:gap-4 md:gap-6 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm hover:shadow-md'}`}>
                                             {/* Imagen */}
-                                            <div className="cart-item-image w-20 sm:w-24 md:w-32 h-20 sm:h-24 md:h-32 bg-white rounded-xl sm:rounded-2xl flex items-center justify-center p-1.5 sm:p-2 flex-shrink-0 shadow-lg border border-slate-100">
-                                                <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain" />
+                                            <div className="cart-item-image w-20 sm:w-24 md:w-32 flex-shrink-0">
+                                                <img src={item.product.image} alt={item.product.name} className="w-full h-auto object-contain rounded-xl sm:rounded-2xl" />
                                             </div>
 
                                             {/* Info */}
