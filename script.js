@@ -2070,6 +2070,7 @@ function App() {
     });
     const mpBrickControllerRef = useRef(null);
     const brickInitStartedAtRef = useRef(0);
+    const brickAutoInitLockedRef = useRef(false);
     const isInitializingBrick = useRef(false);
     const cardPaymentBrickRef = useRef(null);
 
@@ -4307,7 +4308,7 @@ function App() {
         setLastApprovedPaymentId('');
     }, []);
 
-    const cleanupCardPaymentBrick = useCallback(async () => {
+    const cleanupCardPaymentBrick = useCallback(async ({ keepInitializing = false } = {}) => {
         const activeController = mpBrickControllerRef.current;
         mpBrickControllerRef.current = null;
         if (activeController && typeof activeController.unmount === 'function') {
@@ -4316,11 +4317,22 @@ function App() {
             } catch (e) { }
         }
         setMpBrickController(null);
-        isInitializingBrick.current = false;
+        if (!keepInitializing) {
+            isInitializingBrick.current = false;
+        }
     }, []);
 
     // Inicializar el Card Payment Brick cuando se selecciona Mercado Pago
-    const initializeCardPaymentBrick = async () => {
+    const initializeCardPaymentBrick = async ({ force = false } = {}) => {
+        if (force) {
+            brickAutoInitLockedRef.current = false;
+        }
+        if (!force && brickAutoInitLockedRef.current) {
+            return;
+        }
+        if (mpBrickControllerRef.current && !force) {
+            return;
+        }
         if (isInitializingBrick.current) {
             const elapsed = Date.now() - (brickInitStartedAtRef.current || 0);
             if (elapsed < 25000) return;
@@ -4371,12 +4383,13 @@ function App() {
             if (isInitializingBrick.current) {
                 console.warn('⚠️ Mercado Pago: La inicialización está tardando demasiado. Liberando bloqueo...');
                 isInitializingBrick.current = false;
+                brickAutoInitLockedRef.current = true;
                 setPaymentError({ message: 'El formulario de tarjeta tardó demasiado en cargar. Tocá "Reintentar Pago".' });
             }
         }, 20000);
 
         // Limpiar brick anterior si existe
-        await cleanupCardPaymentBrick();
+        await cleanupCardPaymentBrick({ keepInitializing: true });
 
         // Limpiar errores previos
         setPaymentError(null);
@@ -4431,6 +4444,7 @@ function App() {
                     onReady: () => {
                         console.log('✅ Mercado Pago: Card Payment Brick cargado.');
                         isInitializingBrick.current = false;
+                        brickAutoInitLockedRef.current = false;
                         clearTimeout(safetyTimeout);
                     },
                     onSubmit: async (cardFormData) => {
@@ -4572,6 +4586,7 @@ function App() {
                     onError: (error) => {
                         console.error('❌ Mercado Pago Error:', error);
                         isInitializingBrick.current = false;
+                        brickAutoInitLockedRef.current = true;
                         clearTimeout(safetyTimeout);
                         const errorMessage = getMpErrorMessage(error).toLowerCase();
                         // No mostrar error si es solo por AdBlock
@@ -4592,6 +4607,7 @@ function App() {
         } catch (error) {
             console.error('Error creating brick:', error);
             isInitializingBrick.current = false;
+            brickAutoInitLockedRef.current = true;
             clearTimeout(safetyTimeout);
             showToast('Error al cargar el formulario de pago.', 'error');
             await cleanupCardPaymentBrick();
@@ -4690,7 +4706,7 @@ function App() {
         ).trim();
         if (!paymentId) {
             setPaymentError(null);
-            initializeCardPaymentBrick();
+            initializeCardPaymentBrick({ force: true });
             return;
         }
 
@@ -4765,10 +4781,14 @@ function App() {
                 return;
             }
 
+            if (mpBrickControllerRef.current || isInitializingBrick.current || brickAutoInitLockedRef.current) {
+                return;
+            }
+
             // Pequeño delay para asegurar que el DOM está listo
             const timer = setTimeout(() => {
                 const container = document.getElementById('cardPaymentBrick_container');
-                if (container) {
+                if (container && !mpBrickControllerRef.current && !isInitializingBrick.current && !brickAutoInitLockedRef.current) {
                     initializeCardPaymentBrick();
                 }
             }, 300);
@@ -4776,12 +4796,13 @@ function App() {
         } else if ((mpBrickControllerRef.current || mpBrickController) && (!isCheckoutView || !isMP)) {
             // Limpiar brick si se cambia de método de pago O de vista
             console.log('Sweep: Limpiando Brick por cambio de vista o método.');
+            brickAutoInitLockedRef.current = false;
             cleanupCardPaymentBrick();
             if (!pendingPaymentConfirmation?.mpPaymentId) {
                 setLastApprovedPaymentId('');
             }
         }
-    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view, pendingPaymentConfirmation?.mpPaymentId, cleanupCardPaymentBrick, mpBrickController]);
+    }, [checkoutData.paymentChoice, finalTotal, currentUser?.id, currentUser?.name, currentUser?.phone, currentUser?.dni, cart.length, view, pendingPaymentConfirmation?.mpPaymentId, cleanupCardPaymentBrick]);
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
@@ -7923,7 +7944,7 @@ function App() {
                                                                     return;
                                                                 }
                                                                 setPaymentError(null);
-                                                                initializeCardPaymentBrick();
+                                                                initializeCardPaymentBrick({ force: true });
                                                             }}
                                                             disabled={isPaymentProcessing}
                                                             className={`w-full py-3 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${isPaymentProcessing ? 'bg-slate-700 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700'}`}
