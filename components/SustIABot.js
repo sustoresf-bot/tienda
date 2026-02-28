@@ -68,7 +68,8 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     const [isDarkMode, setIsDarkMode] = useState(false);
 
     // Custom Bot Image (Configurable)
-    const botImage = settings?.botImage || "sustia-ai-v2.jpg";
+    const rawBotImage = String(settings?.botImage || '').trim();
+    const botImage = rawBotImage && !/sustia-ai-v2\.jpg$/i.test(rawBotImage) ? rawBotImage : 'sustia-ai.jpg';
 
     const chatStorageKey = `sustore_sustia_chat_${appId}`;
     const defaultBotMessage = { role: 'model', text: '¡Hola! Soy SustIA 🤖, tu asistente personal. ¿Buscas algo especial hoy? Puedo verificar stock y agregar productos a tu carrito.' };
@@ -934,7 +935,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             >
                 {isOpen ? <X className="w-6 h-6 text-white" /> : (
                     <div className="w-full h-full p-1">
-                        <img src="sustia-ai-v2.jpg" className="w-full h-full object-cover rounded-full opacity-95 group-hover:scale-110 transition-transform duration-300" alt="SustIA" />
+                        <img src={botImage} className="w-full h-full object-cover rounded-full opacity-95 group-hover:scale-110 transition-transform duration-300" alt="SustIA" />
                     </div>
                 )}
                 {!isOpen && (
