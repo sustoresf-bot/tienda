@@ -735,27 +735,27 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
     const isMin = qty <= 1;
 
     return (
-        <div className="quick-add-container flex items-stretch gap-1.5 sm:gap-2 w-full max-w-full" onClick={(e) => e.stopPropagation()}>
-            <div className={`quick-add-qty flex w-full items-center rounded-xl ${darkMode ? 'bg-zinc-900/90' : 'bg-slate-100'} p-0.5 border ${darkMode ? 'border-zinc-700/80' : 'border-slate-200'} shadow-inner`}>
+        <div className="quick-add-container flex items-stretch gap-1.5 sm:gap-2 w-full max-w-full min-w-0" onClick={(e) => e.stopPropagation()}>
+            <div className={`quick-add-qty flex min-w-0 items-center justify-between rounded-xl ${darkMode ? 'bg-zinc-900/90' : 'bg-slate-100'} p-0.5 border ${darkMode ? 'border-zinc-700/80' : 'border-slate-200'} shadow-inner`}>
                 <button
                     onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
                     disabled={isMin}
-                    className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition ${isMin ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                    className={`quick-add-qty-btn w-7 h-7 sm:w-8 sm:h-8 shrink-0 flex items-center justify-center rounded-lg transition ${isMin ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
                 ><Minus className="w-3 h-3" /></button>
 
-                <span className={`w-8 sm:w-9 text-center text-[0.78rem] sm:text-xs font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
+                <span className={`quick-add-qty-value min-w-[1.6rem] sm:min-w-[1.8rem] px-1 text-center text-[0.78rem] sm:text-xs font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>{qty}</span>
 
                 <button
                     onClick={(e) => { e.stopPropagation(); setQty(Math.min(product.stock, qty + 1)); }}
                     disabled={isMax}
-                    className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition ${isMax ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                    className={`quick-add-qty-btn w-7 h-7 sm:w-8 sm:h-8 shrink-0 flex items-center justify-center rounded-lg transition ${isMax ? 'opacity-30 cursor-not-allowed' : darkMode ? 'hover:bg-zinc-700 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
                 ><Plus className="w-3 h-3" /></button>
             </div>
 
             <button
                 onClick={handleAdd}
                 aria-label={added ? 'Producto agregado' : 'Agregar al carrito'}
-                className={`quick-add-action w-full h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-[10px] sm:text-xs font-black uppercase tracking-[0.08em] border btn-press ripple ${added
+                className={`quick-add-action flex-1 min-w-0 h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-[10px] sm:text-xs font-black uppercase tracking-[0.08em] border btn-press ripple ${added
                     ? 'bg-green-500 text-white shadow-green-500/30'
                     : darkMode
                         ? 'bg-orange-500 text-white hover:bg-orange-400 border-orange-300/40 shadow-orange-500/30'
@@ -806,13 +806,13 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
             <div className={`h-40 sm:h-48 lg:h-52 ${imageBg} premium-product-image store-product-image-shell m-2 sm:m-3 p-2 sm:p-3 ${imageContainerLayout} items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
 
                 {p.image ? (
-                    <div className="w-auto h-full max-w-full flex items-center justify-center overflow-hidden">
+                    <div className={`product-image-adaptive-frame w-auto h-full max-w-full flex items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl border p-1 ${darkMode ? 'border-orange-500/35 bg-black/30' : 'border-slate-200 bg-white/95'} shadow-md`}>
                         <img
                             src={p.image}
                             loading="lazy"
                             decoding="async"
                             onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.nextSibling.style.display = 'flex'; }}
-                            className={`w-auto h-auto max-w-full max-h-full object-contain object-center block rounded-xl sm:rounded-2xl border-2 ${darkMode ? 'border-orange-500/20' : 'border-slate-100'} shadow-lg z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                            className={`w-auto h-auto max-w-full max-h-full object-contain object-center block rounded-lg sm:rounded-xl shadow-lg z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                         />
                     </div>
                 ) : null}
