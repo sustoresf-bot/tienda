@@ -796,15 +796,16 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const hasDiscount = safeDiscount > 0 && basePrice > 0;
     const finalPrice = calculateItemPrice(basePrice, safeDiscount);
     const savingsAmount = Math.max(0, basePrice - finalPrice);
+    const imageContainerLayout = p.image ? 'inline-flex w-auto max-w-full mx-auto' : 'flex w-full';
 
     return (
         <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col self-start card-hover animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
-            <div className={`h-40 sm:h-48 lg:h-52 ${imageBg} premium-product-image m-2 sm:m-3 p-2 sm:p-3 flex items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
+            <div className={`h-40 sm:h-48 lg:h-52 ${imageBg} premium-product-image m-2 sm:m-3 p-2 sm:p-3 ${imageContainerLayout} items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
 
                 {p.image ? (
-                    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                    <div className="w-auto h-full max-w-full flex items-center justify-center overflow-hidden">
                         <img
                             src={p.image}
                             loading="lazy"
@@ -853,8 +854,8 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
 
                 {/* Badge de Oferta */}
                 {hasDiscount && p.stock > 0 && (
-                    <div className={`absolute z-20 ${p.isFeatured ? 'top-8 sm:top-10 left-2 sm:left-4' : 'top-2 sm:top-4 left-2 sm:left-4'}`}>
-                        <div className="relative overflow-hidden rounded-lg sm:rounded-xl border border-rose-200/20 bg-[linear-gradient(118deg,#881337_0%,#9f1239_52%,#7f1d1d_100%)] px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-[0_8px_20px_rgba(136,19,55,0.24)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_24px_rgba(136,19,55,0.32)]">
+                    <div className={`product-offer-badge absolute z-20 ${p.isFeatured ? 'top-8 sm:top-10 left-2 sm:left-4' : 'top-2 sm:top-4 left-2 sm:left-4'}`}>
+                        <div className="product-offer-badge-inner relative overflow-hidden rounded-lg sm:rounded-xl border border-rose-200/20 bg-[linear-gradient(118deg,#881337_0%,#9f1239_52%,#7f1d1d_100%)] px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-[0_8px_20px_rgba(136,19,55,0.24)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_24px_rgba(136,19,55,0.32)]">
                             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),transparent_55%)]" />
                             <div className="relative flex items-center gap-1.5">
                                 <span className="inline-flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-white/12 ring-1 ring-white/25">
@@ -5883,7 +5884,7 @@ function App() {
                                 {order.items.map((item, idx) => (
                                     <div key={idx} className={`flex justify-between items-center p-4 rounded-xl border transition group duration-300 ${darkMode ? 'bg-slate-900/40 border-slate-800 hover:border-orange-900/30' : 'bg-white border-slate-100 hover:border-orange-200 shadow-sm'}`}>
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 flex items-center justify-center rounded-lg p-1 shadow-md group-hover:scale-105 transition border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                                            <div className={`w-12 h-12 flex items-center justify-center rounded-lg p-1 shadow-md group-hover:scale-105 transition border product-preview-frame ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
                                                 {item.image ? <img src={item.image} alt={item.title || 'Producto'} className="w-full h-full object-contain" /> : <Package className="text-slate-400" />}
                                             </div>
                                             <div>
@@ -6104,7 +6105,7 @@ function App() {
                                 <img
                                     src={allImages[safeIdx]}
                                     alt={`${selectedProduct.name || 'Producto'} - Imagen ${safeIdx + 1}`}
-                                    className={`w-full h-full object-contain z-10 transition-transform duration-700 hover:scale-110 ${darkMode ? 'drop-shadow-[0_0_50px_rgba(255,255,255,0.15)]' : 'drop-shadow-[0_0_50px_rgba(0,0,0,0.1)]'}`}
+                                    className={`w-auto h-auto max-w-full max-h-full object-contain z-10 transition-transform duration-700 hover:scale-110 ${darkMode ? 'drop-shadow-[0_0_50px_rgba(255,255,255,0.15)]' : 'drop-shadow-[0_0_50px_rgba(0,0,0,0.1)]'}`}
                                 />
                             ) : (
                                 <div className="flex items-center justify-center w-full h-full">
@@ -6620,7 +6621,7 @@ function App() {
                 <div className="space-y-3">
                     {normalizedCartItems.map((item, idx) => (
                         <div key={idx} className={`border p-4 rounded-2xl flex gap-4 transition group animate-fade-up transition-colors duration-300 ${darkMode ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.05] hover:border-orange-500/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-orange-200'}`} style={{ animationDelay: `${idx * 0.05}s` }}>
-                            <div className={`w-16 h-16 rounded-xl overflow-hidden shadow-inner border flex-shrink-0 transition-colors duration-300 ${darkMode ? 'bg-[#0a0a0a] border-white/5' : 'bg-white border-slate-200'}`}>
+                            <div className={`w-16 h-16 rounded-xl overflow-hidden shadow-inner border flex-shrink-0 transition-colors duration-300 product-preview-frame ${darkMode ? 'bg-[#0a0a0a] border-white/5' : 'bg-white border-slate-200'}`}>
                                 {item.image ? (
                                     <img src={item.image} alt={item.name || 'Producto'} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
                                 ) : (
@@ -7661,7 +7662,7 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 min-[390px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1920px]:grid-cols-6 gap-3 sm:gap-5 md:gap-6 pb-32 product-grid-responsive">
+                                <div className="grid grid-cols-1 min-[340px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1920px]:grid-cols-6 gap-3 sm:gap-5 md:gap-6 pb-32 product-grid-responsive">
                                     {filteredProducts.map(p => (
                                         <ProductCard
                                             key={p.id}
@@ -7733,7 +7734,7 @@ function App() {
                                         <div key={item.product.id} className={`cart-item-row p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border flex flex-row gap-3 sm:gap-4 md:gap-6 items-center group relative overflow-hidden transition duration-300 ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-900/50' : 'bg-white border-slate-200 hover:border-orange-200 shadow-sm hover:shadow-md'}`}>
                                             {/* Imagen */}
                                             <div className="cart-item-image w-20 sm:w-24 md:w-32 flex-shrink-0">
-                                                <img src={item.product.image} alt={item.product.name} className="w-full h-auto object-contain rounded-xl sm:rounded-2xl" />
+                                                <img src={item.product.image} alt={item.product.name} className="w-auto h-auto max-w-full max-h-full object-contain rounded-xl sm:rounded-2xl" />
                                             </div>
 
                                             {/* Info */}
@@ -8302,7 +8303,7 @@ function App() {
                                         <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
                                             {purchasedItems.sort((a, b) => new Date(b.date) - new Date(a.date)).map((item, idx) => (
                                                 <div key={idx} className={`p-4 rounded-2xl flex items-center gap-4 group transition duration-300 border ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-orange-500/50' : 'bg-white border-slate-200 hover:border-orange-400 hover:shadow-md'}`}>
-                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 overflow-hidden ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
+                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 overflow-hidden product-preview-frame ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
                                                         <img src={item.image} className="w-full h-full object-contain" alt={item.title} />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
@@ -8347,7 +8348,7 @@ function App() {
                                             if (!p) return null;
                                             return (
                                                 <div key={fid} className={`p-4 rounded-2xl flex items-center gap-4 relative group transition border ${darkMode ? 'bg-[#0a0a0a] border-slate-800 hover:border-slate-600' : 'bg-white border-slate-200 hover:border-orange-400 hover:shadow-md'}`}>
-                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 overflow-hidden ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
+                                                    <div className={`w-16 h-16 rounded-xl p-1 flex-shrink-0 overflow-hidden product-preview-frame ${darkMode ? 'bg-white' : 'bg-slate-50 border border-slate-100'}`}>
                                                         <img src={p.image} alt={p.name || 'Producto'} className="w-full h-full object-contain" />
                                                     </div>
 
@@ -8853,7 +8854,7 @@ function App() {
                                                     </p>
                                                     {dashboardMetrics.starProduct ? (
                                                         <div className="flex items-center gap-6 relative z-10">
-                                                            <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg flex-shrink-0 overflow-hidden">
+                                                            <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg flex-shrink-0 overflow-hidden product-preview-frame">
                                                                 <img src={dashboardMetrics.starProduct.image} alt={dashboardMetrics.starProduct.name || 'Producto estrella'} className="w-full h-full object-contain" />
                                                             </div>
                                                             <div>
@@ -8877,7 +8878,7 @@ function App() {
                                                     </p>
                                                     {dashboardMetrics.leastSoldProduct ? (
                                                         <div className="flex items-center gap-6 relative z-10">
-                                                            <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg grayscale flex-shrink-0 overflow-hidden">
+                                                            <div className="w-24 h-24 bg-white rounded-2xl p-2 shadow-lg grayscale flex-shrink-0 overflow-hidden product-preview-frame">
                                                                 <img src={dashboardMetrics.leastSoldProduct.image} alt={dashboardMetrics.leastSoldProduct.name || 'Menos vendido'} className="w-full h-full object-contain" />
                                                             </div>
                                                             <div>
@@ -9058,7 +9059,7 @@ function App() {
                                                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Producto Existente</label>
                                                                         <div className="flex gap-4 items-center">
                                                                             {selectedProduct && (
-                                                                                <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700 overflow-hidden">
+                                                                                <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 border border-slate-700 overflow-hidden product-preview-frame">
                                                                                     <img src={selectedProduct.image} className="w-full h-full object-contain" alt="Preview" />
                                                                                 </div>
                                                                             )}
@@ -9160,7 +9161,7 @@ function App() {
                                                     <div className="space-y-4 mb-6">
                                                         {purchaseCart.map((item, index) => (
                                                             <div key={index} className="flex items-center gap-6 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                                                                <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0">
+                                                                <div className="w-16 h-16 bg-white rounded-lg p-1 flex-shrink-0 overflow-hidden product-preview-frame">
                                                                     <img src={item.productImage} className="w-full h-full object-contain" alt={item.productName} />
                                                                 </div>
                                                                 <div className="flex-1">
