@@ -7020,9 +7020,6 @@ function App() {
                 <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-orange-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
             </div>
-            {view === 'store' && <div className="storefront-side-ambient"></div>}
-
-
             {/* Contenedores Globales (Toasts y Modales) */}
             <div className="fixed top-24 right-4 z-[20001] space-y-3 pointer-events-none">
                 {/* Toasts necesitan pointer-events-auto para poder cerrarlos */}
