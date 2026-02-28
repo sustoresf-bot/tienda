@@ -2057,6 +2057,12 @@ span {
     transition: box-shadow 0.3s ease;
 }
 
+#catalog.premium-category-bar {
+    position: sticky;
+    z-index: 70 !important;
+    isolation: isolate;
+}
+
 :root:not(.dark-mode) .premium-category-bar {
     background: rgba(255, 255, 255, 0.92) !important;
     box-shadow:
@@ -2341,9 +2347,10 @@ span {
     }
 
     #catalog.premium-category-bar {
+        top: calc(60px + env(safe-area-inset-top)) !important;
         padding-top: 0.7rem !important;
         padding-bottom: 0.7rem !important;
-        margin-bottom: 1rem !important;
+        margin-bottom: 1.15rem !important;
     }
 
     #catalog .category-scroll {
@@ -2866,15 +2873,16 @@ span {
 .store-view .product-card-action .quick-add-container {
     width: 100%;
     max-width: 100%;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    display: flex;
+    flex-direction: row;
     align-items: stretch;
     gap: 0.45rem !important;
 }
 
 .store-view .product-card-action .quick-add-qty {
-    width: 100%;
+    width: auto;
     min-width: 0;
+    flex: 0 0 44%;
     justify-content: space-between;
 }
 
@@ -2884,24 +2892,24 @@ span {
 }
 
 .store-view .product-card-action .quick-add-action {
-    width: 100%;
+    width: auto;
+    flex: 1 1 56%;
     min-width: 0 !important;
     max-width: 100%;
-    padding-left: 0.65rem !important;
-    padding-right: 0.65rem !important;
-    letter-spacing: 0.03em !important;
-    overflow: hidden;
+    padding-left: 0.58rem !important;
+    padding-right: 0.58rem !important;
+    letter-spacing: 0.015em !important;
+    overflow: visible;
 }
 
 .store-view .product-card-action .quick-add-action span {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
 }
 
 @media (max-width: 640px) {
     .store-view .product-card-action .quick-add-container {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 0.32rem !important;
     }
 }
@@ -2929,6 +2937,17 @@ span {
     .store-view.store-view-fab-safe.store-view-fab-dual .product-grid-responsive {
         padding-right: 0 !important;
         padding-bottom: calc(12.5rem + var(--fab-safe-bottom)) !important;
+    }
+}
+
+/* Keep IA launcher visually separated when WhatsApp FAB is also visible. */
+.store-sustia-root.store-sustia-root-with-wa .store-sustia-launcher-fab {
+    margin-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+    .store-sustia-root.store-sustia-root-with-wa .store-sustia-launcher-fab {
+        margin-bottom: calc(5.5rem + env(safe-area-inset-bottom));
     }
 }
 
@@ -2978,11 +2997,11 @@ span {
     }
 
     .store-view .product-card-action .quick-add-container {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-        gap: 0.35rem !important;
+        gap: 0.32rem !important;
     }
 
     .store-view .product-card-action .quick-add-qty {
+        flex-basis: 42%;
         min-height: 2rem !important;
         padding: 0.14rem !important;
     }
@@ -2997,10 +3016,17 @@ span {
     }
 
     .store-view .product-card-action .quick-add-action {
+        flex-basis: 58%;
         min-height: 2rem !important;
         height: 2rem !important;
-        font-size: 0.66rem !important;
-        letter-spacing: 0.04em !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        font-size: 0.72rem !important;
+        letter-spacing: 0.01em !important;
+    }
+
+    .store-view .product-card-action .quick-add-action svg {
+        display: none !important;
     }
 
     .store-view .product-card-icon-btn {

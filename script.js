@@ -1667,6 +1667,14 @@ function App() {
         [settings?.requireDNI, settings?.requirePhone]
     );
 
+    useEffect(() => {
+        if (view === 'register') {
+            setLoginMode(false);
+        } else if (view === 'login') {
+            setLoginMode(true);
+        }
+    }, [view]);
+
     // Estados para Nuevos Formularios (Finanzas y Compras)
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
     const [newInvestment, setNewInvestment] = useState({ investor: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
@@ -7186,7 +7194,7 @@ function App() {
             <ProductDetailModal />
 
             {/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */}
-            {view !== 'admin' && (
+            {view !== 'admin' && view !== 'login' && view !== 'register' && (
                 <nav className={`store-nav fixed top-0 w-full h-14 sm:h-16 md:h-20 z-50 px-2.5 sm:px-4 md:px-8 lg:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 premium-nav ${darkMode ? 'bg-[#05070b]/88 border-b border-slate-800/70' : 'bg-white/92 border-b border-slate-200/90 shadow-[0_8px_28px_rgba(15,23,42,0.08)]'}`}>
                     {/* Logo y Menú */}
                     <div className="store-nav-left flex items-center gap-2 sm:gap-5 min-w-0 flex-1 lg:flex-none pr-2 sm:pr-5 lg:pr-0">
@@ -7350,7 +7358,7 @@ function App() {
             )}
 
             {/* Espaciador para el Navbar Fixed */}
-            {view !== 'admin' && <div className="store-nav-spacer h-14 sm:h-16 md:h-20"></div>}
+            {view !== 'admin' && view !== 'login' && view !== 'register' && <div className="store-nav-spacer h-14 sm:h-16 md:h-20"></div>}
 
             {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
             <main className={`flex-grow relative z-10 ${view === 'admin'
@@ -7699,7 +7707,7 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid product-grid-responsive gap-3 sm:gap-5 md:gap-6 pb-32">
+                                <div className="grid product-grid-responsive mt-1 sm:mt-2 gap-3 sm:gap-5 md:gap-6 pb-32">
                                     {filteredProducts.map(p => (
                                         <ProductCard
                                             key={p.id}
@@ -8439,54 +8447,83 @@ function App() {
 
                 {/* 5. MODAL DE AUTENTICACIÓN (LOGIN/REGISTER) */}
                 {(view === 'login' || view === 'register') && (
-                    <div className="fixed inset-0 z-[20002] flex items-end sm:items-center justify-center bg-[#050505]/95 p-0 sm:p-4 animate-fade-up backdrop-blur-xl">
-
-                        <div className="bg-[#0a0a0a] p-5 sm:p-8 md:p-12 rounded-t-3xl sm:rounded-[3rem] w-full max-w-md shadow-2xl border border-slate-800 relative overflow-hidden max-h-[95dvh] overflow-y-auto">
-                            {/* Botón Cerrar (Dentro de la tarjeta) */}
-                            <button onClick={() => setView('store')} className="absolute top-6 right-6 p-2 bg-slate-900/50 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition z-20">
-                                <X className="w-6 h-6" />
+                    <div
+                        className="fixed inset-0 z-[20002] flex items-end sm:items-center justify-center bg-[#050505]/96 p-2 sm:p-4 md:p-6 animate-fade-up backdrop-blur-xl"
+                        onClick={() => setView('store')}
+                    >
+                        <div
+                            className="bg-[#0a0a0a] rounded-2xl sm:rounded-[2.5rem] w-full max-w-[640px] shadow-2xl border border-slate-800 relative overflow-hidden max-h-[calc(100dvh-1rem)] sm:max-h-[92dvh] flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button
+                                onClick={() => setView('store')}
+                                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 bg-slate-900/60 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition z-20"
+                                aria-label="Cerrar modal de acceso"
+                            >
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
 
-                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600"></div>
+                            <div className="absolute top-0 left-0 w-full h-1.5 sm:h-2 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600"></div>
 
-                            <h2 className="text-2xl sm:text-4xl font-black text-white mb-2 text-center tracking-tight">
-                                {loginMode ? 'Bienvenido' : 'Crear Cuenta'}
-                            </h2>
-                            <p className="text-slate-500 text-center mb-5 sm:mb-8 text-sm">
-                                {loginMode ? 'Ingresa a tu cuenta para continuar.' : 'Únete a nosotros hoy mismo.'}
-                            </p>
+                            <div className="px-4 sm:px-8 md:px-10 pt-8 sm:pt-10 md:pt-12 pb-3 sm:pb-4 border-b border-slate-800/80">
+                                <h2 className="text-[1.65rem] sm:text-4xl font-black text-white mb-2 text-center tracking-tight">
+                                    {loginMode ? 'Bienvenido' : 'Crear Cuenta'}
+                                </h2>
+                                <p className="text-slate-500 text-center text-sm sm:text-base">
+                                    {loginMode ? 'Ingresa a tu cuenta para continuar.' : 'Únete a nosotros hoy mismo.'}
+                                </p>
 
-                            <form onSubmit={(e) => { e.preventDefault(); handleAuth(!loginMode) }} className="space-y-4">
-                                {!loginMode && (
-                                    <div className="space-y-4 animate-fade-up">
-                                        <input id="auth-name" name="name" autoComplete="name" className="input-cyber w-full p-4" placeholder="Nombre Completo *" value={authData.name} onChange={e => setAuthData({ ...authData, name: e.target.value })} required />
-                                        <input id="auth-username" name="username" autoComplete="username" className="input-cyber w-full p-4" placeholder="Nombre de Usuario *" value={authData.username} onChange={e => setAuthData({ ...authData, username: e.target.value })} required />
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input id="auth-dni" name="dni" autoComplete="off" className="input-cyber p-4" placeholder={identityRequirements.requireDni ? "DNI *" : "DNI (opcional)"} value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} required={identityRequirements.requireDni} />
-                                            <input id="auth-phone" name="phone" autoComplete="tel" className="input-cyber p-4" placeholder={identityRequirements.requirePhone ? "Teléfono *" : "Teléfono (opcional)"} value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required={identityRequirements.requirePhone} />
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="space-y-4">
-                                    <input id="auth-email" name="email" type="email" autoComplete="email" className="input-cyber w-full p-4" placeholder={loginMode ? "Email" : "Email *"} value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} required />
-                                    <input id="auth-password" name="password" autoComplete={loginMode ? "current-password" : "new-password"} className="input-cyber w-full p-4" type="password" placeholder={loginMode ? "Contraseña" : "Contraseña *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
-                                </div>
-
-                                {loginMode && (
-                                    <button type="button" onClick={handleForgotPassword} className="text-sm text-slate-500 hover:text-orange-400 transition text-right w-full mt-1">
-                                        ¿Olvidaste tu contraseña?
+                                <div className="mt-5 sm:mt-6 grid grid-cols-2 gap-2 p-1 rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-950/40">
+                                    <button
+                                        type="button"
+                                        onClick={() => setLoginMode(true)}
+                                        className={`py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition ${loginMode ? 'bg-gradient-to-r from-orange-600 to-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-900/70'}`}
+                                    >
+                                        Iniciar Sesión
                                     </button>
-                                )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setLoginMode(false)}
+                                        className={`py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition ${!loginMode ? 'bg-gradient-to-r from-orange-600 to-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-900/70'}`}
+                                    >
+                                        Registrarme
+                                    </button>
+                                </div>
+                            </div>
 
-                                <button type="submit" className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-4 text-white rounded-xl font-bold mt-6 transition transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2">
-                                    {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : (loginMode ? 'INGRESAR' : 'REGISTRARSE')}
+                            <div className="flex-1 overflow-y-auto px-4 sm:px-8 md:px-10 pb-5 sm:pb-7 md:pb-9 pt-4 sm:pt-6">
+                                <form onSubmit={(e) => { e.preventDefault(); handleAuth(!loginMode) }} className="space-y-3.5 sm:space-y-4">
+                                    {!loginMode && (
+                                        <div className="space-y-3.5 sm:space-y-4 animate-fade-up">
+                                            <input id="auth-name" name="name" autoComplete="name" className="input-cyber w-full p-3.5 sm:p-4 text-base" placeholder="Nombre Completo *" value={authData.name} onChange={e => setAuthData({ ...authData, name: e.target.value })} required />
+                                            <input id="auth-username" name="username" autoComplete="username" className="input-cyber w-full p-3.5 sm:p-4 text-base" placeholder="Nombre de Usuario *" value={authData.username} onChange={e => setAuthData({ ...authData, username: e.target.value })} required />
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                                                <input id="auth-dni" name="dni" autoComplete="off" className="input-cyber p-3.5 sm:p-4 text-base" placeholder={identityRequirements.requireDni ? "DNI *" : "DNI (opcional)"} value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} required={identityRequirements.requireDni} />
+                                                <input id="auth-phone" name="phone" autoComplete="tel" className="input-cyber p-3.5 sm:p-4 text-base" placeholder={identityRequirements.requirePhone ? "Teléfono *" : "Teléfono (opcional)"} value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required={identityRequirements.requirePhone} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-3.5 sm:space-y-4">
+                                        <input id="auth-email" name="email" type="email" autoComplete="email" className="input-cyber w-full p-3.5 sm:p-4 text-base" placeholder={loginMode ? "Email" : "Email *"} value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} required />
+                                        <input id="auth-password" name="password" autoComplete={loginMode ? "current-password" : "new-password"} className="input-cyber w-full p-3.5 sm:p-4 text-base" type="password" placeholder={loginMode ? "Contraseña" : "Contraseña *"} value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} required />
+                                    </div>
+
+                                    {loginMode && (
+                                        <button type="button" onClick={handleForgotPassword} className="text-sm text-slate-500 hover:text-orange-400 transition text-right w-full mt-1">
+                                            ¿Olvidaste tu contraseña?
+                                        </button>
+                                    )}
+
+                                    <button type="submit" className="w-full bg-gradient-to-r from-orange-600 to-blue-600 hover:from-orange-500 hover:to-blue-500 py-3.5 sm:py-4 text-white rounded-xl sm:rounded-2xl text-sm sm:text-base font-black mt-5 sm:mt-6 transition transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2">
+                                        {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : (loginMode ? 'INGRESAR' : 'REGISTRARSE')}
+                                    </button>
+                                </form>
+
+                                <button onClick={() => setLoginMode(!loginMode)} className="w-full text-center text-slate-500 text-sm sm:text-base mt-6 sm:mt-8 font-bold hover:text-orange-400 transition border-t border-slate-800 pt-5 sm:pt-6">
+                                    {loginMode ? '¿No tienes cuenta? Regístrate gratis' : '¿Ya tienes cuenta? Inicia sesión'}
                                 </button>
-                            </form>
-
-                            <button onClick={() => setLoginMode(!loginMode)} className="w-full text-center text-slate-500 text-sm mt-8 font-bold hover:text-orange-400 transition border-t border-slate-800 pt-6">
-                                {loginMode ? '¿No tienes cuenta? Regístrate gratis' : '¿Ya tienes cuenta? Inicia sesión'}
-                            </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -13766,6 +13803,7 @@ function App() {
                     settings={settings}
                     products={products}
                     addToCart={(p, q = 1) => manageCart(p, q)}
+                    hasFloatingWhatsapp={showFloatingWhatsappButton}
                     controlPanel={{
                         setDarkMode: setDarkMode,
                         openCart: () => setView('cart')

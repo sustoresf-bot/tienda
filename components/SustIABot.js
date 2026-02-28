@@ -59,7 +59,7 @@ const BotProductCard = ({ product, onAdd }) => {
     );
 };
 
-const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, coupons, appId }) => {
+const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, coupons, appId, hasFloatingWhatsapp = false }) => {
     // 1. Verificación de Plan - Solo disponible en Plan Premium
     const forceEnabled = (() => {
         try {
@@ -810,7 +810,10 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     ];
 
     return (
-        <div data-testid="sustia-root" className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-4 z-[9999] flex flex-col items-end pointer-events-none">
+        <div
+            data-testid="sustia-root"
+            className={`store-sustia-root fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-4 z-[9999] flex flex-col items-end pointer-events-none ${hasFloatingWhatsapp ? 'store-sustia-root-with-wa' : ''}`}
+        >
             {isOpen && (
                 <div className="bg-[#0f0f0f]/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] w-[calc(100vw-2rem)] sm:w-80 md:w-96 h-[min(600px,80dvh)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col mb-4 animate-fade-up overflow-hidden font-sans pointer-events-auto ring-1 ring-white/10 relative mr-0 sm:mr-0">
                     <div className="bg-gradient-to-r from-yellow-500 to-amber-600 p-5 flex justify-between items-center relative z-10">
