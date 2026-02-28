@@ -7243,13 +7243,18 @@ function App() {
                         {/* Botón Modo Claro/Oscuro */}
                         <button
                             onClick={() => setDarkMode(!darkMode)}
-                            className={`store-nav-icon-btn relative inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group overflow-hidden border ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
-                            title={darkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
+                            aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                            className={`store-nav-icon-btn relative inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70 ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
+                            title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
                         >
-                            <div className="relative w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
-                                <Moon className={`absolute inset-0 m-auto w-4 h-4 sm:w-5 sm:h-5 transform transition-all duration-500 group-hover:scale-110 ${darkMode ? 'rotate-0 scale-100' : 'rotate-180 scale-0'}`} />
-                                <Sun className={`absolute inset-0 m-auto w-4 h-4 sm:w-5 sm:h-5 transform transition-all duration-500 group-hover:scale-110 ${!darkMode ? 'rotate-0 scale-100' : '-rotate-180 scale-0'}`} />
-                            </div>
+                            {darkMode ? (
+                                <Sun className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                            ) : (
+                                <Moon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" />
+                            )}
+                            <span className={`pointer-events-none absolute left-1/2 top-[calc(100%+0.45rem)] -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-bold shadow-lg opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 ${darkMode ? 'bg-[#0a0a0a] border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}>
+                                {darkMode ? 'Pasar a claro' : 'Pasar a oscuro'}
+                            </span>
                         </button>
 
                         {/* Botón Carrito */}
@@ -7357,7 +7362,7 @@ function App() {
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
-                    <div className={`max-w-[1400px] mx-auto pb-32 min-h-screen block storefront-shell store-view ${storeFabSafeClass}`}>
+                    <div className={`max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pb-32 min-h-screen block storefront-shell store-view ${storeFabSafeClass}`}>
 
                         {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings están cargados */}
                         {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
