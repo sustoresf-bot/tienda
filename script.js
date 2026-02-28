@@ -7308,7 +7308,12 @@ function App() {
             {view !== 'admin' && <div className="store-nav-spacer h-14 sm:h-16 md:h-20"></div>}
 
             {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
-            <main className={`flex-grow relative z-10 ${view === 'admin' ? 'min-h-screen min-full-viewport flex' : 'px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8'}`}>
+            <main className={`flex-grow relative z-10 ${view === 'admin'
+                ? 'min-h-screen min-full-viewport flex'
+                : view === 'store'
+                    ? 'px-0 py-4 sm:px-0 sm:py-6 md:px-0 md:py-8'
+                    : 'px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8'
+                }`}>
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
