@@ -799,10 +799,10 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const imageContainerLayout = p.image ? 'inline-flex w-auto max-w-full mx-auto' : 'flex w-full';
 
     return (
-        <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in content-visibility-auto contain-content`}>
+        <div className={`${cardBg} premium-product-card store-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
-            <div className={`h-40 sm:h-48 lg:h-52 ${imageBg} premium-product-image m-2 sm:m-3 p-2 sm:p-3 ${imageContainerLayout} items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
+            <div className={`h-40 sm:h-48 lg:h-52 ${imageBg} premium-product-image store-product-image-shell m-2 sm:m-3 p-2 sm:p-3 ${imageContainerLayout} items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
 
                 {p.image ? (
                     <div className="w-auto h-full max-w-full flex items-center justify-center overflow-hidden">
@@ -823,7 +823,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                         e.stopPropagation();
                         setSelectedProduct(p);
                     }}
-                    className={`absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-30 ${darkMode ? 'bg-black/60 border-white/20' : 'bg-white/90 border-slate-200'} backdrop-blur-md p-2 sm:p-3 rounded-full ${darkMode ? 'text-white' : 'text-slate-700'} border md:hidden`}
+                    className={`product-card-icon-btn product-card-zoom-btn absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-30 ${darkMode ? 'bg-black/60 border-white/20' : 'bg-white/90 border-slate-200'} backdrop-blur-md p-2 sm:p-3 rounded-full ${darkMode ? 'text-white' : 'text-slate-700'} border md:hidden`}
                 >
                     <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
@@ -875,7 +875,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                 {/* Botón Favorito (Funcional) */}
                 <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
-                    className={`absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'}`}
+                    className={`product-card-icon-btn product-card-favorite-btn absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'}`}
                 >
                     <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
                 </button>
@@ -884,27 +884,27 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
             </div>
 
             {/* Información */}
-            <div className={`p-4 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
+            <div className={`product-card-info p-4 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
                 <div className="flex justify-between items-start gap-2 mb-2 sm:mb-3 min-h-[1.75rem] sm:min-h-[2rem]">
-                    <p className={`text-[10px] sm:text-xs text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
+                    <p className={`product-card-category-chip text-[10px] sm:text-xs text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
                         {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categoría') : (p.category || 'Sin categoría')}
                     </p>
                     {/* Estado de Stock */}
                     {settings?.showStockCount !== false && p.stock > 0 && p.stock <= (settings?.lowStockThreshold || 5) ? (
-                        <span className="text-[9px] sm:text-[10px] text-red-500 font-bold flex items-center gap-1">
+                        <span className="product-card-stock-alert text-[9px] sm:text-[10px] text-red-500 font-bold flex items-center gap-1">
                             <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Últimos {p.stock}
                         </span>
                     ) : null}
                 </div>
 
-                <h3 className={`${textPrimary} font-bold text-base sm:text-[1.05rem] leading-tight mb-2 sm:mb-3 group-hover:text-orange-600 transition line-clamp-2 min-h-[2.2rem] sm:min-h-[2.4rem]`}>
+                <h3 className={`product-card-title ${textPrimary} font-bold text-base sm:text-[1.05rem] leading-tight mb-2 sm:mb-3 group-hover:text-orange-600 transition line-clamp-2 min-h-[2.2rem] sm:min-h-[2.4rem]`}>
                     {p.name}
                 </h3>
 
                 <div className={`product-card-footer mt-auto pt-2.5 sm:pt-3 border-t ${borderColor} flex flex-col items-stretch gap-2 sm:gap-3`}>
                     <div className="product-card-price flex w-full flex-col">
                         {hasDiscount && (
-                            <span className={`text-[10px] sm:text-xs ${textSecondary} line-through font-medium mb-0.5 sm:mb-1`}>
+                            <span className={`product-card-base-price text-[10px] sm:text-xs ${textSecondary} line-through font-medium mb-0.5 sm:mb-1`}>
                                 Antes: ${basePrice.toLocaleString()}
                             </span>
                         )}
@@ -912,7 +912,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                             ${finalPrice.toLocaleString()}
                         </span>
                         {hasDiscount && savingsAmount > 0 && (
-                            <span className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold ${darkMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                            <span className={`product-card-savings-badge mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold ${darkMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
                                 Ahorrás ${savingsAmount.toLocaleString()}
                             </span>
                         )}
@@ -7195,11 +7195,11 @@ function App() {
                         </button>
                         <div className="store-nav-brand cursor-pointer group flex items-center gap-2 sm:gap-3 min-w-0" onClick={() => setView('store')}>
                             {settings?.logoUrl && (
-                                <div className={`store-nav-logo w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                                    <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
+                                <div data-testid="store-nav-logo" className={`store-nav-logo w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                                    <img src={settings.logoUrl} alt="Logo" className="store-nav-logo-image w-full h-full object-contain rounded-full" />
                                 </div>
                             )}
-                            <div className="flex flex-col min-w-0">
+                            <div className="store-nav-brand-text flex flex-col min-w-0">
                                 <span className={`store-brand-title text-xl sm:text-2xl md:text-3xl font-black tracking-tight group-hover:text-orange-500 transition-all duration-300 leading-none block ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {!settingsLoaded ? (
                                         <span className={`inline-block h-6 sm:h-8 w-20 sm:w-32 rounded animate-pulse ${darkMode ? 'bg-slate-700/50' : 'bg-slate-200'}`}></span>
@@ -13444,7 +13444,8 @@ function App() {
                 showFloatingWhatsappButton && (
                     <button
                         onClick={() => window.open(settings.whatsappLink, '_blank')}
-                        className="fixed bottom-24 right-4 sm:right-6 z-50 p-3 sm:p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
+                        data-testid="store-wa-fab"
+                        className="fixed left-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:left-auto sm:right-6 sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-50 p-3 sm:p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
                         title="Chatea con nosotros"
                     >
                         <WhatsAppIcon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />

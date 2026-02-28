@@ -1346,10 +1346,10 @@ body {
         font-size: 0.75rem !important;
     }
 
-    /* Product grid: single column on very small */
+    /* Product grid: 2 columnas también en móviles muy chicos */
     .product-grid-responsive {
-        grid-template-columns: 1fr !important;
-        gap: 0.75rem !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.6rem !important;
     }
 
     /* Modals: full-width on tiny phones */
@@ -2583,7 +2583,7 @@ span {
 
 @media (max-width: 339px) {
     .product-grid-responsive {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 
     .store-view .premium-product-card .premium-product-image {
@@ -2609,6 +2609,20 @@ span {
 .store-nav-brand {
     min-width: 0;
     max-width: 100%;
+}
+
+.store-nav-logo {
+    flex: 0 0 auto;
+    aspect-ratio: 1 / 1;
+}
+
+.store-nav-logo img,
+.store-nav-logo .store-nav-logo-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 9999px;
+    display: block;
 }
 
 .store-nav-actions {
@@ -2649,7 +2663,7 @@ span {
         flex: 1 1 auto !important;
     }
 
-    .store-nav-brand>div {
+    .store-nav-brand-text {
         min-width: 0;
         flex: 1 1 auto;
     }
@@ -2798,7 +2812,7 @@ span {
 
 @media (max-width: 479px) {
     .product-grid-responsive {
-        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 }
 
@@ -2887,7 +2901,7 @@ span {
 
 @media (max-width: 640px) {
     .store-view .product-card-action .quick-add-container {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 0.32rem !important;
     }
 }
@@ -2898,22 +2912,142 @@ span {
 }
 
 .store-view.store-view-fab-safe.store-view-fab-single .product-grid-responsive {
-    padding-right: calc(5rem + var(--fab-safe-right)) !important;
+    padding-right: 0 !important;
     padding-bottom: calc(9rem + var(--fab-safe-bottom)) !important;
 }
 
 .store-view.store-view-fab-safe.store-view-fab-dual .product-grid-responsive {
-    padding-right: calc(5.7rem + var(--fab-safe-right)) !important;
+    padding-right: 0 !important;
     padding-bottom: calc(12rem + var(--fab-safe-bottom)) !important;
 }
 
 @media (max-width: 640px) {
     .store-view.store-view-fab-safe.store-view-fab-single .product-grid-responsive {
-        padding-right: calc(4.4rem + var(--fab-safe-right)) !important;
+        padding-right: 0 !important;
     }
 
     .store-view.store-view-fab-safe.store-view-fab-dual .product-grid-responsive {
-        padding-right: calc(4.9rem + var(--fab-safe-right)) !important;
+        padding-right: 0 !important;
         padding-bottom: calc(12.5rem + var(--fab-safe-bottom)) !important;
+    }
+}
+
+/* ===== MOBILE STOREFRONT SOURCE OF TRUTH ===== */
+@media (max-width: 640px) {
+    .store-view .product-grid-responsive {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.65rem !important;
+    }
+
+    .store-view .store-product-card {
+        border-radius: 1.1rem !important;
+    }
+
+    .store-view .store-product-image-shell {
+        margin: 0.42rem !important;
+        padding: 0.4rem !important;
+        height: 7.8rem !important;
+    }
+
+    .store-view .product-card-info {
+        padding: 0.62rem !important;
+    }
+
+    .store-view .product-card-category-chip {
+        font-size: 0.6rem !important;
+        padding: 0.14rem 0.35rem !important;
+        letter-spacing: 0.06em !important;
+    }
+
+    .store-view .product-card-title {
+        font-size: 0.82rem !important;
+        line-height: 1.2 !important;
+        min-height: 2rem !important;
+        margin-bottom: 0.36rem !important;
+    }
+
+    .store-view .product-card-stock-alert,
+    .store-view .product-card-base-price,
+    .store-view .product-card-savings-badge {
+        display: none !important;
+    }
+
+    .store-view .product-card-price .product-card-final-price {
+        font-size: 1.12rem !important;
+        line-height: 1.05 !important;
+    }
+
+    .store-view .product-card-action .quick-add-container {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        gap: 0.35rem !important;
+    }
+
+    .store-view .product-card-action .quick-add-qty {
+        min-height: 2rem !important;
+        padding: 0.14rem !important;
+    }
+
+    .store-view .product-card-action .quick-add-qty button {
+        width: 1.62rem !important;
+        height: 1.62rem !important;
+    }
+
+    .store-view .product-card-action .quick-add-qty span {
+        font-size: 0.7rem !important;
+    }
+
+    .store-view .product-card-action .quick-add-action {
+        min-height: 2rem !important;
+        height: 2rem !important;
+        font-size: 0.66rem !important;
+        letter-spacing: 0.04em !important;
+    }
+
+    .store-view .product-card-icon-btn {
+        width: 2.25rem !important;
+        height: 2.25rem !important;
+        min-width: 2.25rem !important;
+        min-height: 2.25rem !important;
+        padding: 0 !important;
+        border-radius: 9999px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .store-view .product-card-icon-btn svg {
+        width: 1rem !important;
+        height: 1rem !important;
+    }
+
+    .store-view .product-card-zoom-btn {
+        bottom: 0.38rem !important;
+        right: 0.38rem !important;
+    }
+
+    .store-view .product-card-favorite-btn {
+        top: 0.38rem !important;
+        right: 0.38rem !important;
+    }
+
+    .store-nav .store-nav-logo {
+        flex: 0 0 auto !important;
+        aspect-ratio: 1 / 1 !important;
+    }
+
+    .store-nav .store-nav-logo img,
+    .store-nav .store-nav-logo .store-nav-logo-image {
+        object-fit: contain !important;
+        border-radius: 9999px !important;
+    }
+
+    .store-view.store-view-fab-safe.store-view-fab-single .product-grid-responsive {
+        padding-right: 0 !important;
+        padding-bottom: calc(9.8rem + var(--fab-safe-bottom)) !important;
+    }
+
+    .store-view.store-view-fab-safe.store-view-fab-dual .product-grid-responsive {
+        padding-right: 0 !important;
+        padding-bottom: calc(12.25rem + var(--fab-safe-bottom)) !important;
     }
 }
