@@ -735,8 +735,8 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
     const isMin = qty <= 1;
 
     return (
-        <div className="quick-add-container flex items-center gap-1.5 sm:gap-2 max-w-full" onClick={(e) => e.stopPropagation()}>
-            <div className={`quick-add-qty flex items-center rounded-xl ${darkMode ? 'bg-zinc-900/90' : 'bg-slate-100'} p-0.5 border ${darkMode ? 'border-zinc-700/80' : 'border-slate-200'} shadow-inner`}>
+        <div className="quick-add-container flex items-stretch gap-1.5 sm:gap-2 w-full max-w-full" onClick={(e) => e.stopPropagation()}>
+            <div className={`quick-add-qty flex w-full items-center rounded-xl ${darkMode ? 'bg-zinc-900/90' : 'bg-slate-100'} p-0.5 border ${darkMode ? 'border-zinc-700/80' : 'border-slate-200'} shadow-inner`}>
                 <button
                     onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
                     disabled={isMin}
@@ -754,7 +754,7 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 
             <button
                 onClick={handleAdd}
-                className={`quick-add-action w-auto h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-[10px] sm:text-xs font-black uppercase tracking-[0.08em] border btn-press ripple ${added
+                className={`quick-add-action w-full h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-[10px] sm:text-xs font-black uppercase tracking-[0.08em] border btn-press ripple ${added
                     ? 'bg-green-500 text-white shadow-green-500/30'
                     : darkMode
                         ? 'bg-orange-500 text-white hover:bg-orange-400 border-orange-300/40 shadow-orange-500/30'
@@ -799,7 +799,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const imageContainerLayout = p.image ? 'inline-flex w-auto max-w-full mx-auto' : 'flex w-full';
 
     return (
-        <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col self-start card-hover animate-fade-in content-visibility-auto contain-content`}>
+        <div className={`${cardBg} premium-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
             <div className={`h-40 sm:h-48 lg:h-52 ${imageBg} premium-product-image m-2 sm:m-3 p-2 sm:p-3 ${imageContainerLayout} items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
@@ -885,7 +885,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
 
             {/* Información */}
             <div className={`p-4 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
-                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                <div className="flex justify-between items-start gap-2 mb-2 sm:mb-3 min-h-[1.75rem] sm:min-h-[2rem]">
                     <p className={`text-[10px] sm:text-xs text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
                         {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categoría') : (p.category || 'Sin categoría')}
                     </p>
@@ -901,8 +901,8 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     {p.name}
                 </h3>
 
-                <div className={`product-card-footer mt-auto pt-2.5 sm:pt-3 border-t ${borderColor} flex items-end justify-between gap-2 sm:gap-3`}>
-                    <div className="product-card-price flex flex-col">
+                <div className={`product-card-footer mt-auto pt-2.5 sm:pt-3 border-t ${borderColor} flex flex-col items-stretch gap-2 sm:gap-3`}>
+                    <div className="product-card-price flex w-full flex-col">
                         {hasDiscount && (
                             <span className={`text-[10px] sm:text-xs ${textSecondary} line-through font-medium mb-0.5 sm:mb-1`}>
                                 Antes: ${basePrice.toLocaleString()}
@@ -921,7 +921,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     {/* Add to Cart with Quantity */}
                     {p.stock > 0 && (
                         <div
-                            className="product-card-action flex items-center gap-2 shrink-0"
+                            className="product-card-action flex w-full items-center gap-2"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <QuickAddButton
@@ -7019,6 +7019,38 @@ function App() {
             return salesB - salesA;
         });
 
+    const isSustiaForceEnabled = (() => {
+        try {
+            const href = String(window.location.href || '');
+            if (href.includes('sustia=1')) return true;
+            return new URLSearchParams(window.location.search).get('sustia') === '1';
+        } catch {
+            return false;
+        }
+    })();
+
+    const showFloatingWhatsappButton = Boolean(
+        settings?.showFloatingWhatsapp &&
+        settings?.whatsappLink &&
+        ['business', 'premium'].includes(settings?.subscriptionPlan) &&
+        view !== 'admin'
+    );
+
+    const showSustiaLauncher = Boolean(
+        view !== 'admin' &&
+        (isSustiaForceEnabled || settings?.subscriptionPlan === 'premium')
+    );
+
+    const storeFabSafeState = showFloatingWhatsappButton && showSustiaLauncher
+        ? 'dual'
+        : (showFloatingWhatsappButton || showSustiaLauncher ? 'single' : 'none');
+
+    const storeFabSafeClass = storeFabSafeState === 'dual'
+        ? 'store-view-fab-safe store-view-fab-dual'
+        : storeFabSafeState === 'single'
+            ? 'store-view-fab-safe store-view-fab-single'
+            : '';
+
     // --- RENDERIZADO PRINCIPAL (RETURN) ---
     return (
 
@@ -7325,7 +7357,7 @@ function App() {
 
                 {/* 1. VISTA TIENDA (HOME) */}
                 {view === 'store' && (
-                    <div className="max-w-[1400px] mx-auto pb-32 min-h-screen block storefront-shell store-view">
+                    <div className={`max-w-[1400px] mx-auto pb-32 min-h-screen block storefront-shell store-view ${storeFabSafeClass}`}>
 
                         {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings están cargados */}
                         {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
@@ -7662,7 +7694,7 @@ function App() {
                                         </button>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 min-[340px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1920px]:grid-cols-6 gap-3 sm:gap-5 md:gap-6 pb-32 product-grid-responsive">
+                                <div className="grid product-grid-responsive gap-3 sm:gap-5 md:gap-6 pb-32">
                                     {filteredProducts.map(p => (
                                         <ProductCard
                                             key={p.id}
@@ -13404,7 +13436,7 @@ function App() {
             }
             {/* BOTÓN FLOTANTE DE WHATSAPP (Solo Plan Negocio/Premium) */}
             {
-                settings?.showFloatingWhatsapp && settings?.whatsappLink && ['business', 'premium'].includes(settings?.subscriptionPlan) && view !== 'admin' && (
+                showFloatingWhatsappButton && (
                     <button
                         onClick={() => window.open(settings.whatsappLink, '_blank')}
                         className="fixed bottom-24 right-4 sm:right-6 z-50 p-3 sm:p-4 bg-green-500 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all animate-bounce-slow"
