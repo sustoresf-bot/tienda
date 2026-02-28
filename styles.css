@@ -2489,3 +2489,28 @@ span {
         max-width: min(32vw, 132px) !important;
     }
 }
+
+@media (min-width: 1024px) {
+    .store-nav {
+        gap: 0.85rem;
+    }
+
+    .store-nav-left {
+        flex: 0 1 auto;
+    }
+
+    .store-nav-search-shell {
+        min-width: 340px;
+    }
+
+    .store-nav-actions {
+        padding-left: 0.35rem;
+    }
+}
+
+@media (min-width: 1440px) {
+    .store-nav-search-shell {
+        margin-left: 2.6rem !important;
+        margin-right: 2.6rem !important;
+    }
+}

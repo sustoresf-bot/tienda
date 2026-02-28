@@ -7120,7 +7120,7 @@ function App() {
             {view !== 'admin' && (
                 <nav className={`store-nav fixed top-0 w-full h-14 sm:h-16 md:h-20 z-50 px-2.5 sm:px-4 md:px-8 lg:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 premium-nav ${darkMode ? 'bg-[#05070b]/88 border-b border-slate-800/70' : 'bg-white/92 border-b border-slate-200/90 shadow-[0_8px_28px_rgba(15,23,42,0.08)]'}`}>
                     {/* Logo y Menú */}
-                    <div className="store-nav-left flex items-center gap-2 sm:gap-5 min-w-0 flex-1 pr-2 sm:pr-5">
+                    <div className="store-nav-left flex items-center gap-2 sm:gap-5 min-w-0 flex-1 lg:flex-none pr-2 sm:pr-5 lg:pr-0">
                         <button onClick={() => setIsMenuOpen(true)} title="Abrir menú" className={`store-nav-icon-btn inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
                             <Menu className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                         </button>
@@ -7142,7 +7142,7 @@ function App() {
                     </div>
 
                     {/* Barra de Búsqueda (Visible en Desktop) */}
-                    <div className={`hidden lg:flex items-center rounded-2xl px-6 py-3 w-1/3 transition group premium-nav-search ${darkMode ? 'bg-slate-900/60 border border-slate-700/60 focus-within:border-orange-500/40' : 'bg-slate-100/90 border border-slate-200 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-md'}`}>
+                    <div className={`store-nav-search-shell hidden lg:flex items-center rounded-2xl px-6 py-3 w-[min(38vw,640px)] xl:w-[min(36vw,700px)] mx-4 xl:mx-8 transition group premium-nav-search ${darkMode ? 'bg-slate-900/60 border border-slate-700/60 focus-within:border-orange-500/40' : 'bg-slate-100/90 border border-slate-200 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-md'}`}>
                         <Search className={`w-5 h-5 mr-3 group-focus-within:text-orange-500 transition ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                         <input
                             className={`bg-transparent outline-none text-sm w-full font-medium ${darkMode ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
