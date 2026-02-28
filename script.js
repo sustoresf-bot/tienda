@@ -7375,9 +7375,9 @@ function App() {
 
                         {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings están cargados */}
                         {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
-                            <div className="w-full premium-announcement border border-slate-800/50 bg-[#080808]/50 rounded-2xl p-3 mb-8 text-center relative">
-                                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-32 md:w-48 h-full bg-orange-500/30 blur-[30px] pointer-events-none"></div>
-                                <div className="absolute top-1/2 right-0 -translate-y-1/2 w-32 md:w-48 h-full bg-blue-500/30 blur-[30px] pointer-events-none"></div>
+                            <div className="w-full premium-announcement border border-slate-800/50 bg-[#080808]/50 rounded-2xl p-3 mb-8 text-center relative overflow-hidden before:absolute before:inset-y-0 before:left-0 before:w-1/2 before:bg-gradient-to-r before:from-orange-500/20 before:to-transparent before:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-1/2 after:bg-gradient-to-l after:from-blue-500/20 after:to-transparent after:pointer-events-none">
+                                {/* Left blob removed for ::before */}
+                                {/* Right blob removed for ::after */}
                                 <p className="text-orange-400 font-black text-xs md:text-sm tracking-[0.18em] uppercase flex items-center justify-center gap-3 relative z-10">
                                     <Flame className="w-4 h-4 text-orange-500" /> {settings.announcementMessage} <Flame className="w-4 h-4 text-blue-500" />
                                 </p>
