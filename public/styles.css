@@ -1801,44 +1801,31 @@ span {
 /* ===== PRODUCTION STOREFRONT PREMIUM LAYER ===== */
 .storefront-shell {
     position: relative;
-    --storefront-edge-fade: clamp(68px, 12vw, 230px);
-    --storefront-edge-soft: clamp(22px, 4.4vw, 68px);
-    --storefront-edge-bleed: clamp(20px, 4vw, 72px);
 }
 
 .storefront-shell::before {
     content: '';
     position: absolute;
-    inset: -2rem calc(-1 * var(--storefront-edge-bleed)) auto;
+    top: -2rem;
+    left: 50%;
+    width: 100vw;
+    width: 100dvw;
+    transform: translateX(-50%);
     height: 36rem;
     pointer-events: none;
     z-index: -1;
     background:
-        radial-gradient(70% 60% at 8% 12%, rgba(249, 115, 22, 0.14), transparent 72%),
-        radial-gradient(58% 55% at 92% 10%, rgba(59, 130, 246, 0.10), transparent 78%),
-        radial-gradient(50% 40% at 50% 0%, rgba(139, 92, 246, 0.06), transparent 60%);
-    -webkit-mask-image: linear-gradient(to right,
-            transparent 0,
-            rgba(0, 0, 0, 0.22) var(--storefront-edge-soft),
-            #000 calc(var(--storefront-edge-fade) + var(--storefront-edge-bleed)),
-            #000 calc(100% - (var(--storefront-edge-fade) + var(--storefront-edge-bleed))),
-            rgba(0, 0, 0, 0.22) calc(100% - var(--storefront-edge-soft)),
-            transparent 100%);
-    mask-image: linear-gradient(to right,
-            transparent 0,
-            rgba(0, 0, 0, 0.22) var(--storefront-edge-soft),
-            #000 calc(var(--storefront-edge-fade) + var(--storefront-edge-bleed)),
-            #000 calc(100% - (var(--storefront-edge-fade) + var(--storefront-edge-bleed))),
-            rgba(0, 0, 0, 0.22) calc(100% - var(--storefront-edge-soft)),
-            transparent 100%);
+        radial-gradient(62% 64% at 6% 11%, rgba(249, 115, 22, 0.20), transparent 72%),
+        radial-gradient(60% 62% at 94% 10%, rgba(37, 99, 235, 0.18), transparent 74%),
+        radial-gradient(54% 44% at 50% 0%, rgba(139, 92, 246, 0.08), transparent 62%);
     transition: opacity 0.5s ease;
 }
 
 .dark-mode .storefront-shell::before {
     height: 40rem;
     background:
-        radial-gradient(70% 60% at 8% 12%, rgba(249, 115, 22, 0.22), transparent 72%),
-        radial-gradient(58% 55% at 92% 10%, rgba(37, 99, 235, 0.18), transparent 78%),
+        radial-gradient(62% 64% at 6% 11%, rgba(249, 115, 22, 0.28), transparent 72%),
+        radial-gradient(60% 62% at 94% 10%, rgba(37, 99, 235, 0.24), transparent 74%),
         radial-gradient(50% 40% at 50% 0%, rgba(139, 92, 246, 0.08), transparent 60%);
 }
 
@@ -2115,15 +2102,9 @@ span {
 }
 
 @media (max-width: 640px) {
-    .storefront-shell {
-        --storefront-edge-fade: clamp(40px, 14vw, 86px);
-        --storefront-edge-soft: clamp(14px, 6vw, 28px);
-        --storefront-edge-bleed: clamp(10px, 4vw, 24px);
-    }
-
     .storefront-shell::before {
         height: 20rem;
-        inset: -1rem calc(-1 * var(--storefront-edge-bleed)) auto;
+        top: -1rem;
     }
 
     .premium-announcement p {
