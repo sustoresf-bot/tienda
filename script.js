@@ -54,6 +54,29 @@ const PUBLIC_SITE_URL =
         : '';
 const APP_VERSION = "3.0.0";
 const STRICT_USERNAME_REGEX = /^[a-z0-9._-]{3,32}$/;
+const PENDING_PAYMENT_CONFIRMATION_STORAGE_KEY = 'sustore_pending_payment_confirmation_v1';
+
+function normalizePendingPaymentConfirmation(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const mpPaymentId = String(raw.mpPaymentId || '').trim();
+    if (!mpPaymentId) return null;
+    const uid = String(raw.uid || '').trim();
+    const createdAt = String(raw.createdAt || '').trim() || new Date().toISOString();
+    const confirmationPayload = raw.confirmationPayload && typeof raw.confirmationPayload === 'object'
+        ? raw.confirmationPayload
+        : null;
+    return { mpPaymentId, uid, createdAt, confirmationPayload };
+}
+
+function readPendingPaymentConfirmationFromStorage() {
+    try {
+        const raw = localStorage.getItem(PENDING_PAYMENT_CONFIRMATION_STORAGE_KEY);
+        if (!raw) return null;
+        return normalizePendingPaymentConfirmation(JSON.parse(raw));
+    } catch (e) {
+        return null;
+    }
+}
 
 const mpPublicKeyPromiseByStore = new Map();
 function getPublicKeyCacheKey(storeId) {
@@ -1577,6 +1600,7 @@ function App() {
     const lastSyncedCartRef = useRef(null);
     const [liveCarts, setLiveCarts] = useState([]); // Monitor de carritos en tiempo real
     const [orders, setOrders] = useState([]);
+    const [latestAdminOrderIso, setLatestAdminOrderIso] = useState(null);
     const [users, setUsers] = useState([]);
     const [coupons, setCoupons] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
@@ -2039,7 +2063,13 @@ function App() {
     const [mpBrickController, setMpBrickController] = useState(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
     const [paymentError, setPaymentError] = useState(null);
-    const [lastApprovedPaymentId, setLastApprovedPaymentId] = useState('');
+    const [pendingPaymentConfirmation, setPendingPaymentConfirmation] = useState(() => readPendingPaymentConfirmationFromStorage());
+    const [lastApprovedPaymentId, setLastApprovedPaymentId] = useState(() => {
+        const pending = readPendingPaymentConfirmationFromStorage();
+        return String(pending?.mpPaymentId || '').trim();
+    });
+    const mpBrickControllerRef = useRef(null);
+    const brickInitStartedAtRef = useRef(0);
     const isInitializingBrick = useRef(false);
     const cardPaymentBrickRef = useRef(null);
 
@@ -2234,9 +2264,10 @@ function App() {
     const isSuperAdminSession = !!(systemUser?.email && SUPER_ADMIN_EMAIL && systemUser.email.trim().toLowerCase() === SUPER_ADMIN_EMAIL.trim().toLowerCase());
     const latestOrderIso = useMemo(() => {
         if (!isAdminUser) return null;
+        if (typeof latestAdminOrderIso === 'string' && latestAdminOrderIso) return latestAdminOrderIso;
         const v = orders?.[0]?.date;
         return typeof v === 'string' ? v : null;
-    }, [isAdminUser, orders]);
+    }, [isAdminUser, latestAdminOrderIso, orders]);
     const ordersLastSeenIso = typeof settings?.ordersLastSeenIso === 'string' ? settings.ordersLastSeenIso : null;
     const hasUnseenOrders = !!(latestOrderIso && (!ordersLastSeenIso || latestOrderIso > ordersLastSeenIso));
 
@@ -2526,7 +2557,7 @@ function App() {
             return;
         }
 
-        if (typeof settings?.ordersLastSeenIso !== 'string' && settingsLoaded && orders.length > 0 && latestOrderIso) {
+        if (typeof settings?.ordersLastSeenIso !== 'string' && settingsLoaded && latestOrderIso) {
             markOrdersSeen(latestOrderIso);
         }
     }, [isAdminUser, settingsLoaded, settings?.ordersLastSeenIso, orders.length, latestOrderIso, markOrdersSeen, stopOrderAlarm]);
@@ -2649,6 +2680,16 @@ function App() {
         // Si currentUser existe pero no tiene datos válidos, no guardamos nada
         // Esto evita persistir usuarios "fantasma" incompletos
     }, [currentUser]);
+
+    useEffect(() => {
+        try {
+            if (pendingPaymentConfirmation?.mpPaymentId) {
+                localStorage.setItem(PENDING_PAYMENT_CONFIRMATION_STORAGE_KEY, JSON.stringify(pendingPaymentConfirmation));
+            } else {
+                localStorage.removeItem(PENDING_PAYMENT_CONFIRMATION_STORAGE_KEY);
+            }
+        } catch (e) { }
+    }, [pendingPaymentConfirmation]);
 
     // 3. Inicialización de Firebase Auth
     useEffect(() => {
@@ -2980,6 +3021,26 @@ function App() {
     }, [systemUser, appId]);
 
     useEffect(() => {
+        if (!appId || !systemUser || systemUser.isAnonymous || !isAdminUser) {
+            setLatestAdminOrderIso(null);
+            return;
+        }
+
+        const latestOrderQuery = query(
+            collection(db, 'artifacts', appId, 'public', 'data', 'orders'),
+            orderBy('date', 'desc'),
+            limit(1)
+        );
+
+        return onSnapshot(latestOrderQuery, (snapshot) => {
+            const latest = snapshot.docs[0]?.data()?.date;
+            setLatestAdminOrderIso(typeof latest === 'string' ? latest : null);
+        }, () => {
+            setLatestAdminOrderIso(null);
+        });
+    }, [appId, systemUser?.uid, systemUser?.isAnonymous, isAdminUser]);
+
+    useEffect(() => {
         if (!systemUser) return;
         if (!appId) return;
 
@@ -2991,15 +3052,10 @@ function App() {
             return;
         }
 
-        if (isAdminUser && !isAdminViewActive) {
-            setOrders([]);
-            return;
-        }
-
         const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
 
         let q;
-        if (isAdminUser) {
+        if (isAdminUser && isAdminViewActive) {
             const constraints = [orderBy('date', 'desc'), limit(ordersLimit)];
             if (ordersCursor) constraints.push(startAfter(ordersCursor));
             q = query(ordersRef, ...constraints);
@@ -3010,10 +3066,12 @@ function App() {
         return onSnapshot(q, (snapshot) => {
             const ordersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            if (isAdminUser) {
+            if (isAdminUser && isAdminViewActive) {
                 setHasMoreOrders(snapshot.docs.length === ordersLimit);
                 // No actualizamos el cursor aquí para evitar bucles infinitos si onSnapshot dispara
                 // El cursor solo se actualiza manualmente al cambiar de página
+            } else {
+                setHasMoreOrders(false);
             }
 
             if (!isAdminUser) {
@@ -4195,9 +4253,88 @@ function App() {
         return { message: 'No se pudo procesar el pago. Intentá nuevamente.', code: '' };
     };
 
+    const buildCardOrderCartPayload = useCallback((sourceCart = cart) => {
+        const safeCart = Array.isArray(sourceCart) ? sourceCart : [];
+        return safeCart.map(i => ({
+            productId: i.product?.id,
+            quantity: i.quantity,
+            isPromo: i.product?.isPromo === true,
+            promoItems: Array.isArray(i.product?.items)
+                ? i.product.items.map((entry) => ({
+                    productId: String(entry?.productId || '').trim(),
+                    quantity: Number(entry?.quantity) || 0
+                })).filter((entry) => entry.productId && entry.quantity > 0)
+                : []
+        })).filter((entry) => String(entry.productId || '').trim() && Number(entry.quantity) > 0);
+    }, [cart]);
+
+    const buildCardOrderConfirmationPayload = useCallback((mpPaymentId, options = {}) => {
+        const sourceCheckoutData = options?.checkoutData && typeof options.checkoutData === 'object'
+            ? options.checkoutData
+            : checkoutData;
+        const sourceShippingFee = Number.isFinite(Number(options?.shippingFee))
+            ? Number(options.shippingFee)
+            : (Number(shippingFee) || 0);
+        const sourceCouponCode = options?.couponCode !== undefined
+            ? options.couponCode
+            : (appliedCoupon?.code || null);
+        const sourceCart = Array.isArray(options?.cart) ? options.cart : cart;
+
+        return {
+            paymentMethod: 'Tarjeta',
+            mpPaymentId: String(mpPaymentId || '').trim(),
+            shippingMethod: String(sourceCheckoutData?.shippingMethod || '').trim(),
+            shipping: {
+                address: String(sourceCheckoutData?.address || ''),
+                city: String(sourceCheckoutData?.city || ''),
+                province: String(sourceCheckoutData?.province || ''),
+                zipCode: String(sourceCheckoutData?.zipCode || ''),
+                fee: sourceShippingFee,
+            },
+            couponCode: sourceCouponCode ? String(sourceCouponCode).trim() : null,
+            cart: buildCardOrderCartPayload(sourceCart),
+        };
+    }, [appliedCoupon?.code, buildCardOrderCartPayload, cart, checkoutData, shippingFee]);
+
+    const setPendingPaymentForRecovery = useCallback((pendingData) => {
+        const normalized = normalizePendingPaymentConfirmation(pendingData);
+        setPendingPaymentConfirmation(normalized);
+        setLastApprovedPaymentId(String(normalized?.mpPaymentId || '').trim());
+    }, []);
+
+    const clearPendingPaymentConfirmation = useCallback(() => {
+        setPendingPaymentConfirmation(null);
+        setLastApprovedPaymentId('');
+    }, []);
+
+    const clearCardPaymentBrickContainer = useCallback(() => {
+        const container = document.getElementById('cardPaymentBrick_container');
+        if (container) {
+            container.innerHTML = '';
+        }
+    }, []);
+
+    const cleanupCardPaymentBrick = useCallback(async () => {
+        const activeController = mpBrickControllerRef.current;
+        mpBrickControllerRef.current = null;
+        if (activeController && typeof activeController.unmount === 'function') {
+            try {
+                await activeController.unmount();
+            } catch (e) { }
+        }
+        clearCardPaymentBrickContainer();
+        setMpBrickController(null);
+        isInitializingBrick.current = false;
+    }, [clearCardPaymentBrickContainer]);
+
     // Inicializar el Card Payment Brick cuando se selecciona Mercado Pago
     const initializeCardPaymentBrick = async () => {
-        if (isInitializingBrick.current) return;
+        if (isInitializingBrick.current) {
+            const elapsed = Date.now() - (brickInitStartedAtRef.current || 0);
+            if (elapsed < 25000) return;
+            isInitializingBrick.current = false;
+            await cleanupCardPaymentBrick();
+        }
 
         // Resetear estados al iniciar por si quedaron de una compra anterior
         setIsPaymentProcessing(false);
@@ -4235,24 +4372,20 @@ function App() {
         if (!container) return;
 
         isInitializingBrick.current = true;
+        brickInitStartedAtRef.current = Date.now();
 
         // Timeout de seguridad: si en 10 segundos no cargó, permitir reintentar
         const safetyTimeout = setTimeout(() => {
             if (isInitializingBrick.current) {
                 console.warn('⚠️ Mercado Pago: La inicialización está tardando demasiado. Liberando bloqueo...');
                 isInitializingBrick.current = false;
+                setPaymentError({ message: 'El formulario de tarjeta tardó demasiado en cargar. Tocá "Reintentar Pago".' });
+                cleanupCardPaymentBrick();
             }
         }, 20000);
 
         // Limpiar brick anterior si existe
-        if (mpBrickController) {
-            try {
-                await mpBrickController.unmount();
-            } catch (e) {
-                console.warn('Error unmounting:', e);
-            }
-            setMpBrickController(null);
-        }
+        await cleanupCardPaymentBrick();
 
         // Limpiar el contenedor físicamente por si quedaron restos
         const containerElem = document.getElementById('cardPaymentBrick_container');
@@ -4326,7 +4459,7 @@ function App() {
                         // Bloquear clics dobles pero permitir reintentos si falla
                         setIsPaymentProcessing(true);
                         setPaymentError(null);
-                        setLastApprovedPaymentId('');
+                        clearPendingPaymentConfirmation();
 
                         // Validar datos críticos antes de enviar
                         if (!cardFormData?.token) {
@@ -4383,23 +4516,24 @@ function App() {
                                     return;
                                 }
 
-                                setLastApprovedPaymentId(approvedPaymentId);
-                                await confirmOrderAfterPayment(approvedPaymentId);
+                                const pendingConfirmation = {
+                                    mpPaymentId: approvedPaymentId,
+                                    uid: String(systemUser?.uid || currentUser?.id || '').trim(),
+                                    createdAt: new Date().toISOString(),
+                                    confirmationPayload: buildCardOrderConfirmationPayload(approvedPaymentId),
+                                };
+                                setPendingPaymentForRecovery(pendingConfirmation);
+                                await confirmOrderAfterPayment(approvedPaymentId, { confirmationPayload: pendingConfirmation.confirmationPayload });
                                 showToast('¡Compra realizada!', 'success');
                                 setIsPaymentProcessing(false);
-                                setLastApprovedPaymentId('');
+                                clearPendingPaymentConfirmation();
                                 isInitializingBrick.current = false;
                                 // Limpiar controlador de MP para que la próxima compra reinicie de cero
-                                if (mpBrickController) {
-                                    try {
-                                        await mpBrickController.unmount();
-                                    } catch (e) { console.log(e); }
-                                    setMpBrickController(null);
-                                }
+                                await cleanupCardPaymentBrick();
                             } else if (result.status === 'in_process' || result.status === 'pending') {
                                 setIsPaymentProcessing(false);
                                 isInitializingBrick.current = false;
-                                setLastApprovedPaymentId('');
+                                clearPendingPaymentConfirmation();
                                 setPaymentError({
                                     message: 'El pago quedó pendiente. Aún no se confirmó el pedido. Si no se acredita en unos minutos, contactá soporte.',
                                     code: String(result.status || '').trim(),
@@ -4411,16 +4545,11 @@ function App() {
                                 console.error('❌ Motivo del rechazo:', details.code || details.message);
 
                                 // IMPORTANTE: Si el pago falla, destruimos el brick para que al reintentar se cree uno nuevo y limpio
-                                if (mpBrickController) {
-                                    try {
-                                        await mpBrickController.unmount();
-                                    } catch (e) { console.log("Error al desmontar brick tras falla:", e); }
-                                    setMpBrickController(null);
-                                }
+                                await cleanupCardPaymentBrick();
                                 isInitializingBrick.current = false;
 
                                 setIsPaymentProcessing(false);
-                                setLastApprovedPaymentId('');
+                                clearPendingPaymentConfirmation();
                                 setPaymentError({ message: details.message, code: details.code || '' });
                                 showToast('El pago no se pudo completar. Revisá los detalles.', 'error');
                             }
@@ -4431,10 +4560,17 @@ function App() {
                             const looksLikeNetworkError = /failed to fetch|networkerror|load failed|fetch/i.test(message);
                             const paymentIdToRecover = approvedPaymentId || lastApprovedPaymentId;
                             if (paymentIdToRecover) {
+                                if (approvedPaymentId) {
+                                    setPendingPaymentForRecovery({
+                                        mpPaymentId: paymentIdToRecover,
+                                        uid: String(systemUser?.uid || currentUser?.id || '').trim(),
+                                        createdAt: new Date().toISOString(),
+                                        confirmationPayload: buildCardOrderConfirmationPayload(paymentIdToRecover),
+                                    });
+                                }
                                 const visibleMessage = message && !looksLikeNetworkError
                                     ? message
                                     : 'No se pudo confirmar el pedido después del pago.';
-                                setLastApprovedPaymentId(paymentIdToRecover);
                                 setPaymentError({
                                     message: `${visibleMessage} Podés reintentar la confirmación sin volver a pagar.`,
                                     code: String(error?.code || '').trim(),
@@ -4461,28 +4597,70 @@ function App() {
                         if (errorMessage.includes('melidata')) return;
                         if (errorMessage.includes('content security policy') || errorMessage.includes('csp')) {
                             setPaymentError({ message: 'El navegador bloqueó recursos de Mercado Pago por CSP. Recargá y verificá la configuración de seguridad del dominio.' });
+                            cleanupCardPaymentBrick();
                             return;
                         }
                         setPaymentError({ message: 'Error en el formulario. Verificá tus claves de producción.' });
+                        cleanupCardPaymentBrick();
                     },
                 },
             });
 
+            mpBrickControllerRef.current = controller;
             setMpBrickController(controller);
         } catch (error) {
             console.error('Error creating brick:', error);
             isInitializingBrick.current = false;
             clearTimeout(safetyTimeout);
             showToast('Error al cargar el formulario de pago.', 'error');
+            await cleanupCardPaymentBrick();
         }
     };
 
     // Confirmar orden después de pago exitoso con MP
-    const confirmOrderAfterPayment = async (mpPaymentId) => {
+    const confirmOrderAfterPayment = async (mpPaymentId, options = {}) => {
         const authUser = await getAuthenticatedUser();
         if (!authUser) {
             throw new Error('Sesión inválida. Reiniciá e intentá de nuevo.');
         }
+
+        const storedPayload = pendingPaymentConfirmation?.confirmationPayload && typeof pendingPaymentConfirmation.confirmationPayload === 'object'
+            ? pendingPaymentConfirmation.confirmationPayload
+            : null;
+        const optionPayload = options?.confirmationPayload && typeof options.confirmationPayload === 'object'
+            ? options.confirmationPayload
+            : null;
+        const fallbackPayload = buildCardOrderConfirmationPayload(mpPaymentId);
+        const mergedPayload = {
+            ...fallbackPayload,
+            ...(storedPayload || {}),
+            ...(optionPayload || {}),
+        };
+
+        const effectivePaymentId = String(
+            mpPaymentId ||
+            mergedPayload?.mpPaymentId ||
+            pendingPaymentConfirmation?.mpPaymentId ||
+            ''
+        ).trim();
+        if (!effectivePaymentId) {
+            throw new Error('No se encontró un identificador de pago para confirmar.');
+        }
+
+        const requestPayload = {
+            paymentMethod: 'Tarjeta',
+            mpPaymentId: effectivePaymentId,
+            shippingMethod: String(mergedPayload?.shippingMethod || '').trim() || 'Pickup',
+            shipping: {
+                address: String(mergedPayload?.shipping?.address || ''),
+                city: String(mergedPayload?.shipping?.city || ''),
+                province: String(mergedPayload?.shipping?.province || ''),
+                zipCode: String(mergedPayload?.shipping?.zipCode || ''),
+                fee: Number(mergedPayload?.shipping?.fee) || 0,
+            },
+            couponCode: mergedPayload?.couponCode ? String(mergedPayload.couponCode).trim() : null,
+            cart: Array.isArray(mergedPayload?.cart) ? mergedPayload.cart : [],
+        };
 
         const token = await authUser.getIdToken(true);
         const res = await fetch('/api/orders/confirm', {
@@ -4492,30 +4670,7 @@ function App() {
                 'x-store-id': appId || '',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({
-                paymentMethod: 'Tarjeta',
-                mpPaymentId,
-                shippingMethod: checkoutData.shippingMethod,
-                shipping: {
-                    address: checkoutData.address,
-                    city: checkoutData.city,
-                    province: checkoutData.province,
-                    zipCode: checkoutData.zipCode,
-                    fee: shippingFee,
-                },
-                couponCode: appliedCoupon?.code || null,
-                cart: cart.map(i => ({
-                    productId: i.product?.id,
-                    quantity: i.quantity,
-                    isPromo: i.product?.isPromo === true,
-                    promoItems: Array.isArray(i.product?.items)
-                        ? i.product.items.map((entry) => ({
-                            productId: String(entry?.productId || '').trim(),
-                            quantity: Number(entry?.quantity) || 0
-                        })).filter((entry) => entry.productId && entry.quantity > 0)
-                        : []
-                })),
-            }),
+            body: JSON.stringify(requestPayload),
         });
         const resClone = res.clone();
         const data = await res.json().catch(async () => {
@@ -4539,15 +4694,19 @@ function App() {
 
         setCart([]);
         setAppliedCoupon(null);
-        if (mpBrickController) {
-            try { mpBrickController.unmount(); } catch (e) { }
+        clearPendingPaymentConfirmation();
+        await cleanupCardPaymentBrick();
+        if (options?.redirectOnSuccess !== false) {
+            setView('profile');
         }
-        setMpBrickController(null);
-        setView('profile');
     };
 
     const retryOrderConfirmation = async () => {
-        const paymentId = String(lastApprovedPaymentId || '').trim();
+        const paymentId = String(
+            lastApprovedPaymentId ||
+            pendingPaymentConfirmation?.mpPaymentId ||
+            ''
+        ).trim();
         if (!paymentId) {
             setPaymentError(null);
             initializeCardPaymentBrick();
@@ -4556,8 +4715,9 @@ function App() {
 
         setIsPaymentProcessing(true);
         try {
-            await confirmOrderAfterPayment(paymentId);
-            setLastApprovedPaymentId('');
+            await confirmOrderAfterPayment(paymentId, {
+                confirmationPayload: pendingPaymentConfirmation?.confirmationPayload || null,
+            });
             setPaymentError(null);
             showToast('Pedido confirmado correctamente.', 'success');
         } catch (error) {
@@ -4572,6 +4732,44 @@ function App() {
             setIsPaymentProcessing(false);
         }
     };
+
+    const pendingRecoveryAttemptedRef = useRef('');
+
+    useEffect(() => {
+        const pending = pendingPaymentConfirmation;
+        const paymentId = String(pending?.mpPaymentId || '').trim();
+        if (!paymentId) {
+            pendingRecoveryAttemptedRef.current = '';
+            return;
+        }
+        if (!systemUser || systemUser.isAnonymous) return;
+
+        const pendingUid = String(pending?.uid || '').trim();
+        if (pendingUid && pendingUid !== String(systemUser.uid || '').trim()) {
+            return;
+        }
+
+        if (pendingRecoveryAttemptedRef.current === paymentId) return;
+        pendingRecoveryAttemptedRef.current = paymentId;
+
+        (async () => {
+            try {
+                await confirmOrderAfterPayment(paymentId, {
+                    confirmationPayload: pending?.confirmationPayload || null,
+                    redirectOnSuccess: false,
+                });
+                setPaymentError(null);
+                showToast('Recuperamos y confirmamos tu pedido pendiente.', 'success');
+            } catch (error) {
+                const message = String(error?.message || '').trim() || 'No se pudo confirmar el pedido pendiente.';
+                setPaymentError({
+                    message: `${message} Podés reintentar la confirmación sin volver a pagar.`,
+                    code: String(error?.code || '').trim(),
+                    canRetryConfirmation: true,
+                });
+            }
+        })();
+    }, [pendingPaymentConfirmation, systemUser?.uid, systemUser?.isAnonymous]);
 
     // Effect para inicializar el Brick cuando se selecciona MP
     useEffect(() => {
@@ -4594,17 +4792,15 @@ function App() {
                 }
             }, 300);
             return () => clearTimeout(timer);
-        } else if (mpBrickController && (!isCheckoutView || !isMP)) {
+        } else if ((mpBrickControllerRef.current || mpBrickController) && (!isCheckoutView || !isMP)) {
             // Limpiar brick si se cambia de método de pago O de vista
             console.log('Sweep: Limpiando Brick por cambio de vista o método.');
-            try {
-                mpBrickController.unmount();
-            } catch (e) { }
-            setMpBrickController(null);
-            isInitializingBrick.current = false;
-            setLastApprovedPaymentId('');
+            cleanupCardPaymentBrick();
+            if (!pendingPaymentConfirmation?.mpPaymentId) {
+                setLastApprovedPaymentId('');
+            }
         }
-    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view]);
+    }, [checkoutData.paymentChoice, finalTotal, currentUser, cart.length, view, pendingPaymentConfirmation?.mpPaymentId, cleanupCardPaymentBrick, mpBrickController]);
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
@@ -7989,7 +8185,23 @@ function App() {
                                 </div>
 
                                 {(() => {
-                                    const completedOrders = orders.filter(o => o.userId === currentUser.id && o.status === 'Realizado');
+                                    const currentUid = String(systemUser?.uid || currentUser?.id || '').trim();
+                                    const currentEmail = String(currentUser?.email || systemUser?.email || '').trim().toLowerCase();
+                                    const completedOrders = orders.filter((o) => {
+                                        const normalizedStatus = String(o?.status || '').trim().toLowerCase();
+                                        if (normalizedStatus !== 'realizado') return false;
+
+                                        const ownerIds = [
+                                            o?.userId,
+                                            o?.customerId,
+                                            o?.customer?.id,
+                                        ].map((id) => String(id || '').trim()).filter(Boolean);
+
+                                        if (currentUid && ownerIds.includes(currentUid)) return true;
+
+                                        const orderEmail = String(o?.customer?.email || '').trim().toLowerCase();
+                                        return !!(currentEmail && orderEmail && currentEmail === orderEmail);
+                                    });
                                     // Flatten all items from completed orders
                                     const purchasedItems = completedOrders.flatMap(o => o.items.map(item => ({ ...item, date: o.date })));
 

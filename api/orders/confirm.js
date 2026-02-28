@@ -267,6 +267,35 @@ export default async function handler(req, res) {
     const mpPaymentId = req.body?.mpPaymentId ? String(req.body.mpPaymentId).trim() : null;
     const cart = Array.isArray(req.body?.cart) ? req.body.cart : [];
 
+    // Idempotencia temprana: si el pago ya fue confirmado antes, devolver éxito
+    // incluso si el cliente perdió estado local (carrito/envío).
+    if (paymentMethod === 'Tarjeta' && mpPaymentId) {
+        try {
+            const adminSdk = getAdmin();
+            const db = adminSdk.firestore();
+            const lockRef = db.doc(`artifacts/${storeId}/public/data/paymentLocks/${buildPaymentLockId(mpPaymentId)}`);
+            const lockSnap = await lockRef.get();
+            if (lockSnap.exists) {
+                const lockData = lockSnap.data() || {};
+                const ownerId = String(lockData.customerId || '').trim();
+                if (ownerId && ownerId !== decoded.uid) {
+                    return res.status(409).json({
+                        error: 'Este pago ya fue registrado anteriormente',
+                        code: 'payment_already_used',
+                    });
+                }
+                return res.status(200).json({
+                    success: true,
+                    orderId: String(lockData.orderId || ''),
+                    emailSent: false,
+                    alreadyProcessed: true,
+                });
+            }
+        } catch (precheckError) {
+            console.error('[orders/confirm] Precheck payment lock failed:', precheckError);
+        }
+    }
+
     if (!paymentMethod) return res.status(400).json({ error: 'Falta metodo de pago' });
     if (!shippingMethod) return res.status(400).json({ error: 'Falta metodo de entrega' });
     if (!Array.isArray(cart) || cart.length === 0) return res.status(400).json({ error: 'Carrito vacio' });
