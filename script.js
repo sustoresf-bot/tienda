@@ -6998,9 +6998,11 @@ function App() {
 
                         {/* Anuncio Global (Marquesina) - Solo mostrar cuando settings están cargados */}
                         {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
-                            <div className="w-full premium-announcement bg-gradient-to-r from-orange-900/20 to-red-900/20 border border-orange-500/20 rounded-2xl p-3 mb-8 text-center relative overflow-hidden">
-                                <p className="text-orange-400 font-black text-xs md:text-sm tracking-[0.18em] uppercase flex items-center justify-center gap-3">
-                                    <Flame className="w-4 h-4 text-orange-500" /> {settings.announcementMessage} <Flame className="w-4 h-4 text-orange-500" />
+                            <div className="w-full premium-announcement border border-slate-800/50 bg-[#080808]/50 rounded-2xl p-3 mb-8 text-center relative">
+                                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-32 md:w-48 h-full bg-orange-500/30 blur-[30px] pointer-events-none"></div>
+                                <div className="absolute top-1/2 right-0 -translate-y-1/2 w-32 md:w-48 h-full bg-blue-500/30 blur-[30px] pointer-events-none"></div>
+                                <p className="text-orange-400 font-black text-xs md:text-sm tracking-[0.18em] uppercase flex items-center justify-center gap-3 relative z-10">
+                                    <Flame className="w-4 h-4 text-orange-500" /> {settings.announcementMessage} <Flame className="w-4 h-4 text-blue-500" />
                                 </p>
                             </div>
                         )}
