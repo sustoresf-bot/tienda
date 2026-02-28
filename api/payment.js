@@ -150,7 +150,7 @@ export default async function handler(req, res) {
 
             return null;
         };
-        const discountLabel = formatDiscountLabel(discountDetails) || formatMoney(discountDetails?.amount);
+        const discountLabel = formatDiscountLabel(discountDetails) || (Number.isFinite(Number(discountDetails?.amount)) ? formatMoney(discountDetails.amount) : null);
 
         // items mapping safely
         const safeItems = Array.isArray(items) ? items : [];

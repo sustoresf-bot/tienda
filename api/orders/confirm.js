@@ -148,7 +148,7 @@ function buildEmailHtml({ brandName, ticketWhatsappLink, ticketSiteUrl, orderId,
     const safeBrandName = escapeHtml(brandName || 'Sustore');
     const storeUrl = normalizeUrl(ticketSiteUrl) || 'https://sustore.vercel.app/';
     const whatsappUrl = normalizeWhatsappLink(ticketWhatsappLink);
-    const discountLabel = formatDiscountLabel(discountDetails) || formatMoney(discountDetails?.amount);
+    const discountLabel = formatDiscountLabel(discountDetails) || (Number.isFinite(Number(discountDetails?.amount)) ? formatMoney(discountDetails.amount) : null);
     const year = new Date(date || Date.now()).getFullYear();
     return `
         <!DOCTYPE html>

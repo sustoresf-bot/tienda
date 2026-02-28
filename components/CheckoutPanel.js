@@ -191,9 +191,10 @@ const CheckoutPanel = ({
                                 <div className="space-y-4 animate-fade-up">
                                     <input required placeholder="Dirección y Altura" className={`w-full p-4 rounded-xl border outline-none focus:border-orange-500 transition ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} value={checkoutData.address} onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
                                     <div className="grid grid-cols-2 gap-4">
-                                        <input placeholder="Piso / Depto (Opcional)" className={`w-full p-4 rounded-xl border outline-none focus:border-orange-500 transition ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} value={checkoutData.apartment} onChange={e => setCheckoutData({...checkoutData, apartment: e.target.value})} />
                                         <input required placeholder="Ciudad" className={`w-full p-4 rounded-xl border outline-none focus:border-orange-500 transition ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} value={checkoutData.city} onChange={e => setCheckoutData({...checkoutData, city: e.target.value})} />
+                                        <input required placeholder="Provincia" className={`w-full p-4 rounded-xl border outline-none focus:border-orange-500 transition ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} value={checkoutData.province} onChange={e => setCheckoutData({...checkoutData, province: e.target.value})} />
                                     </div>
+                                    <input required placeholder="Código Postal" className={`w-full p-4 rounded-xl border outline-none focus:border-orange-500 transition ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'}`} value={checkoutData.zipCode} onChange={e => setCheckoutData({...checkoutData, zipCode: e.target.value})} />
                                 </div>
                             )}
                         </div>
@@ -203,6 +204,12 @@ const CheckoutPanel = ({
                                 <CardIcon className="text-blue-500 w-6 h-6" /> Método de Pago
                             </h2>
                             <div className="grid grid-cols-2 gap-4">
+                                {settings?.paymentMercadoPago?.enabled && (
+                                    <button type="button" onClick={() => setCheckoutData({ ...checkoutData, paymentMethod: 'Tarjeta' })} className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative ${checkoutData.paymentMethod === 'Tarjeta' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}>
+                                        <CreditCard className="w-8 h-8" />
+                                        <span className="text-xs font-black uppercase">Tarjeta</span>
+                                    </button>
+                                )}
                                 {settings?.paymentCash && (
                                     <button type="button" onClick={() => setCheckoutData({ ...checkoutData, paymentMethod: 'Cash' })} className={`p-6 rounded-2xl border transition flex flex-col items-center gap-3 relative ${checkoutData.paymentMethod === 'Cash' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : darkMode ? 'border-slate-700 bg-slate-900/30 text-slate-500 hover:border-slate-500' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-400'}`}>
                                         <DollarSign className="w-8 h-8" />

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 
@@ -1664,7 +1664,7 @@ function App() {
     const [loginMode, setLoginMode] = useState(true);
     const identityRequirements = useMemo(
         () => resolveIdentityRequirements(settings),
-        [settings?.requireDNI, settings?.requirePhone]
+        [settings?.requireDNI, settings?.requireDni, settings?.requirePhone, settings?.require_phone]
     );
 
     useEffect(() => {
@@ -4155,6 +4155,9 @@ function App() {
         const usedByArr = Array.isArray(coupon.usedBy) ? coupon.usedBy : [];
         if (coupon.usageLimit && usedByArr.length >= coupon.usageLimit) {
             return showToast("Este cupón ha agotado sus usos totales.", "error");
+        }
+        if (currentUser?.id && usedByArr.includes(currentUser.id)) {
+            return showToast("Ya usaste este cupón anteriormente.", "error");
         }
         if (cartSubtotal < (coupon.minPurchase || 0)) {
             return showToast(`El monto mínimo para este cupón es $${coupon.minPurchase}.`, "warning");

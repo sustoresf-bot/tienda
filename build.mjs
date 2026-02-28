@@ -20,7 +20,7 @@ function normalizeSiteUrl(value) {
 }
 
 function runTailwindBuild() {
-    const command = 'npx @tailwindcss/cli -c tailwind.config.cjs -i tailwind.input.css -o assets/tailwind.css --minify';
+    const command = 'npx @tailwindcss/cli -i tailwind.input.css -o assets/tailwind.css --minify';
     const result = spawnSync(command, {
         cwd: __dirname,
         stdio: 'inherit',
