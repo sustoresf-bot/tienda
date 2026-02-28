@@ -1,6 +1,7 @@
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
 import { emailToDocKey, normalizeStrictUsername, normalizeUsernameForKey } from '../../lib/userIdentity.js';
+import { resolveIdentityRequirements, validateIdentityFields } from '../../lib/auth-requirements.js';
 
 function createApiError(status, message, code) {
     const error = new Error(message);
@@ -25,10 +26,14 @@ export default async function handler(req, res) {
     const dni = String(req.body?.dni || '').trim();
     const phone = String(req.body?.phone || '').trim();
 
-    if (name.length < 3) return res.status(400).json({ error: 'Nombre inválido' });
-    if (!username) return res.status(400).json({ error: 'Usuario inválido. Usá 3-32 caracteres: letras, números, punto, guion o guion bajo.' });
-    if (dni.length < 6) return res.status(400).json({ error: 'DNI inválido' });
-    if (phone.length < 8) return res.status(400).json({ error: 'Teléfono inválido' });
+    if (name.length < 3) {
+        return res.status(400).json({ error: 'Nombre invalido' });
+    }
+    if (!username) {
+        return res.status(400).json({
+            error: 'Usuario invalido. Usa 3-32 caracteres: letras, numeros, punto, guion o guion bajo.',
+        });
+    }
 
     const storeId = getStoreIdFromRequest(req);
     const usernameLower = normalizeUsernameForKey(username);
@@ -38,6 +43,23 @@ export default async function handler(req, res) {
     try {
         const adminSdk = getAdmin();
         const db = adminSdk.firestore();
+
+        const settingsRef = db.doc(`artifacts/${storeId}/public/data/settings/config`);
+        const settingsSnap = await settingsRef.get();
+        const identityRequirements = resolveIdentityRequirements(settingsSnap.exists ? settingsSnap.data() : null);
+        const identityValidation = validateIdentityFields({
+            dni,
+            phone,
+            requireDni: identityRequirements.requireDni,
+            requirePhone: identityRequirements.requirePhone,
+        });
+
+        if (!identityValidation.ok) {
+            return res.status(400).json({
+                error: identityValidation.message,
+                code: identityValidation.code,
+            });
+        }
 
         const userRef = db.doc(`artifacts/${storeId}/public/data/users/${decoded.uid}`);
         const usernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${usernameLower}`);
@@ -54,13 +76,13 @@ export default async function handler(req, res) {
             if (usernameSnap.exists) {
                 const existing = usernameSnap.data() || {};
                 if ((existing.uid || '') !== decoded.uid) {
-                    throw createApiError(409, 'El nombre de usuario ya está en uso', 'username_taken');
+                    throw createApiError(409, 'El nombre de usuario ya esta en uso', 'username_taken');
                 }
             }
             if (emailSnap.exists) {
                 const existing = emailSnap.data() || {};
                 if ((existing.uid || '') !== decoded.uid) {
-                    throw createApiError(409, 'Este email ya está registrado en otra cuenta', 'email_taken');
+                    throw createApiError(409, 'Este email ya esta registrado en otra cuenta', 'email_taken');
                 }
             }
 
@@ -83,18 +105,26 @@ export default async function handler(req, res) {
             };
 
             tx.set(userRef, profile, { merge: true });
-            tx.set(usernameRef, {
-                uid: decoded.uid,
-                emailLower,
-                updatedAt: nowIso,
-                createdAt: usernameSnap.exists ? (usernameSnap.data()?.createdAt || nowIso) : nowIso,
-            }, { merge: true });
-            tx.set(emailRef, {
-                uid: decoded.uid,
-                emailLower,
-                updatedAt: nowIso,
-                createdAt: emailSnap.exists ? (emailSnap.data()?.createdAt || nowIso) : nowIso,
-            }, { merge: true });
+            tx.set(
+                usernameRef,
+                {
+                    uid: decoded.uid,
+                    emailLower,
+                    updatedAt: nowIso,
+                    createdAt: usernameSnap.exists ? usernameSnap.data()?.createdAt || nowIso : nowIso,
+                },
+                { merge: true }
+            );
+            tx.set(
+                emailRef,
+                {
+                    uid: decoded.uid,
+                    emailLower,
+                    updatedAt: nowIso,
+                    createdAt: emailSnap.exists ? emailSnap.data()?.createdAt || nowIso : nowIso,
+                },
+                { merge: true }
+            );
 
             if (previousUsernameLower && previousUsernameLower !== usernameLower) {
                 const previousUsernameRef = db.doc(`artifacts/${storeId}/public/data/usernames/${previousUsernameLower}`);
@@ -121,3 +151,4 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Internal error' });
     }
 }
+

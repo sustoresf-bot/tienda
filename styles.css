@@ -1801,12 +1801,15 @@ span {
 /* ===== PRODUCTION STOREFRONT PREMIUM LAYER ===== */
 .storefront-shell {
     position: relative;
+    --storefront-edge-fade: clamp(68px, 12vw, 230px);
+    --storefront-edge-soft: clamp(22px, 4.4vw, 68px);
+    --storefront-edge-bleed: clamp(20px, 4vw, 72px);
 }
 
 .storefront-shell::before {
     content: '';
     position: absolute;
-    inset: -2rem 0 auto;
+    inset: -2rem calc(-1 * var(--storefront-edge-bleed)) auto;
     height: 36rem;
     pointer-events: none;
     z-index: -1;
@@ -1814,6 +1817,20 @@ span {
         radial-gradient(70% 60% at 8% 12%, rgba(249, 115, 22, 0.14), transparent 72%),
         radial-gradient(58% 55% at 92% 10%, rgba(59, 130, 246, 0.10), transparent 78%),
         radial-gradient(50% 40% at 50% 0%, rgba(139, 92, 246, 0.06), transparent 60%);
+    -webkit-mask-image: linear-gradient(to right,
+            transparent 0,
+            rgba(0, 0, 0, 0.22) var(--storefront-edge-soft),
+            #000 calc(var(--storefront-edge-fade) + var(--storefront-edge-bleed)),
+            #000 calc(100% - (var(--storefront-edge-fade) + var(--storefront-edge-bleed))),
+            rgba(0, 0, 0, 0.22) calc(100% - var(--storefront-edge-soft)),
+            transparent 100%);
+    mask-image: linear-gradient(to right,
+            transparent 0,
+            rgba(0, 0, 0, 0.22) var(--storefront-edge-soft),
+            #000 calc(var(--storefront-edge-fade) + var(--storefront-edge-bleed)),
+            #000 calc(100% - (var(--storefront-edge-fade) + var(--storefront-edge-bleed))),
+            rgba(0, 0, 0, 0.22) calc(100% - var(--storefront-edge-soft)),
+            transparent 100%);
     transition: opacity 0.5s ease;
 }
 
@@ -2082,10 +2099,31 @@ span {
     filter: saturate(1.03) contrast(1.03);
 }
 
+.quick-add-container {
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.quick-add-qty {
+    flex-shrink: 0;
+}
+
+.quick-add-action {
+    min-width: 7.25rem;
+    white-space: nowrap;
+}
+
 @media (max-width: 640px) {
+    .storefront-shell {
+        --storefront-edge-fade: clamp(40px, 14vw, 86px);
+        --storefront-edge-soft: clamp(14px, 6vw, 28px);
+        --storefront-edge-bleed: clamp(10px, 4vw, 24px);
+    }
+
     .storefront-shell::before {
         height: 20rem;
-        inset: -1rem 0 auto;
+        inset: -1rem calc(-1 * var(--storefront-edge-bleed)) auto;
     }
 
     .premium-announcement p {
@@ -2113,6 +2151,26 @@ span {
 
     .premium-product-card:hover {
         transform: none;
+    }
+
+    .quick-add-container {
+        gap: 0.42rem;
+    }
+
+    .quick-add-qty button {
+        width: 1.9rem;
+        height: 1.9rem;
+    }
+
+    .quick-add-qty span {
+        width: 1.95rem;
+        font-size: 0.75rem;
+    }
+
+    .quick-add-action {
+        min-width: 6.9rem;
+        padding: 0.55rem 0.7rem !important;
+        font-size: 0.7rem !important;
     }
 }
 
@@ -2157,11 +2215,12 @@ span {
     }
 
     .store-brand-title {
-        max-width: min(44vw, 180px);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: clamp(1rem, 4.3vw, 1.3rem) !important;
+        max-width: none;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
+        font-size: clamp(0.9rem, 3.4vw, 1.08rem) !important;
         line-height: 1.05 !important;
     }
 
@@ -2424,7 +2483,7 @@ span {
     }
 }
 
-/* ===== NAVBAR BALANCE FIX ===== */
+/* ===== NAVBAR RESPONSIVE SYSTEM ===== */
 .store-nav {
     gap: clamp(0.25rem, 0.8vw, 0.9rem);
 }
@@ -2453,40 +2512,137 @@ span {
 }
 
 @media (max-width: 640px) {
-    .store-nav .store-brand-title {
-        max-width: min(34vw, 150px) !important;
-        font-size: clamp(0.95rem, 3.9vw, 1.2rem) !important;
+    .store-nav {
+        height: 60px !important;
+        padding-left: max(0.6rem, env(safe-area-inset-left)) !important;
+        padding-right: max(0.6rem, env(safe-area-inset-right)) !important;
+        gap: 0.4rem !important;
+    }
+
+    .store-nav-spacer {
+        height: 60px !important;
     }
 
     .store-nav-left {
-        padding-right: 0.65rem !important;
+        flex: 1 1 auto !important;
+        min-width: 0;
+        gap: 0.45rem !important;
+        padding-right: 0.3rem !important;
+    }
+
+    .store-nav-brand {
+        gap: 0.45rem !important;
+        flex: 1 1 auto !important;
+    }
+
+    .store-nav-brand>div {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .store-nav-logo {
+        width: 1.9rem !important;
+        height: 1.9rem !important;
+    }
+
+    .store-nav .store-brand-title {
+        max-width: none !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        overflow-wrap: anywhere;
+        font-size: clamp(0.78rem, 2.95vw, 0.98rem) !important;
+        line-height: 1.02 !important;
     }
 
     .store-nav-actions {
-        gap: 0.35rem !important;
+        gap: 0.3rem !important;
     }
 
-    .store-nav-login-btn {
-        padding-left: 0.6rem !important;
-        padding-right: 0.6rem !important;
-        letter-spacing: 0.01em;
+    .store-nav-icon-btn,
+    .store-nav-login-btn,
+    .store-nav-profile-btn {
+        height: 2.7rem !important;
+        min-height: 2.7rem !important;
+        min-width: 2.7rem !important;
+        border-radius: 0.75rem !important;
     }
-}
 
-@media (max-width: 430px) {
     .store-nav-login-label {
         display: none;
     }
 
     .store-nav-login-btn {
-        width: 2.75rem;
-        min-width: 2.75rem !important;
+        width: 2.7rem !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
+        letter-spacing: 0.01em;
+    }
+
+    .store-nav-profile-btn {
+        padding-left: 0.25rem !important;
+        padding-right: 0.42rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .store-nav .store-brand-title {
+        font-size: clamp(0.74rem, 3.1vw, 0.9rem) !important;
+    }
+}
+
+@media (max-width: 412px) {
+    .store-nav .store-brand-title {
+        font-size: 0.78rem !important;
+    }
+
+    .store-nav-logo {
+        width: 1.8rem !important;
+        height: 1.8rem !important;
+    }
+}
+
+@media (max-width: 359px) {
+    .store-nav {
+        height: 56px !important;
+        padding-left: max(0.5rem, env(safe-area-inset-left)) !important;
+        padding-right: max(0.5rem, env(safe-area-inset-right)) !important;
+    }
+
+    .store-nav-spacer {
+        height: 56px !important;
+    }
+
+    .store-nav-icon-btn,
+    .store-nav-login-btn,
+    .store-nav-profile-btn {
+        height: 2.55rem !important;
+        min-height: 2.55rem !important;
+        min-width: 2.55rem !important;
     }
 
     .store-nav .store-brand-title {
-        max-width: min(32vw, 132px) !important;
+        font-size: 0.72rem !important;
+        line-height: 1 !important;
+    }
+
+    .store-nav-logo {
+        width: 1.65rem !important;
+        height: 1.65rem !important;
+    }
+}
+
+@media (max-height: 500px) and (orientation: landscape) and (max-width: 960px) {
+    .store-nav {
+        height: 50px !important;
+    }
+
+    .store-nav-spacer {
+        height: 50px !important;
+    }
+
+    .store-nav-login-label {
+        display: none;
     }
 }
 

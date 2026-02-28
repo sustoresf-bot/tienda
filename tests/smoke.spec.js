@@ -25,6 +25,45 @@ test('carga la home sin errores de runtime', async ({ page }) => {
     expect(errors, errors.join('\n')).toEqual([]);
 });
 
+test('auth modal: abre login y alterna a registro sin romper UI', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (err) => {
+        const text = String(err);
+        if (text.includes('[BABEL] Note: The code generator has deoptimised the styling')) return;
+        errors.push(text);
+    });
+    page.on('console', (msg) => {
+        if (msg.type() !== 'error') return;
+        const text = msg.text();
+        if (text.includes('[BABEL] Note: The code generator has deoptimised the styling')) return;
+        errors.push(text);
+    });
+
+    await page.goto('/');
+    await page.waitForFunction(() => {
+        const root = document.querySelector('#root');
+        if (!root) return false;
+        const spinner = root.querySelector('.loading-spinner');
+        return !spinner && root.textContent && root.textContent.trim().length > 0;
+    });
+
+    await page.locator('.store-nav-login-btn').first().click();
+    await expect(page.locator('#auth-email')).toBeVisible();
+    await expect(page.locator('#auth-password')).toBeVisible();
+
+    await page.getByRole('button', { name: /regístrate gratis/i }).click();
+    await expect(page.locator('#auth-name')).toBeVisible();
+    await expect(page.locator('#auth-username')).toBeVisible();
+    await expect(page.locator('#auth-dni')).toBeVisible();
+    await expect(page.locator('#auth-phone')).toBeVisible();
+
+    await page.getByRole('button', { name: /inicia sesi[oó]n/i }).click();
+    await expect(page.locator('#auth-name')).toHaveCount(0);
+    await expect(page.locator('#auth-email')).toBeVisible();
+
+    expect(errors, errors.join('\n')).toEqual([]);
+});
+
 test('endpoints criticos rechazan sin token', async ({ request }) => {
     const resOrders = await request.post('/api/orders/confirm', { data: {} });
     expect([401, 403]).toContain(resOrders.status());

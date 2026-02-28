@@ -23,6 +23,7 @@ import {
     getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, getDocs, deleteDoc,
     where, writeBatch, getDoc, increment, setDoc, arrayUnion, arrayRemove, orderBy, limit, startAfter
 } from 'firebase/firestore';
+import { resolveIdentityRequirements, validateIdentityFields, buildMissingIdentityMessage } from './lib/auth-requirements.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyAfllte-D_I3h3TwBaiSL4KVfWrCSVh9ro",
@@ -430,6 +431,8 @@ const defaultSettings = {
     showFloatingWhatsapp: false,
     showCartWhatsappCheckout: false,
     showInstagram: false,
+    requirePhone: true,
+    requireDNI: true,
 
     paymentTransfer: {
         enabled: false,
@@ -732,8 +735,8 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
     const isMin = qty <= 1;
 
     return (
-        <div className="flex flex-col items-end gap-2" onClick={(e) => e.stopPropagation()}>
-            <div className={`flex items-center rounded-lg ${darkMode ? 'bg-zinc-800' : 'bg-slate-100'} p-1 border ${darkMode ? 'border-zinc-700' : 'border-slate-200'}`}>
+        <div className="quick-add-container flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <div className={`quick-add-qty flex items-center rounded-lg ${darkMode ? 'bg-zinc-800' : 'bg-slate-100'} p-1 border ${darkMode ? 'border-zinc-700' : 'border-slate-200'}`}>
                 <button
                     onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
                     disabled={isMin}
@@ -751,7 +754,7 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 
             <button
                 onClick={handleAdd}
-                className={`w-full py-2.5 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-xs font-bold uppercase tracking-wide btn-press ripple ${added
+                className={`quick-add-action w-auto py-2.5 px-3 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 active:scale-95 text-xs font-bold uppercase tracking-wide btn-press ripple ${added
                     ? 'bg-green-500 text-white shadow-green-500/30'
                     : darkMode
                         ? 'bg-white text-black hover:bg-orange-400 hover:text-black shadow-white/10'
@@ -1651,6 +1654,10 @@ function App() {
         phone: ''
     });
     const [loginMode, setLoginMode] = useState(true);
+    const identityRequirements = useMemo(
+        () => resolveIdentityRequirements(settings),
+        [settings?.requireDNI, settings?.requirePhone]
+    );
 
     // Estados para Nuevos Formularios (Finanzas y Compras)
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'General', date: new Date().toISOString().split('T')[0] });
@@ -3599,7 +3606,11 @@ function App() {
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(data.error || 'Error al crear el perfil');
+                if (!res.ok) {
+                    const apiError = new Error(data.error || 'Error al crear el perfil');
+                    if (data?.code) apiError.code = data.code;
+                    throw apiError;
+                }
             };
 
             const claimLegacyProfile = async (firebaseUser) => {
@@ -3622,17 +3633,23 @@ function App() {
                 const normalizedUsername = authData.username.trim().toLowerCase();
                 const normalizedDni = authData.dni.trim();
                 const normalizedPhone = authData.phone.trim();
+                const { requireDni, requirePhone } = identityRequirements;
                 if (!normalizedName || normalizedName.length < 3) throw new Error("El nombre es muy corto.");
                 if (!STRICT_USERNAME_REGEX.test(normalizedUsername)) {
                     throw new Error("El usuario debe tener 3-32 caracteres y solo puede incluir letras, numeros, punto, guion o guion bajo.");
                 }
                 if (!normalizedEmail || !normalizedEmail.includes('@')) throw new Error("Email inválido.");
                 if (!authData.password || authData.password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres.");
-                if (!normalizedDni || normalizedDni.length < 6) throw new Error("Debes ingresar tu DNI (mínimo 6 dígitos).");
-                if (!normalizedPhone || normalizedPhone.length < 8) throw new Error("Debes ingresar tu teléfono (mínimo 8 dígitos).");
+
+                const identityValidation = validateIdentityFields({
+                    dni: normalizedDni,
+                    phone: normalizedPhone,
+                    requireDni,
+                    requirePhone,
+                });
+                if (!identityValidation.ok) throw new Error(identityValidation.message);
 
                 const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, authData.password);
-
                 const minimalUser = {
                     id: userCredential.user.uid,
                     name: normalizedName,
@@ -3640,37 +3657,42 @@ function App() {
                     emailLower: normalizedEmail,
                     role: String(normalizedEmail).trim().toLowerCase() === String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase() ? 'admin' : 'user',
                 };
-                setCurrentUser(minimalUser);
 
-                setView('store');
-                setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
-                setIsLoading(false);
-                showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
+                if (!usersPath) {
+                    setCurrentUser(minimalUser);
+                    setView('store');
+                    setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
+                    showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
+                    return;
+                }
 
-                (async () => {
-                    try {
-                        await setupProfile(userCredential.user, {
-                            name: normalizedName,
-                            username: normalizedUsername,
-                            dni: normalizedDni,
-                            phone: normalizedPhone,
-                        });
-                        const profile = await fetchProfile(userCredential.user.uid);
-                        if (!profile) return;
-
-                        const normalizedEmailLower = String(profile?.emailLower || profile?.email || '').trim().toLowerCase();
-                        const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
-                        const normalizedProfile = superEmailLower && normalizedEmailLower === superEmailLower
-                            ? { ...profile, role: 'admin' }
-                            : profile;
-                        setCurrentUser(normalizedProfile);
-                    } catch (e) {
-                        console.error('Error setup profile (background):', e);
-                        showToast(e?.message || 'Error al crear el perfil', 'error');
-                        try { await auth.signOut(); } catch { }
-                        try { await userCredential.user.delete(); } catch { }
+                try {
+                    await setupProfile(userCredential.user, {
+                        name: normalizedName,
+                        username: normalizedUsername,
+                        dni: normalizedDni,
+                        phone: normalizedPhone,
+                    });
+                    const profile = await fetchProfile(userCredential.user.uid);
+                    if (!profile) {
+                        throw new Error('No se pudo completar tu perfil. Intenta nuevamente.');
                     }
-                })();
+
+                    const normalizedEmailLower = String(profile?.emailLower || profile?.email || '').trim().toLowerCase();
+                    const superEmailLower = String(SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+                    const normalizedProfile = superEmailLower && normalizedEmailLower === superEmailLower
+                        ? { ...profile, role: 'admin' }
+                        : profile;
+                    setCurrentUser(normalizedProfile);
+                    setView('store');
+                    setAuthData({ email: '', password: '', name: '', username: '', dni: '', phone: '' });
+                    showToast("¡Cuenta creada exitosamente! Bienvenido.", "success");
+                } catch (e) {
+                    console.error('Error setup profile (register):', e);
+                    try { await auth.signOut(); } catch { }
+                    try { await userCredential.user.delete(); } catch { }
+                    throw e;
+                }
 
                 return;
             } else {
@@ -4185,9 +4207,17 @@ function App() {
                 return showToast("Por favor inicia sesión para finalizar la compra.", "info");
             }
 
-            if (!effectiveUser.name || !effectiveUser.phone || !effectiveUser.dni) {
+            const profileValidation = validateIdentityFields({
+                dni: effectiveUser.dni,
+                phone: effectiveUser.phone,
+                requireDni: identityRequirements.requireDni,
+                requirePhone: identityRequirements.requirePhone,
+            });
+            const normalizedProfileName = String(effectiveUser.name || '').trim();
+            if (!normalizedProfileName || !profileValidation.ok) {
                 setView('profile');
-                return showToast("Por favor completa tus datos personales (Nombre, Teléfono y DNI) en tu perfil antes de comprar.", "warning");
+                const requiredFields = buildMissingIdentityMessage(identityRequirements);
+                return showToast(`Por favor completa tus datos personales (${requiredFields}) en tu perfil antes de comprar.`, "warning");
             }
 
             if (checkoutData.shippingMethod === 'Delivery' && (!checkoutData.address || !checkoutData.city || !checkoutData.province || !checkoutData.zipCode)) {
@@ -4801,8 +4831,16 @@ function App() {
 
         if (isCheckoutView && isMP && finalTotal > 0 && currentUser && cart.length > 0) {
             // Validar que el usuario tenga datos completos antes de mostrar formulario de pago
-            if (!currentUser.name || !currentUser.phone || !currentUser.dni) {
-                showToast("Por favor completá tus datos personales antes de pagar con tarjeta.", "warning");
+            const profileValidation = validateIdentityFields({
+                dni: currentUser.dni,
+                phone: currentUser.phone,
+                requireDni: identityRequirements.requireDni,
+                requirePhone: identityRequirements.requirePhone,
+            });
+            const normalizedProfileName = String(currentUser.name || '').trim();
+            if (!normalizedProfileName || !profileValidation.ok) {
+                const requiredFields = buildMissingIdentityMessage(identityRequirements);
+                showToast(`Por favor completá tus datos personales (${requiredFields}) antes de pagar con tarjeta.`, "warning");
                 setView('profile');
                 return;
             }
@@ -4828,7 +4866,7 @@ function App() {
                 setLastApprovedPaymentId('');
             }
         }
-    }, [checkoutData.paymentChoice, finalTotal, currentUser?.id, currentUser?.name, currentUser?.phone, currentUser?.dni, cart.length, view, pendingPaymentConfirmation?.mpPaymentId, cleanupCardPaymentBrick]);
+    }, [checkoutData.paymentChoice, finalTotal, currentUser?.id, currentUser?.name, currentUser?.phone, currentUser?.dni, cart.length, view, pendingPaymentConfirmation?.mpPaymentId, cleanupCardPaymentBrick, identityRequirements.requireDni, identityRequirements.requirePhone]);
 
     // --- FUNCIONES DE ADMINISTRACIÓN ---
 
@@ -6977,13 +7015,6 @@ function App() {
     return (
 
         <div className={`min-h-screen flex flex-col relative w-full bg-grid font-sans selection:bg-orange-500/30 selection:text-orange-200 transition-colors duration-300 ${darkMode ? 'bg-[#050505]' : 'bg-slate-50'}`}>
-            {/* DEBUGGER VISUAL (SOLO DESARROLLO) */}
-            {view === 'store' && currentUser?.role === 'admin' && (
-                <div className="fixed bottom-4 left-4 z-[9999] bg-black/80 text-green-400 font-mono text-xs p-2 rounded border border-green-900 pointer-events-none">
-                    [DEBUG] Total: {products.length} | Filtro: {filteredProducts.length} | Cat: {selectedCategory || 'ALL'}
-                </div>
-            )}
-
             {/* Efectos de Fondo Globales */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-900/5 rounded-full blur-[150px] animate-pulse-slow"></div>
@@ -7126,12 +7157,12 @@ function App() {
                         </button>
                         <div className="store-nav-brand cursor-pointer group flex items-center gap-2 sm:gap-3 min-w-0" onClick={() => setView('store')}>
                             {settings?.logoUrl && (
-                                <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                                <div className={`store-nav-logo w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 bg-white p-0.5 flex-shrink-0 shadow-lg group-hover:border-orange-500 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-300 ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                                     <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
                                 </div>
                             )}
                             <div className="flex flex-col min-w-0">
-                                <span className={`store-brand-title text-xl sm:text-2xl md:text-3xl font-black tracking-tight group-hover:text-orange-500 transition-all duration-300 leading-none block truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                <span className={`store-brand-title text-xl sm:text-2xl md:text-3xl font-black tracking-tight group-hover:text-orange-500 transition-all duration-300 leading-none block ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {!settingsLoaded ? (
                                         <span className={`inline-block h-6 sm:h-8 w-20 sm:w-32 rounded animate-pulse ${darkMode ? 'bg-slate-700/50' : 'bg-slate-200'}`}></span>
                                     ) : (settings?.storeName || '')}
@@ -7276,7 +7307,7 @@ function App() {
             )}
 
             {/* Espaciador para el Navbar Fixed */}
-            {view !== 'admin' && <div className="h-14 sm:h-16 md:h-20"></div>}
+            {view !== 'admin' && <div className="store-nav-spacer h-14 sm:h-16 md:h-20"></div>}
 
             {/* --- CONTENIDO PRINCIPAL (VIEW SWITCHER) --- */}
             <main className={`flex-grow relative z-10 ${view === 'admin' ? 'min-h-screen min-full-viewport flex' : 'px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8'}`}>
@@ -8383,8 +8414,8 @@ function App() {
                                         <input id="auth-name" name="name" autoComplete="name" className="input-cyber w-full p-4" placeholder="Nombre Completo *" value={authData.name} onChange={e => setAuthData({ ...authData, name: e.target.value })} required />
                                         <input id="auth-username" name="username" autoComplete="username" className="input-cyber w-full p-4" placeholder="Nombre de Usuario *" value={authData.username} onChange={e => setAuthData({ ...authData, username: e.target.value })} required />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <input id="auth-dni" name="dni" autoComplete="off" className="input-cyber p-4" placeholder="DNI *" value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} required />
-                                            <input id="auth-phone" name="phone" autoComplete="tel" className="input-cyber p-4" placeholder="Teléfono *" value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required />
+                                            <input id="auth-dni" name="dni" autoComplete="off" className="input-cyber p-4" placeholder={identityRequirements.requireDni ? "DNI *" : "DNI (opcional)"} value={authData.dni} onChange={e => setAuthData({ ...authData, dni: e.target.value })} required={identityRequirements.requireDni} />
+                                            <input id="auth-phone" name="phone" autoComplete="tel" className="input-cyber p-4" placeholder={identityRequirements.requirePhone ? "Teléfono *" : "Teléfono (opcional)"} value={authData.phone} onChange={e => setAuthData({ ...authData, phone: e.target.value })} required={identityRequirements.requirePhone} />
                                         </div>
                                     </div>
                                 )}
