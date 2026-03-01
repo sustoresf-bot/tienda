@@ -2686,6 +2686,8 @@ function App() {
                     window.location.reload();
                 }
             }
+        }, (error) => {
+            console.error("Error fetching config version:", error);
         });
         return () => unsubscribe();
     }, [appId]);
@@ -3004,11 +3006,15 @@ function App() {
                     setSettingsLoaded(true);
                     setAboutText(defaultSettings.aboutUsText);
                 }
+            }, (error) => {
+                console.error("Error fetching settings:", error);
+                setSettings(defaultSettings);
+                setSettingsLoaded(true);
             })
         );
 
         unsubscribeFunctions.push(
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), (snapshot) => {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'),
                 setPromos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             }, (error) => {
                 console.error("Error fetching promos:", error);
@@ -3461,7 +3467,9 @@ function App() {
         setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'carts', currentUser.id), {
             userId: currentUser.id,
             items: serializeCartForAudit(validated)
-        }, { merge: true });
+        }, { merge: true }).catch((err) => {
+            console.error('Error syncing cart to Firestore:', err);
+        });
 
         if (removed.length > 0) {
             showToast(`Tu carrito se actualizo: ${removed.join(', ')}`, 'info');
@@ -5469,9 +5477,9 @@ function App() {
 
         try {
             const updatedCategories = [...(settings.categories || []), newCategory.trim()];
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), {
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), {
                 categories: updatedCategories
-            });
+            }, { merge: true });
             setNewCategory('');
             setShowCategoryModal(false);
             showToast(`Categoría "${newCategory}" creada.`, "success");
@@ -6360,15 +6368,16 @@ function App() {
                     lastUpdate: nowIso
                 };
 
-                // 1. Guardar Pedido
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
-
-                // 2. Descontar Stock
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
+                // 1. Guardar Pedido y Descontar Stock (atómico)
+                const batch = writeBatch(db);
+                const orderRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'));
+                batch.set(orderRef, newOrder);
+                batch.update(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), {
                     stock: increment(-Number(saleData.quantity))
                 });
+                await batch.commit();
 
-                // 3. Forzar notificación de alarma
+                // 2. Forzar notificación de alarma
                 if (!adminOrderAlarmMuted) {
                     startOrderAlarm();
                 }

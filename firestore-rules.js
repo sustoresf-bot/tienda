@@ -117,7 +117,7 @@ service cloud.firestore {
       allow read: if collectionName == 'coupons';
 
       // Datos sensibles solo para admin
-      allow read: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments'] && isAdmin(appId);
+      allow read: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments', 'priceRules'] && isAdmin(appId);
 
       // ----------------------------------------
       // PRODUCTOS: Solo admin puede crear/editar/eliminar
@@ -154,9 +154,9 @@ service cloud.firestore {
         isValidSize();
 
       // ----------------------------------------
-      // PROVEEDORES/GASTOS/COMPRAS: Solo admin
+      // PROVEEDORES/GASTOS/COMPRAS/REGLAS DE PRECIO: Solo admin
       // ----------------------------------------
-      allow write: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments'] && isAdmin(appId);
+      allow write: if collectionName in ['suppliers', 'expenses', 'purchases', 'investments', 'priceRules'] && isAdmin(appId);
 
       // ----------------------------------------
       // USUARIOS:
