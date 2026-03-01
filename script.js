@@ -3014,7 +3014,7 @@ function App() {
         );
 
         unsubscribeFunctions.push(
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'),
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'promos'), (snapshot) => {
                 setPromos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             }, (error) => {
                 console.error("Error fetching promos:", error);
