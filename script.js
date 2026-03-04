@@ -14144,6 +14144,7 @@ function App() {
             <Suspense fallback={null}>
                 <SustIABot
                     settings={settings}
+                    settingsReady={settingsLoaded && !isLoading}
                     products={products}
                     addToCart={(p, q = 1) => manageCart(p, q)}
                     hasFloatingWhatsapp={showFloatingWhatsappButton}

@@ -33,6 +33,16 @@ const renderMarkdown = (text) => {
     return parts.length > 0 ? parts : text;
 };
 
+const buildDefaultBotMessage = (storeName) => ({
+    role: 'model',
+    text: `¡Hola! Soy tu asistente virtual${storeName ? ` de **${storeName}**` : ''} 🤖. ¿Buscás algo especial hoy? Puedo mostrarte productos, ofertas, cupones, y ayudarte con envío y pagos.`
+});
+
+const looksLikeBootstrapGreeting = (text) => {
+    const normalized = String(text || '').toLowerCase();
+    return normalized.includes('asistente virtual') && normalized.includes('productos') && normalized.includes('cupones');
+};
+
 const BotProductCard = ({ product, onAdd, accentColor, idx = 0 }) => {
     const [qty, setQty] = useState(1);
     const basePrice = Number(product.basePrice) || 0;
@@ -88,7 +98,7 @@ const BotProductCard = ({ product, onAdd, accentColor, idx = 0 }) => {
     );
 };
 
-const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, coupons, appId, hasFloatingWhatsapp = false }) => {
+const SustIABot = React.memo(({ settings, settingsReady = false, products, addToCart, controlPanel, coupons, appId, hasFloatingWhatsapp = false }) => {
     // 1. Verificación de Plan - Solo disponible en Plan Premium
     const forceEnabled = (() => {
         try {
@@ -139,6 +149,9 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             @keyframes sustia-pulse-ring { 0% { transform:scale(1); opacity:0.6; } 50% { transform:scale(1.15); opacity:0.3; } 100% { transform:scale(1); opacity:0.6; } }
             @keyframes sustia-bounce-dot { 0%,80%,100% { transform:translateY(0); } 40% { transform:translateY(-6px); } }
             @keyframes sustia-fab-entrance { from { transform:scale(0) rotate(-180deg); opacity:0; } to { transform:scale(1) rotate(0deg); opacity:1; } }
+            @keyframes sustia-chip-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+            @keyframes sustia-shimmer { from { transform: translateX(-110%); } to { transform: translateX(120%); } }
+            @keyframes sustia-soft-pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
             .sustia-chat-open { animation: sustia-slide-up 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
             .sustia-msg-bot { animation: sustia-msg-in-left 0.3s ease-out forwards; }
             .sustia-msg-user { animation: sustia-msg-in-right 0.3s ease-out forwards; }
@@ -146,9 +159,73 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             .sustia-dot { animation: sustia-bounce-dot 1.2s ease-in-out infinite; }
             .sustia-fab { animation: sustia-fab-entrance 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
             .sustia-pulse-ring { animation: sustia-pulse-ring 2s ease-in-out infinite; }
-            .sustia-quick-btn { transition: all 0.2s ease; }
-            .sustia-quick-btn:hover { transform: translateY(-1px); }
-            .sustia-quick-btn:active { transform: translateY(0) scale(0.97); }
+            .sustia-chat-shell {
+                background:
+                    radial-gradient(circle at 12% 8%, rgba(255,255,255,0.09), transparent 30%),
+                    radial-gradient(circle at 88% 0%, rgba(255,255,255,0.08), transparent 28%),
+                    linear-gradient(170deg, rgba(12,12,16,0.98) 0%, rgba(7,7,10,0.98) 100%);
+            }
+            .sustia-header-btn {
+                border: 1px solid rgba(255,255,255,0.35);
+                background: rgba(255,255,255,0.08);
+                transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+            }
+            .sustia-header-btn:hover {
+                background: rgba(255,255,255,0.18);
+                box-shadow: 0 8px 18px rgba(0,0,0,0.24);
+                transform: translateY(-1px);
+            }
+            .sustia-header-btn:active { transform: translateY(0) scale(0.95); }
+            .sustia-quick-btn {
+                position: relative;
+                overflow: hidden;
+                border-width: 1px;
+                letter-spacing: .01em;
+                backdrop-filter: blur(10px);
+                animation: sustia-chip-in .25s ease-out both;
+                transition: transform .2s ease, box-shadow .24s ease, border-color .24s ease, background .24s ease;
+            }
+            .sustia-quick-btn::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(120deg, transparent 25%, rgba(255,255,255,0.35), transparent 75%);
+                transform: translateX(-110%);
+                pointer-events: none;
+            }
+            .sustia-quick-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 24px rgba(0,0,0,0.24);
+            }
+            .sustia-quick-btn:hover::after { animation: sustia-shimmer .5s ease-out forwards; }
+            .sustia-quick-btn:active { transform: translateY(0) scale(0.98); }
+            .sustia-quick-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                box-shadow: none;
+            }
+            .sustia-input-shell {
+                border-radius: 9999px;
+                border: 1px solid rgba(255,255,255,0.10);
+                background: rgba(255,255,255,0.03);
+                transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+            }
+            .sustia-input-shell:focus-within {
+                background: rgba(255,255,255,0.05);
+                border-color: rgba(255,255,255,0.24);
+                box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+            }
+            .sustia-send-btn {
+                transition: transform .18s ease, filter .2s ease, box-shadow .2s ease;
+            }
+            .sustia-send-btn:hover:not(:disabled) {
+                transform: translateY(-1px);
+                box-shadow: 0 10px 22px rgba(0,0,0,0.28);
+                filter: brightness(1.08);
+            }
+            .sustia-loading-pill {
+                animation: sustia-soft-pulse 1.8s ease-in-out infinite;
+            }
         `;
         document.head.appendChild(style);
     }, []);
@@ -158,9 +235,10 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     const botImage = rawBotImage && !/sustia-ai-v2\.jpg$/i.test(rawBotImage) ? rawBotImage : 'sustia-ai.jpg';
 
     const chatStorageKey = `sustore_sustia_chat_${appId}`;
-    const storeName = settings?.storeName || '';
-    const defaultBotMessage = { role: 'model', text: `¡Hola! Soy tu asistente virtual${storeName ? ` de **${storeName}**` : ''} 🤖. ¿Buscás algo especial hoy? Puedo mostrarte productos, ofertas, cupones, y ayudarte con envío y pagos.` };
-    const [messages, setMessages] = useState([defaultBotMessage]);
+    const configuredStoreName = typeof settings?.storeName === 'string' ? settings.storeName.trim() : '';
+    const storeName = settingsReady ? configuredStoreName : '';
+    const defaultBotMessage = buildDefaultBotMessage(storeName);
+    const [messages, setMessages] = useState(() => (settingsReady ? [defaultBotMessage] : []));
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const topicRef = useRef(null);
@@ -342,6 +420,20 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     useEffect(() => {
         messagesRef.current = messages;
     }, [messages]);
+
+    useEffect(() => {
+        if (!settingsReady) return;
+        setMessages(prev => {
+            const safePrev = Array.isArray(prev) ? prev : [];
+            if (safePrev.length === 0) return [defaultBotMessage];
+            if (safePrev.length === 1 && safePrev[0]?.role === 'model' && looksLikeBootstrapGreeting(safePrev[0]?.text)) {
+                if (String(safePrev[0]?.text || '') !== defaultBotMessage.text) {
+                    return [defaultBotMessage];
+                }
+            }
+            return safePrev;
+        });
+    }, [settingsReady, defaultBotMessage.text]);
 
     useEffect(() => {
         return () => { isMountedRef.current = false; };
@@ -1290,6 +1382,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     };
 
     const sendText = async (rawText, opts = {}) => {
+        if (!settingsReady) return;
         const alreadyAddedUser = !!opts.alreadyAddedUser;
         const text = String(rawText || '').trim().slice(0, 300);
         if (!text) return;
@@ -1352,6 +1445,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     };
 
     const handleQuickAction = (value) => {
+        if (!settingsReady) return;
         const text = String(value || '').trim();
         if (!text) return;
         sendText(text);
@@ -1362,7 +1456,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             localStorage.removeItem(chatStorageKey);
         } catch { }
         topicRef.current = null;
-        setMessages([defaultBotMessage]);
+        setMessages(settingsReady ? [defaultBotMessage] : []);
     };
 
     const quickActions = [
@@ -1382,47 +1476,48 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
             className={`store-sustia-root fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-4 z-[9999] flex flex-col items-end pointer-events-none ${hasFloatingWhatsapp ? 'store-sustia-root-with-wa' : ''}`}
         >
             {isOpen && (
-                <div className="sustia-chat-open backdrop-blur-2xl border rounded-[2rem] w-[calc(100vw-2rem)] sm:w-80 md:w-96 h-[min(600px,80dvh)] flex flex-col mb-4 overflow-hidden font-sans pointer-events-auto relative mr-0 sm:mr-0"
-                    style={{ backgroundColor: 'rgba(15,15,15,0.95)', borderColor: pc(0.15), boxShadow: `0 20px 50px rgba(0,0,0,0.5), 0 0 30px ${pc(0.08)}` }}>
+                <div className="sustia-chat-open sustia-chat-shell backdrop-blur-2xl border rounded-[2rem] w-[calc(100vw-2rem)] sm:w-80 md:w-96 h-[min(600px,80dvh)] flex flex-col mb-4 overflow-hidden pointer-events-auto relative mr-0 sm:mr-0"
+                    style={{ borderColor: pc(0.18), boxShadow: `0 20px 50px rgba(0,0,0,0.5), 0 0 30px ${pc(0.08)}`, fontFamily: '"Manrope","Outfit","Segoe UI",sans-serif' }}>
                     {/* Header */}
                     <div className="p-5 flex justify-between items-center relative z-10" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${primaryDark})` }}>
                         <div className="flex items-center gap-3">
                             <div className="p-1 bg-white/20 rounded-full backdrop-blur-md overflow-hidden border border-white/30">
                                 <img src={botImage} className="w-9 h-9 object-cover rounded-full" alt="SustIA" />
                             </div>
-                            <div>
-                                <h3 className="font-black text-white text-sm tracking-tight">Asistente Virtual</h3>
-                                <p className="text-[10px] text-white/90 font-bold flex items-center gap-1.5">
+                            <div className="leading-tight">
+                                <h3 className="font-black text-white text-sm tracking-[0.01em]">Asistente Virtual</h3>
+                                <p className="text-[10px] text-white/90 font-semibold flex items-center gap-1.5 mt-1">
                                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ boxShadow: '0 0 8px rgba(74,222,128,0.8)' }}></span>
-                                    En línea
+                                    {settingsReady ? `En linea${storeName ? ` - ${storeName}` : ''}` : 'Iniciando asistente...'}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button onClick={clearChat} className="text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-full transition-all duration-200 active:scale-90" title="Limpiar chat">
+                            <button onClick={clearChat} className="sustia-header-btn text-white/90 hover:text-white p-2 rounded-full" title="Limpiar chat" disabled={!settingsReady}>
                                 <Trash2 className="w-5 h-5" />
                             </button>
-                            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-full transition-all duration-200 active:scale-90" title="Cerrar">
+                            <button onClick={() => setIsOpen(false)} className="sustia-header-btn text-white/90 hover:text-white p-2 rounded-full" title="Cerrar">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
 
                     {/* Quick Actions */}
-                    <div className={`px-4 py-2 border-b ${isDarkMode ? 'bg-[#111] border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className={`px-4 py-2 border-b ${isDarkMode ? 'bg-[#0c0c0c]/90 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
                         <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                            {quickActions.map(a => (
+                            {quickActions.map((a, idx) => (
                                 <button
                                     key={a.label}
                                     type="button"
                                     data-testid={`quick-action-${a.label.toLowerCase()}`}
                                     onClick={() => handleQuickAction(a.value)}
-                                    className={`sustia-quick-btn shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border ${
+                                    className={`sustia-quick-btn shrink-0 px-3.5 py-1.5 rounded-full text-[11px] font-extrabold ${
                                         isDarkMode
-                                            ? 'border-white/10 bg-[#1a1a1a] text-white hover:bg-[#222]'
-                                            : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
+                                            ? 'border-white/15 bg-white/[0.05] text-white hover:border-white/30 hover:bg-white/[0.11]'
+                                            : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'
                                     }`}
-                                    style={{ '--hover-border': primaryColor }}
+                                    style={{ animationDelay: `${idx * 45}ms` }}
+                                    disabled={!settingsReady || isTyping}
                                 >
                                     <span className={isDarkMode ? 'text-white' : 'text-slate-800'}>{a.label}</span>
                                 </button>
@@ -1432,6 +1527,13 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
 
                     {/* Messages */}
                     <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar relative" style={{ backgroundColor: 'rgba(10,10,10,0.5)' }}>
+                        {!settingsReady && messages.length === 0 && (
+                            <div className="flex items-start sustia-msg-bot">
+                                <div className="sustia-loading-pill max-w-[85%] p-4 rounded-2xl text-[13px] leading-relaxed shadow-lg bg-[#1a1a1a] text-slate-200 rounded-tl-none border border-white/5">
+                                    <p className="whitespace-pre-wrap">Estoy preparando todo para atenderte. En un momento vas a poder usar el chat.</p>
+                                </div>
+                            </div>
+                        )}
                         {messages.map((m, i) => (
                             <div key={i} className={`flex flex-col ${m.role === 'client' ? 'items-end sustia-msg-user' : 'items-start sustia-msg-bot'}`}>
                                 <div
@@ -1498,20 +1600,20 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
                     {/* Input */}
                     <div className="p-3 border-t relative z-0" style={{ backgroundColor: '#0a0a0a', borderColor: pc(0.15) }}>
                         <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
-                            <input
-                                className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-full px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-slate-600"
-                                placeholder="Escribe aquí..."
-                                value={inputValue}
-                                onChange={e => setInputValue(e.target.value)}
-                                style={{ '--focus-color': pc(0.5) }}
-                                onFocus={e => e.target.style.borderColor = pc(0.5)}
-                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                            />
+                            <div className="sustia-input-shell flex-1 flex items-center">
+                                <input
+                                    className="flex-1 bg-transparent border-0 rounded-full px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-slate-500 disabled:opacity-70"
+                                    placeholder={settingsReady ? "Escribe aqui..." : "Cargando asistente..."}
+                                    value={inputValue}
+                                    onChange={e => setInputValue(e.target.value)}
+                                    disabled={!settingsReady}
+                                />
+                            </div>
                             <button
                                 type="submit"
-                                className="p-2.5 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 hover:brightness-110"
+                                className="sustia-send-btn p-2.5 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                                 style={{ backgroundColor: primaryColor, boxShadow: `0 4px 12px ${pc(0.25)}` }}
-                                disabled={isTyping || !inputValue.trim()}
+                                disabled={!settingsReady || isTyping || !inputValue.trim()}
                             >
                                 <Send className="w-4 h-4" />
                             </button>
@@ -1550,6 +1652,7 @@ const SustIABot = React.memo(({ settings, products, addToCart, controlPanel, cou
     if (prevProps.settings?.primaryColor !== nextProps.settings?.primaryColor) return false;
     if (prevProps.settings?.storeName !== nextProps.settings?.storeName) return false;
     if (prevProps.settings?.botImage !== nextProps.settings?.botImage) return false;
+    if (prevProps.settingsReady !== nextProps.settingsReady) return false;
     if (prevProps.hasFloatingWhatsapp !== nextProps.hasFloatingWhatsapp) return false;
     if (prevProps.products !== nextProps.products) return false;
     if (prevProps.coupons !== nextProps.coupons) return false;
