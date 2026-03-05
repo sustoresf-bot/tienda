@@ -192,47 +192,24 @@ body {
 
 .hero-title-neon {
     text-shadow:
-        0 0 3px rgba(255, 255, 255, 0.85),
-        0 0 14px rgba(255, 255, 255, 0.38),
-        0 0 30px var(--secondary),
-        0 0 54px var(--primary),
-        0 14px 32px rgba(2, 6, 23, 0.5);
-    -webkit-text-stroke: 0.4px rgba(255, 255, 255, 0.22);
-    animation: hero-neon-breathe 4.8s ease-in-out infinite;
+        0 0 1px rgba(255, 255, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+    -webkit-text-stroke: 0;
 }
 
 .hero-title-neon-gradient {
-    filter: drop-shadow(0 0 10px var(--primary)) drop-shadow(0 0 34px var(--secondary));
-    background-size: 180% 180%;
-    animation: hero-gradient-shift 7s ease-in-out infinite;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    background-size: 150% 150%;
+    animation: hero-gradient-shift 8s ease-in-out infinite;
 }
 
 .hero-title-neon-light {
-    text-shadow:
-        0 0 10px rgba(15, 23, 42, 0.1),
-        0 0 30px rgba(15, 23, 42, 0.05);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes hero-neon-breathe {
-
-    0%,
-    100% {
-        text-shadow:
-            0 0 3px rgba(255, 255, 255, 0.82),
-            0 0 12px rgba(255, 255, 255, 0.34),
-            0 0 24px var(--secondary),
-            0 0 44px var(--primary),
-            0 14px 28px rgba(2, 6, 23, 0.48);
-    }
-
-    50% {
-        text-shadow:
-            0 0 4px rgba(255, 255, 255, 0.94),
-            0 0 16px rgba(255, 255, 255, 0.45),
-            0 0 34px var(--secondary),
-            0 0 58px var(--primary),
-            0 16px 34px rgba(2, 6, 23, 0.58);
-    }
+    /* Removed aggressive breathe animation */
+    0%, 100% { opacity: 1; }
 }
 
 @keyframes hero-gradient-shift {
@@ -3327,70 +3304,46 @@ span {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/* ULTRA PREMIUM HERO UPGRADE                                                  */
+/* ULTRA PREMIUM HERO UPGRADE (CLEAN VERSION)                                  */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Animated Border Gradient */
+/* Clean Border Gradient */
 .hero-animated-border {
     position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .hero-animated-border::before {
-    content: "";
-    position: absolute;
-    inset: -2px;
-    border-radius: inherit;
-    padding: 2px;
-    background: linear-gradient(45deg, #f97316, #8b5cf6, #ec4899, #f97316);
-    background-size: 300% 300%;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: border-gradient 4s ease infinite;
-    pointer-events: none;
-    z-index: 2;
-    opacity: 0.6;
+    content: none;
 }
 
-@keyframes border-gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-/* Ultra Glass Effect */
+/* Refined Glass Effect (Cleaner) */
 .glass-ultra {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    background: rgba(20, 20, 25, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .dark-mode .glass-ultra {
-    background: rgba(10, 10, 10, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(5, 5, 10, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 :root:not(.dark-mode) .glass-ultra {
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 
-/* Text Enhancements */
+/* Text Enhancements - Solid Gradient */
 .text-gradient-premium {
-    background: linear-gradient(to right, #f97316, #ec4899, #8b5cf6);
+    background: linear-gradient(to right, #f97316, #d946ef);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    background-size: 200% auto;
-    animation: text-shine 5s linear infinite;
-}
-
-@keyframes text-shine {
-    to { background-position: 200% center; }
+    background-size: 100% auto;
 }
 
 /* Floating Elements */
