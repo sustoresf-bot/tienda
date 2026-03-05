@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 
@@ -582,9 +582,13 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
             className="absolute inset-0 overflow-hidden z-[2]"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
+            onTouchStart={() => setIsPaused(true)}
+            onTouchEnd={() => setIsPaused(false)}
+            onFocusCapture={() => setIsPaused(true)}
+            onBlurCapture={() => setIsPaused(false)}
         >
             <div
-                className="h-full w-full flex transition-transform duration-700 ease-in-out"
+                className="h-full w-full flex transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)]"
                 style={{ transform: `translate3d(-${activeIndex * 100}%, 0, 0)`, willChange: 'transform' }}
             >
                 {slides.map((slide, idx) => {
@@ -605,7 +609,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                 <>
                     <button
                         type="button"
-                        className={`absolute left-2 sm:left-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full transition-all duration-200 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/40 sm:bg-black/50 hover:bg-black/70 text-white/70 hover:text-white' : 'bg-white/40 sm:bg-white/50 hover:bg-white/70 text-slate-700 hover:text-slate-900'}`}
+                        className={`absolute left-2 sm:left-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/45 sm:bg-black/50 hover:bg-black/75 text-white/80 hover:text-white' : 'bg-white/55 sm:bg-white/65 hover:bg-white/90 text-slate-700 hover:text-slate-900'}`}
                         onClick={(e) => { e.stopPropagation(); goPrev(); }}
                         aria-label="Banner anterior"
                     >
@@ -613,12 +617,24 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                     </button>
                     <button
                         type="button"
-                        className={`absolute right-2 sm:right-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full transition-all duration-200 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/40 sm:bg-black/50 hover:bg-black/70 text-white/70 hover:text-white' : 'bg-white/40 sm:bg-white/50 hover:bg-white/70 text-slate-700 hover:text-slate-900'}`}
+                        className={`absolute right-2 sm:right-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/45 sm:bg-black/50 hover:bg-black/75 text-white/80 hover:text-white' : 'bg-white/55 sm:bg-white/65 hover:bg-white/90 text-slate-700 hover:text-slate-900'}`}
                         onClick={(e) => { e.stopPropagation(); goNext(); }}
                         aria-label="Banner siguiente"
                     >
                         <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
+                    <div className={`absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 rounded-full border pointer-events-auto ${darkMode ? 'bg-black/40 border-white/15' : 'bg-white/45 border-white/60'}`}>
+                        {slides.map((slide, idx) => (
+                            <button
+                                key={`dot-${slide.id || idx}`}
+                                type="button"
+                                aria-label={`Ir al banner ${idx + 1}`}
+                                aria-current={idx === activeIndex ? 'true' : undefined}
+                                onClick={(e) => { e.stopPropagation(); setActiveIndex(idx); }}
+                                className={`premium-carousel-dot ${idx === activeIndex ? 'is-active' : ''} ${idx === activeIndex ? (darkMode ? 'bg-orange-400' : 'bg-orange-500') : (darkMode ? 'bg-white/45 hover:bg-white/75' : 'bg-slate-500/45 hover:bg-slate-700/60')}`}
+                            />
+                        ))}
+                    </div>
                 </>
             )}
         </div>
@@ -7443,7 +7459,7 @@ function App() {
                                             <span className="bg-orange-500 text-black px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2 sm:mb-4 inline-block">
                                                 {settings?.heroBadge || 'Tienda profesional lista para vender'}
                                             </span>
-                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 text-white hero-title-neon`} style={{ textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}>
+                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-[0.95] sm:leading-[0.9] mb-1.5 sm:mb-4 text-white hero-title-neon`}>
                                                 {settings?.heroTitle1 || (settings?.storeName || 'Tu tienda online')} <br />
                                                 <span className={`text-transparent bg-clip-text bg-gradient-to-r hero-title-neon-gradient ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || 'que transmite confianza y vende más'}

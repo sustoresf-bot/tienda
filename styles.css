@@ -192,19 +192,59 @@ body {
 
 .hero-title-neon {
     text-shadow:
-        0 0 10px rgba(255, 255, 255, 0.15),
-        0 0 30px rgba(255, 255, 255, 0.08),
-        0 0 60px rgba(255, 255, 255, 0.04);
+        0 0 3px rgba(255, 255, 255, 0.85),
+        0 0 14px rgba(255, 255, 255, 0.38),
+        0 0 30px rgba(59, 130, 246, 0.24),
+        0 0 54px rgba(249, 115, 22, 0.2),
+        0 14px 32px rgba(2, 6, 23, 0.5);
+    -webkit-text-stroke: 0.4px rgba(255, 255, 255, 0.22);
+    animation: hero-neon-breathe 4.8s ease-in-out infinite;
 }
 
 .hero-title-neon-gradient {
-    filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.35)) drop-shadow(0 0 40px rgba(59, 130, 246, 0.2));
+    filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.45)) drop-shadow(0 0 34px rgba(59, 130, 246, 0.32));
+    background-size: 180% 180%;
+    animation: hero-gradient-shift 7s ease-in-out infinite;
 }
 
 .hero-title-neon-light {
     text-shadow:
         0 0 10px rgba(15, 23, 42, 0.1),
         0 0 30px rgba(15, 23, 42, 0.05);
+}
+
+@keyframes hero-neon-breathe {
+
+    0%,
+    100% {
+        text-shadow:
+            0 0 3px rgba(255, 255, 255, 0.82),
+            0 0 12px rgba(255, 255, 255, 0.34),
+            0 0 24px rgba(59, 130, 246, 0.2),
+            0 0 44px rgba(249, 115, 22, 0.16),
+            0 14px 28px rgba(2, 6, 23, 0.48);
+    }
+
+    50% {
+        text-shadow:
+            0 0 4px rgba(255, 255, 255, 0.94),
+            0 0 16px rgba(255, 255, 255, 0.45),
+            0 0 34px rgba(59, 130, 246, 0.3),
+            0 0 58px rgba(249, 115, 22, 0.26),
+            0 16px 34px rgba(2, 6, 23, 0.58);
+    }
+}
+
+@keyframes hero-gradient-shift {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
 }
 
 .neon-box {
@@ -1974,12 +2014,22 @@ span {
         0 20px 60px rgba(2, 6, 23, 0.25),
         0 1px 0 rgba(255, 255, 255, 0.05) inset;
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease;
+    position: relative;
 }
 
 .premium-hero:hover {
     box-shadow:
         0 24px 70px rgba(2, 6, 23, 0.32),
         0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+.premium-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(100deg, rgba(15, 23, 42, 0.52) 0%, rgba(15, 23, 42, 0.2) 48%, rgba(15, 23, 42, 0.06) 100%);
+    z-index: 3;
 }
 
 :root:not(.dark-mode) .premium-hero {
@@ -1998,6 +2048,65 @@ span {
 
 .premium-hero-content h1 {
     letter-spacing: -0.035em;
+}
+
+.premium-hero-content {
+    display: inline-flex;
+    flex-direction: column;
+    width: fit-content;
+    max-width: min(100%, 42rem);
+    padding: clamp(0.6rem, 2vw, 1.1rem) clamp(0.7rem, 2.2vw, 1.35rem);
+    border-radius: 1.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(120deg, rgba(2, 6, 23, 0.6), rgba(2, 6, 23, 0.3));
+    box-shadow: 0 14px 36px rgba(2, 6, 23, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(8px);
+}
+
+:root:not(.dark-mode) .premium-hero::after {
+    background: linear-gradient(100deg, rgba(2, 6, 23, 0.4) 0%, rgba(2, 6, 23, 0.14) 48%, rgba(2, 6, 23, 0.03) 100%);
+}
+
+:root:not(.dark-mode) .premium-hero-content {
+    border-color: rgba(255, 255, 255, 0.62);
+    background: linear-gradient(120deg, rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.18));
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.premium-carousel-controls {
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
+    transform: translateZ(0);
+}
+
+.premium-carousel-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-carousel-dot:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.65), 0 0 0 5px rgba(249, 115, 22, 0.45);
+}
+
+.premium-carousel-dot.is-active {
+    width: 1.65rem;
+    box-shadow: 0 0 14px rgba(249, 115, 22, 0.5);
+}
+
+:root:not(.dark-mode) .premium-carousel-controls {
+    border-color: rgba(148, 163, 184, 0.25);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-title-neon,
+    .hero-title-neon-gradient {
+        animation: none;
+    }
 }
 
 .premium-hero-ctas button {
@@ -2336,6 +2445,12 @@ span {
         font-size: clamp(1.55rem, 6.6vw, 2.05rem) !important;
         line-height: 1.02 !important;
         margin-bottom: 0.65rem !important;
+    }
+
+    .premium-hero-content {
+        border-radius: 0.95rem;
+        padding: 0.62rem 0.68rem;
+        max-width: min(100%, 30rem);
     }
 
     .premium-hero-content p {
@@ -3159,21 +3274,22 @@ span {
 /* Desktop storefront card re-balance */
 @media (min-width: 1025px) and (max-width: 1439px) {
     .store-view .product-grid-responsive {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-        gap: 1rem !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 1.1rem !important;
     }
 }
 
 @media (min-width: 1440px) {
     .store-view .product-grid-responsive {
-        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 1.2rem !important;
     }
 }
 
 @media (min-width: 1025px) {
     .store-view .product-grid-responsive .store-product-card {
         width: 100%;
-        max-width: 23rem;
+        max-width: 26rem;
         justify-self: center;
     }
 
@@ -3183,12 +3299,17 @@ span {
         overflow-wrap: normal !important;
         hyphens: none !important;
         line-height: 1.28 !important;
-        min-height: 2.55rem !important;
+        min-height: 2.8rem !important;
         text-wrap: pretty;
+        font-size: clamp(1.02rem, 1.1vw, 1.16rem) !important;
     }
 
     .store-view .store-product-image-shell {
-        height: 12.5rem !important;
+        height: 14.5rem !important;
+    }
+
+    .store-view .product-card-price .product-card-final-price {
+        font-size: clamp(1.72rem, 1.75vw, 2rem) !important;
     }
 }
 
