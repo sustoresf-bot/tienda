@@ -888,18 +888,29 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     </div>
                 )}
 
-                {/* Botón Compartir (NUEVO) */}
+                {/* Botón Compartir (Debajo del Corazón) */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         const url = `${window.location.origin}${window.location.pathname}?product=${p.id}`;
-                        navigator.clipboard.writeText(url).then(() => {
-                            if (showToast) showToast('Enlace copiado al portapapeles', 'success');
-                        }).catch(() => {
-                            if (showToast) showToast('Error al copiar enlace', 'error');
-                        });
+                        
+                        if (navigator.share) {
+                            navigator.share({
+                                title: p.name,
+                                text: `Mirá este producto: ${p.name}`,
+                                url: url
+                            }).catch(() => {
+                                // Fallback si el usuario cancela o falla
+                            });
+                        } else {
+                            navigator.clipboard.writeText(url).then(() => {
+                                if (showToast) showToast('Enlace copiado al portapapeles', 'success');
+                            }).catch(() => {
+                                if (showToast) showToast('Error al copiar enlace', 'error');
+                            });
+                        }
                     }}
-                    className={`product-card-icon-btn product-card-share-btn absolute top-2 right-12 sm:top-4 sm:right-16 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-blue-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200'}`}
+                    className={`product-card-icon-btn product-card-share-btn absolute top-12 right-2 sm:top-16 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-blue-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200'}`}
                     title="Compartir producto"
                 >
                     <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -6234,6 +6245,34 @@ function App() {
                                 {isPromo ? 'COMBOS & PROMOCIONES' : (Array.isArray(selectedProduct.categories) && selectedProduct.categories.length > 0 ? selectedProduct.categories[0] : (selectedProduct.category || 'Sin categoría'))}
                             </span>
                             <h2 className={`text-2xl sm:text-3xl md:text-4xl font-black leading-[1.1] mb-3 sm:mb-6 ${darkMode ? 'text-white neon-text-small' : 'text-slate-900'}`}>{selectedProduct.name}</h2>
+                            
+                            {/* Botón Compartir (En Modal) */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const url = `${window.location.origin}${window.location.pathname}?product=${selectedProduct.id}`;
+                                    
+                                    if (navigator.share) {
+                                        navigator.share({
+                                            title: selectedProduct.name,
+                                            text: `Mirá este producto: ${selectedProduct.name}`,
+                                            url: url
+                                        }).catch(() => {
+                                            // Fallback
+                                        });
+                                    } else {
+                                        navigator.clipboard.writeText(url).then(() => {
+                                            if (showToast) showToast('Enlace copiado al portapapeles', 'success');
+                                        }).catch(() => {
+                                            if (showToast) showToast('Error al copiar enlace', 'error');
+                                        });
+                                    }
+                                }}
+                                className={`mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition border ${darkMode ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                            >
+                                <Share2 className="w-4 h-4" /> Compartir
+                            </button>
+
                             {hasProductDiscount && (
                                 <div className={`mb-3 inline-flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 ${darkMode ? 'border-rose-400/30 bg-gradient-to-r from-rose-500/25 to-orange-500/20' : 'border-rose-200 bg-gradient-to-r from-rose-50 to-orange-50'}`}>
                                     <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-rose-200' : 'text-rose-700'}`}>Oferta activa</span>
@@ -7459,7 +7498,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full max-w-5xl mx-auto aspect-[16/9] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero hero-animated-border ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
+                        <div className={`relative w-full max-w-5xl mx-auto aspect-[4/3] sm:aspect-[16/9] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero hero-animated-border ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
