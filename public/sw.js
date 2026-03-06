@@ -117,3 +117,51 @@ self.addEventListener('message', (event) => {
         self.skipWaiting();
     }
 });
+
+self.addEventListener('push', (event) => {
+    const payload = (() => {
+        try {
+            return event.data ? event.data.json() : {};
+        } catch (e) {
+            return {};
+        }
+    })();
+
+    const title = String(payload?.title || 'Nuevo pedido');
+    const body = String(payload?.body || 'Tenés un pedido nuevo para revisar.');
+    const icon = String(payload?.icon || '/icon-192.png');
+    const badge = String(payload?.badge || '/icon-192.png');
+    const tag = String(payload?.tag || 'pedido-nuevo');
+    const url = String(payload?.url || '/?view=admin&tab=orders');
+    const data = payload?.data && typeof payload.data === 'object' ? payload.data : {};
+
+    event.waitUntil(
+        self.registration.showNotification(title, {
+            body,
+            icon,
+            badge,
+            tag,
+            renotify: true,
+            data: { ...data, url },
+        })
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const targetUrl = String(event.notification?.data?.url || '/?view=admin&tab=orders');
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            for (const client of windowClients) {
+                const clientUrl = (() => {
+                    try { return new URL(client.url); } catch (e) { return null; }
+                })();
+                if (clientUrl && clientUrl.origin === self.location.origin) {
+                    return client.focus().then(() => client.navigate(targetUrl));
+                }
+            }
+            return clients.openWindow(targetUrl);
+        })
+    );
+});

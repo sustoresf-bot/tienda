@@ -2796,10 +2796,11 @@ span {
 
     .store-nav .store-brand-title {
         max-width: none !important;
-        white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-        overflow-wrap: anywhere;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        overflow-wrap: normal !important;
+        word-break: keep-all !important;
         font-size: clamp(0.78rem, 2.95vw, 0.98rem) !important;
         line-height: 1.02 !important;
     }
@@ -2960,7 +2961,7 @@ span {
 }
 
 .store-view .premium-product-card h3 {
-    min-height: 2.65rem !important;
+    min-height: 2.15rem !important;
 }
 
 @media (min-width: 640px) {
@@ -2970,12 +2971,12 @@ span {
 }
 
 .store-view .product-card-price {
-    min-height: 5.9rem;
+    min-height: 4.15rem;
 }
 
 @media (min-width: 640px) {
     .store-view .product-card-price {
-        min-height: 6.4rem;
+        min-height: 4.65rem;
     }
 }
 
@@ -3088,13 +3089,14 @@ span {
     }
 
     .store-view .store-product-image-shell {
-        margin: 0.42rem !important;
-        padding: 0.4rem !important;
-        height: 7.8rem !important;
+        width: 100% !important;
+        margin: 0.36rem !important;
+        padding: 0.2rem !important;
+        height: 9.6rem !important;
     }
 
     .store-view .product-card-info {
-        padding: 0.62rem !important;
+        padding: 0.58rem !important;
     }
 
     .store-view .product-card-category-chip {
@@ -3106,8 +3108,8 @@ span {
     .store-view .product-card-title {
         font-size: 0.82rem !important;
         line-height: 1.2 !important;
-        min-height: 2rem !important;
-        margin-bottom: 0.36rem !important;
+        min-height: 1.7rem !important;
+        margin-bottom: 0.24rem !important;
     }
 
     .store-view .product-card-stock-alert,
@@ -3119,6 +3121,10 @@ span {
     .store-view .product-card-price .product-card-final-price {
         font-size: 1.12rem !important;
         line-height: 1.05 !important;
+    }
+
+    .store-view .product-card-price {
+        min-height: 3.15rem !important;
     }
 
     .store-view .product-card-action .quick-add-container {
@@ -3282,7 +3288,10 @@ span {
     }
 
     .store-view .store-product-image-shell {
-        height: 14.5rem !important;
+        width: 100% !important;
+        margin: 0.6rem !important;
+        padding: 0.28rem !important;
+        height: 16.8rem !important;
     }
 
     .store-view .product-card-price .product-card-final-price {
@@ -3291,7 +3300,23 @@ span {
 }
 
 .store-view .product-image-adaptive-frame {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0.3rem !important;
     transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.store-view .product-image-adaptive-frame img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: contain !important;
+}
+
+.store-view .product-card-footer {
+    gap: 0.58rem !important;
+    padding-top: 0.58rem !important;
 }
 
 .store-view .store-product-card:hover .product-image-adaptive-frame {
@@ -3380,3 +3405,322 @@ span {
     20% { transform: translateX(100%) rotate(45deg); }
     100% { transform: translateX(100%) rotate(45deg); }
 }
+
+/* ------- */
+/* ANIMACIONES PROFESIONALES REVISADAS (V2)                                    */
+/* -------- */
+
+/* 1. Keyframes Base y Cinematogr�ficos */
+
+@keyframes fadeInUpCinema {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98);
+        filter: blur(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes slideInRightCinema {
+    0% {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes kenBurns {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+@keyframes softPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    50% { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0.1); }
+}
+
+@keyframes shineSweep {
+    0% { transform: translateX(-100%) skewX(-15deg); }
+    100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+/* 2. Hero Section Cinematogr�fica */
+
+.premium-hero {
+    overflow: hidden; /* Necesario para Ken Burns */
+    position: relative;
+    /* Entrada suave del contenedor */
+    animation: scaleInSmooth 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-hero img {
+    /* Efecto Ken Burns continuo */
+    animation: kenBurns 20s ease-out infinite alternate;
+    will-change: transform;
+}
+
+.premium-hero-content {
+    /* Entrada del panel de contenido */
+    animation: slideInRightCinema 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.3s;
+    /* Glassmorphism reforzado */
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+.premium-hero-content h1 {
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.5s;
+}
+
+.premium-hero-content p {
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.6s;
+}
+
+.premium-hero-ctas {
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.7s;
+}
+
+/* 3. Productos: Entrada en Cascada Elegante */
+
+.product-grid-responsive .premium-product-card {
+    /* Animación de entrada más suave y pesada (calidad premium) */
+    /* Usamos 'both' para que aplique el estado inicial (0%) antes de empezar y el final (100%) al terminar */
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Stagger delay optimizado */
+.product-grid-responsive .premium-product-card:nth-child(1) { animation-delay: 0.1s; }
+.product-grid-responsive .premium-product-card:nth-child(2) { animation-delay: 0.15s; }
+.product-grid-responsive .premium-product-card:nth-child(3) { animation-delay: 0.2s; }
+.product-grid-responsive .premium-product-card:nth-child(4) { animation-delay: 0.25s; }
+.product-grid-responsive .premium-product-card:nth-child(5) { animation-delay: 0.3s; }
+.product-grid-responsive .premium-product-card:nth-child(6) { animation-delay: 0.35s; }
+.product-grid-responsive .premium-product-card:nth-child(7) { animation-delay: 0.4s; }
+.product-grid-responsive .premium-product-card:nth-child(8) { animation-delay: 0.45s; }
+.product-grid-responsive .premium-product-card:nth-child(9) { animation-delay: 0.5s; }
+.product-grid-responsive .premium-product-card:nth-child(10) { animation-delay: 0.55s; }
+.product-grid-responsive .premium-product-card:nth-child(11) { animation-delay: 0.6s; }
+.product-grid-responsive .premium-product-card:nth-child(12) { animation-delay: 0.65s; }
+
+/* 4. Interacci�n de Producto (Hover Premium) */
+
+.premium-product-card {
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.premium-product-card:hover {
+    transform: translateY(-8px) scale(1.01);
+}
+
+:root:not(.dark-mode) .premium-product-card:hover {
+    box-shadow: 
+        0 20px 40px -5px rgba(15, 23, 42, 0.15), 
+        0 10px 15px -3px rgba(15, 23, 42, 0.05);
+    border-color: rgba(249, 115, 22, 0.3) !important;
+}
+
+.premium-product-card .premium-product-image img {
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.premium-product-card:hover .premium-product-image img {
+    transform: scale(1.08);
+}
+
+/* Bot�n de acci�n r�pida */
+.quick-add-action {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.quick-add-action::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+    transform: translateX(-150%) skewX(-20deg);
+}
+
+.premium-product-card:hover .quick-add-action::after {
+    animation: shineSweep 1.2s ease-in-out;
+}
+
+/* 5. UI Elements & Nav */
+
+/* Navbar glass effect transition */
+.premium-nav {
+    transition: background-color 0.4s ease, box-shadow 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+.premium-nav:hover, .premium-nav:focus-within {
+    background-color: var(--bg-nav);
+    backdrop-filter: blur(20px);
+}
+
+/* Botones principales con pulso suave al hover */
+.btn-primary:hover {
+    animation: softPulse 2s infinite;
+}
+
+/* Categor�as flotantes */
+.premium-category-bar {
+    animation: slideDownSmooth 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.2s;
+}
+
+/* Background animado sutil */
+.grid-bg {
+    opacity: 0.08; /* M�s sutil */
+    animation: gridMove 30s linear infinite; /* M�s lento */
+}
+
+
+/* FORCE VISIBILITY PATCH */
+.premium-product-card {
+    opacity: 1 !important;
+}
+
+.store-view .product-grid-responsive {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 1rem !important;
+}
+
+@media (max-width: 380px) {
+    .store-view .product-grid-responsive {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 0.7rem !important;
+    }
+
+    .store-view .store-product-card {
+        max-width: 100% !important;
+    }
+}
+
+@media (min-width: 381px) and (max-width: 767px) {
+    .store-view .product-grid-responsive {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.72rem !important;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    .store-view .product-grid-responsive {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 0.95rem !important;
+    }
+}
+
+@media (min-width: 1200px) {
+    .store-view .product-grid-responsive {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 1.2rem !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    .store-view .product-grid-responsive .store-product-card {
+        max-width: 100% !important;
+        min-height: 100% !important;
+    }
+}
+
+.store-view .store-product-image-shell {
+    height: clamp(8rem, 24vw, 14.5rem) !important;
+}
+
+.admin-shell .admin-main.admin-content {
+    animation: adminPanelEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-shell .admin-main.admin-content>* {
+    animation: adminSectionEnter 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.admin-shell .admin-nav-btn,
+.admin-shell .admin-exit-btn,
+.admin-shell .admin-mobile-menu {
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+}
+
+.admin-shell .admin-nav-btn:hover,
+.admin-shell .admin-exit-btn:hover,
+.admin-shell .admin-mobile-menu:hover {
+    transform: translateY(-2px);
+}
+
+.admin-shell .admin-main .bg-\[\#0a0a0a\].border,
+.admin-shell .admin-main .bg-slate-900\/30.border,
+.admin-shell .admin-main .bg-slate-900.border {
+    transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.admin-shell .admin-main .bg-\[\#0a0a0a\].border:hover,
+.admin-shell .admin-main .bg-slate-900\/30.border:hover,
+.admin-shell .admin-main .bg-slate-900.border:hover {
+    transform: translateY(-4px);
+}
+
+.admin-shell .admin-main table tbody tr {
+    transition: background-color 0.24s ease, transform 0.24s ease;
+}
+
+.admin-shell .admin-main table tbody tr:hover {
+    transform: translateX(2px);
+}
+
+@keyframes adminPanelEnter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes adminSectionEnter {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.995);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-shell .admin-main.admin-content,
+    .admin-shell .admin-main.admin-content>* {
+        animation: none !important;
+    }
+
+    .admin-shell .admin-nav-btn,
+    .admin-shell .admin-exit-btn,
+    .admin-shell .admin-mobile-menu,
+    .admin-shell .admin-main .bg-\[\#0a0a0a\].border,
+    .admin-shell .admin-main .bg-slate-900\/30.border,
+    .admin-shell .admin-main .bg-slate-900.border,
+    .admin-shell .admin-main table tbody tr {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+

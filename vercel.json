@@ -147,6 +147,10 @@
         {
             "source": "/api/admin/import-store",
             "destination": "/api/admin?action=import"
+        },
+        {
+            "source": "/((?!api/|assets/|.*\\..*).*)",
+            "destination": "/api/seo"
         }
     ]
 }

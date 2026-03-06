@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { getAdmin, verifyIdTokenFromRequest } from '../../lib/firebaseAdmin.js';
 import { getStoreIdFromRequest } from '../../lib/authz.js';
+import { sendOrderPushNotifications } from '../../lib/webPush.js';
 
 function formatMoney(amount) {
     return `$${Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 0 })}`;
@@ -744,6 +745,19 @@ export default async function handler(req, res) {
             }
         });
         orderCommitted = true;
+        let pushResult = { sent: 0, failed: 0, disabled: 0, skipped: true };
+        try {
+            pushResult = await sendOrderPushNotifications({
+                adminSdk,
+                storeId,
+                orderId,
+                total,
+                customerName: userData.name || 'Cliente',
+                shippingMethod,
+            });
+        } catch (pushError) {
+            console.error('[orders/confirm] Push send failed:', pushError);
+        }
 
         let emailSent = false;
         const emailUser = String(process.env.EMAIL_USER || '').trim();
@@ -794,7 +808,13 @@ export default async function handler(req, res) {
             console.warn('[orders/confirm] Email not configured (missing EMAIL_USER/EMAIL_PASS).');
         }
 
-        return res.status(200).json({ success: true, orderId, emailSent });
+        return res.status(200).json({
+            success: true,
+            orderId,
+            emailSent,
+            pushSent: pushResult.sent,
+            pushFailed: pushResult.failed,
+        });
     } catch (error) {
         console.error('[orders/confirm] Error:', error);
         let refundStatus = null;

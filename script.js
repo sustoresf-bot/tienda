@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 
@@ -76,6 +76,17 @@ function readPendingPaymentConfirmationFromStorage() {
     } catch (e) {
         return null;
     }
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padded = `${String(base64String || '').trim()}${'='.repeat((4 - String(base64String || '').trim().length % 4) % 4)}`;
+    const base64 = padded.replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i += 1) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
 }
 
 const mpPublicKeyPromiseByStore = new Map();
@@ -871,18 +882,15 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                 {/* Badge de Oferta */}
                 {hasDiscount && p.stock > 0 && (
                     <div className={`product-offer-badge absolute z-20 ${p.isFeatured ? 'top-8 sm:top-10 left-2 sm:left-4' : 'top-2 sm:top-4 left-2 sm:left-4'}`}>
-                        <div className="product-offer-badge-inner relative overflow-hidden rounded-lg sm:rounded-xl border border-rose-200/20 bg-[linear-gradient(118deg,#881337_0%,#9f1239_52%,#7f1d1d_100%)] px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-[0_8px_20px_rgba(136,19,55,0.24)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_24px_rgba(136,19,55,0.32)]">
-                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),transparent_55%)]" />
-                            <div className="relative flex items-center gap-1.5">
-                                <span className="inline-flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-white/12 ring-1 ring-white/25">
-                                    <Percent className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white/95" />
+                        <div className="product-offer-badge-inner relative overflow-hidden rounded-full border border-rose-100/35 bg-[linear-gradient(120deg,#be123c_0%,#9f1239_55%,#7f1d1d_100%)] px-2 sm:px-2.5 py-1 sm:py-1.5 shadow-[0_6px_16px_rgba(136,19,55,0.35)] transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-[0_10px_24px_rgba(136,19,55,0.42)]">
+                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),transparent_58%)]" />
+                            <div className="relative flex items-center gap-1">
+                                <span className="inline-flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/35">
+                                    <Percent className="h-2.5 w-2.5 text-white" />
                                 </span>
-                                <div className="flex flex-col leading-none">
-                                    <span className="text-[7px] sm:text-[8px] font-semibold tracking-[0.2em] text-rose-100/90">OFERTA</span>
-                                    <span className="mt-0.5 text-[10px] sm:text-[11px] font-black tracking-tight text-white">
-                                        -{safeDiscount}% <span className="font-medium tracking-[0.12em] text-rose-100/90">OFF</span>
-                                    </span>
-                                </div>
+                                <span className="text-[9px] sm:text-[10px] font-black tracking-[0.08em] text-white">
+                                    -{safeDiscount}% <span className="font-semibold text-rose-100/90">OFERTA</span>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -1639,6 +1647,10 @@ function App() {
     const orderAlarmEagerUnlockDoneRef = useRef(false);
     const lastOrdersSeenWriteRef = useRef(null);
     const [audioUnlocked, setAudioUnlocked] = useState(false);
+    const [pushNotificationsSupported, setPushNotificationsSupported] = useState(false);
+    const [pushNotificationsPermission, setPushNotificationsPermission] = useState('default');
+    const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
+    const [isPushNotificationsBusy, setIsPushNotificationsBusy] = useState(false);
 
 
     // Datos Principales
@@ -2354,6 +2366,137 @@ function App() {
         });
     }, []);
 
+    const refreshPushSubscriptionStatus = useCallback(async () => {
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+        const supported = !!(window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window);
+        setPushNotificationsSupported(supported);
+        setPushNotificationsPermission(supported ? Notification.permission : 'denied');
+        if (!supported || !isAdminUser) {
+            setPushNotificationsEnabled(false);
+            return;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            setPushNotificationsEnabled(!!subscription);
+        } catch (e) {
+            setPushNotificationsEnabled(false);
+        }
+    }, [isAdminUser]);
+
+    const enablePushNotifications = useCallback(async () => {
+        if (!isAdminUser) return;
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+        const supported = !!(window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window);
+        if (!supported) {
+            showToast('Este dispositivo no soporta notificaciones push web.', 'warning');
+            return;
+        }
+
+        setIsPushNotificationsBusy(true);
+        try {
+            const permission = await Notification.requestPermission();
+            setPushNotificationsPermission(permission);
+            if (permission !== 'granted') {
+                showToast('Permiso de notificaciones no concedido.', 'warning');
+                setPushNotificationsEnabled(false);
+                return;
+            }
+
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) throw new Error('Sesión inválida');
+
+            const keyRes = await fetch('/api/notifications/public-key', {
+                method: 'GET',
+                headers: { 'x-store-id': appId || '' },
+            });
+            const keyData = await keyRes.json().catch(() => ({}));
+            if (!keyRes.ok) throw new Error(keyData?.error || 'No se pudo obtener la clave de notificaciones');
+            const publicKey = String(keyData?.publicKey || '').trim();
+            if (!publicKey) throw new Error('Clave pública inválida');
+
+            const registration = await navigator.serviceWorker.ready;
+            const existing = await registration.pushManager.getSubscription();
+            if (existing) {
+                await existing.unsubscribe().catch(() => undefined);
+            }
+
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey),
+            });
+
+            const subscribeRes = await fetch('/api/notifications/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-store-id': appId || '',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    subscription: subscription.toJSON(),
+                    platform: navigator.platform || '',
+                }),
+            });
+            const subscribeData = await subscribeRes.json().catch(() => ({}));
+            if (!subscribeRes.ok) throw new Error(subscribeData?.error || 'No se pudo guardar la suscripción');
+
+            setPushNotificationsEnabled(true);
+            showToast('Notificaciones push activadas.', 'success');
+        } catch (error) {
+            setPushNotificationsEnabled(false);
+            showToast(error?.message || 'No se pudo activar notificaciones push.', 'error');
+        } finally {
+            setIsPushNotificationsBusy(false);
+            refreshPushSubscriptionStatus();
+        }
+    }, [isAdminUser, appId, showToast, refreshPushSubscriptionStatus]);
+
+    const disablePushNotifications = useCallback(async () => {
+        if (!isAdminUser) return;
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+        const supported = !!(window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window);
+        if (!supported) {
+            setPushNotificationsEnabled(false);
+            return;
+        }
+
+        setIsPushNotificationsBusy(true);
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            if (!subscription) {
+                setPushNotificationsEnabled(false);
+                showToast('No había suscripción activa en este dispositivo.', 'info');
+                return;
+            }
+
+            const endpoint = String(subscription.endpoint || '').trim();
+            const token = await auth.currentUser?.getIdToken();
+            if (token && endpoint) {
+                await fetch('/api/notifications/unsubscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-store-id': appId || '',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ endpoint }),
+                }).catch(() => undefined);
+            }
+
+            await subscription.unsubscribe().catch(() => undefined);
+            setPushNotificationsEnabled(false);
+            showToast('Notificaciones push desactivadas.', 'info');
+        } catch (error) {
+            showToast(error?.message || 'No se pudo desactivar notificaciones push.', 'error');
+        } finally {
+            setIsPushNotificationsBusy(false);
+            refreshPushSubscriptionStatus();
+        }
+    }, [isAdminUser, appId, showToast, refreshPushSubscriptionStatus]);
+
     const stopOrderAlarm = useCallback(() => {
         orderAlarmActiveRef.current = false;
         if (orderAlarmIntervalRef.current) {
@@ -2418,6 +2561,15 @@ function App() {
         tick();
         orderAlarmIntervalRef.current = setInterval(tick, 2000);
     }, [isAdminUser, adminOrderAlarmMuted]);
+
+    useEffect(() => {
+        if (!isAdminUser) {
+            setPushNotificationsEnabled(false);
+            setPushNotificationsPermission('default');
+            return;
+        }
+        refreshPushSubscriptionStatus();
+    }, [isAdminUser, refreshPushSubscriptionStatus, systemUser?.uid, appId]);
 
     useEffect(() => {
         const rawHostname = (typeof window !== 'undefined' && window.location && window.location.hostname)
@@ -7134,7 +7286,7 @@ function App() {
     };
 
     // Estado de Carga Inicial
-    if (isLoading && view === 'store') {
+    if (view === 'store' && (isLoading || !settingsLoaded)) {
         const loadingPrimaryColor = settings?.primaryColor || '#f97316';
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white px-4">
@@ -7819,10 +7971,8 @@ function App() {
                                         <h2 className={`text-3xl font-black mb-8 flex items-center gap-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                             <Tag className="w-8 h-8 text-purple-500" /> Packs y promociones
                                         </h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                                             {promos.map(promo => {
-                                                // Calcular si hay stock para esta promo
-                                                // La disponibilidad depende del "item" con menor stock relativo
                                                 let maxPurchasable = Infinity;
                                                 promo.items.forEach(item => {
                                                     const p = products.find(prod => prod.id === item.productId);
@@ -7832,48 +7982,69 @@ function App() {
                                                 });
 
                                                 const hasStock = maxPurchasable > 0;
+                                                const visibleItems = promo.items.slice(0, 2);
+                                                const extraItemsCount = Math.max(0, promo.items.length - visibleItems.length);
+                                                const regularTotal = promo.items.reduce((acc, item) => {
+                                                    const p = products.find(prod => prod.id === item.productId);
+                                                    return acc + ((Number(p?.basePrice) || 0) * item.quantity);
+                                                }, 0);
+                                                const promoPrice = Number(promo.price) || 0;
+                                                const promoDiscount = regularTotal > 0
+                                                    ? Math.max(0, Math.round(((regularTotal - promoPrice) / regularTotal) * 100))
+                                                    : 0;
 
                                                 return (
-                                                    <div key={promo.id} className={`rounded-[2.2rem] border overflow-hidden group transition duration-500 relative flex flex-col premium-promo-card ${darkMode ? 'bg-gradient-to-br from-purple-900/8 to-blue-900/8 border-slate-700/80 hover:border-purple-500/50 shadow-[0_10px_30px_rgba(2,6,23,0.35)]' : 'bg-white border-slate-200 shadow-sm hover:shadow-xl'}`}>
+                                                    <div key={promo.id} className={`rounded-[1.4rem] border overflow-hidden group transition duration-500 relative flex flex-col premium-promo-card ${darkMode ? 'bg-gradient-to-br from-purple-900/8 to-blue-900/8 border-slate-700/80 hover:border-purple-500/50 shadow-[0_10px_26px_rgba(2,6,23,0.28)]' : 'bg-white border-slate-200 shadow-sm hover:shadow-lg'}`}>
                                                         <div
-                                                            className={`aspect-square flex items-center justify-center relative overflow-hidden cursor-zoom-in ${darkMode ? 'bg-slate-900/50' : 'bg-slate-50'}`}
+                                                            className={`aspect-[4/3] flex items-center justify-center relative overflow-hidden cursor-zoom-in ${darkMode ? 'bg-slate-900/50' : 'bg-slate-50'}`}
                                                             onClick={() => setSelectedProduct({ ...promo, isPromo: true, stock: maxPurchasable })}
                                                         >
                                                             <img src={promo.image} alt={promo.name || 'Promo'} className="w-full h-full object-contain transition duration-700 group-hover:scale-110" />
                                                             <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent ${darkMode ? 'from-[#0a0a0a]' : 'from-white/50'}`}></div>
-                                                            <div className="absolute top-4 right-4 bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-[0.12em] shadow-lg">
+                                                            <div className="absolute top-3 right-3 bg-purple-600 text-white text-[9px] sm:text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-[0.12em] shadow-lg">
                                                                 Combo
                                                             </div>
                                                         </div>
 
-                                                        <div className="p-7 flex-1 flex flex-col">
-                                                            <h3 className={`text-2xl font-black mb-2 leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{promo.name}</h3>
-                                                            <p className={`text-sm mb-6 flex-1 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{promo.description}</p>
+                                                        <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                                                            <h3 className={`text-lg sm:text-xl font-black mb-1 leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{promo.name}</h3>
+                                                            <p className={`text-xs sm:text-sm mb-4 line-clamp-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{promo.description}</p>
 
-                                                            {/* Lista de productos incluidos */}
-                                                            <div className="mb-6 space-y-2">
-                                                                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-[0.2em]">Incluye:</p>
-                                                                {promo.items.map((item, idx) => {
+                                                            <div className="mb-4 space-y-1.5">
+                                                                <p className="text-[9px] uppercase font-bold text-slate-500 tracking-[0.18em]">Incluye:</p>
+                                                                {visibleItems.map((item, idx) => {
                                                                     const p = products.find(prod => prod.id === item.productId);
                                                                     return (
-                                                                        <div key={idx} className={`flex items-center gap-2 text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                                            <CheckCircle className={`w-3.5 h-3.5 ${darkMode ? 'text-purple-500' : 'text-purple-600'}`} />
+                                                                        <div key={idx} className={`flex items-center gap-2 text-xs sm:text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                                            <CheckCircle className={`w-3.5 h-3.5 flex-shrink-0 ${darkMode ? 'text-purple-500' : 'text-purple-600'}`} />
                                                                             <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.quantity}x</span> {p ? p.name : 'Producto'}
                                                                         </div>
                                                                     );
                                                                 })}
+                                                                {extraItemsCount > 0 && (
+                                                                    <div className={`text-[11px] font-bold ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+                                                                        +{extraItemsCount} producto{extraItemsCount > 1 ? 's' : ''} más
+                                                                    </div>
+                                                                )}
                                                             </div>
 
-                                                            <div className={`flex items-center justify-between mt-auto pt-6 border-t ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                                                            <div className={`flex items-center justify-between mt-auto pt-4 border-t ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
                                                                 <div className="flex flex-col">
                                                                     <span className="text-slate-500 text-xs font-bold line-through decoration-red-500 decoration-2">
-                                                                        ${promo.items.reduce((acc, item) => {
-                                                                            const p = products.find(prod => prod.id === item.productId);
-                                                                            return acc + ((Number(p?.basePrice) || 0) * item.quantity);
-                                                                        }, 0).toLocaleString()}
+                                                                        ${regularTotal.toLocaleString()}
                                                                     </span>
-                                                                    <span className={`text-3xl font-black ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
-                                                                        ${Number(promo.price).toLocaleString()}
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`text-2xl sm:text-[1.7rem] font-black ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+                                                                            ${promoPrice.toLocaleString()}
+                                                                        </span>
+                                                                        {promoDiscount > 0 && (
+                                                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black border ${darkMode ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                                                                                -{promoDiscount}%
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className={`text-[11px] font-semibold mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                                        Ahorrás ${(Math.max(0, regularTotal - promoPrice)).toLocaleString()}
                                                                     </span>
                                                                 </div>
                                                                 <button
@@ -7891,9 +8062,9 @@ function App() {
                                                                         manageCart(promoProduct, 1);
                                                                     }}
                                                                     disabled={!hasStock}
-                                                                    className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition shadow-lg ${hasStock ? (darkMode ? 'bg-white text-black hover:bg-purple-400 hover:text-white hover:scale-105' : 'bg-slate-900 text-white hover:bg-purple-600 hover:scale-105') : (darkMode ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-200 text-slate-400 cursor-not-allowed')}`}
+                                                                    className={`px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-1.5 transition shadow-lg ${hasStock ? (darkMode ? 'bg-white text-black hover:bg-purple-400 hover:text-white hover:scale-105' : 'bg-slate-900 text-white hover:bg-purple-600 hover:scale-105') : (darkMode ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-200 text-slate-400 cursor-not-allowed')}`}
                                                                 >
-                                                                    {hasStock ? <ShoppingCart className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                                                                    {hasStock ? <ShoppingCart className="w-4 h-4" /> : <X className="w-4 h-4" />}
                                                                     {hasStock ? 'Agregar' : 'Agotado'}
                                                                 </button>
                                                             </div>
@@ -9037,10 +9208,6 @@ function App() {
 
                                                 <button onClick={() => { setAdminTab('finance'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'finance' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                     <Wallet className="w-5 h-5" /> Finanzas
-                                                </button>
-
-                                                <button onClick={() => { setAdminTab('cms'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'cms' ? 'bg-blue-500/15 text-blue-200 border border-blue-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
-                                                    <Globe className="w-5 h-5" /> Editor Web
                                                 </button>
 
                                                 <button onClick={() => { setAdminTab('settings'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'settings' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
@@ -10649,6 +10816,17 @@ function App() {
                                                             {adminOrderAlarmMuted ? 'Muteada' : 'Activa'}
                                                         </span>
                                                     </button>
+                                                    <button
+                                                        onClick={() => (pushNotificationsEnabled ? disablePushNotifications() : enablePushNotifications())}
+                                                        disabled={isPushNotificationsBusy || !pushNotificationsSupported}
+                                                        className={`px-5 py-3 rounded-xl font-black transition border flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed ${pushNotificationsEnabled ? 'bg-cyan-900/20 text-cyan-300 border-cyan-500/30 hover:bg-cyan-600 hover:text-white' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'}`}
+                                                    >
+                                                        <Smartphone className="w-5 h-5" />
+                                                        Push en celu/compu
+                                                        <span className={`text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-widest ${pushNotificationsEnabled ? 'bg-cyan-900/30 text-cyan-300 border-cyan-500/30' : 'bg-slate-900/60 text-slate-400 border-slate-700'}`}>
+                                                            {!pushNotificationsSupported ? 'No soporta' : isPushNotificationsBusy ? 'Procesando' : pushNotificationsPermission === 'denied' ? 'Bloqueada' : pushNotificationsEnabled ? 'Activa' : 'Inactiva'}
+                                                        </span>
+                                                    </button>
                                                 </div>
                                             </div>
 
@@ -11685,11 +11863,11 @@ function App() {
                                     }
 
 
-                                    {/* TAB: CMS EDITOR WEB */}
+                                    {/* TAB: CMS CONTENIDO */}
                                     {adminTab === 'cms' && (
                                         <div className="max-w-4xl mx-auto animate-fade-up pb-20">
                                             <h1 className="text-3xl md:text-4xl font-black text-white mb-2 flex items-center gap-3">
-                                                <Globe className="w-8 h-8 text-blue-500" /> Editor Web & Contenido
+                                                <Globe className="w-8 h-8 text-blue-500" /> Contenido de la tienda
                                             </h1>
                                             <p className="text-slate-500 mb-8">Personaliza textos, videos y testimonios de tu tienda.</p>
 
