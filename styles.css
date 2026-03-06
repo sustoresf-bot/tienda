@@ -3381,43 +3381,29 @@ span {
     100% { transform: translateX(100%) rotate(45deg); }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* NUEVAS ANIMACIONES PROFESIONALES (PLAN DE MEJORA)                           */
-/* ═══════════════════════════════════════════════════════════════════════════ */
+/* ------- */
+/* ANIMACIONES PROFESIONALES REVISADAS (V2)                                    */
+/* -------- */
 
-/* 1. Keyframes Base */
+/* 1. Keyframes Base y Cinematogr�ficos */
 
-@keyframes fadeInUpSmooth {
+@keyframes fadeInUpCinema {
     0% {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(30px) scale(0.98);
+        filter: blur(4px);
     }
     100% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
+        filter: blur(0);
     }
 }
 
-@keyframes scaleInSmooth {
+@keyframes slideInRightCinema {
     0% {
         opacity: 0;
-        transform: scale(0.95);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes breathe {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
-}
-
-@keyframes slideInRightSmooth {
-    0% {
-        opacity: 0;
-        transform: translateX(30px);
+        transform: translateX(40px);
     }
     100% {
         opacity: 1;
@@ -3425,148 +3411,157 @@ span {
     }
 }
 
-/* 2. Aplicación a Productos (Staggered) - FORZADO */
-
-.product-grid-responsive .premium-product-card {
-    animation: fadeInUpSmooth 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards !important;
-    opacity: 0; /* Fallback para asegurar que empiece invisible */
-    animation-fill-mode: forwards !important;
+@keyframes kenBurns {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
 }
 
-/* Stagger delay para los primeros 12 productos */
-.product-grid-responsive .premium-product-card:nth-child(1) { animation-delay: 0.1s !important; }
-.product-grid-responsive .premium-product-card:nth-child(2) { animation-delay: 0.2s !important; }
-.product-grid-responsive .premium-product-card:nth-child(3) { animation-delay: 0.3s !important; }
-.product-grid-responsive .premium-product-card:nth-child(4) { animation-delay: 0.4s !important; }
-.product-grid-responsive .premium-product-card:nth-child(5) { animation-delay: 0.5s !important; }
-.product-grid-responsive .premium-product-card:nth-child(6) { animation-delay: 0.6s !important; }
-.product-grid-responsive .premium-product-card:nth-child(7) { animation-delay: 0.7s !important; }
-.product-grid-responsive .premium-product-card:nth-child(8) { animation-delay: 0.8s !important; }
-.product-grid-responsive .premium-product-card:nth-child(9) { animation-delay: 0.9s !important; }
-.product-grid-responsive .premium-product-card:nth-child(10) { animation-delay: 1.0s !important; }
-.product-grid-responsive .premium-product-card:nth-child(11) { animation-delay: 1.1s !important; }
-.product-grid-responsive .premium-product-card:nth-child(12) { animation-delay: 1.2s !important; }
+@keyframes softPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    50% { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0.1); }
+}
 
-/* 3. Hero Section Mejorada - FORZADO */
+@keyframes shineSweep {
+    0% { transform: translateX(-100%) skewX(-15deg); }
+    100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+/* 2. Hero Section Cinematogr�fica */
 
 .premium-hero {
-    animation: scaleInSmooth 1s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+    overflow: hidden; /* Necesario para Ken Burns */
+    position: relative;
+    /* Entrada suave del contenedor */
+    animation: scaleInSmooth 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-hero img {
+    /* Efecto Ken Burns continuo */
+    animation: kenBurns 20s ease-out infinite alternate;
+    will-change: transform;
 }
 
 .premium-hero-content {
-    animation: slideInRightSmooth 1s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) backwards !important;
+    /* Entrada del panel de contenido */
+    animation: slideInRightCinema 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.3s;
+    /* Glassmorphism reforzado */
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
 
-/* Efecto de flotación sutil para el Hero */
-.premium-hero:hover {
-    animation: breathe 6s ease-in-out infinite;
+.premium-hero-content h1 {
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.5s;
 }
 
-/* 4. Modales y Paneles */
-
-.modal-themed, .checkout-view, .cart-view {
-    animation: scaleInSmooth 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+.premium-hero-content p {
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.6s;
 }
 
-/* 5. Botones y Elementos Interactivos */
-
-button {
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, background-color 0.2s ease;
+.premium-hero-ctas {
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.7s;
 }
 
-button:active {
-    transform: scale(0.96);
+/* 3. Productos: Entrada en Cascada Elegante */
+
+.product-grid-responsive .premium-product-card {
+    /* Animaci�n de entrada m�s suave y pesada (calidad premium) */
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    /* Asegura que sean invisibles antes de animar */
+    opacity: 0;
+    animation-fill-mode: forwards;
 }
 
-/* Botón "Agregar" en tarjetas */
+/* Stagger delay optimizado */
+.product-grid-responsive .premium-product-card:nth-child(1) { animation-delay: 0.1s; }
+.product-grid-responsive .premium-product-card:nth-child(2) { animation-delay: 0.15s; }
+.product-grid-responsive .premium-product-card:nth-child(3) { animation-delay: 0.2s; }
+.product-grid-responsive .premium-product-card:nth-child(4) { animation-delay: 0.25s; }
+.product-grid-responsive .premium-product-card:nth-child(5) { animation-delay: 0.3s; }
+.product-grid-responsive .premium-product-card:nth-child(6) { animation-delay: 0.35s; }
+.product-grid-responsive .premium-product-card:nth-child(7) { animation-delay: 0.4s; }
+.product-grid-responsive .premium-product-card:nth-child(8) { animation-delay: 0.45s; }
+.product-grid-responsive .premium-product-card:nth-child(9) { animation-delay: 0.5s; }
+.product-grid-responsive .premium-product-card:nth-child(10) { animation-delay: 0.55s; }
+.product-grid-responsive .premium-product-card:nth-child(11) { animation-delay: 0.6s; }
+.product-grid-responsive .premium-product-card:nth-child(12) { animation-delay: 0.65s; }
+
+/* 4. Interacci�n de Producto (Hover Premium) */
+
+.premium-product-card {
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.premium-product-card:hover {
+    transform: translateY(-8px) scale(1.01);
+}
+
+:root:not(.dark-mode) .premium-product-card:hover {
+    box-shadow: 
+        0 20px 40px -5px rgba(15, 23, 42, 0.15), 
+        0 10px 15px -3px rgba(15, 23, 42, 0.05);
+    border-color: rgba(249, 115, 22, 0.3) !important;
+}
+
+.premium-product-card .premium-product-image img {
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.premium-product-card:hover .premium-product-image img {
+    transform: scale(1.08);
+}
+
+/* Bot�n de acci�n r�pida */
 .quick-add-action {
     position: relative;
     overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.quick-add-action:hover::after {
+.quick-add-action::after {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 50%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateX(-100%);
-    animation: shine-sweep 1.5s infinite;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+    transform: translateX(-150%) skewX(-20deg);
 }
 
-/* 6. Mejoras en Navegación */
-
-.store-nav-icon-btn:hover {
-    transform: translateY(-2px);
-    color: var(--primary);
+.premium-product-card:hover .quick-add-action::after {
+    animation: shineSweep 1.2s ease-in-out;
 }
 
-/* 7. Categorías */
+/* 5. UI Elements & Nav */
 
-.premium-category-bar button {
-    transition: all 0.3s ease;
-}
-
-.premium-category-bar button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-/* 8. Reducción de movimiento (Eliminado para evitar conflictos en testing, usar el bloque superior específico) */
-/* 
-@media (prefers-reduced-motion: reduce) {
-    *, ::before, ::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
-} 
-*/
-
-/* 9. Animaciones de Entrada Header */
-
-@keyframes slideDownSmooth {
-    0% {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
+/* Navbar glass effect transition */
 .premium-nav {
-    animation: slideDownSmooth 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: background-color 0.4s ease, box-shadow 0.4s ease, backdrop-filter 0.4s ease;
 }
 
-.premium-announcement {
-    animation: slideDownSmooth 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+.premium-nav:hover, .premium-nav:focus-within {
+    background-color: var(--bg-nav);
+    backdrop-filter: blur(20px);
 }
 
-
-/* 10. Fondo Animado Sutil */
-
-@keyframes gridMove {
-    0% { background-position: 0 0; }
-    100% { background-position: 40px 40px; }
+/* Botones principales con pulso suave al hover */
+.btn-primary:hover {
+    animation: softPulse 2s infinite;
 }
 
+/* Categor�as flotantes */
+.premium-category-bar {
+    animation: slideDownSmooth 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.2s;
+}
+
+/* Background animado sutil */
 .grid-bg {
-    animation: gridMove 20s linear infinite;
-}
-
-
-/* ANIMACI�N GLOBAL FORZADA PARA DEBUGGING VISUAL */
-@keyframes globalFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-body {
-    animation: globalFadeIn 1.5s ease-out !important;
+    opacity: 0.08; /* M�s sutil */
+    animation: gridMove 30s linear infinite; /* M�s lento */
 }
 
