@@ -1578,6 +1578,7 @@ function App() {
     // Navegación y UI
     const [view, setView] = useState('store'); // store, cart, checkout, profile, login, register, admin, about, guide
     const [adminTab, setAdminTab] = useState('dashboard');
+    const [cmsTab, setCmsTab] = useState('landing'); // Nuevo estado para el CMS
     const [expenses, setExpenses] = useState([]);
     const [investments, setInvestments] = useState([]);
     const [purchases, setPurchases] = useState([]);
@@ -7708,6 +7709,55 @@ function App() {
                             </div>
                         )}
 
+
+                        {/* TUTORIALS SECTION (CMS) */}
+                        {(settings?.tutorials || []).length > 0 && (
+                            <div className={`py-16 border-y relative overflow-hidden mb-12 ${darkMode ? 'bg-[#0a0a0a] border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full opacity-20 -translate-y-1/2"></div>
+                                <div className="container-tv relative z-10 px-4 md:px-8">
+                                    <div className="text-center max-w-2xl mx-auto mb-12">
+                                        <span className="text-blue-500 font-bold tracking-widest text-xs uppercase mb-2 block">Aprende con Nosotros</span>
+                                        <h2 className={`text-3xl md:text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Guías y Tutoriales</h2>
+                                        <p className={`${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Descubre cómo sacar el máximo provecho a nuestra plataforma con estos videos paso a paso.</p>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                        {settings.tutorials.map((video, idx) => {
+                                            let videoId = video.url;
+                                            if (video.url.includes('youtube.com') || video.url.includes('youtu.be')) {
+                                                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+                                                const match = video.url.match(regExp);
+                                                videoId = (match && match[2].length === 11) ? match[2] : null;
+                                            }
+                                            
+                                            return (
+                                                <div key={idx} className={`group relative rounded-2xl overflow-hidden border shadow-2xl transition duration-500 ${darkMode ? 'bg-slate-900 border-slate-800 hover:border-blue-500/50' : 'bg-white border-slate-200 hover:shadow-blue-500/10'}`}>
+                                                    <div className="aspect-video bg-black relative">
+                                                        {videoId ? (
+                                                            <iframe 
+                                                                src={`https://www.youtube.com/embed/${videoId}`} 
+                                                                title={video.title}
+                                                                className="w-full h-full"
+                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                                allowFullScreen
+                                                            ></iframe>
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                                                <Play className="w-12 h-12 opacity-50" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="p-6">
+                                                        <h3 className={`font-bold text-lg group-hover:text-blue-500 transition ${darkMode ? 'text-white' : 'text-slate-900'}`}>{video.title}</h3>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className={`mb-3 sm:mb-4 flex items-center justify-between gap-4 premium-catalog-intro ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                             <div>
                                 <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Catálogo</p>
@@ -7919,6 +7969,38 @@ function App() {
                                 </div>
 
                             </>
+                        )}
+
+                        {/* TESTIMONIALS SECTION (CMS) */}
+                        {(settings?.testimonials || []).length > 0 && (
+                            <div className={`py-24 relative overflow-hidden mt-20 border-t border-dashed ${darkMode ? 'border-slate-800/50' : 'border-slate-200'}`}>
+                                <div className="container-tv relative z-10 px-4 md:px-8">
+                                    <div className="text-center max-w-2xl mx-auto mb-16">
+                                        <span className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-2 block">Historias de Éxito</span>
+                                        <h2 className={`text-3xl md:text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Lo que dicen nuestros clientes</h2>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {settings.testimonials.map((t, idx) => (
+                                            <div key={idx} className={`p-8 rounded-[2rem] border relative transition duration-500 hover:-translate-y-2 ${darkMode ? 'bg-white/[0.03] border-white/5 hover:bg-white/[0.05]' : 'bg-white border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl'}`}>
+                                                <div className="text-4xl text-orange-500 font-serif absolute top-6 right-8 opacity-20">"</div>
+                                                <p className={`text-lg italic mb-6 leading-relaxed ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                                                    "{t.text}"
+                                                </p>
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${darkMode ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'}`}>
+                                                        {(t.name || 'C').charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{t.name}</h4>
+                                                        <p className={`text-xs uppercase tracking-wider font-bold ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.role}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
@@ -8955,6 +9037,10 @@ function App() {
 
                                                 <button onClick={() => { setAdminTab('finance'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'finance' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
                                                     <Wallet className="w-5 h-5" /> Finanzas
+                                                </button>
+
+                                                <button onClick={() => { setAdminTab('cms'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'cms' ? 'bg-blue-500/15 text-blue-200 border border-blue-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
+                                                    <Globe className="w-5 h-5" /> Editor Web
                                                 </button>
 
                                                 <button onClick={() => { setAdminTab('settings'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn w-full text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl flex items-center gap-3 font-semibold text-sm transition ${adminTab === 'settings' ? 'bg-orange-500/15 text-orange-200 border border-orange-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-400 border border-transparent hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-700/70'}`}>
@@ -11597,6 +11683,263 @@ function App() {
                                             </div>
                                         )
                                     }
+
+
+                                    {/* TAB: CMS EDITOR WEB */}
+                                    {adminTab === 'cms' && (
+                                        <div className="max-w-4xl mx-auto animate-fade-up pb-20">
+                                            <h1 className="text-3xl md:text-4xl font-black text-white mb-2 flex items-center gap-3">
+                                                <Globe className="w-8 h-8 text-blue-500" /> Editor Web & Contenido
+                                            </h1>
+                                            <p className="text-slate-500 mb-8">Personaliza textos, videos y testimonios de tu tienda.</p>
+
+                                            {/* CMS TABS */}
+                                            <div className="flex gap-2 mb-8 overflow-x-auto pb-2 border-b border-white/5">
+                                                {[
+                                                    { id: 'landing', label: 'Landing Page' },
+                                                    { id: 'tutorials', label: 'Videos Tutoriales' },
+                                                    { id: 'testimonials', label: 'Historias de Éxito' },
+                                                    { id: 'guide', label: 'Guía de Compra' }
+                                                ].map(tab => (
+                                                    <button
+                                                        key={tab.id}
+                                                        onClick={() => setCmsTab(tab.id)}
+                                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition whitespace-nowrap ${cmsTab === tab.id ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                                    >
+                                                        {tab.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            {/* TAB: LANDING */}
+                                            {cmsTab === 'landing' && (
+                                                <div className="space-y-6">
+                                                    <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl">
+                                                        <h3 className="text-lg font-bold text-white mb-4">Textos Principales (Hero)</h3>
+                                                        <div className="space-y-4">
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Título Principal (Línea 1)</label>
+                                                                <input
+                                                                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none"
+                                                                    value={settings.heroTitle1 || ''}
+                                                                    onChange={e => setSettings({ ...settings, heroTitle1: e.target.value })}
+                                                                    placeholder="Ej: Tu tienda online"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Título Secundario (Línea 2 - Gradiente)</label>
+                                                                <input
+                                                                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none"
+                                                                    value={settings.heroTitle2 || ''}
+                                                                    onChange={e => setSettings({ ...settings, heroTitle2: e.target.value })}
+                                                                    placeholder="Ej: que transmite confianza"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Subtítulo</label>
+                                                                <textarea
+                                                                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none h-24 resize-none"
+                                                                    value={settings.heroSubtitle || ''}
+                                                                    onChange={e => setSettings({ ...settings, heroSubtitle: e.target.value })}
+                                                                    placeholder="Descripción breve de tu propuesta de valor..."
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Badge / Etiqueta Superior</label>
+                                                                <input
+                                                                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none"
+                                                                    value={settings.heroBadge || ''}
+                                                                    onChange={e => setSettings({ ...settings, heroBadge: e.target.value })}
+                                                                    placeholder="Ej: Tienda profesional lista para vender"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* TAB: TUTORIALS */}
+                                            {cmsTab === 'tutorials' && (
+                                                <div className="space-y-6">
+                                                    <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl">
+                                                        <div className="flex justify-between items-center mb-6">
+                                                            <h3 className="text-lg font-bold text-white">Videos Tutoriales</h3>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const newTutorials = [...(settings.tutorials || []), { id: Date.now(), title: '', url: '' }];
+                                                                    setSettings({ ...settings, tutorials: newTutorials });
+                                                                }}
+                                                                className="text-xs bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500/30 transition"
+                                                            >
+                                                                + Agregar Video
+                                                            </button>
+                                                        </div>
+                                                        
+                                                        <div className="space-y-4">
+                                                            {(settings.tutorials || []).length === 0 && <p className="text-slate-500 text-sm italic">No hay videos configurados.</p>}
+                                                            {(settings.tutorials || []).map((video, idx) => (
+                                                                <div key={idx} className="bg-slate-900/50 p-4 rounded-xl border border-white/5 flex gap-4 items-start">
+                                                                    <div className="flex-1 space-y-3">
+                                                                        <input
+                                                                            className="w-full bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none"
+                                                                            placeholder="Título del Video"
+                                                                            value={video.title}
+                                                                            onChange={e => {
+                                                                                const newTutorials = [...(settings.tutorials || [])];
+                                                                                newTutorials[idx].title = e.target.value;
+                                                                                setSettings({ ...settings, tutorials: newTutorials });
+                                                                            }}
+                                                                        />
+                                                                        <input
+                                                                            className="w-full bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none font-mono"
+                                                                            placeholder="URL de YouTube (Embed o Link)"
+                                                                            value={video.url}
+                                                                            onChange={e => {
+                                                                                const newTutorials = [...(settings.tutorials || [])];
+                                                                                newTutorials[idx].url = e.target.value;
+                                                                                setSettings({ ...settings, tutorials: newTutorials });
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            const newTutorials = (settings.tutorials || []).filter((_, i) => i !== idx);
+                                                                            setSettings({ ...settings, tutorials: newTutorials });
+                                                                        }}
+                                                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* TAB: TESTIMONIALS */}
+                                            {cmsTab === 'testimonials' && (
+                                                <div className="space-y-6">
+                                                    <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl">
+                                                        <div className="flex justify-between items-center mb-6">
+                                                            <h3 className="text-lg font-bold text-white">Historias de Éxito</h3>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const newTestimonials = [...(settings.testimonials || []), { id: Date.now(), name: '', role: 'Cliente', text: '' }];
+                                                                    setSettings({ ...settings, testimonials: newTestimonials });
+                                                                }}
+                                                                className="text-xs bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500/30 transition"
+                                                            >
+                                                                + Agregar Testimonio
+                                                            </button>
+                                                        </div>
+                                                        
+                                                        <div className="space-y-4">
+                                                            {(settings.testimonials || []).length === 0 && <p className="text-slate-500 text-sm italic">No hay testimonios configurados.</p>}
+                                                            {(settings.testimonials || []).map((t, idx) => (
+                                                                <div key={idx} className="bg-slate-900/50 p-4 rounded-xl border border-white/5 flex gap-4 items-start">
+                                                                    <div className="flex-1 space-y-3">
+                                                                        <div className="flex gap-3">
+                                                                            <input
+                                                                                className="flex-1 bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none"
+                                                                                placeholder="Nombre del Cliente"
+                                                                                value={t.name}
+                                                                                onChange={e => {
+                                                                                    const newTestimonials = [...(settings.testimonials || [])];
+                                                                                    newTestimonials[idx].name = e.target.value;
+                                                                                    setSettings({ ...settings, testimonials: newTestimonials });
+                                                                                }}
+                                                                            />
+                                                                            <input
+                                                                                className="w-1/3 bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none"
+                                                                                placeholder="Rol / Título"
+                                                                                value={t.role}
+                                                                                onChange={e => {
+                                                                                    const newTestimonials = [...(settings.testimonials || [])];
+                                                                                    newTestimonials[idx].role = e.target.value;
+                                                                                    setSettings({ ...settings, testimonials: newTestimonials });
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                        <textarea
+                                                                            className="w-full bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none resize-none h-20"
+                                                                            placeholder="Testimonio o Historia..."
+                                                                            value={t.text}
+                                                                            onChange={e => {
+                                                                                const newTestimonials = [...(settings.testimonials || [])];
+                                                                                newTestimonials[idx].text = e.target.value;
+                                                                                setSettings({ ...settings, testimonials: newTestimonials });
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            const newTestimonials = (settings.testimonials || []).filter((_, i) => i !== idx);
+                                                                            setSettings({ ...settings, testimonials: newTestimonials });
+                                                                        }}
+                                                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* TAB: GUIDE */}
+                                            {cmsTab === 'guide' && (
+                                                <div className="space-y-6">
+                                                    <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl">
+                                                        <h3 className="text-lg font-bold text-white mb-6">Pasos de la Guía "Cómo Comprar"</h3>
+                                                        <div className="space-y-6">
+                                                            {[1, 2, 3, 4, 5].map(step => (
+                                                                <div key={step} className="bg-slate-900/30 p-4 rounded-xl border border-white/5">
+                                                                    <div className="flex items-center gap-3 mb-3">
+                                                                        <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30">{step}</span>
+                                                                        <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Paso {step}</span>
+                                                                    </div>
+                                                                    <div className="space-y-3">
+                                                                        <input
+                                                                            className="w-full bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none"
+                                                                            placeholder={`Título del Paso ${step}`}
+                                                                            value={settings[`guideStep${step}Title`] || ''}
+                                                                            onChange={e => setSettings({ ...settings, [`guideStep${step}Title`]: e.target.value })}
+                                                                        />
+                                                                        <textarea
+                                                                            className="w-full bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none resize-none h-16"
+                                                                            placeholder={`Descripción del Paso ${step}`}
+                                                                            value={settings[`guideStep${step}Text`] || ''}
+                                                                            onChange={e => setSettings({ ...settings, [`guideStep${step}Text`]: e.target.value })}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* SAVE BUTTON */}
+                                            <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-50">
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), settings);
+                                                            showToast("Cambios guardados correctamente.", "success");
+                                                        } catch (e) {
+                                                            console.error(e);
+                                                            showToast("Error al guardar cambios.", "error");
+                                                        }
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-full shadow-2xl shadow-blue-900/40 transition transform hover:scale-105 flex items-center gap-3 animate-bounce-in"
+                                                >
+                                                    <Save className="w-5 h-5" /> GUARDAR CAMBIOS
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* TAB: CONFIGURACIÓN AVANZADA (NEW) */}
                                     {
