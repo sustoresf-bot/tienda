@@ -794,7 +794,7 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 };
 
 // --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
-const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode }) => {
+const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode, showToast }) => {
     // Clases dinámicas basadas en el tema
     const cardBg = darkMode ? 'bg-[#090d12]' : 'bg-white';
     const cardBorder = darkMode ? 'border-slate-800/80' : 'border-slate-200/90';
@@ -887,6 +887,23 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                         </div>
                     </div>
                 )}
+
+                {/* Botón Compartir (NUEVO) */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        const url = `${window.location.origin}${window.location.pathname}?product=${p.id}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                            if (showToast) showToast('Enlace copiado al portapapeles', 'success');
+                        }).catch(() => {
+                            if (showToast) showToast('Error al copiar enlace', 'error');
+                        });
+                    }}
+                    className={`product-card-icon-btn product-card-share-btn absolute top-2 right-12 sm:top-4 sm:right-16 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-blue-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200'}`}
+                    title="Compartir producto"
+                >
+                    <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
 
                 {/* Botón Favorito (Funcional) */}
                 <button
@@ -2503,6 +2520,24 @@ function App() {
         // Guardar preferencia en localStorage
         localStorage.setItem('sustore_dark_mode', JSON.stringify(darkMode));
     }, [darkMode]);
+
+    // EFECTO PARA DETECTAR URL COMPARTIDA Y ABRIR PRODUCTO
+    useEffect(() => {
+        if (products.length > 0) {
+            const params = new URLSearchParams(window.location.search);
+            const sharedProductId = params.get('product');
+
+            if (sharedProductId) {
+                const product = products.find(p => p.id === sharedProductId);
+                if (product) {
+                    setSelectedProduct(product);
+                    // Opcional: Limpiar URL para no reabrir al recargar
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, '', newUrl);
+                }
+            }
+        }
+    }, [products]);
 
     // 1. Sincronizar Carrito Local y Remoto (Live Cart)
     useEffect(() => {
@@ -7743,6 +7778,7 @@ function App() {
                                             manageCart={manageCart}
                                             calculateItemPrice={calculateItemPrice}
                                             darkMode={darkMode}
+                                            showToast={showToast}
                                         />
                                     ))}
                                 </div>
