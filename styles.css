@@ -2708,7 +2708,7 @@ span {
     }
 
     .store-view .premium-product-card .premium-product-image {
-        height: 10rem !important;
+        height: 11.2rem !important;
     }
 }
 
@@ -3639,7 +3639,7 @@ span {
 }
 
 .store-view .store-product-image-shell {
-    height: clamp(8rem, 24vw, 14.5rem) !important;
+    height: clamp(10.8rem, 31vw, 18.5rem) !important;
 }
 
 .admin-shell .admin-main.admin-content {

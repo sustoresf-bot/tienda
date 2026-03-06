@@ -823,22 +823,22 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const hasDiscount = safeDiscount > 0 && basePrice > 0;
     const finalPrice = calculateItemPrice(basePrice, safeDiscount);
     const savingsAmount = Math.max(0, basePrice - finalPrice);
-    const imageContainerLayout = p.image ? 'inline-flex w-auto max-w-full mx-auto' : 'flex w-full';
+    const imageContainerLayout = 'flex w-full';
 
     return (
         <div className={`${cardBg} premium-product-card store-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in content-visibility-auto contain-content`}>
 
             {/* Imagen y Badges */}
-            <div className={`h-40 sm:h-48 lg:h-52 ${imageBg} premium-product-image store-product-image-shell m-2 sm:m-3 p-2 sm:p-3 ${imageContainerLayout} items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
+            <div className={`h-52 sm:h-56 lg:h-64 ${imageBg} premium-product-image store-product-image-shell m-1.5 sm:m-2 p-1 sm:p-1.5 ${imageContainerLayout} items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
 
                 {p.image ? (
-                    <div className={`product-image-adaptive-frame w-auto h-full max-w-full flex items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl border p-1 ${darkMode ? 'border-orange-500/35 bg-black/30' : 'border-slate-200 bg-white/95'} shadow-md`}>
+                    <div className={`product-image-adaptive-frame w-full h-full max-w-full flex items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl border p-0.5 sm:p-1 ${darkMode ? 'border-orange-500/35 bg-black/30' : 'border-slate-200 bg-white/95'} shadow-md`}>
                         <img
                             src={p.image}
                             loading="lazy"
                             decoding="async"
                             onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.nextSibling.style.display = 'flex'; }}
-                            className={`w-auto h-auto max-w-full max-h-full object-contain object-center block rounded-lg sm:rounded-xl shadow-lg z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                            className={`w-full h-full object-contain object-center block rounded-lg sm:rounded-xl shadow-lg z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                         />
                     </div>
                 ) : null}
