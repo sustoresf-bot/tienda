@@ -3385,7 +3385,7 @@ span {
 /* ANIMACIONES PROFESIONALES REVISADAS (V2)                                    */
 /* -------- */
 
-/* 1. Keyframes Base y Cinematográficos */
+/* 1. Keyframes Base y Cinematogrï¿½ficos */
 
 @keyframes fadeInUpCinema {
     0% {
@@ -3426,7 +3426,7 @@ span {
     100% { transform: translateX(200%) skewX(-15deg); }
 }
 
-/* 2. Hero Section Cinematográfica */
+/* 2. Hero Section Cinematogrï¿½fica */
 
 .premium-hero {
     overflow: hidden; /* Necesario para Ken Burns */
@@ -3468,11 +3468,9 @@ span {
 /* 3. Productos: Entrada en Cascada Elegante */
 
 .product-grid-responsive .premium-product-card {
-    /* Animación de entrada más suave y pesada (calidad premium) */
-    animation: fadeInUpCinema 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-    /* Asegura que sean invisibles antes de animar */
-    opacity: 0;
-    animation-fill-mode: forwards;
+    /* AnimaciÃ³n de entrada mÃ¡s suave y pesada (calidad premium) */
+    /* Usamos 'both' para que aplique el estado inicial (0%) antes de empezar y el final (100%) al terminar */
+    animation: fadeInUpCinema 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 /* Stagger delay optimizado */
@@ -3489,7 +3487,7 @@ span {
 .product-grid-responsive .premium-product-card:nth-child(11) { animation-delay: 0.6s; }
 .product-grid-responsive .premium-product-card:nth-child(12) { animation-delay: 0.65s; }
 
-/* 4. Interacción de Producto (Hover Premium) */
+/* 4. Interacciï¿½n de Producto (Hover Premium) */
 
 .premium-product-card {
     transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -3514,7 +3512,7 @@ span {
     transform: scale(1.08);
 }
 
-/* Botón de acción rápida */
+/* Botï¿½n de acciï¿½n rï¿½pida */
 .quick-add-action {
     position: relative;
     overflow: hidden;
@@ -3553,7 +3551,7 @@ span {
     animation: softPulse 2s infinite;
 }
 
-/* Categorías flotantes */
+/* Categorï¿½as flotantes */
 .premium-category-bar {
     animation: slideDownSmooth 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
     animation-delay: 0.2s;
@@ -3561,7 +3559,13 @@ span {
 
 /* Background animado sutil */
 .grid-bg {
-    opacity: 0.08; /* Más sutil */
-    animation: gridMove 30s linear infinite; /* Más lento */
+    opacity: 0.08; /* Mï¿½s sutil */
+    animation: gridMove 30s linear infinite; /* Mï¿½s lento */
+}
+
+
+/* FORCE VISIBILITY PATCH */
+.premium-product-card {
+    opacity: 1 !important;
 }
 
