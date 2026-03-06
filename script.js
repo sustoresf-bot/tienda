@@ -6759,34 +6759,84 @@ function App() {
                 </div>
                 <div className="space-y-3 mt-4">
                     {userOrders.map((order, idx) => (
-                        <div key={order.id || idx} className={`border p-4 rounded-2xl flex flex-col gap-3 transition group animate-fade-up transition-colors duration-300 ${darkMode ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.05] hover:border-orange-500/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-orange-200'}`} style={{ animationDelay: `${idx * 0.05}s` }}>
-                            <div className="flex justify-between items-start">
+                        <div key={order.id || idx} className={`border p-6 rounded-2xl flex flex-col gap-4 transition group animate-fade-up transition-colors duration-300 ${darkMode ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.05] hover:border-orange-500/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-orange-200'}`} style={{ animationDelay: `${idx * 0.05}s` }}>
+                            {/* Cabecera del Ticket */}
+                            <div className="flex justify-between items-start border-b pb-4 border-dashed border-slate-300 dark:border-white/10">
                                 <div>
-                                    <p className={`font-bold text-sm transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>#{order.orderId}</p>
-                                    <p className={`text-[10px] font-mono transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{new Date(order.date).toLocaleString()}</p>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <p className={`font-black text-sm tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>ORDEN #{order.orderId}</p>
+                                    </div>
+                                    <p className={`text-[10px] font-mono ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{new Date(order.date).toLocaleString()}</p>
                                 </div>
-                                <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${order.status === 'Realizado' || order.status === 'Completado' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${order.status === 'Realizado' || order.status === 'Completado' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'}`}>
                                     {order.status}
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-1">
+                            {/* Datos Cliente y Envío */}
+                            <div className="grid grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <p className={`font-bold mb-1 uppercase tracking-widest text-[10px] ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Cliente</p>
+                                    <p className={`${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{order.customer?.name || user.name}</p>
+                                    <p className={`${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{order.customer?.email || user.email}</p>
+                                    <p className={`${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{order.customer?.phone || user.phone}</p>
+                                </div>
+                                <div>
+                                    <p className={`font-bold mb-1 uppercase tracking-widest text-[10px] ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Envío ({order.shippingMethod})</p>
+                                    <p className={`break-words ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{order.shippingAddress || 'No especificada'}</p>
+                                </div>
+                            </div>
+
+                            {/* Lista de Items */}
+                            <div className={`rounded-xl p-4 space-y-2 ${darkMode ? 'bg-black/20 border border-white/5' : 'bg-white border border-slate-200'}`}>
                                 {order.items.map((item, i) => (
-                                    <p key={i} className={`text-xs truncate transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                        <span className={`font-bold ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{item.quantity}x</span> {item.title}
-                                    </p>
+                                    <div key={i} className="flex justify-between text-xs items-center">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <span className={`font-bold font-mono ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{item.quantity}x</span>
+                                            <span className={`truncate ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>{item.title}</span>
+                                        </div>
+                                        <span className={`font-mono ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>${(item.unit_price * item.quantity).toLocaleString()}</span>
+                                    </div>
                                 ))}
                             </div>
 
-                            <div className={`pt-3 border-t flex justify-between items-center transition-colors duration-300 ${darkMode ? 'border-white/5' : 'border-slate-200/50'}`}>
-                                <p className="text-orange-400 font-black font-mono">${Number(order.total).toLocaleString()}</p>
+                            {/* Totales Financieros */}
+                            <div className={`space-y-1 text-xs text-right pt-2`}>
+                                <div className="flex justify-between">
+                                    <span className={`${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Subtotal</span>
+                                    <span className={`font-mono ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>${order.subtotal?.toLocaleString()}</span>
+                                </div>
+                                {order.discount > 0 && (
+                                     <div className="flex justify-between text-green-500">
+                                        <span className="font-bold">Descuento</span>
+                                        <span className="font-mono">-${order.discount?.toLocaleString()}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between">
+                                    <span className={`${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Envío</span>
+                                    <span className={`font-mono ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{order.shippingFee > 0 ? `$${order.shippingFee?.toLocaleString()}` : 'Gratis'}</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-2 pt-2 border-t border-dashed border-slate-500/20">
+                                    <span className={`font-black uppercase tracking-widest text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Total Final</span>
+                                    <span className={`font-black text-lg text-orange-400`}>${order.total?.toLocaleString()}</span>
+                                </div>
+                            </div>
+
+                            {/* Footer de Pago */}
+                            <div className={`mt-2 pt-3 border-t flex justify-between items-center ${darkMode ? 'border-white/5' : 'border-slate-200'}`}>
+                                <div className="text-xs">
+                                    <p className={`font-bold flex items-center gap-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                                        <CreditCard className="w-3 h-3" /> {order.paymentMethod}
+                                    </p>
+                                    {order.mpPaymentId && <p className="font-mono text-[10px] opacity-50 mt-0.5">ID: {order.mpPaymentId}</p>}
+                                </div>
                                 {order.mpPaymentId && (
                                     <button
                                         onClick={() => copyToClipboard(order.mpPaymentId)}
-                                        className={`flex items-center gap-2 text-[10px] font-bold px-2 py-1 rounded-lg transition-colors duration-300 ${darkMode ? 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700' : 'bg-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-300'}`}
+                                        className={`flex items-center gap-2 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors duration-300 ${darkMode ? 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 border border-slate-700' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200'}`}
                                         title="Copiar ID de Pago"
                                     >
-                                        <Copy className="w-3 h-3" /> {order.mpPaymentId.slice(0, 8)}...
+                                        <Copy className="w-3 h-3" /> COPIAR ID
                                     </button>
                                 )}
                             </div>
