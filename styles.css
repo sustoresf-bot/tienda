@@ -3425,34 +3425,36 @@ span {
     }
 }
 
-/* 2. Aplicaci贸n a Productos (Staggered) */
+/* 2. Aplicaci贸n a Productos (Staggered) - FORZADO */
 
 .product-grid-responsive .premium-product-card {
-    animation: fadeInUpSmooth 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation: fadeInUpSmooth 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards !important;
+    opacity: 0; /* Fallback para asegurar que empiece invisible */
+    animation-fill-mode: forwards !important;
 }
 
 /* Stagger delay para los primeros 12 productos */
-.product-grid-responsive .premium-product-card:nth-child(1) { animation-delay: 0.05s; }
-.product-grid-responsive .premium-product-card:nth-child(2) { animation-delay: 0.1s; }
-.product-grid-responsive .premium-product-card:nth-child(3) { animation-delay: 0.15s; }
-.product-grid-responsive .premium-product-card:nth-child(4) { animation-delay: 0.2s; }
-.product-grid-responsive .premium-product-card:nth-child(5) { animation-delay: 0.25s; }
-.product-grid-responsive .premium-product-card:nth-child(6) { animation-delay: 0.3s; }
-.product-grid-responsive .premium-product-card:nth-child(7) { animation-delay: 0.35s; }
-.product-grid-responsive .premium-product-card:nth-child(8) { animation-delay: 0.4s; }
-.product-grid-responsive .premium-product-card:nth-child(9) { animation-delay: 0.45s; }
-.product-grid-responsive .premium-product-card:nth-child(10) { animation-delay: 0.5s; }
-.product-grid-responsive .premium-product-card:nth-child(11) { animation-delay: 0.55s; }
-.product-grid-responsive .premium-product-card:nth-child(12) { animation-delay: 0.6s; }
+.product-grid-responsive .premium-product-card:nth-child(1) { animation-delay: 0.1s !important; }
+.product-grid-responsive .premium-product-card:nth-child(2) { animation-delay: 0.2s !important; }
+.product-grid-responsive .premium-product-card:nth-child(3) { animation-delay: 0.3s !important; }
+.product-grid-responsive .premium-product-card:nth-child(4) { animation-delay: 0.4s !important; }
+.product-grid-responsive .premium-product-card:nth-child(5) { animation-delay: 0.5s !important; }
+.product-grid-responsive .premium-product-card:nth-child(6) { animation-delay: 0.6s !important; }
+.product-grid-responsive .premium-product-card:nth-child(7) { animation-delay: 0.7s !important; }
+.product-grid-responsive .premium-product-card:nth-child(8) { animation-delay: 0.8s !important; }
+.product-grid-responsive .premium-product-card:nth-child(9) { animation-delay: 0.9s !important; }
+.product-grid-responsive .premium-product-card:nth-child(10) { animation-delay: 1.0s !important; }
+.product-grid-responsive .premium-product-card:nth-child(11) { animation-delay: 1.1s !important; }
+.product-grid-responsive .premium-product-card:nth-child(12) { animation-delay: 1.2s !important; }
 
-/* 3. Hero Section Mejorada */
+/* 3. Hero Section Mejorada - FORZADO */
 
 .premium-hero {
-    animation: scaleInSmooth 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: scaleInSmooth 1s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 }
 
 .premium-hero-content {
-    animation: slideInRightSmooth 0.8s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation: slideInRightSmooth 1s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) backwards !important;
 }
 
 /* Efecto de flotaci贸n sutil para el Hero */
@@ -3512,7 +3514,8 @@ button:active {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-/* 8. Reducci贸n de movimiento */
+/* 8. Reducci贸n de movimiento (Eliminado para evitar conflictos en testing, usar el bloque superior espec铆fico) */
+/* 
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
         animation-duration: 0.01ms !important;
@@ -3520,7 +3523,8 @@ button:active {
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
-}
+} 
+*/
 
 /* 9. Animaciones de Entrada Header */
 
@@ -3553,5 +3557,16 @@ button:active {
 
 .grid-bg {
     animation: gridMove 20s linear infinite;
+}
+
+
+/* ANIMACI覰 GLOBAL FORZADA PARA DEBUGGING VISUAL */
+@keyframes globalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+body {
+    animation: globalFadeIn 1.5s ease-out !important;
 }
 
