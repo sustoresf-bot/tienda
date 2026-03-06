@@ -6694,16 +6694,51 @@ function App() {
 
     // --- SUB-COMPONENTS FOR ADMIN DRAWER ---
 
-    const UserCartView = ({ user, orders }) => {
-        const userOrders = useMemo(() => {
-            if (!orders || !user) return [];
-            return orders.filter(o => o.userId === user.id || o.customerId === user.id).sort((a, b) => new Date(b.date) - new Date(a.date));
-        }, [orders, user]);
+    const UserCartView = ({ user }) => {
+        const [userOrders, setUserOrders] = useState([]);
+        const [loadingHistory, setLoadingHistory] = useState(true);
+
+        useEffect(() => {
+            if (!user?.id) return;
+            
+            const fetchHistory = async () => {
+                setLoadingHistory(true);
+                try {
+                    const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+                    const q = query(
+                        ordersRef, 
+                        where('customerId', '==', user.id),
+                        orderBy('date', 'desc'),
+                        limit(50) // Limitamos a las últimas 50 para rendimiento
+                    );
+                    const snapshot = await getDocs(q);
+                    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setUserOrders(docs);
+                } catch (err) {
+                    console.error("Error fetching user history:", err);
+                    // Fallback: intentar filtrar de las órdenes en memoria si falla la query compuesta (por índices faltantes)
+                    // setUserOrders([]); 
+                } finally {
+                    setLoadingHistory(false);
+                }
+            };
+
+            fetchHistory();
+        }, [user]);
 
         const copyToClipboard = (text) => {
             navigator.clipboard.writeText(text);
             showToast("Copiado al portapapeles", "success");
         };
+
+        if (loadingHistory) {
+             return (
+                 <div className="py-20 flex flex-col items-center gap-4 opacity-50">
+                     <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
+                     <p className={`text-xs font-black tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>CARGANDO HISTORIAL...</p>
+                 </div>
+             );
+        }
 
         if (userOrders.length === 0) {
             return (
@@ -7030,7 +7065,7 @@ function App() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8">
-                        {type === 'cart' && <UserCartView user={user} orders={orders} />}
+                        {type === 'cart' && <UserCartView user={user} />}
                         {(type === 'edit' || type === 'password') && (
                             <UserEditForm
                                 user={user}
