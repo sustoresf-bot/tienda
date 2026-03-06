@@ -6694,60 +6694,69 @@ function App() {
 
     // --- SUB-COMPONENTS FOR ADMIN DRAWER ---
 
-    const UserCartView = ({ cartItems, isLoading }) => {
-        const normalizedCartItems = useMemo(() => serializeCartForAudit(cartItems), [cartItems, serializeCartForAudit]);
+    const UserCartView = ({ user, orders }) => {
+        const userOrders = useMemo(() => {
+            if (!orders || !user) return [];
+            return orders.filter(o => o.userId === user.id || o.customerId === user.id).sort((a, b) => new Date(b.date) - new Date(a.date));
+        }, [orders, user]);
 
-        if (isLoading) {
-            return (
-                <div className="py-20 flex flex-col items-center gap-4 opacity-50">
-                    <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-                    <p className={`text-xs font-black tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>SINCRONIZANDO DATOS...</p>
-                </div>
-            );
-        }
-        if (normalizedCartItems.length === 0) {
+        const copyToClipboard = (text) => {
+            navigator.clipboard.writeText(text);
+            showToast("Copiado al portapapeles", "success");
+        };
+
+        if (userOrders.length === 0) {
             return (
                 <div className="py-20 text-center flex flex-col items-center gap-6">
                     <div className={`p-6 rounded-full border transition-colors duration-300 ${darkMode ? 'bg-white/5 border-white/5' : 'bg-slate-100 border-slate-200'}`}>
-                        <ShoppingCart className={`w-12 h-12 transition-colors duration-300 ${darkMode ? 'text-slate-700' : 'text-slate-300'}`} />
+                        <ShoppingBag className={`w-12 h-12 transition-colors duration-300 ${darkMode ? 'text-slate-700' : 'text-slate-300'}`} />
                     </div>
-                    <p className={`text-sm font-black uppercase tracking-widest italic transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>No hay productos activos</p>
+                    <p className={`text-sm font-black uppercase tracking-widest italic transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>No hay compras registradas</p>
                 </div>
             );
         }
+
         return (
             <>
                 <div className="flex justify-between items-center px-2">
-                    <p className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Contenido del Carrito</p>
-                    <p className="text-xs font-bold text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full">{normalizedCartItems.length} ITEMS</p>
+                    <p className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Historial de Compras</p>
+                    <p className="text-xs font-bold text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full">{userOrders.length} ORDENES</p>
                 </div>
-                <div className="space-y-3">
-                    {normalizedCartItems.map((item, idx) => (
-                        <div key={idx} className={`border p-4 rounded-2xl flex gap-4 transition group animate-fade-up transition-colors duration-300 ${darkMode ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.05] hover:border-orange-500/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-orange-200'}`} style={{ animationDelay: `${idx * 0.05}s` }}>
-                            <div className={`w-16 h-16 rounded-xl overflow-hidden shadow-inner border flex-shrink-0 transition-colors duration-300 product-preview-frame ${darkMode ? 'bg-[#0a0a0a] border-white/5' : 'bg-white border-slate-200'}`}>
-                                {item.image ? (
-                                    <img src={item.image} alt={item.name || 'Producto'} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <Package className={`w-7 h-7 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center">
-                                <p className={`font-bold text-sm leading-tight mb-1 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.name || 'Producto'}</p>
-                                <div className="flex justify-between items-center">
-                                    <p className={`text-xs transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Cant: <span className={`font-mono font-bold transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.quantity}</span></p>
-                                    <p className="text-orange-400 font-black font-mono text-xs">${Number(item.price).toLocaleString()}</p>
+                <div className="space-y-3 mt-4">
+                    {userOrders.map((order, idx) => (
+                        <div key={order.id || idx} className={`border p-4 rounded-2xl flex flex-col gap-3 transition group animate-fade-up transition-colors duration-300 ${darkMode ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.05] hover:border-orange-500/20' : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-orange-200'}`} style={{ animationDelay: `${idx * 0.05}s` }}>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className={`font-bold text-sm transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>#{order.orderId}</p>
+                                    <p className={`text-[10px] font-mono transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{new Date(order.date).toLocaleString()}</p>
                                 </div>
+                                <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${order.status === 'Realizado' || order.status === 'Completado' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                    {order.status}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                                {order.items.map((item, i) => (
+                                    <p key={i} className={`text-xs truncate transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                        <span className={`font-bold ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{item.quantity}x</span> {item.title}
+                                    </p>
+                                ))}
+                            </div>
+
+                            <div className={`pt-3 border-t flex justify-between items-center transition-colors duration-300 ${darkMode ? 'border-white/5' : 'border-slate-200/50'}`}>
+                                <p className="text-orange-400 font-black font-mono">${Number(order.total).toLocaleString()}</p>
+                                {order.mpPaymentId && (
+                                    <button
+                                        onClick={() => copyToClipboard(order.mpPaymentId)}
+                                        className={`flex items-center gap-2 text-[10px] font-bold px-2 py-1 rounded-lg transition-colors duration-300 ${darkMode ? 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700' : 'bg-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-300'}`}
+                                        title="Copiar ID de Pago"
+                                    >
+                                        <Copy className="w-3 h-3" /> {order.mpPaymentId.slice(0, 8)}...
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
-                </div>
-                <div className={`pt-6 border-t transition-colors duration-300 ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
-                    <div className={`flex justify-between items-center p-6 rounded-2xl border transition-colors duration-300 ${darkMode ? 'bg-orange-500/5 border-orange-500/20' : 'bg-orange-50 border-orange-100'}`}>
-                        <p className={`font-bold transition-colors duration-300 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Valor Total</p>
-                        <p className={`text-2xl font-black font-mono transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>${normalizedCartItems.reduce((acc, i) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}</p>
-                    </div>
                 </div>
             </>
         );
@@ -6891,6 +6900,7 @@ function App() {
         // Effect to update initial form state and fetch cart
         useEffect(() => {
             if (active && user) {
+                /* Cart fetch removed as we now show orders history
                 if (type === 'cart') {
                     const fetchCart = async () => {
                         setIsLoadingCart(true);
@@ -6903,6 +6913,7 @@ function App() {
                     };
                     fetchCart();
                 }
+                */
 
                 setInitialFormState({
                     name: user.name || '',
@@ -7006,7 +7017,7 @@ function App() {
                     <div className={`p-8 border-b flex justify-between items-center transition-colors duration-300 ${darkMode ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50/50'}`}>
                         <div>
                             <h2 className={`text-xl font-black tracking-widest uppercase transition-colors duration-300 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                {type === 'cart' ? 'Auditoría de Carrito' : 'Configurar Cuenta'}
+                                {type === 'cart' ? 'Historial de Compras' : 'Configurar Cuenta'}
                             </h2>
                             <p className={`text-[10px] font-bold mt-1 tracking-widest flex items-center gap-2 transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                                 <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
@@ -7019,7 +7030,7 @@ function App() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8">
-                        {type === 'cart' && <UserCartView cartItems={userCartItems} isLoading={isLoadingCart} />}
+                        {type === 'cart' && <UserCartView user={user} orders={orders} />}
                         {(type === 'edit' || type === 'password') && (
                             <UserEditForm
                                 user={user}
@@ -10080,7 +10091,7 @@ function App() {
                                                                                     onClick={() => setViewUserCart(u)}
                                                                                     className="w-full py-2.5 rounded-xl border border-orange-500/20 bg-orange-500/5 text-orange-400 hover:bg-orange-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                                                                                 >
-                                                                                    <Maximize2 className="w-3 h-3" /> Ver Carrito en Vivo
+                                                                                    <Maximize2 className="w-3 h-3" /> Ver Compras
                                                                                 </button>
                                                                             </div>
                                                                         </td>
