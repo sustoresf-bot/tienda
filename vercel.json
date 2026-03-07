@@ -125,6 +125,42 @@
     ],
     "rewrites": [
         {
+            "source": "/api/notifications/public-key",
+            "destination": "/api/notifications?action=public-key"
+        },
+        {
+            "source": "/api/notifications/subscribe",
+            "destination": "/api/notifications?action=subscribe"
+        },
+        {
+            "source": "/api/notifications/unsubscribe",
+            "destination": "/api/notifications?action=unsubscribe"
+        },
+        {
+            "source": "/api/auth/bootstrap-super-admin",
+            "destination": "/api/auth?action=bootstrap-super-admin"
+        },
+        {
+            "source": "/api/auth/claim-legacy-profile",
+            "destination": "/api/auth?action=claim-legacy-profile"
+        },
+        {
+            "source": "/api/auth/legacy-login",
+            "destination": "/api/auth?action=legacy-login"
+        },
+        {
+            "source": "/api/auth/reset-password",
+            "destination": "/api/auth?action=reset-password"
+        },
+        {
+            "source": "/api/auth/setup-profile",
+            "destination": "/api/auth?action=setup-profile"
+        },
+        {
+            "source": "/api/auth/username-lookup",
+            "destination": "/api/auth?action=username-lookup"
+        },
+        {
             "source": "/api/checkout",
             "destination": "/api/checkout"
         },
