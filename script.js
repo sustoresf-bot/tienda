@@ -11875,8 +11875,6 @@ function App() {
                                             <div className="flex gap-2 mb-8 overflow-x-auto pb-2 border-b border-white/5">
                                                 {[
                                                     { id: 'landing', label: 'Landing Page' },
-                                                    { id: 'tutorials', label: 'Videos Tutoriales' },
-                                                    { id: 'testimonials', label: 'Historias de Éxito' },
                                                     { id: 'guide', label: 'Guía de Compra' }
                                                 ].map(tab => (
                                                     <button
@@ -11936,135 +11934,9 @@ function App() {
                                                 </div>
                                             )}
 
-                                            {/* TAB: TUTORIALS */}
-                                            {cmsTab === 'tutorials' && (
-                                                <div className="space-y-6">
-                                                    <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl">
-                                                        <div className="flex justify-between items-center mb-6">
-                                                            <h3 className="text-lg font-bold text-white">Videos Tutoriales</h3>
-                                                            <button 
-                                                                onClick={() => {
-                                                                    const newTutorials = [...(settings.tutorials || []), { id: Date.now(), title: '', url: '' }];
-                                                                    setSettings({ ...settings, tutorials: newTutorials });
-                                                                }}
-                                                                className="text-xs bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500/30 transition"
-                                                            >
-                                                                + Agregar Video
-                                                            </button>
-                                                        </div>
-                                                        
-                                                        <div className="space-y-4">
-                                                            {(settings.tutorials || []).length === 0 && <p className="text-slate-500 text-sm italic">No hay videos configurados.</p>}
-                                                            {(settings.tutorials || []).map((video, idx) => (
-                                                                <div key={idx} className="bg-slate-900/50 p-4 rounded-xl border border-white/5 flex gap-4 items-start">
-                                                                    <div className="flex-1 space-y-3">
-                                                                        <input
-                                                                            className="w-full bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none"
-                                                                            placeholder="Título del Video"
-                                                                            value={video.title}
-                                                                            onChange={e => {
-                                                                                const newTutorials = [...(settings.tutorials || [])];
-                                                                                newTutorials[idx].title = e.target.value;
-                                                                                setSettings({ ...settings, tutorials: newTutorials });
-                                                                            }}
-                                                                        />
-                                                                        <input
-                                                                            className="w-full bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none font-mono"
-                                                                            placeholder="URL de YouTube (Embed o Link)"
-                                                                            value={video.url}
-                                                                            onChange={e => {
-                                                                                const newTutorials = [...(settings.tutorials || [])];
-                                                                                newTutorials[idx].url = e.target.value;
-                                                                                setSettings({ ...settings, tutorials: newTutorials });
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                    <button 
-                                                                        onClick={() => {
-                                                                            const newTutorials = (settings.tutorials || []).filter((_, i) => i !== idx);
-                                                                            setSettings({ ...settings, tutorials: newTutorials });
-                                                                        }}
-                                                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
 
-                                            {/* TAB: TESTIMONIALS */}
-                                            {cmsTab === 'testimonials' && (
-                                                <div className="space-y-6">
-                                                    <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl">
-                                                        <div className="flex justify-between items-center mb-6">
-                                                            <h3 className="text-lg font-bold text-white">Historias de Éxito</h3>
-                                                            <button 
-                                                                onClick={() => {
-                                                                    const newTestimonials = [...(settings.testimonials || []), { id: Date.now(), name: '', role: 'Cliente', text: '' }];
-                                                                    setSettings({ ...settings, testimonials: newTestimonials });
-                                                                }}
-                                                                className="text-xs bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500/30 transition"
-                                                            >
-                                                                + Agregar Testimonio
-                                                            </button>
-                                                        </div>
-                                                        
-                                                        <div className="space-y-4">
-                                                            {(settings.testimonials || []).length === 0 && <p className="text-slate-500 text-sm italic">No hay testimonios configurados.</p>}
-                                                            {(settings.testimonials || []).map((t, idx) => (
-                                                                <div key={idx} className="bg-slate-900/50 p-4 rounded-xl border border-white/5 flex gap-4 items-start">
-                                                                    <div className="flex-1 space-y-3">
-                                                                        <div className="flex gap-3">
-                                                                            <input
-                                                                                className="flex-1 bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none"
-                                                                                placeholder="Nombre del Cliente"
-                                                                                value={t.name}
-                                                                                onChange={e => {
-                                                                                    const newTestimonials = [...(settings.testimonials || [])];
-                                                                                    newTestimonials[idx].name = e.target.value;
-                                                                                    setSettings({ ...settings, testimonials: newTestimonials });
-                                                                                }}
-                                                                            />
-                                                                            <input
-                                                                                className="w-1/3 bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none"
-                                                                                placeholder="Rol / Título"
-                                                                                value={t.role}
-                                                                                onChange={e => {
-                                                                                    const newTestimonials = [...(settings.testimonials || [])];
-                                                                                    newTestimonials[idx].role = e.target.value;
-                                                                                    setSettings({ ...settings, testimonials: newTestimonials });
-                                                                                }}
-                                                                            />
-                                                                        </div>
-                                                                        <textarea
-                                                                            className="w-full bg-black border border-slate-800 rounded-lg p-2 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 outline-none resize-none h-20"
-                                                                            placeholder="Testimonio o Historia..."
-                                                                            value={t.text}
-                                                                            onChange={e => {
-                                                                                const newTestimonials = [...(settings.testimonials || [])];
-                                                                                newTestimonials[idx].text = e.target.value;
-                                                                                setSettings({ ...settings, testimonials: newTestimonials });
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                    <button 
-                                                                        onClick={() => {
-                                                                            const newTestimonials = (settings.testimonials || []).filter((_, i) => i !== idx);
-                                                                            setSettings({ ...settings, testimonials: newTestimonials });
-                                                                        }}
-                                                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+
+
 
                                             {/* TAB: GUIDE */}
                                             {cmsTab === 'guide' && (
