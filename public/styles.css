@@ -2489,13 +2489,16 @@ span {
     }
 
     .premium-product-card .premium-product-image {
-        margin: 0.45rem !important;
-        padding: 0.45rem !important;
-        height: 8.6rem !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+        height: auto !important;
+        border-radius: 1.15rem !important;
     }
 
     .premium-product-card .premium-product-image img {
-        border-radius: 0.9rem !important;
+        border-radius: 1.15rem !important;
     }
 
     .premium-product-card .text-\[9px\],
@@ -2708,7 +2711,8 @@ span {
     }
 
     .store-view .premium-product-card .premium-product-image {
-        height: 11.2rem !important;
+        height: auto !important;
+        aspect-ratio: 1 / 1 !important;
     }
 }
 

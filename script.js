@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 
@@ -135,12 +135,13 @@ const setupSmoothScroll = () => {
     if (isTouchDevice) return;
 
     const lenis = new Lenis({
-        lerp: 0.09,           // Smoothness (lower = more glide, 0.05-0.15 range)
-        duration: 1.4,        // Duration of the scroll animation in seconds
-        smoothWheel: true,    // Enable smooth wheel scrolling
-        wheelMultiplier: 0.8, // Reduce wheel sensitivity slightly
-        touchMultiplier: 1,   // Keep native touch behavior
+        lerp: 0.04,           // Ultra smooth, thick damping (lower = more glide)
+        duration: 2.0,        // Longer duration for floaty feel
+        smoothWheel: true,
+        wheelMultiplier: 0.9, // Balanced sensitivity
+        touchMultiplier: 1.5, // Better feel on touch 
         infinite: false,
+        syncTouch: true,      // Makes touch scrolling feel more connected
     });
 
     window.__smoothScrollLenis = lenis;
@@ -823,116 +824,116 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const hasDiscount = safeDiscount > 0 && basePrice > 0;
     const finalPrice = calculateItemPrice(basePrice, safeDiscount);
     const savingsAmount = Math.max(0, basePrice - finalPrice);
-    const imageContainerLayout = 'flex w-full';
+    const imageContainerLayout = 'w-full px-1.5 pt-1.5 pb-0 sm:px-2 sm:pt-2 block min-w-0';
 
     return (
-        <div className={`${cardBg} premium-product-card store-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} overflow-hidden group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in content-visibility-auto contain-content`}>
+        <div className={`${cardBg} premium-product-card store-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in`}>
 
-            {/* Imagen y Badges */}
-            <div className={`h-52 sm:h-56 lg:h-64 ${imageBg} premium-product-image store-product-image-shell m-1.5 sm:m-2 p-1 sm:p-1.5 ${imageContainerLayout} items-center justify-center relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
+            {/* Renderizado Estricto de la Zona de Imagen (0 desbordes permitidos) */}
+            <div className={`px-1.5 pt-1.5 pb-0 sm:px-2 sm:pt-2`}>
+                <div className={`h-52 sm:h-56 lg:h-64 flex items-center justify-center ${imageBg} premium-product-image store-product-image-shell rounded-xl sm:rounded-[1.2rem] relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
 
-                {p.image ? (
-                    <div className={`product-image-adaptive-frame w-full h-full max-w-full flex items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl border p-0.5 sm:p-1 ${darkMode ? 'border-orange-500/35 bg-black/30' : 'border-slate-200 bg-white/95'} shadow-md`}>
+                    {p.image ? (
                         <img
                             src={p.image}
                             loading="lazy"
                             decoding="async"
-                            onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.nextSibling.style.display = 'flex'; }}
-                            className={`w-full h-full object-contain object-center block rounded-lg sm:rounded-xl shadow-lg z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
+                            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                            className={`block w-auto h-auto max-w-[calc(100%-16px)] max-h-[calc(100%-16px)] object-contain object-center rounded-[0.85rem] sm:rounded-2xl p-0.5 sm:p-1 border ${darkMode ? 'border-orange-500/40 bg-[#000000]/40' : 'border-slate-200 bg-white/95'} shadow-[0_4px_12px_rgba(0,0,0,0.5)] z-10 transition-transform duration-700 group-hover:scale-110 ${p.stock <= 0 ? 'grayscale opacity-50' : ''}`}
                         />
-                    </div>
-                ) : null}
+                    ) : null}
 
 
-                {/* Botón Ver (Visible en Mobile/Touch) */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedProduct(p);
-                    }}
-                    className={`product-card-icon-btn product-card-zoom-btn absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-30 ${darkMode ? 'bg-black/60 border-white/20' : 'bg-white/90 border-slate-200'} backdrop-blur-md p-2 sm:p-3 rounded-full ${darkMode ? 'text-white' : 'text-slate-700'} border md:hidden`}
-                >
-                    <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
+                    {/* Botón Ver (Visible en Mobile/Touch) */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProduct(p);
+                        }}
+                        className={`product-card-icon-btn product-card-zoom-btn absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-30 ${darkMode ? 'bg-black/60 border-white/20' : 'bg-white/90 border-slate-200'} backdrop-blur-md p-2 sm:p-3 rounded-full ${darkMode ? 'text-white' : 'text-slate-700'} border md:hidden`}
+                    >
+                        <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
 
-                {/* Fallback Icon */}
-                <div className="hidden w-full h-full flex items-center justify-center z-0 absolute inset-0" style={{ display: p.image ? 'none' : 'flex' }}>
-                    <div className={`flex flex-col items-center justify-center ${darkMode ? 'text-slate-700' : 'text-slate-400'}`}>
-                        <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mb-2 opacity-50" />
-                        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50">Sin Imagen</span>
-                    </div>
-                </div>
-
-                {/* OVERLAY AGOTADO (Mejorado) */}
-                {p.stock <= 0 && (
-                    <div className={`absolute inset-0 z-30 flex items-center justify-center ${darkMode ? 'bg-[#050505]/55' : 'bg-white/70'} backdrop-blur-[1px]`}>
-                        <span className={`px-4 py-2 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-[0.24em] border ${darkMode ? 'bg-slate-900/90 text-slate-100 border-slate-600' : 'bg-white/95 text-slate-700 border-slate-300'}`}>
-                            AGOTADO
-                        </span>
-                    </div>
-                )}
-
-                {/* BADGE: DESTACADO */}
-                {p.isFeatured && p.stock > 0 && (
-                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[9px] sm:text-[10px] font-black px-2 sm:px-4 py-1 sm:py-1.5 rounded-br-xl sm:rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1 animate-pulse">
-                        <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" /> Destacado
-                    </div>
-                )}
-
-                {/* Badge de Oferta */}
-                {hasDiscount && p.stock > 0 && (
-                    <div className={`product-offer-badge absolute z-20 ${p.isFeatured ? 'top-8 sm:top-10 left-2 sm:left-4' : 'top-2 sm:top-4 left-2 sm:left-4'}`}>
-                        <div className="product-offer-badge-inner relative overflow-hidden rounded-full border border-rose-100/35 bg-[linear-gradient(120deg,#be123c_0%,#9f1239_55%,#7f1d1d_100%)] px-2 sm:px-2.5 py-1 sm:py-1.5 shadow-[0_6px_16px_rgba(136,19,55,0.35)] transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-[0_10px_24px_rgba(136,19,55,0.42)]">
-                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),transparent_58%)]" />
-                            <div className="relative flex items-center gap-1">
-                                <span className="inline-flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/35">
-                                    <Percent className="h-2.5 w-2.5 text-white" />
-                                </span>
-                                <span className="text-[9px] sm:text-[10px] font-black tracking-[0.08em] text-white">
-                                    -{safeDiscount}% <span className="font-semibold text-rose-100/90">OFERTA</span>
-                                </span>
-                            </div>
+                    {/* Fallback Icon */}
+                    <div className="hidden w-full h-full flex items-center justify-center z-0 absolute inset-0" style={{ display: p.image ? 'none' : 'flex' }}>
+                        <div className={`flex flex-col items-center justify-center ${darkMode ? 'text-slate-700' : 'text-slate-400'}`}>
+                            <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mb-2 opacity-50" />
+                            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50">Sin Imagen</span>
                         </div>
                     </div>
-                )}
 
-                {/* Botón Compartir (Debajo del Corazón) */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        const url = `${window.location.origin}${window.location.pathname}?product=${p.id}`;
-                        
-                        if (navigator.share) {
-                            navigator.share({
-                                title: p.name,
-                                text: `Mirá este producto: ${p.name}`,
-                                url: url
-                            }).catch(() => {
-                                // Fallback si el usuario cancela o falla
-                            });
-                        } else {
-                            navigator.clipboard.writeText(url).then(() => {
-                                if (showToast) showToast('Enlace copiado al portapapeles', 'success');
-                            }).catch(() => {
-                                if (showToast) showToast('Error al copiar enlace', 'error');
-                            });
-                        }
-                    }}
-                    className={`product-card-icon-btn product-card-share-btn absolute top-12 right-2 sm:top-16 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-blue-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200'}`}
-                    title="Compartir producto"
-                >
-                    <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
+                    {/* OVERLAY AGOTADO (Mejorado) */}
+                    {p.stock <= 0 && (
+                        <div className={`absolute inset-0 z-30 flex items-center justify-center ${darkMode ? 'bg-[#050505]/55' : 'bg-white/70'} backdrop-blur-[1px]`}>
+                            <span className={`px-4 py-2 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-[0.24em] border ${darkMode ? 'bg-slate-900/90 text-slate-100 border-slate-600' : 'bg-white/95 text-slate-700 border-slate-300'}`}>
+                                AGOTADO
+                            </span>
+                        </div>
+                    )}
 
-                {/* Botón Favorito (Funcional) */}
-                <button
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
-                    className={`product-card-icon-btn product-card-favorite-btn absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'}`}
-                >
-                    <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
-                </button>
+                    {/* BADGE: DESTACADO */}
+                    {p.isFeatured && p.stock > 0 && (
+                        <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[9px] sm:text-[10px] font-black px-2 sm:px-4 py-1 sm:py-1.5 rounded-br-xl sm:rounded-br-2xl uppercase tracking-wider z-20 shadow-lg flex items-center gap-1 animate-pulse">
+                            <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" /> Destacado
+                        </div>
+                    )}
+
+                    {/* Badge de Oferta */}
+                    {hasDiscount && p.stock > 0 && (
+                        <div className={`product-offer-badge absolute z-20 ${p.isFeatured ? 'top-8 sm:top-10 left-2 sm:left-4' : 'top-2 sm:top-4 left-2 sm:left-4'}`}>
+                            <div className="product-offer-badge-inner relative overflow-hidden rounded-full border border-rose-100/35 bg-[linear-gradient(120deg,#be123c_0%,#9f1239_55%,#7f1d1d_100%)] px-2 sm:px-2.5 py-1 sm:py-1.5 shadow-[0_6px_16px_rgba(136,19,55,0.35)] transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-[0_10px_24px_rgba(136,19,55,0.42)]">
+                                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),transparent_58%)]" />
+                                <div className="relative flex items-center gap-1">
+                                    <span className="inline-flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/35">
+                                        <Percent className="h-2.5 w-2.5 text-white" />
+                                    </span>
+                                    <span className="text-[9px] sm:text-[10px] font-black tracking-[0.08em] text-white">
+                                        -{safeDiscount}% <span className="font-semibold text-rose-100/90">OFERTA</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Botón Compartir (Debajo del Corazón) */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const url = `${window.location.origin}${window.location.pathname}?product=${p.id}`;
+
+                            if (navigator.share) {
+                                navigator.share({
+                                    title: p.name,
+                                    text: `Mirá este producto: ${p.name}`,
+                                    url: url
+                                }).catch(() => {
+                                    // Fallback si el usuario cancela o falla
+                                });
+                            } else {
+                                navigator.clipboard.writeText(url).then(() => {
+                                    if (showToast) showToast('Enlace copiado al portapapeles', 'success');
+                                }).catch(() => {
+                                    if (showToast) showToast('Error al copiar enlace', 'error');
+                                });
+                            }
+                        }}
+                        className={`product-card-icon-btn product-card-share-btn absolute top-12 right-2 sm:top-16 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-blue-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200'}`}
+                        title="Compartir producto"
+                    >
+                        <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+
+                    {/* Botón Favorito (Funcional) */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(p) }}
+                        className={`product-card-icon-btn product-card-favorite-btn absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-3 rounded-full z-20 transition shadow-lg backdrop-blur-sm border ${currentUser?.favorites?.includes(p.id) ? 'bg-red-500 text-white border-red-500 shadow-red-500/30' : darkMode ? 'bg-white/10 text-slate-300 border-white/10 hover:bg-white hover:text-red-500' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'}`}
+                    >
+                        <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${currentUser?.favorites?.includes(p.id) ? 'fill-current' : ''}`} />
+                    </button>
 
 
+                </div>
             </div>
 
             {/* Información */}
@@ -6398,13 +6399,13 @@ function App() {
                                 {isPromo ? 'COMBOS & PROMOCIONES' : (Array.isArray(selectedProduct.categories) && selectedProduct.categories.length > 0 ? selectedProduct.categories[0] : (selectedProduct.category || 'Sin categoría'))}
                             </span>
                             <h2 className={`text-2xl sm:text-3xl md:text-4xl font-black leading-[1.1] mb-3 sm:mb-6 ${darkMode ? 'text-white neon-text-small' : 'text-slate-900'}`}>{selectedProduct.name}</h2>
-                            
+
                             {/* Botón Compartir (En Modal) */}
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     const url = `${window.location.origin}${window.location.pathname}?product=${selectedProduct.id}`;
-                                    
+
                                     if (navigator.share) {
                                         navigator.share({
                                             title: selectedProduct.name,
@@ -6853,13 +6854,13 @@ function App() {
 
         useEffect(() => {
             if (!user?.id) return;
-            
+
             const fetchHistory = async () => {
                 setLoadingHistory(true);
                 try {
                     const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
                     const q = query(
-                        ordersRef, 
+                        ordersRef,
                         where('customerId', '==', user.id),
                         orderBy('date', 'desc'),
                         limit(50) // Limitamos a las últimas 50 para rendimiento
@@ -6885,12 +6886,12 @@ function App() {
         };
 
         if (loadingHistory) {
-             return (
-                 <div className="py-20 flex flex-col items-center gap-4 opacity-50">
-                     <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-                     <p className={`text-xs font-black tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>CARGANDO HISTORIAL...</p>
-                 </div>
-             );
+            return (
+                <div className="py-20 flex flex-col items-center gap-4 opacity-50">
+                    <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
+                    <p className={`text-xs font-black tracking-widest transition-colors duration-300 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>CARGANDO HISTORIAL...</p>
+                </div>
+            );
         }
 
         if (userOrders.length === 0) {
@@ -6960,7 +6961,7 @@ function App() {
                                     <span className={`font-mono ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>${order.subtotal?.toLocaleString()}</span>
                                 </div>
                                 {order.discount > 0 && (
-                                     <div className="flex justify-between text-green-500">
+                                    <div className="flex justify-between text-green-500">
                                         <span className="font-bold">Descuento</span>
                                         <span className="font-mono">-${order.discount?.toLocaleString()}</span>
                                     </div>
@@ -7872,7 +7873,7 @@ function App() {
                                         <h2 className={`text-3xl md:text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Guías y Tutoriales</h2>
                                         <p className={`${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Descubre cómo sacar el máximo provecho a nuestra plataforma con estos videos paso a paso.</p>
                                     </div>
-                                    
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                         {settings.tutorials.map((video, idx) => {
                                             let videoId = video.url;
@@ -7881,16 +7882,16 @@ function App() {
                                                 const match = video.url.match(regExp);
                                                 videoId = (match && match[2].length === 11) ? match[2] : null;
                                             }
-                                            
+
                                             return (
                                                 <div key={idx} className={`group relative rounded-2xl overflow-hidden border shadow-2xl transition duration-500 ${darkMode ? 'bg-slate-900 border-slate-800 hover:border-blue-500/50' : 'bg-white border-slate-200 hover:shadow-blue-500/10'}`}>
                                                     <div className="aspect-video bg-black relative">
                                                         {videoId ? (
-                                                            <iframe 
-                                                                src={`https://www.youtube.com/embed/${videoId}`} 
+                                                            <iframe
+                                                                src={`https://www.youtube.com/embed/${videoId}`}
                                                                 title={video.title}
                                                                 className="w-full h-full"
-                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                                 allowFullScreen
                                                             ></iframe>
                                                         ) : (
@@ -8150,7 +8151,7 @@ function App() {
                                         <span className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-2 block">Historias de Éxito</span>
                                         <h2 className={`text-3xl md:text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Lo que dicen nuestros clientes</h2>
                                     </div>
-                                    
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {settings.testimonials.map((t, idx) => (
                                             <div key={idx} className={`p-8 rounded-[2rem] border relative transition duration-500 hover:-translate-y-2 ${darkMode ? 'bg-white/[0.03] border-white/5 hover:bg-white/[0.05]' : 'bg-white border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl'}`}>
