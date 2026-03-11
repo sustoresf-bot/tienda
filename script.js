@@ -1680,6 +1680,7 @@ function App() {
 
     // Estados de Interfaz de Usuario
     const [searchQuery, setSearchQuery] = useState('');
+    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('');
 
     // --- DRAG TO SCROLL (Categorías) ---
@@ -7543,8 +7544,8 @@ function App() {
             {view !== 'admin' && view !== 'login' && view !== 'register' && (
                 <nav className={`store-nav fixed top-0 w-full h-14 sm:h-16 md:h-20 z-50 px-2.5 sm:px-4 md:px-8 lg:px-12 flex items-center justify-between backdrop-blur-xl transition-all duration-300 premium-nav ${darkMode ? 'bg-[#05070b]/88 border-b border-slate-800/70' : 'bg-white/92 border-b border-slate-200/90 shadow-[0_8px_28px_rgba(15,23,42,0.08)]'}`}>
                     {/* Logo y Menú */}
-                    <div className="store-nav-left flex items-center gap-2 sm:gap-5 min-w-0 flex-1 lg:flex-none pr-2 sm:pr-5 lg:pr-0">
-                        <button onClick={() => setIsMenuOpen(true)} title="Abrir menú" className={`store-nav-icon-btn inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
+                    <div className="store-nav-left flex items-center gap-2 sm:gap-5 min-w-0 flex-1 lg:flex-none pr-1 sm:pr-5 lg:pr-0">
+                        <button onClick={() => setIsMenuOpen(true)} title="Abrir menú" className={`store-nav-icon-btn inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition border group ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'}`}>
                             <Menu className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition" />
                         </button>
                         <div className="store-nav-brand cursor-pointer group flex items-center gap-2 sm:gap-3 min-w-0" onClick={() => setView('store')}>
@@ -7594,17 +7595,27 @@ function App() {
                             )}
                         </div>
 
+                        {/* Botón Búsqueda Móvil */}
+                        <button
+                            onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                            aria-label="Buscar productos"
+                            className={`store-nav-icon-btn lg:hidden relative inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200'} ${isMobileSearchOpen ? (darkMode ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' : 'bg-orange-100 text-orange-600 border-orange-300') : ''}`}
+                            title="Buscar productos"
+                        >
+                            <Search className="w-4 h-4 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
+                        </button>
+
                         {/* Botón Modo Claro/Oscuro */}
                         <button
                             onClick={() => setDarkMode(!darkMode)}
                             aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-                            className={`store-nav-icon-btn relative inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70 ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
+                            className={`store-nav-icon-btn relative inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70 ${darkMode ? 'bg-slate-900/50 text-yellow-400 hover:bg-slate-800 border-slate-700/50' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200'}`}
                             title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
                         >
                             {darkMode ? (
-                                <Sun className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                                <Sun className="w-4 h-4 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
                             ) : (
-                                <Moon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" />
+                                <Moon className="w-4 h-4 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" />
                             )}
                             <span className={`pointer-events-none absolute left-1/2 top-[calc(100%+0.45rem)] -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-bold shadow-lg opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 ${darkMode ? 'bg-[#0a0a0a] border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}>
                                 {darkMode ? 'Pasar a claro' : 'Pasar a oscuro'}
@@ -7612,8 +7623,8 @@ function App() {
                         </button>
 
                         {/* Botón Carrito */}
-                        <button onClick={() => setView('cart')} title="Ver carrito" className={`store-nav-icon-btn relative inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50 hover:border-orange-500/30' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200 hover:border-orange-400'}`}>
-                            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 group-hover:-rotate-12 transition-transform" />
+                        <button onClick={() => setView('cart')} title="Ver carrito" className={`store-nav-icon-btn relative inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 p-0 rounded-lg sm:rounded-xl transition group border ${darkMode ? 'bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/50 hover:border-orange-500/30' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-slate-200 hover:border-orange-400'}`}>
+                            <ShoppingBag className="w-4 h-4 sm:w-6 sm:h-6 group-hover:scale-110 group-hover:-rotate-12 transition-transform" />
                             {cart.length > 0 && (
                                 <span className={`absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-orange-500 text-white text-[9px] sm:text-[10px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg border-2 animate-bounce-short ${darkMode ? 'border-[#050505]' : 'border-white'}`}>
                                     {cart.length}
@@ -7623,8 +7634,8 @@ function App() {
 
                         {/* Perfil / Login - Solo mostrar perfil si el usuario tiene datos válidos */}
                         {currentUser && currentUser.id && currentUser.email && currentUser.name ? (
-                            <button onClick={() => setView('profile')} className={`store-nav-profile-btn h-11 sm:h-12 flex items-center gap-2 sm:gap-3 pl-1.5 pr-2.5 sm:pr-4 py-0 rounded-lg sm:rounded-xl border transition group ${darkMode ? 'bg-slate-900/50 border-slate-700/50 hover:border-orange-500/50' : 'bg-slate-100 border-slate-200 hover:border-orange-400'}`}>
-                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold shadow-lg text-xs sm:text-sm group-hover:scale-105 transition">
+                            <button onClick={() => setView('profile')} className={`store-nav-profile-btn w-10 h-10 sm:w-12 sm:h-12 md:w-auto md:h-12 flex items-center justify-center md:justify-start gap-0 md:gap-3 px-0 md:pl-1.5 md:pr-4 py-0 rounded-lg sm:rounded-xl border transition group ${darkMode ? 'bg-slate-900/50 border-slate-700/50 hover:border-orange-500/50' : 'bg-slate-100 border-slate-200 hover:border-orange-400'}`}>
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold shadow-lg text-[10px] sm:text-sm group-hover:scale-105 transition">
                                     {currentUser.name.charAt(0)}
                                 </div>
                                 <div className="text-left hidden md:block">
@@ -7641,6 +7652,27 @@ function App() {
                         )}
                     </div>
                 </nav>
+            )}
+
+            {/* Barra de Búsqueda Móvil Expandible */}
+            {view !== 'admin' && view !== 'login' && view !== 'register' && isMobileSearchOpen && (
+                <div className={`lg:hidden fixed top-14 sm:top-16 md:top-20 left-0 w-full z-40 px-3 py-3 shadow-lg border-b animate-fade-in-down ${darkMode ? 'bg-[#05070b]/95 border-slate-800 backdrop-blur-xl' : 'bg-white/95 border-slate-200/90 backdrop-blur-xl'}`}>
+                    <div className={`flex items-center rounded-xl px-4 py-2.5 transition border ${darkMode ? 'bg-slate-900/80 border-slate-700/80 focus-within:border-orange-500/50' : 'bg-slate-100/80 border-slate-200 focus-within:border-orange-400 focus-within:bg-white'}`}>
+                        <Search className={`w-4 h-4 mr-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+                        <input
+                            autoFocus
+                            className={`bg-transparent outline-none text-sm w-full font-medium ${darkMode ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
+                            placeholder="Buscar en la tienda..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')} className={`p-1.5 rounded-full ml-1 ${darkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}>
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
+                </div>
             )}
 
             {/* --- MENÚ MÓVIL (DETALLADO Y EXPLÍCITO) --- */}
