@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 
@@ -621,7 +621,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                 <>
                     <button
                         type="button"
-                        className={`absolute left-2 sm:left-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/45 sm:bg-black/50 hover:bg-black/75 text-white/80 hover:text-white' : 'bg-white/55 sm:bg-white/65 hover:bg-white/90 text-slate-700 hover:text-slate-900'}`}
+                        className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/45 sm:bg-black/50 hover:bg-black/75 text-white/80 hover:text-white' : 'bg-white/55 sm:bg-white/65 hover:bg-white/90 text-slate-700 hover:text-slate-900'}`}
                         onClick={(e) => { e.stopPropagation(); goPrev(); }}
                         aria-label="Banner anterior"
                     >
@@ -629,7 +629,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                     </button>
                     <button
                         type="button"
-                        className={`absolute right-2 sm:right-3 top-1/3 sm:top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/45 sm:bg-black/50 hover:bg-black/75 text-white/80 hover:text-white' : 'bg-white/55 sm:bg-white/65 hover:bg-white/90 text-slate-700 hover:text-slate-900'}`}
+                        className={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20 !w-8 !h-8 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/45 sm:bg-black/50 hover:bg-black/75 text-white/80 hover:text-white' : 'bg-white/55 sm:bg-white/65 hover:bg-white/90 text-slate-700 hover:text-slate-900'}`}
                         onClick={(e) => { e.stopPropagation(); goNext(); }}
                         aria-label="Banner siguiente"
                     >
@@ -808,30 +808,31 @@ const QuickAddButton = ({ product, onAdd, darkMode }) => {
 // --- COMPONENTE PRODUCT CARD OPTIMIZADO (MEMOIZED) ---
 const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setSelectedProduct, manageCart, calculateItemPrice, darkMode, showToast }) => {
     // Clases dinámicas basadas en el tema
-    const cardBg = darkMode ? 'bg-[#090d12]' : 'bg-white';
+    // Clases dinámicas basadas en el tema
+    const outerBg = darkMode ? 'bg-[#050505]' : 'bg-slate-50';
+    const cardBg = darkMode ? 'bg-gradient-to-b from-[#0f172a] to-[#090d12]' : 'bg-gradient-to-b from-slate-50 to-white';
     const cardBorder = darkMode ? 'border-slate-800/80' : 'border-slate-200/90';
     const cardHoverBorder = darkMode ? 'hover:border-slate-600' : 'hover:border-slate-300';
     const cardShadow = darkMode
         ? 'shadow-[0_12px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_16px_45px_rgba(0,0,0,0.45)]'
         : 'shadow-[0_12px_28px_rgba(15,23,42,0.08)] hover:shadow-[0_16px_42px_rgba(15,23,42,0.12)]';
-    const imageBg = darkMode ? 'bg-gradient-to-b from-slate-900 to-[#090d12]' : 'bg-gradient-to-b from-slate-50 to-white';
     const textPrimary = darkMode ? 'text-white' : 'text-slate-900';
     const textSecondary = darkMode ? 'text-slate-400' : 'text-slate-600';
-    const infoBg = darkMode ? 'bg-[#090d12]' : 'bg-white';
     const borderColor = darkMode ? 'border-slate-800/70' : 'border-slate-200';
     const basePrice = Number(p.basePrice) || 0;
     const safeDiscount = Math.min(100, Math.max(0, Number(p.discount) || 0));
     const hasDiscount = safeDiscount > 0 && basePrice > 0;
     const finalPrice = calculateItemPrice(basePrice, safeDiscount);
     const savingsAmount = Math.max(0, basePrice - finalPrice);
-    const imageContainerLayout = 'w-full px-1.5 pt-1.5 pb-0 sm:px-2 sm:pt-2 block min-w-0';
 
     return (
-        <div className={`${cardBg} premium-product-card store-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in`}>
+        <div className={`${outerBg} premium-product-card store-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in p-1.5 sm:p-2`}>
 
-            {/* Renderizado Estricto de la Zona de Imagen (0 desbordes permitidos) */}
-            <div className={`px-1.5 pt-1.5 pb-0 sm:px-2 sm:pt-2`}>
-                <div className={`h-52 sm:h-56 lg:h-64 flex items-center justify-center ${imageBg} premium-product-image store-product-image-shell rounded-xl sm:rounded-[1.2rem] relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
+            {/* Contenedor Interior (El "Fondo Azul" Unificado y Redondeado) */}
+            <div className={`flex-1 flex flex-col relative ${cardBg} rounded-xl sm:rounded-[1.4rem] overflow-hidden shadow-inner`}>
+
+                {/* Zona de Imagen */}
+                <div className={`h-52 sm:h-56 lg:h-64 flex items-center justify-center premium-product-image store-product-image-shell relative overflow-hidden cursor-zoom-in transition-all duration-500`} onClick={() => setSelectedProduct(p)}>
 
                     {p.image ? (
                         <img
@@ -934,10 +935,9 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
 
 
                 </div>
-            </div>
 
             {/* Información */}
-            <div className={`product-card-info p-4 sm:p-4 flex-1 flex flex-col relative z-10 ${infoBg}`}>
+            <div className={`product-card-info p-4 sm:p-4 flex-1 flex flex-col relative z-10`}>
                 <div className="flex justify-between items-start gap-2 mb-2 sm:mb-3 min-h-[1.75rem] sm:min-h-[2rem]">
                     <p className={`product-card-category-chip text-[10px] sm:text-xs text-orange-500 font-black uppercase tracking-widest ${darkMode ? 'border-orange-900/30 bg-orange-900/10' : 'border-orange-200 bg-orange-50'} border px-1.5 sm:px-2 py-0.5 sm:py-1 rounded`}>
                         {Array.isArray(p.categories) ? (p.categories.length > 0 ? p.categories[0] : p.category || 'Sin categoría') : (p.category || 'Sin categoría')}
@@ -985,6 +985,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                         </div>
                     )}
                 </div>
+            </div>
             </div>
         </div>
     );
@@ -7748,7 +7749,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full max-w-5xl mx-auto aspect-[4/3] sm:aspect-[16/9] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero hero-animated-border ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
+                        <div className={`relative w-full max-w-5xl mx-auto aspect-[16/9] md:aspect-[21/9] xl:aspect-[3/1] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero hero-animated-border ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
