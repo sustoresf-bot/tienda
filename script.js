@@ -635,7 +635,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                     >
                         <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
-                    <div className={`absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 rounded-full border pointer-events-auto ${darkMode ? 'bg-black/40 border-white/15' : 'bg-white/45 border-white/60'}`}>
+                    <div className={`absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 sm:py-2 rounded-full backdrop-blur-md shadow-lg border pointer-events-auto transition-colors duration-300 ${darkMode ? 'bg-[#050505]/60 border-white/10' : 'bg-white/70 border-black/5'}`}>
                         {slides.map((slide, idx) => (
                             <button
                                 key={`dot-${slide.id || idx}`}
@@ -643,7 +643,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                                 aria-label={`Ir al banner ${idx + 1}`}
                                 aria-current={idx === activeIndex ? 'true' : undefined}
                                 onClick={(e) => { e.stopPropagation(); setActiveIndex(idx); }}
-                                className={`premium-carousel-dot ${idx === activeIndex ? 'is-active' : ''} ${idx === activeIndex ? (darkMode ? 'bg-orange-400' : 'bg-orange-500') : (darkMode ? 'bg-white/45 hover:bg-white/75' : 'bg-slate-500/45 hover:bg-slate-700/60')}`}
+                                className={`transition-all duration-300 rounded-full ${idx === activeIndex ? 'w-6 sm:w-8 h-1.5 sm:h-2' : 'w-1.5 sm:w-2 h-1.5 sm:h-2 hover:w-3'} ${idx === activeIndex ? (darkMode ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]') : (darkMode ? 'bg-white/50 hover:bg-white' : 'bg-slate-900/40 hover:bg-slate-900/70')}`}
                             />
                         ))}
                     </div>
@@ -7781,7 +7781,7 @@ function App() {
                         )}
 
                         {/* Banner Hero */}
-                        <div className={`relative w-full max-w-5xl mx-auto aspect-[16/9] md:aspect-[21/9] xl:aspect-[3/1] rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl mb-6 sm:mb-8 border group container-tv premium-hero hero-animated-border ${darkMode ? 'border-slate-800 bg-[#080808]' : 'border-slate-200/50 bg-slate-100'}`}>
+                        <div className={`relative w-[calc(100%+1.5rem)] -mx-3 sm:w-full sm:mx-auto max-w-5xl aspect-[16/9] md:aspect-[21/9] xl:aspect-[3/1] rounded-none sm:rounded-[2rem] overflow-hidden shadow-2xl mb-8 sm:mb-10 sm:border group container-tv premium-hero hero-animated-border ${darkMode ? 'border-y border-slate-800 bg-[#080808]' : 'border-y border-slate-200/80 bg-slate-100'}`}>
                             {/* Grid Background Effect */}
                             <div className="grid-bg"></div>
                             <div className={`absolute inset-0 bg-[url('/noise.svg')] z-[1] pointer-events-none ${darkMode ? 'opacity-20' : 'opacity-10'}`}></div>
@@ -7944,12 +7944,19 @@ function App() {
                             </div>
                         )}
 
-                        <div className={`mb-3 sm:mb-4 flex items-center justify-between gap-4 premium-catalog-intro ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                            <div>
-                                <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Catálogo</p>
-                                <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Nuestros productos</h2>
+                        <div className={`mb-5 sm:mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 premium-catalog-intro ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                            <div className="text-center sm:text-left flex flex-col items-center sm:items-start w-full sm:w-auto">
+                                <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-1 sm:mb-1.5 flex items-center gap-2 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                                    <span className={`w-6 h-px sm:w-8 ${darkMode ? 'bg-slate-700' : 'bg-slate-300'}`}></span>
+                                    Catálogo
+                                    <span className={`w-6 h-px sm:hidden ${darkMode ? 'bg-slate-700' : 'bg-slate-300'}`}></span>
+                                </p>
+                                <h2 className={`text-3xl sm:text-3xl lg:text-4xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                    Nuestros productos
+                                </h2>
                             </div>
-                            <div className={`text-xs sm:text-sm font-bold whitespace-nowrap px-3 py-1.5 rounded-full border ${darkMode ? 'bg-slate-900/70 border-slate-700 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+                            <div className={`text-xs sm:text-sm font-bold whitespace-nowrap px-4 py-2 mt-1 sm:mt-0 rounded-full border shadow-sm flex items-center gap-2 transition-all ${darkMode ? 'bg-slate-900/90 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+                                <div className={`w-2 h-2 rounded-full animate-pulse flex-shrink-0 ${darkMode ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'}`}></div>
                                 {products.filter(p => p.isActive !== false).length} disponibles
                             </div>
                         </div>
