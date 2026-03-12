@@ -1,0 +1,32 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Auditoría de arquitectura y modularización de script.js",
+      "status": "PENDING",
+      "assigned_to": "Arquitecto",
+      "dependencies": []
+    },
+    {
+      "id": 2,
+      "title": "Análisis de guía de categorías y backlog de características",
+      "status": "PENDING",
+      "assigned_to": "Investigador",
+      "dependencies": []
+    },
+    {
+      "id": 3,
+      "title": "Revisar estructura CSS y plan de responsividad",
+      "status": "PENDING",
+      "assigned_to": "Arquitecto",
+      "dependencies": []
+    },
+    {
+      "id": 4,
+      "title": "Investigar mejores prácticas para carousels responsivos",
+      "status": "PENDING",
+      "assigned_to": "Investigador",
+      "dependencies": []
+    }
+  ]
+}
