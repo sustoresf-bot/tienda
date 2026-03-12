@@ -1,0 +1,124 @@
+461:     showHomeBannerCarousel: true,
+462:     homeBannerAutoplayMs: 5000,
+521: const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, autoplayMs, darkMode, onBannerClick, onActiveIndexChange }) => {
+523:         if (!Array.isArray(banners)) return [];
+524:         return banners.filter(b => b && b.enabled !== false && typeof b.imageUrl === 'string' && b.imageUrl.trim().length > 0);
+525:     }, [banners]);
+577:             <img src={fallbackUrl} alt="Banner" style={{ opacity: imageOpacity }} className={`absolute inset-0 w-full h-full object-cover transition-t
+611:                             onClick={() => clickable && onBannerClick?.(slide)}
+613:                             <img src={slide.imageUrl} alt="Banner" style={{ opacity: imageOpacity }} className={imageClass} />
+623:                         className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20 !w-7 !h-7 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full
+625:                         aria-label="Banner anterior"
+631:                         className={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20 !w-7 !h-7 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-fu
+633:                         aria-label="Banner siguiente"
+642:                                 aria-label={`Ir al banner ${idx + 1}`}
+1246:     carousel: {
+1247:         title: 'Carrusel de Banners',
+1249:         description: 'Controla los banners rotativos del home y su destino al hacer clic.',
+1660:     const [homeBanners, setHomeBanners] = useState([]);
+1661:     const [homeBannerActiveIndex, setHomeBannerActiveIndex] = useState(0);
+1741:     const [newHomeBanner, setNewHomeBanner] = useState({ imageUrl: '', targetType: 'none', targetId: '', enabled: true, order: 0 });
+1742:     const [editingHomeBannerId, setEditingHomeBannerId] = useState(null);
+2270:     const handleHomeBannerClick = (slide) => {
+2281:             showToast("Este banner apunta a un producto que ya no existe.", "warning");
+2289:                 showToast("Este banner apunta a una promo que ya no existe.", "warning");
+3170:     // - Público: realtime en todas las colecciones (products, settings, promos, homeBanners, coupons)
+3243:             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'homeBanners'), (snapshot) => {
+3244:                 const banners = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+3245:                 banners.sort((a, b) => {
+3253:                 setHomeBanners(banners);
+3255:                 console.error("Error fetching homeBanners:", error);
+3256:                 setHomeBanners([]);
+5431:     const resetHomeBannerForm = () => {
+5432:         setEditingHomeBannerId(null);
+5433:         setNewHomeBanner({ imageUrl: '', targetType: 'none', targetId: '', enabled: true, order: 0 });
+5436:     const editHomeBannerFn = (banner) => {
+5437:         if (!banner) return;
+5438:         setEditingHomeBannerId(banner.id);
+5439:         const targetType = banner.targetType || (banner.promoId ? 'promo' : banner.productId ? 'product' : 'none');
+5440:         const targetId = banner.targetId || banner.promoId || banner.productId || '';
+5441:         setNewHomeBanner({
+5442:             imageUrl: banner.imageUrl || '',
+5445:             enabled: banner.enabled !== false,
+5446:             order: Number.isFinite(Number(banner.order)) ? Number(banner.order) : 0,
+5450:     const saveHomeBannerFn = async () => {
+5451:         if (!newHomeBanner?.imageUrl) return showToast("Subí una imagen para el banner.", "warning");
+5452:         const targetType = newHomeBanner?.targetType || 'none';
+5453:         const targetId = newHomeBanner?.targetId || '';
+5454:         if (targetType !== 'none' && !targetId) return showToast("Seleccioná el destino del banner.", "warning");
+5456:         const orderValue = Number.isFinite(Number(newHomeBanner.order)) ? Number(newHomeBanner.order) : 0;
+5458:             imageUrl: newHomeBanner.imageUrl,
+5459:             enabled: newHomeBanner.enabled !== false,
+5468:             if (editingHomeBannerId) {
+5469:                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'homeBanners', editingHomeBannerId), payload);
+5470:                 showToast("Banner actualizado.", "success");
+5472:                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'homeBanners'), {
+5476:                 showToast("Banner creado.", "success");
+5478:             resetHomeBannerForm();
+5481:             showToast("Error guardando banner: " + (e?.message || "error"), "error");
+5485:     const deleteHomeBannerFn = (banner) => {
+5486:         if (!banner?.id) return;
+5487:         openConfirm("Eliminar Banner", "¿Eliminar este banner del carrusel?", async () => {
+5489:                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'homeBanners', banner.id));
+5490:                 showToast("Banner eliminado.", "success");
+5491:                 if (editingHomeBannerId === banner.id) resetHomeBannerForm();
+5494:                 showToast("Error eliminando banner: " + (e?.message || "error"), "error");
+7753:                         {settingsLoaded && settings?.showAnnouncementBanner !== false && settings?.announcementMessage && (
+7782:                         {/* Banner Hero */}
+7787:                             <HomeBannerCarouselBackground
+7789:                                 banners={settings?.showHomeBannerCarousel === false ? [] : homeBanners}
+7791:                                 autoplayMs={settings?.homeBannerAutoplayMs || 5000}
+7793:                                 onBannerClick={handleHomeBannerClick}
+7794:                                 onActiveIndexChange={setHomeBannerActiveIndex}
+7798:                             <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-4 sm:px-8 sm:p
+9222:                                             <button onClick={() => { setAdminTab('carousel'); setIsAdminMenuOpen(false); }} className={`admin-nav-btn 
+10528:                                             {/* Formulario Nueva Promo o Banner Upgrade */}
+11012:                                             {/* Banner de advertencia si hay productos desactivados por límite de plan */}
+11631:                                         adminTab === 'carousel' && (
+11639:                                                         <p className="text-slate-400 mb-6 max-w-md">El carrusel de banners del home está disponible a 
+11652:                                                                 <p className="text-slate-500 mt-2">Administrá los banners rotativos del home de tu tie
+11654:                                                             <AdminHowToUse guideKey="carousel" />
+11671:                                                                                 onClick={() => setSettings({ ...settings, showHomeBannerCarousel: sett
+11672:                                                                                 className={`w-14 h-8 rounded-full transition relative ${settings?.show
+11674:                                                                                 <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transiti
+11683:                                                                                 value={Number.isFinite(Number(settings?.homeBannerAutoplayMs)) ? Math.
+11687:                                                                                     setSettings({ ...settings, homeBannerAutoplayMs: Math.round(safeSe
+11699:                                                                                 onChange={(e) => handleImageUpload(e, setNewHomeBanner, 'imageUrl')}
+11702:                                                                             {newHomeBanner?.imageUrl && (
+11704:                                                                                     <img src={newHomeBanner.imageUrl} className="w-full h-full object-
+11716:                                                                                         value={newHomeBanner?.targetType || 'none'}
+11717:                                                                                         onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targetTy
+11729:                                                                                         value={Number.isFinite(Number(newHomeBanner?.order)) ? Number(
+11730:                                                                                         onChange={(e) => setNewHomeBanner(prev => ({ ...prev, order: e
+11736:                                                                             {newHomeBanner?.targetType !== 'none' && (
+11740:                                                                                             {newHomeBanner?.targetType === 'promo' ? 'Promo al hacer c
+11744:                                                                                             value={newHomeBanner?.targetId || ''}
+11745:                                                                                             onChange={(e) => setNewHomeBanner(prev => ({ ...prev, targ
+11748:                                                                                             {(newHomeBanner?.targetType === 'promo' ? [...promos] : [.
+11757:                                                                                             const isPromo = newHomeBanner?.targetType === 'promo';
+11759:                                                                                                 ? promos.find(p => p.id === newHomeBanner?.targetId)
+11760:                                                                                                 : products.find(p => p.id === newHomeBanner?.targetId)
+11785:                                                                                         onClick={() => setNewHomeBanner(prev => ({ ...prev, enabled: p
+11786:                                                                                         className={`w-14 h-8 rounded-full transition relative ${newHom
+11788:                                                                                         <div className={`absolute top-1 w-6 h-6 bg-white rounded-full 
+11793:                                                                                     {editingHomeBannerId && (
+11795:                                                                                             onClick={resetHomeBannerForm}
+11802:                                                                                         onClick={saveHomeBannerFn}
+11805:                                                                                         {editingHomeBannerId ? 'Guardar Slide' : 'Agregar Slide'}
+11813:                                                                         {homeBanners.length === 0 ? (
+11816:                                                                             homeBanners.map(b => {
+11855:                                                                                                 onClick={() => editHomeBannerFn(b)}
+11861:                                                                                                 onClick={() => deleteHomeBannerFn(b)}
+11875:                                                             {/* Save Button for carousel settings - only for super admin */}
+12534:                                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block
+12541:                                                                 <p className="text-xs text-slate-500 mt-2">Dejar vacío para ocultar el banner.</p>
+12584:                                                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 b
+12720:                                                         {/* Hero Banner Configuration */}
+12723:                                                                 <ImageIcon className="w-5 h-5 text-purple-400" /> Banner Principal (Hero)
+13555:                                                                             <p className="text-sm text-slate-400 mb-2">Sube una imagen atractiva (ej: 
+13700:                                                                 {/* Show Announcement Banner */}
+13703:                                                                         <p className="font-bold text-white">Banner de Anuncio</p>
+13707:                                                                         onClick={() => setSettings({ ...settings, showAnnouncementBanner: settings?.sh
+13708:                                                                         className={`w-14 h-8 rounded-full transition relative ${settings?.showAnnounce
+13710:                                                                         <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${set
+14858:                 '🎠 Carrusel de banners'

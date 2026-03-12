@@ -621,21 +621,21 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                 <>
                     <button
                         type="button"
-                        className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20 !w-7 !h-7 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/45 sm:bg-black/50 hover:bg-black/75 text-white/80 hover:text-white' : 'bg-white/55 sm:bg-white/65 hover:bg-white/90 text-slate-700 hover:text-slate-900'}`}
+                        className={`absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 !w-9 !h-9 sm:!w-12 sm:!h-12 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto opacity-70 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md border ${darkMode ? 'bg-black/50 border-white/10 hover:bg-black/90 text-white/90 hover:text-white hover:scale-105' : 'bg-white/60 border-black/5 hover:bg-white/95 text-slate-800 hover:text-slate-900 hover:scale-105'}`}
                         onClick={(e) => { e.stopPropagation(); goPrev(); }}
                         aria-label="Banner anterior"
                     >
-                        <ArrowLeft className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                        <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-md" />
                     </button>
                     <button
                         type="button"
-                        className={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20 !w-7 !h-7 sm:!w-10 sm:!h-10 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 ${darkMode ? 'bg-black/45 sm:bg-black/50 hover:bg-black/75 text-white/80 hover:text-white' : 'bg-white/55 sm:bg-white/65 hover:bg-white/90 text-slate-700 hover:text-slate-900'}`}
+                        className={`absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 !w-9 !h-9 sm:!w-12 sm:!h-12 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto opacity-70 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md border ${darkMode ? 'bg-black/50 border-white/10 hover:bg-black/90 text-white/90 hover:text-white hover:scale-105' : 'bg-white/60 border-black/5 hover:bg-white/95 text-slate-800 hover:text-slate-900 hover:scale-105'}`}
                         onClick={(e) => { e.stopPropagation(); goNext(); }}
                         aria-label="Banner siguiente"
                     >
-                        <ArrowRight className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                        <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-md" />
                     </button>
-                    <div className={`absolute bottom-2 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2.5 px-2.5 py-1 sm:py-2 rounded-full backdrop-blur-md shadow-lg border pointer-events-auto transition-colors duration-300 ${darkMode ? 'bg-[#050505]/60 border-white/10' : 'bg-white/70 border-black/5'}`}>
+                    <div className={`absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full backdrop-blur-md shadow-xl border pointer-events-auto transition-colors duration-300 max-w-[calc(100%-6rem)] overflow-x-auto flex-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${darkMode ? 'bg-[#050505]/70 border-white/10' : 'bg-white/80 border-black/10'}`}>
                         {slides.map((slide, idx) => (
                             <button
                                 key={`dot-${slide.id || idx}`}
@@ -643,7 +643,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                                 aria-label={`Ir al banner ${idx + 1}`}
                                 aria-current={idx === activeIndex ? 'true' : undefined}
                                 onClick={(e) => { e.stopPropagation(); setActiveIndex(idx); }}
-                                className={`transition-all duration-300 rounded-full ${idx === activeIndex ? 'w-5 sm:w-8 h-1 sm:h-2' : 'w-1 sm:w-2 h-1 sm:h-2 hover:w-2.5'} ${idx === activeIndex ? (darkMode ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]') : (darkMode ? 'bg-white/50 hover:bg-white' : 'bg-slate-900/40 hover:bg-slate-900/70')}`}
+                                className={`transition-all duration-300 rounded-full flex-shrink-0 cursor-pointer outline-none ${idx === activeIndex ? 'w-6 sm:w-10 h-1.5 sm:h-2.5' : 'w-1.5 sm:w-2.5 h-1.5 sm:h-2.5 hover:w-3 sm:hover:w-4'} ${idx === activeIndex ? (darkMode ? 'bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.8)]' : 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.6)]') : (darkMode ? 'bg-white/50 hover:bg-white/80' : 'bg-slate-900/40 hover:bg-slate-900/70')}`}
                             />
                         ))}
                     </div>
