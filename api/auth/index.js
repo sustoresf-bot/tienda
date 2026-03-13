@@ -101,6 +101,7 @@ const FIREBASE_ADMIN_MISCONFIG_HINTS = [
     'permission-denied',
 ];
 let warnedFirebaseAdminMisconfigured = false;
+let warnedResetEmailNotConfigured = false;
 
 function isFirebaseAdminMisconfigured(error) {
     const message = String(error?.message || '').toLowerCase();
@@ -499,8 +500,10 @@ async function handleResetPassword(req, res) {
 
     const emailUser = String(process.env.EMAIL_USER || '').trim();
     const emailPass = String(process.env.EMAIL_PASS || '').trim();
-    if (!emailUser || !emailPass) {
-        return res.status(500).json({ error: 'Email no configurado en el servidor' });
+    const emailConfigured = !!emailUser && !!emailPass;
+    if (!emailConfigured && !warnedResetEmailNotConfigured) {
+        warnedResetEmailNotConfigured = true;
+        console.warn('[reset-password] Email no configurado. Se devuelve éxito genérico para evitar enumeración de cuentas.');
     }
 
     const storeId = getStoreIdFromRequest(req);
@@ -518,7 +521,7 @@ async function handleResetPassword(req, res) {
             }
         }
 
-        if (userExists) {
+        if (userExists && emailConfigured) {
             const firebaseLink = await adminSdk.auth().generatePasswordResetLink(email);
             const firebaseUrl = new URL(firebaseLink);
             const oobCode = firebaseUrl.searchParams.get('oobCode');

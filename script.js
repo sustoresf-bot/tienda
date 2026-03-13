@@ -621,21 +621,21 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                 <>
                     <button
                         type="button"
-                        className={`absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 !w-9 !h-9 sm:!w-12 sm:!h-12 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto opacity-70 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md border ${darkMode ? 'bg-black/50 border-white/10 hover:bg-black/90 text-white/90 hover:text-white hover:scale-105' : 'bg-white/60 border-black/5 hover:bg-white/95 text-slate-800 hover:text-slate-900 hover:scale-105'}`}
+                        className={`absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto opacity-80 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md border m-0 p-0 appearance-none ${darkMode ? 'bg-black/50 border-white/10 hover:bg-black/80 text-white' : 'bg-white/60 border-black/5 hover:bg-white/90 text-slate-800'}`}
                         onClick={(e) => { e.stopPropagation(); goPrev(); }}
                         aria-label="Banner anterior"
                     >
-                        <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-md" />
+                        <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                     <button
                         type="button"
-                        className={`absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 !w-9 !h-9 sm:!w-12 sm:!h-12 !min-w-0 !min-h-0 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto opacity-70 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md border ${darkMode ? 'bg-black/50 border-white/10 hover:bg-black/90 text-white/90 hover:text-white hover:scale-105' : 'bg-white/60 border-black/5 hover:bg-white/95 text-slate-800 hover:text-slate-900 hover:scale-105'}`}
+                        className={`absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full premium-carousel-controls transition-all duration-300 flex items-center justify-center pointer-events-auto opacity-80 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md border m-0 p-0 appearance-none ${darkMode ? 'bg-black/50 border-white/10 hover:bg-black/80 text-white' : 'bg-white/60 border-black/5 hover:bg-white/90 text-slate-800'}`}
                         onClick={(e) => { e.stopPropagation(); goNext(); }}
                         aria-label="Banner siguiente"
                     >
-                        <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-md" />
+                        <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
-                    <div className={`absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full backdrop-blur-md shadow-xl border pointer-events-auto transition-colors duration-300 max-w-[calc(100%-6rem)] overflow-x-auto flex-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${darkMode ? 'bg-[#050505]/70 border-white/10' : 'bg-white/80 border-black/10'}`}>
+                    <div className={`absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full backdrop-blur-md shadow-xl border pointer-events-auto transition-colors duration-300 max-w-[90%] ${darkMode ? 'bg-black/50 border-white/10' : 'bg-white/70 border-black/10'}`}>
                         {slides.map((slide, idx) => (
                             <button
                                 key={`dot-${slide.id || idx}`}
@@ -643,7 +643,7 @@ const HomeBannerCarouselBackground = ({ settingsLoaded, banners, fallbackUrl, au
                                 aria-label={`Ir al banner ${idx + 1}`}
                                 aria-current={idx === activeIndex ? 'true' : undefined}
                                 onClick={(e) => { e.stopPropagation(); setActiveIndex(idx); }}
-                                className={`transition-all duration-300 rounded-full flex-shrink-0 cursor-pointer outline-none ${idx === activeIndex ? 'w-6 sm:w-10 h-1.5 sm:h-2.5' : 'w-1.5 sm:w-2.5 h-1.5 sm:h-2.5 hover:w-3 sm:hover:w-4'} ${idx === activeIndex ? (darkMode ? 'bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.8)]' : 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.6)]') : (darkMode ? 'bg-white/50 hover:bg-white/80' : 'bg-slate-900/40 hover:bg-slate-900/70')}`}
+                                className={`transition-all duration-300 rounded-full flex-shrink-0 cursor-pointer block m-0 p-0 appearance-none border-none outline-none ${idx === activeIndex ? 'w-6 sm:w-8 h-2 sm:h-2.5' : 'w-2 sm:w-2.5 h-2 sm:h-2.5 hover:scale-110'} ${idx === activeIndex ? (darkMode ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]') : (darkMode ? 'bg-white/60 hover:bg-white' : 'bg-slate-800/40 hover:bg-slate-800/70')}`}
                             />
                         ))}
                     </div>
@@ -826,7 +826,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
     const savingsAmount = Math.max(0, basePrice - finalPrice);
 
     return (
-        <div className={`${outerBg} premium-product-card store-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in p-1.5 sm:p-2`}>
+        <div className={`${outerBg} premium-product-card store-product-card rounded-2xl sm:rounded-[1.75rem] border ${cardBorder} group ${cardHoverBorder} ${cardShadow} transition duration-500 relative flex flex-col card-hover animate-fade-in p-1.5 sm:p-2 md:h-[33.25rem] lg:h-[36.85rem] xl:h-[38.5rem]`}>
 
             {/* Contenedor Interior (El "Fondo Azul" Unificado y Redondeado) */}
             <div className={`flex-1 flex flex-col relative ${cardBg} rounded-xl sm:rounded-[1.4rem] overflow-hidden shadow-inner`}>
@@ -972,7 +972,7 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                     </div>
 
                     {/* Add to Cart with Quantity */}
-                    {p.stock > 0 && (
+                    {p.stock > 0 ? (
                         <div
                             className="product-card-action flex w-full items-center gap-2"
                             onClick={(e) => e.stopPropagation()}
@@ -982,6 +982,12 @@ const ProductCard = React.memo(({ p, settings, currentUser, toggleFavorite, setS
                                 onAdd={(product, qty) => manageCart(product, qty)}
                                 darkMode={darkMode}
                             />
+                        </div>
+                    ) : (
+                        <div className="product-card-action flex w-full items-center gap-2">
+                            <div className={`w-full rounded-xl border px-3 py-2.5 text-center text-[10px] sm:text-xs font-black uppercase tracking-[0.18em] ${darkMode ? 'bg-slate-950/70 border-slate-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-500'}`}>
+                                Sin stock
+                            </div>
                         </div>
                     )}
                 </div>
@@ -1659,7 +1665,7 @@ function App() {
     const [products, setProducts] = useState([]);
     const [promos, setPromos] = useState([]); // Nuevo estado para Promos
     const [homeBanners, setHomeBanners] = useState([]);
-    const [homeBannerActiveIndex, setHomeBannerActiveIndex] = useState(0);
+    const [, setHomeBannerActiveIndex] = useState(0);
     const [cart, setCart] = useState(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('sustore_cart'));
@@ -7294,7 +7300,7 @@ function App() {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white px-4">
                 <div className="relative">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-slate-800 animate-spin" style={{ borderTopColor: loadingPrimaryColor }}></div>
+                    <div className="loading-spinner w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-slate-800 animate-spin" style={{ borderTopColor: loadingPrimaryColor }}></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                         <Zap className="w-6 h-6 sm:w-8 sm:h-8 animate-pulse" style={{ color: loadingPrimaryColor }} />
                     </div>
@@ -7373,6 +7379,60 @@ function App() {
             const salesB = dashboardMetrics?.salesCount?.[b.id] || 0;
             return salesB - salesA;
         });
+
+    const activeProductsCount = products.filter(p => p.isActive !== false).length;
+    const offerProductsCount = products.filter(p => p.isActive !== false && (Number(p.discount) || 0) > 0).length;
+    const featuredProductsCount = products.filter(p => p.isActive !== false && p.isFeatured).length;
+    const trimmedSearchQuery = String(searchQuery || '').trim();
+    const activeCatalogLabel = selectedCategory === 'Promos'
+        ? 'packs y promociones'
+        : selectedCategory === 'Ofertas'
+            ? 'ofertas activas'
+            : selectedCategory
+                ? `la categoría ${selectedCategory}`
+                : 'todo el catálogo';
+    const catalogHeading = selectedCategory === 'Promos'
+        ? 'Packs y promociones'
+        : selectedCategory === 'Ofertas'
+            ? 'Ofertas que vale la pena mirar'
+            : selectedCategory
+                ? selectedCategory
+                : 'Nuestros productos';
+    const catalogSummaryText = selectedCategory === 'Promos'
+        ? (
+            promos.length > 0
+                ? `Armamos ${promos.length} pack${promos.length === 1 ? '' : 's'} listos para comprar más rápido, sumar valor por pedido y destacar ofertas con mejor presentación.`
+                : 'Esta sección queda lista para mostrar packs y promociones con una lectura más clara y un cierre de compra más directo.'
+        )
+        : trimmedSearchQuery
+            ? `Mostrando ${filteredProducts.length} resultado${filteredProducts.length === 1 ? '' : 's'} para "${trimmedSearchQuery}" dentro de ${activeCatalogLabel}.`
+            : selectedCategory === 'Ofertas'
+                ? `Reunimos ${offerProductsCount} producto${offerProductsCount === 1 ? '' : 's'} con descuento para que encontrar oportunidades sea rápido y cómodo.`
+                : selectedCategory
+                    ? `Explorá ${filteredProducts.length} producto${filteredProducts.length === 1 ? '' : 's'} dentro de ${activeCatalogLabel}, con precios visibles y acciones de compra más claras.`
+                    : `Explorá ${activeProductsCount} producto${activeProductsCount === 1 ? '' : 's'} disponibles con una experiencia más limpia, más premium y mucho mejor calibrada para celular y escritorio.`;
+    const catalogStatItems = [
+        { Icon: Package, label: 'Disponibles', value: activeProductsCount, tone: 'orange' },
+        { Icon: Percent, label: 'Ofertas', value: offerProductsCount, tone: 'rose' },
+        { Icon: Sparkles, label: 'Destacados', value: featuredProductsCount, tone: 'blue' },
+    ];
+    const heroTrustItems = [
+        {
+            Icon: Shield,
+            title: 'Compra más segura',
+            description: 'Señales claras de confianza, pagos ordenados y lectura simple desde el primer segundo.',
+        },
+        {
+            Icon: Truck,
+            title: 'Entrega bien comunicada',
+            description: 'Retiro o envío con información visible para que el cliente avance con menos dudas.',
+        },
+        {
+            Icon: Headphones,
+            title: 'Acompañamiento real',
+            description: 'WhatsApp, soporte y ayuda pensados para convertir mejor sin fricción.',
+        },
+    ];
 
     const isSustiaForceEnabled = (() => {
         try {
@@ -7795,9 +7855,10 @@ function App() {
                                 onActiveIndexChange={setHomeBannerActiveIndex}
                             />
 
-                            {/* Overlay de Texto - solo visible en el primer slide */}
-                            <div className={`absolute inset-x-0 bottom-0 sm:inset-0 flex flex-col justify-end sm:justify-center px-4 pb-4 sm:px-8 sm:pb-0 md:px-20 z-10 pointer-events-none transition-opacity duration-500 ${homeBannerActiveIndex === 0 ? (darkMode ? 'bg-gradient-to-t md:bg-gradient-to-r from-[#050505]/95 via-[#050505]/60 sm:from-[#050505] sm:via-[#050505]/82 to-transparent' : 'bg-gradient-to-t md:bg-gradient-to-r from-black/80 via-black/40 sm:from-black/60 sm:via-black/35 to-transparent') : 'bg-transparent opacity-0'}`}>
-                                <div className="max-w-2xl animate-fade-up premium-hero-content glass-ultra">
+                            {/* Overlay principal de valor de marca */}
+                            <div className="premium-hero-overlay absolute inset-0 z-10 flex flex-col justify-end pointer-events-none">
+                                <div className="px-4 pb-4 sm:px-8 sm:pb-8 md:px-12 lg:px-16">
+                                <div className="max-w-2xl animate-fade-up premium-hero-content premium-hero-copy">
                                     {/* Skeleton/Loading mientras no se cargan los settings */}
                                     {!settingsLoaded ? (
                                         <>
@@ -7835,6 +7896,20 @@ function App() {
                                             </div>
                                         </>
                                     )}
+                                </div>
+                                <div className="premium-hero-trust-grid mt-4 sm:mt-6">
+                                    {heroTrustItems.map(({ Icon, title, description }) => (
+                                        <div key={title} className="premium-hero-trust-card pointer-events-auto">
+                                            <div className="premium-hero-trust-icon">
+                                                <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="premium-hero-trust-title">{title}</p>
+                                                <p className="premium-hero-trust-description">{description}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                                 </div>
                             </div>
                         </div>
@@ -7944,20 +8019,35 @@ function App() {
                             </div>
                         )}
 
-                        <div className={`mb-5 sm:mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 premium-catalog-intro ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                            <div className="text-center sm:text-left flex flex-col items-center sm:items-start w-full sm:w-auto">
+                        <div className="mb-5 sm:mb-8 premium-catalog-intro">
+                            <div className={`premium-catalog-panel ${darkMode ? 'premium-catalog-panel-dark' : 'premium-catalog-panel-light'}`}>
                                 <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-1 sm:mb-1.5 flex items-center gap-2 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                                     <span className={`w-6 h-px sm:w-8 ${darkMode ? 'bg-slate-700' : 'bg-slate-300'}`}></span>
                                     Catálogo
                                     <span className={`w-6 h-px sm:hidden ${darkMode ? 'bg-slate-700' : 'bg-slate-300'}`}></span>
                                 </p>
                                 <h2 className={`text-3xl sm:text-3xl lg:text-4xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                    Nuestros productos
+                                    {catalogHeading}
                                 </h2>
+                                <p className={`mt-3 text-sm sm:text-base leading-relaxed max-w-2xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                                    {catalogSummaryText}
+                                </p>
                             </div>
-                            <div className={`text-xs sm:text-sm font-bold whitespace-nowrap px-4 py-2 mt-1 sm:mt-0 rounded-full border shadow-sm flex items-center gap-2 transition-all ${darkMode ? 'bg-slate-900/90 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
-                                <div className={`w-2 h-2 rounded-full animate-pulse flex-shrink-0 ${darkMode ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'}`}></div>
-                                {products.filter(p => p.isActive !== false).length} disponibles
+                            <div className="premium-catalog-stats">
+                                {catalogStatItems.map(({ Icon, label, value, tone }) => (
+                                    <div
+                                        key={label}
+                                        className={`premium-catalog-stat premium-catalog-stat-${tone} ${darkMode ? 'premium-catalog-stat-dark' : 'premium-catalog-stat-light'}`}
+                                    >
+                                        <div className="premium-catalog-stat-icon">
+                                            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                                        </div>
+                                        <div className="premium-catalog-stat-copy">
+                                            <strong>{value}</strong>
+                                            <span>{label}</span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -7969,10 +8059,13 @@ function App() {
                                 onMouseLeave={handleMouseLeaveCategories}
                                 onMouseUp={handleMouseUpCategories}
                                 onMouseMove={handleMouseMoveCategories}
-                                className={`flex items-center gap-2 overflow-x-auto pb-1 category-scroll ${isDraggingCategories ? 'cursor-grabbing scroll-auto' : 'cursor-grab scroll-smooth'}`}
+                                className={`premium-category-track flex items-center gap-2 overflow-x-auto pb-1 category-scroll ${isDraggingCategories ? 'cursor-grabbing scroll-auto' : 'cursor-grab scroll-smooth'}`}
                                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
                             >
-                                <Filter className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
+                                <div className={`premium-filter-chip ${darkMode ? 'premium-filter-chip-dark' : 'premium-filter-chip-light'}`}>
+                                    <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    <span>Explorar</span>
+                                </div>
 
                                 {/* BOTÓN PROMOS (SPECIAL) */}
                                 <button
@@ -14181,14 +14274,14 @@ function App() {
             {/* FOOTER PROFESIONAL (Visible solo fuera del Admin y Auth) */}
             {
                 view !== 'admin' && view !== 'login' && view !== 'register' && (
-                    <footer className={`pt-16 pb-8 relative overflow-hidden transition-colors duration-300 border-t ${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-slate-100 border-slate-200'}`}>
+                    <footer className={`premium-store-footer pt-16 pb-8 relative overflow-hidden transition-colors duration-300 border-t ${darkMode ? 'bg-[#050505] border-slate-900' : 'bg-slate-100 border-slate-200'}`}>
                         {/* Decoración de Fondo */}
                         <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent`}></div>
                         <div className={`absolute -top-40 -right-40 w-96 h-96 rounded-full blur-[100px] pointer-events-none ${darkMode ? 'bg-blue-900/5' : 'bg-blue-500/5'}`}></div>
 
-                        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-12 mb-10 sm:mb-16 relative z-10">
+                        <div className="premium-footer-grid max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-12 mb-10 sm:mb-16 relative z-10">
                             {/* Columna 1: Marca */}
-                            <div className="md:col-span-2 space-y-6">
+                            <div className="premium-footer-card premium-footer-brand md:col-span-2 space-y-6">
                                 <h2 className={`text-3xl font-black tracking-tighter italic ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {settingsLoaded ? (settings?.storeName || '') : ''}
                                     <span className="text-orange-500">{settings?.footerSuffix || '.SF'}</span>
@@ -14196,13 +14289,13 @@ function App() {
                                 <p className={`max-w-sm leading-relaxed text-sm ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>
                                     {settings?.footerDescription || 'Tu destino premium para tecnología de vanguardia. Ofrecemos los mejores productos con garantía y soporte especializado. Elevamos tu experiencia digital.'}
                                 </p>
-                                <div className="flex gap-3 pt-2 flex-wrap">
+                                <div className="premium-footer-socials flex gap-3 pt-2 flex-wrap">
                                     {settings?.showInstagram !== false && settings?.instagramLink && (
                                         <button onClick={() => window.open(settings?.instagramLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-pink-400 hover:bg-pink-900/10 hover:border-pink-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-pink-600 hover:bg-pink-50 hover:border-pink-300'}`}>
                                             <Instagram className="w-5 h-5" />
                                         </button>
                                     )}
-                                    {settings?.showWhatsapp === true && settings?.whatsappLink && (
+                                    {settings?.showWhatsapp !== false && settings?.whatsappLink && (
                                         <button onClick={() => window.open(settings?.whatsappLink, '_blank')} className={`p-2 rounded-lg transition border ${darkMode ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-green-400 hover:bg-green-900/10 hover:border-green-500/30' : 'bg-white text-slate-500 border-slate-200 hover:text-green-600 hover:bg-green-50 hover:border-green-300'}`}>
                                             <WhatsAppIcon className="w-5 h-5" />
                                         </button>
@@ -14231,9 +14324,9 @@ function App() {
                             </div>
 
                             {/* Columna 2: Quick Links */}
-                            <div className="space-y-6">
+                            <div className="premium-footer-card premium-footer-links space-y-6">
                                 <h3 className={`font-bold uppercase tracking-widest text-xs ${darkMode ? 'text-white' : 'text-slate-900'}`}>Enlaces Rápidos</h3>
-                                <ul className={`space-y-3 text-sm font-medium ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>
+                                <ul className={`premium-footer-link-list space-y-3 text-sm font-medium ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>
                                     <li>
                                         <button onClick={() => setView('store')} className="hover:text-orange-500 transition flex items-center gap-2 group">
                                             <span className="w-0 group-hover:w-2 h-px bg-orange-500 transition-all duration-300"></span> Inicio
@@ -14254,7 +14347,7 @@ function App() {
 
                             {/* Columna 3: Soporte */}
                             {settings?.showFooterContact !== false && (
-                                <div className="space-y-6">
+                                <div className="premium-footer-card premium-footer-contact space-y-6">
                                     <h3 className={`font-bold uppercase tracking-widest text-xs ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                         {settings?.footerContactTitle || 'Contacto'}
                                     </h3>
@@ -14312,7 +14405,7 @@ function App() {
                         </div>
 
                         {/* Copyright Bar */}
-                        <div className={`border-t transition-colors duration-300 ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-slate-200/50'}`}>
+                        <div className={`premium-footer-bottom border-t transition-colors duration-300 ${darkMode ? 'border-slate-900 bg-[#020202]' : 'border-slate-200 bg-slate-200/50'}`}>
                             <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <p className={`text-xs font-mono ${darkMode ? 'text-slate-600' : 'text-slate-500'}`}>
                                     {settings?.footerCopyright || `© ${new Date().getFullYear()} Sustore. Todos los derechos reservados.`}

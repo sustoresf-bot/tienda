@@ -1,0 +1,1 @@
+6380:                                 {allImages.map((imgSrc, idx) => (

@@ -66,6 +66,11 @@ export default async function handler(req, res) {
     }
 
     const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const action = String(body.action || '').trim();
+
+    if (action !== 'process_payment') {
+        return res.status(400).json({ error: 'Invalid action' });
+    }
 
     // Verificar que tenemos el Access Token configurado
     if (!process.env.MP_ACCESS_TOKEN) {
@@ -77,8 +82,6 @@ export default async function handler(req, res) {
     const client = new MercadoPagoConfig({
         accessToken: process.env.MP_ACCESS_TOKEN,
     });
-
-    const action = String(body.action || '').trim();
 
     try {
         if (action === 'process_payment') {
@@ -130,9 +133,6 @@ export default async function handler(req, res) {
                 id: paymentResponse.id,
             });
         }
-
-        return res.status(400).json({ error: 'Invalid action' });
-
     } catch (error) {
         // Log detallado en la consola de Vercel (Esto lo podés ver vos en Vercel logs)
         console.error('--- ERROR DETALLADO DE MERCADO PAGO ---');

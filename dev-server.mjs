@@ -97,6 +97,20 @@ async function handleApi(req, res) {
         if (!url.searchParams.get('action')) url.searchParams.set('action', adminAction);
     }
 
+    const authRewriteMap = {
+        '/api/auth/legacy-login': 'legacy-login',
+        '/api/auth/bootstrap-super-admin': 'bootstrap-super-admin',
+        '/api/auth/claim-legacy-profile': 'claim-legacy-profile',
+        '/api/auth/reset-password': 'reset-password',
+        '/api/auth/setup-profile': 'setup-profile',
+        '/api/auth/username-lookup': 'username-lookup',
+    };
+    const authAction = authRewriteMap[url.pathname];
+    if (authAction) {
+        url.pathname = '/api/auth';
+        if (!url.searchParams.get('action')) url.searchParams.set('action', authAction);
+    }
+
     if (url.pathname === '/api/public-config') {
         url.pathname = '/api/checkout';
         if (!url.searchParams.get('action')) url.searchParams.set('action', 'public_config');
