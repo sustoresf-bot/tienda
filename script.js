@@ -7380,59 +7380,29 @@ function App() {
             return salesB - salesA;
         });
 
-    const activeProductsCount = products.filter(p => p.isActive !== false).length;
-    const offerProductsCount = products.filter(p => p.isActive !== false && (Number(p.discount) || 0) > 0).length;
-    const featuredProductsCount = products.filter(p => p.isActive !== false && p.isFeatured).length;
     const trimmedSearchQuery = String(searchQuery || '').trim();
-    const activeCatalogLabel = selectedCategory === 'Promos'
-        ? 'packs y promociones'
-        : selectedCategory === 'Ofertas'
-            ? 'ofertas activas'
-            : selectedCategory
-                ? `la categoría ${selectedCategory}`
-                : 'todo el catálogo';
-    const catalogHeading = selectedCategory === 'Promos'
-        ? 'Packs y promociones'
-        : selectedCategory === 'Ofertas'
-            ? 'Ofertas que vale la pena mirar'
-            : selectedCategory
-                ? selectedCategory
-                : 'Nuestros productos';
+    const catalogHeading = trimmedSearchQuery
+        ? 'Resultados'
+        : selectedCategory === 'Promos'
+            ? 'Packs y promociones'
+            : selectedCategory === 'Ofertas'
+                ? 'Ofertas seleccionadas'
+                : selectedCategory
+                    ? selectedCategory
+                    : 'Elegí con confianza';
     const catalogSummaryText = selectedCategory === 'Promos'
         ? (
             promos.length > 0
-                ? `Armamos ${promos.length} pack${promos.length === 1 ? '' : 's'} listos para comprar más rápido, sumar valor por pedido y destacar ofertas con mejor presentación.`
-                : 'Esta sección queda lista para mostrar packs y promociones con una lectura más clara y un cierre de compra más directo.'
+                ? 'Combinaciones armadas para resolver la compra en menos pasos y con una presentación mucho más clara.'
+                : 'Esta sección queda lista para mostrar packs y promociones de forma simple, prolija y fácil de recorrer.'
         )
         : trimmedSearchQuery
-            ? `Mostrando ${filteredProducts.length} resultado${filteredProducts.length === 1 ? '' : 's'} para "${trimmedSearchQuery}" dentro de ${activeCatalogLabel}.`
+            ? `Resultados para "${trimmedSearchQuery}".`
             : selectedCategory === 'Ofertas'
-                ? `Reunimos ${offerProductsCount} producto${offerProductsCount === 1 ? '' : 's'} con descuento para que encontrar oportunidades sea rápido y cómodo.`
+                ? 'Precios especiales elegidos para que encontrar una buena oportunidad sea rápido y agradable.'
                 : selectedCategory
-                    ? `Explorá ${filteredProducts.length} producto${filteredProducts.length === 1 ? '' : 's'} dentro de ${activeCatalogLabel}, con precios visibles y acciones de compra más claras.`
-                    : `Explorá ${activeProductsCount} producto${activeProductsCount === 1 ? '' : 's'} disponibles con una experiencia más limpia, más premium y mucho mejor calibrada para celular y escritorio.`;
-    const catalogStatItems = [
-        { Icon: Package, label: 'Disponibles', value: activeProductsCount, tone: 'orange' },
-        { Icon: Percent, label: 'Ofertas', value: offerProductsCount, tone: 'rose' },
-        { Icon: Sparkles, label: 'Destacados', value: featuredProductsCount, tone: 'blue' },
-    ];
-    const heroTrustItems = [
-        {
-            Icon: Shield,
-            title: 'Compra más segura',
-            description: 'Señales claras de confianza, pagos ordenados y lectura simple desde el primer segundo.',
-        },
-        {
-            Icon: Truck,
-            title: 'Entrega bien comunicada',
-            description: 'Retiro o envío con información visible para que el cliente avance con menos dudas.',
-        },
-        {
-            Icon: Headphones,
-            title: 'Acompañamiento real',
-            description: 'WhatsApp, soporte y ayuda pensados para convertir mejor sin fricción.',
-        },
-    ];
+                    ? `Una selección cuidada dentro de ${selectedCategory}, con foco en lectura clara y compra simple.`
+                    : 'Una selección cuidada, con precios claros y una compra simple de principio a fin.';
 
     const isSustiaForceEnabled = (() => {
         try {
@@ -7874,41 +7844,28 @@ function App() {
                                         </>
                                     ) : (
                                         <>
-                                            <span className="bg-orange-500 text-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-md text-[8px] sm:text-[10px] font-black uppercase tracking-widest mb-1.5 sm:mb-4 inline-block floating-badge shadow-lg shadow-orange-500/20">
+                                            <span className={`px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-[0.22em] mb-2 sm:mb-4 inline-flex items-center border premium-hero-badge ${darkMode ? 'premium-hero-badge-dark text-orange-200 border-white/10' : 'premium-hero-badge-light text-slate-700 border-white/70'}`}>
                                                 {settings?.heroBadge || 'Tienda profesional lista para vender'}
                                             </span>
-                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-tight sm:leading-[0.9] mb-1.5 sm:mb-4 text-white hero-title-neon`}>
+                                            <h1 className={`text-xl sm:text-3xl md:text-5xl lg:text-6xl text-tv-huge font-black leading-tight sm:leading-[0.92] mb-2 sm:mb-4 hero-title-neon ${darkMode ? 'text-white' : 'text-slate-950'}`}>
                                                 {settings?.heroTitle1 || (settings?.storeName || 'Tu tienda online')} <br />
                                                 <span className={`text-transparent bg-clip-text bg-gradient-to-r hero-title-neon-gradient text-gradient-premium ${darkMode ? 'from-orange-400 to-blue-600' : 'from-orange-600 to-blue-700'}`}>
                                                     {settings?.heroTitle2 || 'que transmite confianza y vende más'}
                                                 </span>
                                             </h1>
-                                            <p className={`text-[10px] sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-md font-semibold line-clamp-2 md:line-clamp-none text-white/85`} style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
+                                            <p className={`text-[10px] sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-6 max-w-lg font-semibold line-clamp-2 md:line-clamp-none ${darkMode ? 'text-white/85' : 'text-slate-600'}`} style={darkMode ? { textShadow: '0 1px 6px rgba(0,0,0,0.45)' } : undefined}>
                                                 {settings?.heroSubtitle || 'Diseño premium, compra simple y una experiencia fluida en cualquier dispositivo.'}
                                             </p>
                                             <div className="flex flex-row items-center gap-2 sm:gap-4 premium-hero-ctas">
-                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className="flex-1 sm:flex-none px-3 py-2 sm:px-8 sm:py-4 bg-white text-black font-black text-[10px] sm:text-base rounded-xl hover:bg-orange-400 transition flex items-center justify-center gap-1 sm:gap-2 group/btn pointer-events-auto btn-shine shadow-[0_4px_15px_rgba(255,255,255,0.2)] hover:shadow-[0_0_25px_rgba(249,115,22,0.6)] hover:scale-105 active:scale-95 duration-300">
+                                                <button onClick={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} className={`flex-1 sm:flex-none px-3 py-2 sm:px-8 sm:py-4 font-black text-[10px] sm:text-base rounded-xl transition flex items-center justify-center gap-1 sm:gap-2 group/btn pointer-events-auto btn-shine hover:scale-105 active:scale-95 duration-300 ${darkMode ? 'bg-white text-black hover:bg-orange-400 shadow-[0_4px_15px_rgba(255,255,255,0.2)] hover:shadow-[0_0_25px_rgba(249,115,22,0.6)]' : 'bg-slate-950 text-white hover:bg-slate-800 shadow-[0_18px_34px_-24px_rgba(15,23,42,0.6)]'}`}>
                                                     Ver catálogo <ArrowRight className="w-3 h-3 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition" />
                                                 </button>
-                                                <button onClick={() => setView('guide')} className={`flex-1 sm:flex-none px-3 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1 sm:gap-2 transition font-bold text-[10px] sm:text-sm group pointer-events-auto bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white hover:scale-105 active:scale-95 duration-300`}>
-                                                    <Info className={`w-3 h-3 sm:w-4 sm:h-4 text-orange-400`} /> Cómo comprar
+                                                <button onClick={() => setView('guide')} className={`flex-1 sm:flex-none px-3 py-2 sm:px-6 sm:py-2.5 rounded-xl flex items-center justify-center gap-1 sm:gap-2 transition font-bold text-[10px] sm:text-sm group pointer-events-auto hover:scale-105 active:scale-95 duration-300 ${darkMode ? 'bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white' : 'bg-white/72 backdrop-blur-md border border-slate-200 text-slate-700 hover:bg-white'}`}>
+                                                    <Info className={`w-3 h-3 sm:w-4 sm:h-4 ${darkMode ? 'text-orange-400' : 'text-orange-500'}`} /> Cómo comprar
                                                 </button>
                                             </div>
                                         </>
                                     )}
-                                </div>
-                                <div className="premium-hero-trust-grid mt-4 sm:mt-6">
-                                    {heroTrustItems.map(({ Icon, title, description }) => (
-                                        <div key={title} className="premium-hero-trust-card pointer-events-auto">
-                                            <div className="premium-hero-trust-icon">
-                                                <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="premium-hero-trust-title">{title}</p>
-                                                <p className="premium-hero-trust-description">{description}</p>
-                                            </div>
-                                        </div>
-                                    ))}
                                 </div>
                                 </div>
                             </div>
@@ -8032,22 +7989,6 @@ function App() {
                                 <p className={`mt-3 text-sm sm:text-base leading-relaxed max-w-2xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                                     {catalogSummaryText}
                                 </p>
-                            </div>
-                            <div className="premium-catalog-stats">
-                                {catalogStatItems.map(({ Icon, label, value, tone }) => (
-                                    <div
-                                        key={label}
-                                        className={`premium-catalog-stat premium-catalog-stat-${tone} ${darkMode ? 'premium-catalog-stat-dark' : 'premium-catalog-stat-light'}`}
-                                    >
-                                        <div className="premium-catalog-stat-icon">
-                                            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                                        </div>
-                                        <div className="premium-catalog-stat-copy">
-                                            <strong>{value}</strong>
-                                            <span>{label}</span>
-                                        </div>
-                                    </div>
-                                ))}
                             </div>
                         </div>
 
